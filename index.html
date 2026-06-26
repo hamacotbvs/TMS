@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web App Quản Lý</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <aside class="hidden md:flex flex-col w-64 bg-slate-800 text-white h-full justify-between p-4 shadow-xl">
+        <div>
+            <div class="text-xl font-bold p-2 text-center border-b border-slate-700 mb-6">
+                <i class="fa-solid fa-cube text-teal-400 mr-2"></i>HỆ THỐNG
+            </div>
+            <nav class="space-y-2">
+                <button onclick="switchTab('home')" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-teal-600 text-white font-medium transition">
+                    <i class="fa-solid fa-house w-5"></i> <span>HOME</span>
+                </button>
+                <button onclick="switchTab('bao-cao')" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition">
+                    <i class="fa-solid fa-chart-pie w-5"></i> <span>Báo cáo</span>
+                </button>
+                <button onclick="switchTab('them')" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition">
+                    <i class="fa-solid fa-circle-plus w-5 text-emerald-400"></i> <span>Thêm mới</span>
+                </button>
+                <button onclick="switchTab('van-chuyen')" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition">
+                    <i class="fa-solid fa-truck w-5"></i> <span>Vận chuyển</span>
+                </button>
+                <button onclick="switchTab('kho')" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition">
+                    <i class="fa-solid fa-warehouse w-5"></i> <span>Kho</span>
+                </button>
+            </nav>
+        </div>
+        <div class="text-xs text-gray-400 text-center border-t border-slate-700 pt-3">
+            © 2026 Hệ Thống Tự Động
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
+            <h1 id="current-title" class="text-lg md:text-xl font-bold text-gray-800">HOME</h1>
+            <div class="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span>Firebase Connected</span>
+            </div>
+        </header>
+
+        <div class="flex-1 p-4 md:p-6 overflow-y-auto">
+            <div id="content-area" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[300px]">
+                Nội dung của trang HOME sẽ hiển thị ở đây.
+            </div>
+        </div>
+    </main>
+
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 text-gray-400 flex justify-around items-center h-16 landscape:h-12 z-50 shadow-2xl">
+        <button onclick="switchTab('home')" class="mobile-tab-btn flex flex-col items-center justify-center w-full h-full text-teal-400">
+            <i class="fa-solid fa-house text-lg landscape:text-base"></i>
+            <span class="text-[10px] mt-0.5 landscape:hidden">HOME</span>
+        </button>
+        <button onclick="switchTab('bao-cao')" class="mobile-tab-btn flex flex-col items-center justify-center w-full h-full">
+            <i class="fa-solid fa-chart-pie text-lg landscape:text-base"></i>
+            <span class="text-[10px] mt-0.5 landscape:hidden">Báo cáo</span>
+        </button>
+        
+        <button onclick="switchTab('them')" class="mobile-tab-btn relative -top-3 landscape:top-0 bg-teal-500 text-white rounded-full w-12 h-12 landscape:w-9 landscape:h-9 flex items-center justify-center shadow-lg transform active:scale-95 transition-transform border-4 border-slate-900 landscape:border-0">
+            <i class="fa-solid fa-plus text-xl landscape:text-lg"></i>
+        </button>
+
+        <button onclick="switchTab('van-chuyen')" class="mobile-tab-btn flex flex-col items-center justify-center w-full h-full">
+            <i class="fa-solid fa-truck text-lg landscape:text-base"></i>
+            <span class="text-[10px] mt-0.5 landscape:hidden">Vận chuyển</span>
+        </button>
+        <button onclick="switchTab('kho')" class="mobile-tab-btn flex flex-col items-center justify-center w-full h-full">
+            <i class="fa-solid fa-warehouse text-lg landscape:text-base"></i>
+            <span class="text-[10px] mt-0.5 landscape:hidden">Kho</span>
+        </button>
+    </nav>
+
+    <script>
+        const tabData = {
+            'home': { title: 'HOME', content: '<h3 class="text-lg font-semibold">Chào mừng trở lại!</h3><p class="mt-2 text-gray-600">Hệ thống đang hoạt động ổn định. Dữ liệu từ Google Sheets đã được đồng bộ.</p>' },
+            'bao-cao': { title: 'Báo cáo thống kê', content: '<h3 class="text-lg font-semibold">Báo cáo tổng quan</h3><div class="mt-4 p-4 bg-gray-50 border rounded-lg">Biểu đồ hoặc danh sách báo cáo xuất hiện tại đây...</div>' },
+            'them': { title: 'Thêm dữ liệu mới', content: '<h3 class="text-lg font-semibold">Tạo lệnh mới</h3><p class="mt-2">Form nhập liệu nhanh cho nhân viên...</p>' },
+            'van-chuyen': { title: 'Quản lý Vận chuyển', content: '<h3 class="text-lg font-semibold">Trạng thái đội xe</h3><p class="mt-2">Danh sách xe đang di chuyển, lộ trình chi tiết...</p>' },
+            'kho': { title: 'Quản lý kho hàng', content: '<h3 class="text-lg font-semibold">Tồn kho hiện tại</h3><p class="mt-2">Kiểm kê vật tư, hàng hóa trong kho...</p>' }
+        };
+
+        function switchTab(tabId) {
+            // Cập nhật tiêu đề và nội dung chính
+            document.getElementById('current-title').innerText = tabData[tabId].title;
+            document.getElementById('content-area').innerHTML = tabData[tabId].content;
+
+            // Xử lý đổi màu active trên Máy tính (Sidebar)
+            const sidebarBtns = document.querySelectorAll('.tab-btn');
+            sidebarBtns.forEach(btn => {
+                if(btn.getAttribute('onclick').includes(tabId)) {
+                    btn.className = "tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-teal-600 text-white font-medium transition";
+                } else {
+                    btn.className = "tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition";
+                }
+            });
+
+            // Xử lý đổi màu active trên Điện thoại (Bottom Nav)
+            const mobileBtns = document.querySelectorAll('.mobile-tab-btn');
+            mobileBtns.forEach(btn => {
+                if(btn.getAttribute('onclick').includes(tabId)) {
+                    if(!tabId.includes('them')) btn.classList.add('text-teal-400');
+                } else {
+                    btn.classList.remove('text-teal-400');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
