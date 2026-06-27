@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Web App Fixed Menu 60px</title>
+    <title>Web App Fixed Menu 50px</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -20,38 +20,38 @@
 </head>
 <body class="flex flex-col w-full h-full justify-between relative m-0 p-0">
 
-    <main id="content-area" class="flex-1 w-full p-6 overflow-y-auto text-center flex flex-col items-center justify-center">
-        <h1 id="tab-title" class="text-3xl font-bold text-gray-800 mb-2">HOME</h1>
-        <p class="text-gray-500 text-lg">Menu cao đúng 60px, nút cộng nằm phẳng ở giữa và đổi màu khi kích hoạt.</p>
+    <main id="content-area" class="flex-1 w-full p-4 overflow-y-auto text-center flex flex-col items-center justify-center">
+        <h1 id="tab-title" class="text-2xl font-bold text-gray-800 mb-1">HOME</h1>
+        <p class="text-gray-500 text-base">Menu bên dưới đã được hạ xuống chiều cao chuẩn 50px gọn gàng.</p>
     </main>
 
-    <div class="fixed bottom-0 left-0 right-0 w-full z-50 m-0 p-0 h-[60px]">
+    <div class="fixed bottom-0 left-0 right-0 w-full z-50 m-0 p-0 h-[50px]">
         <nav class="bg-[#007acc] shadow-2xl flex justify-between items-center px-4 md:px-12 relative w-full h-full">
             
             <button onclick="switchTab('HOME', this)" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-100 transition-all cursor-pointer h-full">
-                <span class="material-icons text-xl">home</span>
-                <span class="text-[10px] mt-0.5 font-medium">HOME</span>
+                <span class="material-icons text-lg">home</span>
+                <span class="text-[9px] mt-0.5 font-medium">HOME</span>
             </button>
 
             <button onclick="switchTab('Báo cáo', this)" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer h-full">
-                <span class="material-icons text-xl">pie_chart</span>
-                <span class="text-[10px] mt-0.5 font-medium">Báo cáo</span>
+                <span class="material-icons text-lg">pie_chart</span>
+                <span class="text-[9px] mt-0.5 font-medium">Báo cáo</span>
             </button>
 
             <div class="flex-1 flex justify-center h-full items-center">
-                <button id="add-btn" onclick="switchTab('Thêm mới', this)" class="bg-white text-[#007acc] rounded-full w-11 h-11 min-w-[44px] min-h-[44px] shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer">
-                    <span class="material-icons text-2xl font-bold">add</span>
+                <button id="add-btn" onclick="switchTab('Thêm mới', this)" class="bg-white text-[#007acc] rounded-full w-9 h-9 min-w-[36px] min-h-[36px] shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer">
+                    <span class="material-icons text-xl font-bold">add</span>
                 </button>
             </div>
 
             <button onclick="switchTab('Vận chuyển', this)" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer h-full">
-                <span class="material-icons text-xl">local_shipping</span>
-                <span class="text-[10px] mt-0.5 font-medium">Vận chuyển</span>
+                <span class="material-icons text-lg">local_shipping</span>
+                <span class="text-[9px] mt-0.5 font-medium">Vận chuyển</span>
             </button>
 
             <button onclick="switchTab('Kho', this)" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer h-full">
-                <span class="material-icons text-xl">warehouse</span>
-                <span class="text-[10px] mt-0.5 font-medium">Kho</span>
+                <span class="material-icons text-lg">warehouse</span>
+                <span class="text-[9px] mt-0.5 font-medium">Kho</span>
             </button>
 
         </nav>
@@ -59,10 +59,8 @@
 
     <script>
         function switchTab(tabName, element) {
-            // Cập nhật tiêu đề màn hình
             document.getElementById('tab-title').innerText = tabName;
             
-            // 1. Xử lý độ mờ (opacity) cho 4 tab chữ thông thường
             const tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(tab => {
                 if(tab === element) {
@@ -74,20 +72,18 @@
                 }
             });
 
-            // 2. Xử lý đổi màu riêng cho nút Dấu cộng ở giữa
             const addBtn = document.getElementById('add-btn');
             if (tabName === 'Thêm mới') {
-                // Khi được chọn: Vòng tròn đổi thành xám nhẹ, dấu + thành màu trắng
+                // Đổi vòng tròn thành xám nhẹ, dấu + thành màu trắng
                 addBtn.classList.remove('bg-white', 'text-[#007acc]');
                 addBtn.classList.add('bg-gray-300/40', 'text-white');
                 
-                // Đồng thời tắt active của các tab chữ khác
                 tabs.forEach(tab => {
                     tab.classList.remove('opacity-100');
                     tab.classList.add('opacity-60');
                 });
             } else {
-                // Khi chọn tab khác: Trả nút cộng về trạng thái nền trắng, dấu + xanh ban đầu
+                // Trả về trạng thái mặc định ban đầu
                 addBtn.classList.remove('bg-gray-300/40', 'text-white');
                 addBtn.classList.add('bg-white', 'text-[#007acc]');
             }
