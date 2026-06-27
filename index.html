@@ -167,16 +167,15 @@
         if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
 
         // --- 3. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
-        window.switchTab = function(tabId) {
+        window.switchTab = function(tabId, event) {
             const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
-            const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
+            if (event && event.currentTarget) {event.currentTarget.classList.add('active');} } // Kích hoạt trạng thái active cho nút menu tương ứng
         // --- 4. BÁO CÁO XE GIAO HÀNG THEO NGÀY
         const oChonNgay = document.getElementById('input-ngay-xem');
         const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
         let unsubscribeReport = null;
-
         // Tự động gán ngày hiện tại làm mặc định khi mở app
         const homNay = new Date();
         const dinhDangHomNay = homNay.toISOString().split('T')[0];
