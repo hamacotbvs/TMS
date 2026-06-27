@@ -172,7 +172,7 @@
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
             if (event && event.currentTarget) {event.currentTarget.classList.add('active');} } // Kích hoạt trạng thái active cho nút menu tương ứng
-        // --- 4. BÁO CÁO XE GIAO HÀNG THEO NGÀY (ĐÃ SỬA LỖI CÚ PHÁP) ---
+        // --- 4. BÁO CÁO XE GIAO HÀNG THEO NGÀY (ĐÃ ĐỔI ĐỊNH DẠNG THEO DATABASE) ---
         const oChonNgay = document.getElementById('input-ngay-xem');
         const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
         let unsubscribeReport = null;
@@ -185,17 +185,24 @@
         function taiBaoCaoTheoNgay(chuoiNgayYMD) {
             if(!chuoiNgayYMD) return;
 
+            // chuoiNgayYMD nhận từ ô input có dạng "YYYY-MM-DD" (Ví dụ: "2026-06-01")
             const phanTach = chuoiNgayYMD.split('-'); // [YYYY, MM, DD]
-            const ngayTimKiem = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Vẫn giữ định dạng DD/MM/YYYY để lọc ô dữ liệu
-            const thangChon = parseInt(phanTach[1], 10); // Chuyển "06" thành số 6 để khớp với tên bảng TUYENDUONGT6
-            const tenCollectionThang = `TUYENDUONGT${thangChon}`; 
+            
+            // ĐỔI TẠI ĐÂY: Khớp với cấu trúc YYYY-MM-DD trong database của bạn
+            const ngayTimKiem = chuoiNgayYMD; 
+            
+            // Tạo thêm định dạng hiển thị DD/MM/YYYY để hiển thị trên thông báo cho người dùng dễ nhìn
+            const ngayHienThi = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`;
+
+            const thangChon = parseInt(phanTach[1], 10); // Chuyển "06" thành số 6
+            const tenCollectionThang = `TUYENDUONGT${thangChon}`; // Thành "TUYENDUONGT6"
 
             bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm bảng dữ liệu ${tenCollectionThang}...</td></tr>`;
 
             if (unsubscribeReport) unsubscribeReport();
 
             try {
-                // Lọc theo ngày bắt đầu giao hàng
+                // Lọc các bản ghi có "Bắt_đầu_giao_hàng" bắt đầu bằng chuỗi "YYYY-MM-DD"
                 const q = query(
                     collection(db, tenCollectionThang), 
                     where("Bắt_đầu_giao_hàng", ">=", ngayTimKiem),
@@ -206,7 +213,7 @@
                     bodyBangBaoCao.innerHTML = "";
 
                     if(querySnapshot.empty) {
-                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${ngayTimKiem}</td></tr>`;
+                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${ngayHienThi}</td></tr>`;
                         return;
                     }
 
@@ -216,6 +223,21 @@
                         if(data["Duyệt"] === "Đã giao hàng") classBadge = "status-dagiao";
                         else if(data["Duyệt"] === "Đang giao hàng") classBadge = "status-chuanbi";
 
+                        // Xử lý định dạng hiển thị ngày giờ từ database ra giao diện cho đẹp (chuyển từ YYYY-MM-DD thành DD/MM/YYYY)
+                        let batDauHienThi = data["Bắt_đầu_giao_hàng"] || '---';
+                        if(batDauHienThi !== '---' && batDauHienThi.includes('-')) {
+                            const [ngayPart, gioPart] = batDauHienThi.split(' ');
+                            const [y, m, d] = ngayPart.split('-');
+                            batDauHienThi = `${d}/${m}/${y} ${gioPart || ''}`;
+                        }
+
+                        let ketThucHienThi = data["Kết_thúc_giao_hàng"] || '---';
+                        if(ketThucHienThi !== '---' && ketThucHienThi.includes('-')) {
+                            const [ngayPart, gioPart] = ketThucHienThi.split(' ');
+                            const [y, m, d] = ngayPart.split('-');
+                            ketThucHienThi = `${d}/${m}/${y} ${gioPart || ''}`;
+                        }
+
                         const hangBaoCao = document.createElement('tr');
                         hangBaoCao.innerHTML = `
                             <td><strong>${data["Phương_tiện"] || '---'}</strong></td>
@@ -224,8 +246,8 @@
                             <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${data["Nơi giao"] || '---'}</td>
                             <td>${data["TTải"] ? Number(data["TTải"]).toLocaleString() : '0'}</td>
                             <td><span class="badge-status ${classBadge}">${data["Duyệt"] || data["Status"] || 'Mới'}</span></td>
-                            <td>${data["Bắt_đầu_giao_hàng"] || '---'}</td>
-                            <td>${data["Kết_thúc_giao_hàng"] || '---'}</td>
+                            <td>${batDauHienThi}</td>
+                            <td>${ketThucHienThi}</td>
                         `;
                         bodyBangBaoCao.appendChild(hangBaoCao);
                     });
