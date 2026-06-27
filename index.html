@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Chi Tiêu & Vận Chuyển</title>
+    <title>HAMACO-TMS</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -123,35 +123,35 @@
         <div id="home" class="page-content active">
             <div class="card">
                 <h2>🎯 Ngân sách chi tiêu</h2>
-                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu tổng quan trang Home sẽ hiển thị ở đây.</p>
+                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
             </div>
         </div>
 
         <div id="bao-cao" class="page-content">
             <div class="card">
                 <h2>📊 Báo cáo & Thống kê</h2>
-                <p style="margin-top: 10px; color: #666;">Nội dung phân tích, biểu đồ cột và số liệu chi tiết.</p>
+                <p style="margin-top: 10px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
             </div>
         </div>
 
         <div id="them-moi" class="page-content">
             <div class="card">
-                <h2>➕ Thêm mới</h2>
-                <p style="margin-top: 10px; color: #666;">Form nhập nhanh thông tin chi phí hoặc cập nhật lịch trình xe.</p>
+                <h2>➕ Thêm giao dịch / Dữ liệu mới</h2>
+                <p style="margin-top: 10px; color: #666;">Form nhập nhanh thông tin chi tiêu hoặc chuyến hàng.</p>
             </div>
         </div>
 
         <div id="kho" class="page-content">
             <div class="card">
                 <h2>📦 Quản lý Kho hàng</h2>
-                <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư và tồn kho thực tế.</p>
+                <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
             </div>
         </div>
 
         <div id="van-chuyen" class="page-content">
             <div class="card">
                 <h2>🚚 Quản lý Vận chuyển</h2>
-                <p style="margin-top: 10px; color: #666;">Danh sách chuyến hàng, quản lý tài xế và tiến độ giao nhận.</p>
+                <p style="margin-top: 10px; color: #666;">Điều phối xe, tài xế và trạng thái đơn vận chuyển.</p>
             </div>
         </div>
 
@@ -169,4 +169,56 @@
         <div class="nav-item add-btn" onclick="switchTab('them-moi')">
             <i class="fa-solid fa-plus"></i>
         </div>
-        <div class="nav-item" onclick="switchTab('kho
+        <div class="nav-item" onclick="switchTab('kho')">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Kho</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('van-chuyen')">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+            <span>Vận chuyển</span>
+        </div>
+    </nav>
+
+    <script type="module">
+        // --- 1. CẤU HÌNH FIREBASE ---
+        // Thêm các thư viện Firebase SDK cần thiết
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        // Nếu dùng Firestore thì thay bằng: import { getFirestore } from "...firebase-firestore.js";
+
+        // Thay thế thông tin cấu hình này bằng tài khoản Firebase thực tế của bạn
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Khởi tạo Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        console.log("Firebase đã được cấu hình thành công!");
+
+        // --- 2. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
+        window.switchTab = function(tabId) {
+            // Ẩn tất cả các trang nội dung
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => page.classList.remove('active'));
+
+            // Gỡ bỏ trạng thái active của tất cả các nút menu
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+
+            // Hiển thị trang được chọn
+            document.getElementById(tabId).classList.add('active');
+
+            // Kích hoạt trạng thái active cho nút menu tương ứng
+            const clickedTarget = event.currentTarget;
+            clickedTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
