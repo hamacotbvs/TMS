@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web App Quản Lý - HAMACO TMS</title>
+    <title>Web App Quản Lý - HAMACO TMS Firestore</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
@@ -40,9 +40,9 @@
     <main class="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0">
         <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
             <h1 id="current-title" class="text-lg md:text-xl font-bold text-gray-800">HOME</h1>
-            <div id="db-status" class="flex items-center space-x-2 text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full font-medium">
-                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                <span id="status-text">Connecting...</span>
+            <div id="db-status" class="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span>Firestore Active</span>
             </div>
         </header>
 
@@ -79,13 +79,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Thêm thông tin cấu hình từ ảnh của bạn vào đây
         const firebaseConfig = {
             apiKey: "AIzaSyAUewVDshHW4Dxebo_hLahHUg12muBgsa4",
             authDomain: "hamaco-tms.firebaseapp.com",
-            databaseURL: "https://hamaco-tms-default-rtdb.firebaseio.com/", // Link Realtime DB của bạn
             projectId: "hamaco-tms",
             storageBucket: "hamaco-tms.appspot.com",
             messagingSenderId: "355627029952",
@@ -93,53 +91,46 @@
             measurementId: "G-0ECZF7RFNH"
         };
 
-        // Khởi tạo Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const db = getFirestore(app);
 
-        // Biến lưu trữ dữ liệu cục bộ từ Firebase
-        let globalData = {};
+        let globalData = [];
         let currentTab = "HOME";
 
-        // Kiểm tra kết nối Database
-        const connectedRef = ref(db, ".info/connected");
-        onValue(connectedRef, (snap) => {
-            const statusDiv = document.getElementById("db-status");
-            const statusText = document.getElementById("status-text");
-            if (snap.val() === true) {
-                statusDiv.className = "flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium";
-                statusText.innerText = "Firebase Connected";
+        // Lắng nghe dữ liệu real-time từ Collection "Sheet1" và Document "data_list" trên Firestore
+        const docRef = doc(db, "Sheet1", "data_list");
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const firestoreData = docSnap.data();
+                // Giải nén định dạng arrayValue của Firestore về dạng mảng JSON thuần túy để dựng bảng
+                if (firestoreData.list && firestoreData.list.length > 0) {
+                    globalData = firestoreData.list.map(item => {
+                        let row = {};
+                        for (let key in item.fields) {
+                            row[key] = item.fields[key].stringValue || "";
+                        }
+                        return row;
+                    });
+                    renderUI();
+                }
             } else {
-                statusDiv.className = "flex items-center space-x-2 text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full font-medium";
-                statusText.innerText = "Connecting...";
+                document.getElementById('content-area').innerHTML = `<p class="text-gray-500 text-center py-8">Chưa có dữ liệu đồng bộ trên Firestore.</p>`;
             }
+        }, (error) => {
+            console.error("Lỗi tải dữ liệu Firestore: ", error);
+            document.getElementById('content-area').innerHTML = `<p class="text-red-500 text-center py-8">Lỗi phân quyền Rules hoặc sai cấu hình.</p>`;
         });
 
-        // ĐỒNG BỘ REALTIME: Tự động tải lại dữ liệu khi Google Sheet có thay đổi (Firebase cập nhật)
-        // Lưu ý: Đoạn code Apps Script của bạn đẩy dữ liệu lên tab nào (Ví dụ: Sheet1) thì điền đúng tên ở đây
-        const sheetRef = ref(db, "Sheet1"); 
-        onValue(sheetRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                globalData = data;
-                renderUI(); // Vẽ lại giao diện sau khi có dữ liệu mới
-            } else {
-                document.getElementById('content-area').innerHTML = `<p class="text-gray-500 text-center py-8">Chưa có dữ liệu đồng bộ từ Google Sheets.</p>`;
-            }
-        });
-
-        // Hàm vẽ bảng dữ liệu tương ứng dựa trên tab đang chọn
         window.renderUI = function() {
             document.getElementById('current-title').innerText = currentTab;
             
             if (currentTab === "Thêm") {
-                document.getElementById('content-area').innerHTML = `<h3 class="text-lg font-semibold mb-4">Thêm mới thông tin</h3><p class="text-gray-600">Giao diện form nhập liệu...</p>`;
+                document.getElementById('content-area').innerHTML = `<h3 class="text-lg font-semibold mb-4">Thêm mới thông tin</h3><p class="text-gray-600">Giao diện biểu mẫu nhập liệu...</p>`;
                 return;
             }
 
             if (!globalData || globalData.length === 0) return;
 
-            // Tạo bảng dữ liệu tự động dựa trên headers nhận từ Sheets
             const headers = Object.keys(globalData[0]);
             
             let tableHTML = `
@@ -163,18 +154,15 @@
             document.getElementById('content-area').innerHTML = tableHTML;
         }
 
-        // Hàm xử lý khi người dùng ấn chuyển tab
         window.switchTab = function(tabId) {
             currentTab = tabId;
             
-            // Đổi trạng thái nút Active trên Desktop
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.className = "tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition";
             });
             const activeBtn = document.getElementById(`btn-${tabId}`);
             if(activeBtn) activeBtn.className = "tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-teal-600 text-white font-medium transition";
 
-            // Đổi trạng thái nút Active trên Mobile
             document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
                 btn.classList.remove('text-teal-400');
             });
