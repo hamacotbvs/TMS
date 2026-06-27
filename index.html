@@ -127,7 +127,7 @@
 
         // --- 2. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
         window.switchTab = function(tabId) {
-            const pages = document.querySelectorAll('.trang-content'); pages.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
+            const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
             const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
