@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
         
         /* Nút reset */
@@ -145,9 +146,10 @@
 
     <script type="module">
         // --- 1. CẤU HÌNH FIREBASE ---
+        // Thêm các thư viện Firebase SDK cần thiết
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, setDoc, orderBy} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // Thông tin cấu hình tài khoản Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAG1TAeGdizPFS6yLjRf_CFGdk7MeXxifU",
             authDomain: "app-tms-bf7ec.firebaseapp.com",
@@ -155,40 +157,25 @@
             storageBucket: "app-tms-bf7ec.firebasestorage.app",
             messagingSenderId: "30608691122",
             appId: "1:30608691122:web:55220ddcd6779e71b09eab",
-            measurementId: "G-3E90723GR6"
-        };
-        const app = initializeApp(firebaseConfig); 
-        const db = getFirestore(app); 
+            measurementId: "G-3E90723GR6"};
+        const app = initializeApp(firebaseConfig); // Khởi tạo ứng dụng Firebase
+        const db = getFirestore(app); // Khởi tạo Cloud Firestore và gán vào biến `db` để sử dụng toàn app
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
-        // --- 2. NÚT RESET ---
+        // ---2. NÚT RESET ---
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {
-            idNutLamMoi.addEventListener('click', () => {
-                const iconSvg = idNutLamMoi.querySelector('svg'); 
-                if (iconSvg) {
-                    iconSvg.style.transform = 'rotate(360deg)'; 
-                    iconSvg.style.transition = 'transform 0.4s ease';
-                } 
-                setTimeout(() => { window.location.reload(); }, 350); 
-            });
-        }
+        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
 
         // --- 3. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
         window.switchTab = function(tabId, event) {
-            const trangs = document.querySelectorAll('.trang-content'); 
-            trangs.forEach(page => page.classList.remove('active')); 
-            const menuItems = document.querySelectorAll('.MENU-item'); 
-            menuItems.forEach(item => item.classList.remove('active')); 
-            document.getElementById(tabId).classList.add('active'); 
-            if (event && event.currentTarget) { event.currentTarget.classList.add('active'); } 
-        }
-
-        // --- 4. BÁO CÁO XE GIAO HÀNG THEO NGÀY (LỌC THEO BẮT ĐẦU GIAO HÀNG) ---
+            const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
+            const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
+            document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
+            if (event && event.currentTarget) {event.currentTarget.classList.add('active');} } // Kích hoạt trạng thái active cho nút menu tương ứng
+        // --- 4. BÁO CÁO XE GIAO HÀNG THEO NGÀY
         const oChonNgay = document.getElementById('input-ngay-xem');
         const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
         let unsubscribeReport = null;
-
         // Tự động gán ngày hiện tại làm mặc định khi mở app
         const homNay = new Date();
         const dinhDangHomNay = homNay.toISOString().split('T')[0];
@@ -198,35 +185,42 @@
             if(!chuoiNgayYMD) return;
 
             const phanTach = chuoiNgayYMD.split('-'); // [YYYY, MM, DD]
-            const ngayTimKiem = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Định dạng chuẩn DD/MM/YYYY để truy vấn chuỗi văn bản
+            const dinhDangNgayDuyet = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Chuyển thành DD/MM/YYYY giống dữ liệu Firestore mẫu
             const thangChon = phanTach[1]; 
-            const tenCollectionThang = `TUYENDUONG_${thangChon}`; 
+            const tenCollectionThang = `TUYENDUONG_${thangChon}`; // Tự động đổi bảng theo tháng chọn
 
-            bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm dữ liệu từ bảng ${tenCollectionThang}...</td></tr>`;
+            bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm bảng dữ liệu ${tenCollectionThang}...</td></tr>`;
 
             if (unsubscribeReport) unsubscribeReport();
 
             try {
-                // Lọc trực tiếp các tài liệu có cột "Bắt_đầu_giao_hàng" mang đầu chuỗi là ngày được chọn
-                const q = query(
+                const phanTach = chuoiNgayYMD.split('-'); // [YYYY, MM, DD]
+                const ngayTimKiem = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`;  // Tạo chuỗi ngày dạng DD/MM/YYYY để so sánh chuỗi bắt đầu
+                const thangChon = phanTach[1]; 
+                const tenCollectionThang = `TUYENDUONG_${thangChon}`;
+                bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm bảng dữ liệu ${tenCollectionThang}...</td></tr>`;
+                if (unsubscribeReport) unsubscribeReport();
+                try {
+                    // SỬA TẠI ĐÂY: Lọc các tài liệu có trường "Bắt_đầu_giao_hàng" bắt đầu bằng chuỗi "DD/MM/YYYY"
+                    const q = query(
                     collection(db, tenCollectionThang), 
                     where("Bắt_đầu_giao_hàng", ">=", ngayTimKiem),
-                    where("Bắt_đầu_giao_hàng", "<=", ngayTimKiem + "\uf8ff")
-                );
+                    where("Bắt_đầu_giao_hàng", "<=", ngayTimKiem + "\uf8ff"));
+                    // (Các đoạn code onSnapshot phía dưới giữ nguyên không thay đổi)
 
                 unsubscribeReport = onSnapshot(q, (querySnapshot) => {
                     bodyBangBaoCao.innerHTML = "";
 
                     if(querySnapshot.empty) {
-                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Không có xe nào bắt đầu giao hàng trong ngày ${ngayTimKiem}</td></tr>`;
+                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${dinhDangNgayDuyet}</td></tr>`;
                         return;
                     }
 
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         let classBadge = "status-khac";
-                        if(data["Duyệt"] === "Đã giao") classBadge = "status-dagiao";
-                        else if(data["Duyệt"] === "Chuẩn bị giao") classBadge = "status-chuanbi";
+                        if(data["Duyệt"] === "Đã giao hàng") classBadge = "status-dagiao";
+                        else if(data["Duyệt"] === "Đang giao hàng") classBadge = "status-chuanbi";
 
                         const hangBaoCao = document.createElement('tr');
                         hangBaoCao.innerHTML = `
@@ -242,17 +236,15 @@
                         bodyBangBaoCao.appendChild(hangBaoCao);
                     });
                 }, (error) => {
-                    console.error("Lỗi Firestore: ", error);
-                    bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Lỗi tải dữ liệu hoặc chưa cấu hình đúng bảng trên Firestore.</td></tr>`;
+                    console.error("Lỗi: ", error);
+                    bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Không đọc được dữ liệu bảng ${tenCollectionThang}.</td></tr>`;
                 });
-
             } catch (err) {
-                console.error("Lỗi hệ thống: ", err);
-                bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Lỗi lập truy vấn hệ thống.</td></tr>`;
+                bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Lỗi hệ thống lập truy vấn.</td></tr>`;
             }
         }
 
-        // Chạy kích hoạt lần đầu và lắng nghe sự kiện thay đổi ngày
+        // Chạy kích hoạt lần đầu và lắng nghe thay đổi ngày chọn
         taiBaoCaoTheoNgay(oChonNgay.value);
         oChonNgay.addEventListener('change', (e) => { taiBaoCaoTheoNgay(e.target.value); });
     </script>
