@@ -8,13 +8,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Roboto', sans-serif;
-        }
 
+        * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
+        
+        /* Nút reset */
+            .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
+                background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
+            /* Định cấu hình màu sắc cho icon SVG bên trong */
+            .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
+            .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
+        
         body {
             background-color: #f5f6f8;
             color: #333;
@@ -135,6 +139,7 @@
         </div>
 
         <div id="them-moi" class="page-content">
+            <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
             <div class="card">
                 <h2>➕ Thêm giao dịch / Dữ liệu mới</h2>
                 <p style="margin-top: 10px; color: #666;">Form nhập nhanh thông tin chi tiêu hoặc chuyến hàng.</p>
@@ -201,6 +206,11 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         console.log("Firebase đã được cấu hình thành công!");
+
+        // NÚT RESET
+        const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
+        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';}
+            setTimeout(() => { window.location.reload(); }, 350); });}
 
         // --- 2. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
         window.switchTab = function(tabId) {
