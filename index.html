@@ -194,10 +194,19 @@
             if (unsubscribeReport) unsubscribeReport();
 
             try {
-                const q = query(
+                const phanTach = chuoiNgayYMD.split('-'); // [YYYY, MM, DD]
+                const ngayTimKiem = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`;  // Tạo chuỗi ngày dạng DD/MM/YYYY để so sánh chuỗi bắt đầu
+                const thangChon = phanTach[1]; 
+                const tenCollectionThang = `TUYENDUONG_${thangChon}`;
+                bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm bảng dữ liệu ${tenCollectionThang}...</td></tr>`;
+                if (unsubscribeReport) unsubscribeReport();
+                try {
+                    // SỬA TẠI ĐÂY: Lọc các tài liệu có trường "Bắt_đầu_giao_hàng" bắt đầu bằng chuỗi "DD/MM/YYYY"
+                    const q = query(
                     collection(db, tenCollectionThang), 
-                    where("Ngày duyệt", "==", dinhDangNgayDuyet)
-                );
+                    where("Bắt_đầu_giao_hàng", ">=", ngayTimKiem),
+                    where("Bắt_đầu_giao_hàng", "<=", ngayTimKiem + "\uf8ff"));
+                    // (Các đoạn code onSnapshot phía dưới giữ nguyên không thay đổi)
 
                 unsubscribeReport = onSnapshot(q, (querySnapshot) => {
                     bodyBangBaoCao.innerHTML = "";
