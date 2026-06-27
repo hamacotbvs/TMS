@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Web App Fixed Menu 50px</title>
+    <title>Web App with Firebase Logo</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -21,7 +21,9 @@
 <body class="flex flex-col w-full h-full justify-between relative m-0 p-0">
 
     <main id="content-area" class="flex-1 w-full p-4 overflow-y-auto text-center flex flex-col items-center justify-center">
-        <h1 id="tab-title" class="text-2xl font-bold text-gray-800 mb-1">HOME</h1>
+        <div id="header-container" class="flex items-center justify-center mb-2 h-12">
+            <h1 id="tab-title" class="text-2xl font-bold text-gray-800">HOME</h1>
+        </div>
         <p class="text-gray-500 text-base">Menu bên dưới đã được hạ xuống chiều cao chuẩn 50px gọn gàng.</p>
     </main>
 
@@ -57,10 +59,61 @@
         </nav>
     </div>
 
-    <script>
-        function switchTab(tabName, element) {
-            document.getElementById('tab-title').innerText = tabName;
+    <script type="module">
+        // 1. Nhập các hàm cần thiết từ Firebase SDK (Modular v10+)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+        // Cấu hình Firebase dựa trên thông tin dự án app-tms của bạn
+        const firebaseConfig = {
+            apiKey: "AIzaSyAG1TAeGdizpRS6yLjRf_CFGdk7MeXxifU",
+            authDomain: "app-tms-bf7ec.firebaseapp.com",
+            projectId: "app-tms-bf7ec",
+            storageBucket: "app-tms-bf7ec.firebasestorage.app",
+            messagingSenderId: "30608691122",
+            appId: "1:30608691122:web:55220ddcd6779e71b09eab",
+            measurementId: "G-3E90723GR6"
+        };
+
+        // Khởi tạo Firebase
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+
+        // Biến toàn cục lưu đường dẫn ảnh Logo sau khi tải từ Firebase về
+        let logoUrl = "";
+
+        // Hàm lấy link logo.png từ Firebase Storage
+        async function loadAppLogo() {
+            try {
+                // Tạo liên kết tới file logo.png nằm trên thư mục gốc của Storage
+                const logoRef = ref(storage, 'logo.png'); 
+                logoUrl = await getDownloadURL(logoRef);
+                
+                // Sau khi lấy được link thành công, hiển thị nó lên tab HOME luôn
+                renderHeader('HOME');
+            } catch (error) {
+                console.error("Lỗi khi tải logo từ Firebase:", error);
+            }
+        }
+
+        // Hàm xử lý hiển thị linh hoạt (Hiện ảnh ở tab HOME, hiện chữ ở các tab khác)
+        function renderHeader(tabName) {
+            const container = document.getElementById('header-container');
+            if (tabName === 'HOME' && logoUrl) {
+                // Nếu là tab HOME và đã có link ảnh -> Thay thế bằng thẻ <img>, giới hạn chiều cao max h-10 để không phá khung
+                container.innerHTML = `<img src="${logoUrl}" alt="Logo" class="max-h-10 object-contain mx-auto" />`;
+            } else {
+                // Các tab khác thì hiện lại chữ tiêu đề viết hoa chuẩn chỉnh
+                container.innerHTML = `<h1 id="tab-title" class="text-2xl font-bold text-gray-800">${tabName}</h1>`;
+            }
+        }
+
+        // Hàm chuyển đổi Tab
+        window.switchTab = function(tabName, element) {
+            // Gọi hàm render header để quyết định ẩn/hiện logo
+            renderHeader(tabName);
             
+            // Xử lý độ mờ (opacity) cho 4 tab thông thường
             const tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(tab => {
                 if(tab === element) {
@@ -72,9 +125,9 @@
                 }
             });
 
+            // Xử lý đổi màu nút Dấu cộng ở giữa
             const addBtn = document.getElementById('add-btn');
             if (tabName === 'Thêm mới') {
-                // Đổi vòng tròn thành xám nhẹ, dấu + thành màu trắng
                 addBtn.classList.remove('bg-white', 'text-[#007acc]');
                 addBtn.classList.add('bg-gray-300/40', 'text-white');
                 
@@ -83,11 +136,13 @@
                     tab.classList.add('opacity-60');
                 });
             } else {
-                // Trả về trạng thái mặc định ban đầu
                 addBtn.classList.remove('bg-gray-300/40', 'text-white');
                 addBtn.classList.add('bg-white', 'text-[#007acc]');
             }
         }
+
+        // Chạy tải logo ngay khi ứng dụng vừa load xong
+        loadAppLogo();
     </script>
 </body>
 </html>
