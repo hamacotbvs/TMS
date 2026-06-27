@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web App Container</title>
+    <title>Web App Container - Full Width</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        /* Đảm bảo chiều cao full màn hình, không bị cuộn thừa */
         html, body {
             height: 100%;
             margin: 0;
@@ -20,38 +19,38 @@
 </head>
 <body class="flex flex-col h-screen w-screen justify-between relative">
 
-    <main id="content-area" class="flex-1 w-full p-4 overflow-y-auto pb-28 text-center flex flex-col items-center justify-center">
-        <h1 id="tab-title" class="text-2xl font-bold text-gray-800 mb-2">HOME</h1>
-        <p class="text-gray-500">Nội dung của tab sẽ thay đổi linh hoạt tại đây.</p>
+    <main id="content-area" class="flex-1 w-full p-6 overflow-y-auto pb-24 text-center flex flex-col items-center justify-center">
+        <h1 id="tab-title" class="text-3xl font-bold text-gray-800 mb-2">HOME</h1>
+        <p class="text-gray-500 text-lg">Nội dung của tab sẽ thay đổi linh hoạt tại đây và đã giãn full màn hình.</p>
     </main>
 
-    <div class="fixed bottom-4 left-0 right-0 mx-auto w-[calc(100%-2rem)] max-w-md z-50">
-        <nav class="bg-[#007acc] rounded-3xl shadow-xl flex justify-between items-center px-4 py-2 relative h-16">
+    <div class="fixed bottom-0 left-0 right-0 w-full z-50">
+        <nav class="bg-[#007acc] shadow-2xl flex justify-between items-center px-8 relative h-18">
             
-            <button onclick="switchTab('HOME')" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-100 transition-all">
-                <span class="material-icons text-xl">home</span>
-                <span class="text-[10px] mt-0.5 font-medium">HOME</span>
+            <button onclick="switchTab('HOME')" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-100 transition-all cursor-pointer">
+                <span class="material-icons text-2xl">home</span>
+                <span class="text-xs mt-1 font-medium">HOME</span>
             </button>
 
-            <button onclick="switchTab('Báo cáo')" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all">
-                <span class="material-icons text-xl">pie_chart</span>
-                <span class="text-[10px] mt-0.5 font-medium">Báo cáo</span>
+            <button onclick="switchTab('Báo cáo')" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer">
+                <span class="material-icons text-2xl">pie_chart</span>
+                <span class="text-xs mt-1 font-medium">Báo cáo</span>
             </button>
 
-            <div class="flex-1 flex justify-center relative -top-5">
-                <button onclick="switchTab('Thêm mới')" class="bg-white text-[#007acc] rounded-full w-14 h-14 shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all border-4 border-[#007acc]">
+            <div class="flex-1 flex justify-center relative -top-4">
+                <button onclick="switchTab('Thêm mới')" class="bg-white text-[#007acc] rounded-full w-16 h-16 shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all border-4 border-[#007acc] cursor-pointer">
                     <span class="material-icons text-3xl font-bold">add</span>
                 </button>
             </div>
 
-            <button onclick="switchTab('Vận chuyển')" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all">
-                <span class="material-icons text-xl">local_shipping</span>
-                <span class="text-[10px] mt-0.5 font-medium">Vận chuyển</span>
+            <button onclick="switchTab('Vận chuyển')" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer">
+                <span class="material-icons text-2xl">local_shipping</span>
+                <span class="text-xs mt-1 font-medium">Vận chuyển</span>
             </button>
 
-            <button onclick="switchTab('Kho')" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all">
-                <span class="material-icons text-xl">warehouse</span>
-                <span class="text-[10px] mt-0.5 font-medium">Kho</span>
+            <button onclick="switchTab('Kho')" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer">
+                <span class="material-icons text-2xl">warehouse</span>
+                <span class="text-xs mt-1 font-medium">Kho</span>
             </button>
 
         </nav>
@@ -59,10 +58,8 @@
 
     <script>
         function switchTab(tabName) {
-            // Thay đổi tiêu đề trên màn hình chính dựa theo tab vừa nhấn
             document.getElementById('tab-title').innerText = tabName;
             
-            // Xử lý hiệu ứng làm sáng (active) icon được chọn
             const tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(tab => {
                 if(tab.innerText.includes(tabName)) {
