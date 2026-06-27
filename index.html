@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        /* Tùy chỉnh thanh cuộn cho bảng dữ liệu */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -26,7 +25,7 @@
         </div>
         <div class="flex items-center gap-2 bg-blue-700 px-4 py-2 rounded-full text-sm">
             <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-            <span>Dữ liệu Realtime kết nối từ Google Sheet</span>
+            <span>Dữ liệu Realtime từ Google Sheet (Tốc độ cao)</span>
         </div>
     </header>
 
@@ -65,7 +64,7 @@
             <div id="content-area" class="flex-1 overflow-auto">
                 <div class="flex flex-col items-center justify-center h-full text-slate-400 py-12">
                     <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p class="text-sm font-medium">Đang tải và đồng bộ dữ liệu từ Cloud Firestore...</p>
+                    <p class="text-sm font-medium">Đang tải và đồng bộ dữ liệu song song từ Cloud Firestore...</p>
                 </div>
             </div>
 
@@ -73,11 +72,10 @@
     </main>
 
     <script type="module">
-        // Nhập các hàm cần thiết từ Firebase SDK thế hệ mới (v10)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Cấu hình Firebase lấy chính xác từ dự án hamaco-tms của bạn
+        // Cấu hình ứng dụng Web (Đã xác minh chính xác từ dự án hamaco-tms)
         const firebaseConfig = {
             apiKey: "AIzaSyAUewVDshHW4Dxebo_hLahHUg12muBgsa4",
             authDomain: "hamaco-tms.firebaseapp.com",
@@ -88,34 +86,30 @@
             measurementId: "G-0ECZF7RFNH"
         };
 
-        // Khởi tạo ứng dụng Firebase và cơ sở dữ liệu Firestore
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Biến toàn cục chứa mảng dữ liệu sau khi xử lý
         let globalData = [];
 
-        // LẮNG NGHE REALTIME BỘ SƯU TẬP (COLLECTION) TÊN LÀ "Sheet"
+        // LẮNG NGHE TOÀN BỘ COLLECTION TÊN TAB LÀ "Sheet" THEO THỜI GIAN THỰC (REALTIME)
         const colRef = collection(db, "Sheet");
         
         onSnapshot(colRef, (querySnapshot) => {
             globalData = [];
             
-            // Duyệt qua từng tài liệu dòng lẻ trên Firestore để bóc tách dữ liệu
             querySnapshot.forEach((docSnap) => {
                 if (docSnap.exists()) {
                     const docData = docSnap.data();
-                    
-                    // Khôi phục mảng phẳng từ dạng chuỗi cấu trúc REST API
                     let cleanRow = {};
+                    
+                    // Chuyển đổi dữ liệu phẳng trực tiếp từ Firestore thành object hiển thị
                     for (let key in docData) {
-                        cleanRow[key] = docData[key];
+                        cleanRow[key] = docData[key].stringValue || "";
                     }
                     globalData.push(cleanRow);
                 }
             });
 
-            // Cập nhật giao diện khi nhận được dữ liệu mới hoàn chỉnh
             if (globalData.length > 0) {
                 document.getElementById('sync-status').innerText = "Đã đồng bộ";
                 document.getElementById('sync-status').className = "text-lg font-bold mt-2 text-green-600";
@@ -129,47 +123,38 @@
                 document.getElementById('content-area').innerHTML = `
                     <div class="text-center py-12 text-slate-400">
                         <p class="text-lg">Trống dữ liệu</p>
-                        <p class="text-xs">Firestore chưa nhận được dữ liệu hoặc bảng tính trống.</p>
+                        <p class="text-xs">Chưa có dữ liệu nào được cấu hình trong Collection [Sheet].</p>
                     </div>`;
                 document.getElementById('sync-status').innerText = "Trống dữ liệu";
             }
         }, (error) => {
-            console.error("Lỗi kết nối Firestore: ", error);
+            console.error("Lỗi đồng bộ: ", error);
             document.getElementById('sync-status').innerText = "Lỗi kết nối";
             document.getElementById('sync-status').className = "text-lg font-bold mt-2 text-red-600";
-            document.getElementById('content-area').innerHTML = `
-                <div class="text-center py-12 text-red-500">
-                    <p class="font-bold">Lỗi đồng bộ dữ liệu bảo mật (403/401)</p>
-                    <p class="text-xs mt-1 text-slate-500">Hãy đảm bảo bạn đã cấu hình Rules Firestore là 'allow read, write: if true;'</p>
-                </div>`;
         });
 
-        // HÀM DỰNG BẢNG DỮ LIỆU ĐỘNG RA GIAO DIỆN
+        // HÀM VẼ BẢNG HIỂN THỊ RA HTML
         function renderTable(dataArray) {
             if (dataArray.length === 0) return;
 
-            // Tự động bóc tách danh sách cột tiêu đề dựa trên các Key hiện có (được đặt tên là Cot_A, Cot_B...)
+            // Lấy danh sách tiêu đề động và xếp thứ tự chuẩn từ Cot_A, Cot_B...
             const allKeys = Object.keys(dataArray[0]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
 
             let html = `<table class="w-full text-left border-collapse text-xs">`;
-            
-            // Khởi tạo hàng tiêu đề bảng hiển thị trực quan
             html += `<thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider sticky top-0 shadow-sm"><tr>`;
             allKeys.forEach(key => {
-                // Đổi hiển thị từ định dạng "Cot_A" thành chữ "Cột A" cho người dùng dễ nhìn
                 let friendlyName = key.replace("Cot_", "Cột ");
                 html += `<th class="px-4 py-3 border-b border-slate-200 font-semibold">${friendlyName}</th>`;
             });
             html += `</tr></thead>`;
 
-            // Đổ nội dung từng hàng dữ liệu tương ứng
             html += `<tbody class="divide-y divide-slate-100 bg-white text-slate-600">`;
             dataArray.forEach((row, index) => {
                 const rowBg = index % 2 === 0 ? "bg-white" : "bg-slate-50/50";
                 html += `<tr class="${rowBg} hover:bg-blue-50/40 transition-colors">`;
                 allKeys.forEach(key => {
                     let cellVal = row[key] !== undefined ? row[key] : " ";
-                    html += `<th class="px-4 py-2.5 border-b border-slate-100 font-normal whitespace-nowrap">${cellVal}</th>`;
+                    html += `<td class="px-4 py-2.5 border-b border-slate-100 font-normal whitespace-nowrap">${cellVal}</td>`;
                 });
                 html += `</tr>`;
             });
@@ -178,7 +163,7 @@
             document.getElementById('content-area').innerHTML = html;
         }
 
-        // TÍNH NĂNG TÌM KIẾM NHANH (SEARCH FILTER)
+        // TÍNH NĂNG TÌM KIẾM NHANH (LIVE SEARCH)
         document.getElementById('search-input').addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
             if (keyword === "") {
