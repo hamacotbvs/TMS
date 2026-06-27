@@ -111,24 +111,24 @@
         // --- 1. CẤU HÌNH FIREBASE ---
         // Thêm các thư viện Firebase SDK cần thiết
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        // Nếu dùng Firestore thì thay bằng: import { getFirestore } from "...firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Thay thế thông tin cấu hình này bằng tài khoản Firebase thực tế của bạn
+        // Thông tin cấu hình tài khoản Firebase
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+            apiKey: "AIzaSyAG1TAeGdizPFS6yLjRf_CFGdk7MeXxifU",
+            authDomain: "app-tms-bf7ec.firebaseapp.com",
+            databaseURL: "https://app-tms-bf7ec-default-rtdb.firebaseio.com", // Điền URL Realtime Database của bạn tại đây
+            projectId: "app-tms-bf7ec",
+            storageBucket: "app-tms-bf7ec.firebasestorage.app",
+            messagingSenderId: "30608691122",
+            appId: "1:30608691122:web:55220ddcd6779e71b09eab",
+            measurementId: "G-3E90723GR6"};
 
         // Khởi tạo Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-        console.log("Firebase đã được cấu hình thành công!");
+        console.log("Firebase đã được kết nối thành công với dự án app-tms-bf7ec!");
 
         // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
