@@ -17,7 +17,6 @@
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
             .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
             .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
-        
         /* ĐỊNH DẠNG CHUNG */
         body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;} /* cấu trúc nền cho toàn app */
         .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
@@ -34,7 +33,8 @@
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
-            .KHUNG-CAC-TAB {padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
+            .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
+            .KHUNG-CON-TRONG-TAB {padding: 12px 16px;    /* Giảm từ 20px xuống còn 12px */ margin-bottom: 10px;   /* Giảm khoảng cách giữa các card */}
             .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} /* Hạ chiều cao menu xuống 45px và ép sát đáy */
             .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } /* Đổi bố cục nút sang hàng ngang (icon nằm trước chữ) */
             .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
