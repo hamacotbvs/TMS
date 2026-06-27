@@ -112,7 +112,6 @@
         // Thêm các thư viện Firebase SDK cần thiết
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
         // Thông tin cấu hình tài khoản Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAG1TAeGdizPFS6yLjRf_CFGdk7MeXxifU",
@@ -122,15 +121,15 @@
             messagingSenderId: "30608691122",
             appId: "1:30608691122:web:55220ddcd6779e71b09eab",
             measurementId: "G-3E90723GR6"};
-
+        const app = initializeApp(firebaseConfig); // Khởi tạo ứng dụng Firebase
         const db = getFirestore(app); // Khởi tạo Cloud Firestore và gán vào biến `db` để sử dụng toàn app
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
-        // NÚT RESET
+        // ---2. NÚT RESET ---
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
         if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
 
-        // --- 2. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
+        // --- 3. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
         window.switchTab = function(tabId) {
             const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
