@@ -67,12 +67,9 @@
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
                 <h2>📊 Tình hình giao hàng theo xe</h2>
-                
                 <div class="bo-loc-ngay">
                     <label for="input-ngay-xem"><i class="fa-regular fa-calendar-days"></i> Chọn ngày xem:</label>
-                    <input type="date" id="input-ngay-xem" class="o-chon-ngay">
-                </div>
-
+                    <input type="date" id="input-ngay-xem" class="o-chon-ngay"> </div>
                 <div class="khung-bang-bao-cao">
                     <table class="bang-bao-cao">
                         <thead>
@@ -92,10 +89,7 @@
                                 <td colspan="8" class="txt-rong">Đang tải dữ liệu...</td>
                             </tr>
                         </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                    </table> </div> </div> </div>
 
         <div id="bao-cao" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
@@ -129,22 +123,22 @@
     </div>
 
     <nav class="MENU-DUOI">
-        <div class="MENU-item active" onclick="switchTab('home')">
+        <div class="MENU-item active" onclick="switchTab('home', event)">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </div>
-        <div class="MENU-item" onclick="switchTab('bao-cao')">
+        <div class="MENU-item" onclick="switchTab('bao-cao', event)">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Báo cáo</span>
         </div>
-        <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
+        <div class="MENU-item add-btn" onclick="switchTab('them-moi', event)">
             <i class="fa-solid fa-plus"></i>
         </div>
-        <div class="MENU-item" onclick="switchTab('kho')">
+        <div class="MENU-item" onclick="switchTab('kho', event)">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Kho</span>
         </div>
-        <div class="MENU-item" onclick="switchTab('van-chuyen')">
+        <div class="MENU-item" onclick="switchTab('van-chuyen', event)">
             <i class="fa-solid fa-car-side"></i>
             <span>Vận chuyển</span>
         </div>
@@ -154,7 +148,7 @@
         // --- 1. CẤU HÌNH FIREBASE ---
         // Thêm các thư viện Firebase SDK cần thiết
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, setDoc, orderBy} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         // Thông tin cấu hình tài khoản Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAG1TAeGdizPFS6yLjRf_CFGdk7MeXxifU",
@@ -178,6 +172,73 @@
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
             const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
+        // --- 4. BÁO CÁO XE GIAO HÀNG THEO NGÀY
+        const oChonNgay = document.getElementById('input-ngay-xem');
+        const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
+        let unsubscribeReport = null;
+
+        // Tự động gán ngày hiện tại làm mặc định khi mở app
+        const homNay = new Date();
+        const dinhDangHomNay = homNay.toISOString().split('T')[0];
+        oChonNgay.value = dinhDangHomNay;
+
+        function taiBaoCaoTheoNgay(chuoiNgayYMD) {
+            if(!chuoiNgayYMD) return;
+
+            const phanTach = chuoiNgayYMD.split('-'); // [YYYY, MM, DD]
+            const dinhDangNgayDuyet = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Chuyển thành DD/MM/YYYY giống dữ liệu Firestore mẫu
+            const thangChon = phanTach[1]; 
+            const tenCollectionThang = `TUYENDUONG_${thangChon}`; // Tự động đổi bảng theo tháng chọn
+
+            bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm bảng dữ liệu ${tenCollectionThang}...</td></tr>`;
+
+            if (unsubscribeReport) unsubscribeReport();
+
+            try {
+                const q = query(
+                    collection(db, tenCollectionThang), 
+                    where("Ngày duyệt", "==", dinhDangNgayDuyet)
+                );
+
+                unsubscribeReport = onSnapshot(q, (querySnapshot) => {
+                    bodyBangBaoCao.innerHTML = "";
+
+                    if(querySnapshot.empty) {
+                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${dinhDangNgayDuyet}</td></tr>`;
+                        return;
+                    }
+
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        let classBadge = "status-khac";
+                        if(data["Duyệt"] === "Đã giao") classBadge = "status-dagiao";
+                        else if(data["Duyệt"] === "Chuẩn bị giao") classBadge = "status-chuanbi";
+
+                        const hangBaoCao = document.createElement('tr');
+                        hangBaoCao.innerHTML = `
+                            <td><strong>${data["Phương_tiện"] || '---'}</strong></td>
+                            <td>Chuyến ${data["Chuyến"] || '0'}</td>
+                            <td>${data["Tài_xế"] || '---'}</td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${data["Nơi giao"] || '---'}</td>
+                            <td>${data["TTải"] ? Number(data["TTải"]).toLocaleString() : '0'}</td>
+                            <td><span class="badge-status ${classBadge}">${data["Duyệt"] || data["Status"] || 'Mới'}</span></td>
+                            <td>${data["Bắt_đầu_giao_hàng"] || '---'}</td>
+                            <td>${data["Kết_thúc_giao_hàng"] || '---'}</td>
+                        `;
+                        bodyBangBaoCao.appendChild(hangBaoCao);
+                    });
+                }, (error) => {
+                    console.error("Lỗi: ", error);
+                    bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Không đọc được dữ liệu bảng ${tenCollectionThang}.</td></tr>`;
+                });
+            } catch (err) {
+                bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Lỗi hệ thống lập truy vấn.</td></tr>`;
+            }
+        }
+
+        // Chạy kích hoạt lần đầu và lắng nghe thay đổi ngày chọn
+        taiBaoCaoTheoNgay(oChonNgay.value);
+        oChonNgay.addEventListener('change', (e) => { taiBaoCaoTheoNgay(e.target.value); });
     </script>
 </body>
 </html>
