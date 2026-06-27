@@ -12,11 +12,11 @@
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
         
         /* Nút reset */
-            .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
-                background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
-            .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
-            .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
+        .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
+            background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
+        .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
+        .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
         /* ĐỊNH DẠNG CHUNG */
         body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
         .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
@@ -41,6 +41,23 @@
             .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
             .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
             .MENU-item.add-btn i {font-size: 16px;} }
+        /* --- CSS CHO BÁO CÁO TAB HOME --- */
+        .bo-loc-ngay {display: flex; align-items: center; gap: 10px; margin-top: 15px; margin-bottom: 15px;}
+        .bo-loc-ngay label {font-weight: 500; color: #555; font-size: 14px;}
+        .o-chon-ngay {padding: 8px 12px; border: 1.5px solid #007acc; border-radius: 8px; font-size: 14px; outline: none; color: #333; font-weight: 500; cursor: pointer;}
+        
+        .khung-bang-bao-cao {width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #eef2f5;}
+        .bang-bao-cao {width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;}
+        .bang-bao-cao th {background-color: #007acc; color: white; padding: 12px 10px; font-weight: 500; white-space: nowrap;}
+        .bang-bao-cao td {padding: 12px 10px; border-bottom: 1px solid #eef2f5; color: #444; white-space: nowrap;}
+        .bang-bao-cao tr:nth-child(even) {background-color: #f9fbfd;}
+        .bang-bao-cao tr:hover {background-color: #f1f5f9;}
+        
+        .badge-status {padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;}
+        .status-dagiao {background-color: #e6f4ea; color: #137333;}
+        .status-chuanbi {background-color: #fef7e0; color: #b06000;}
+        .status-khac {background-color: #f1f3f4; color: #3c4043;}
+        .txt-rong {text-align: center; padding: 30px !important; color: #888; font-style: italic;}
     </style>
 </head>
 <body>
@@ -49,8 +66,34 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiêu</h2>
-                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
+                <h2>📊 Tình hình giao hàng theo xe</h2>
+                
+                <div class="bo-loc-ngay">
+                    <label for="input-ngay-xem"><i class="fa-regular fa-calendar-days"></i> Chọn ngày xem:</label>
+                    <input type="date" id="input-ngay-xem" class="o-chon-ngay">
+                </div>
+
+                <div class="khung-bang-bao-cao">
+                    <table class="bang-bao-cao">
+                        <thead>
+                            <tr>
+                                <th>Phương tiện (Xe)</th>
+                                <th>Chuyến</th>
+                                <th>Tài xế</th>
+                                <th>Nơi giao</th>
+                                <th>Tổng tải (kg)</th>
+                                <th>Trạng thái</th>
+                                <th>Bắt đầu</th>
+                                <th>Kết thúc</th>
+                            </tr>
+                        </thead>
+                        <tbody id="du-lieu-bao-cao-xe">
+                            <tr>
+                                <td colspan="8" class="txt-rong">Đang tải dữ liệu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
