@@ -20,18 +20,26 @@
         
         /* ĐỊNH DẠNG CHUNG */
         body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;} /* cấu trúc nền cho toàn app */
-        .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */} /* Cấu hình cho vùng chứa nội dung các tab */
+        .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
         /* THANH MENU DƯỚI */
-        .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px;} /* định dạng khung menu */
+        .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
-        .MENU-item i {font-size: 20px; margin-bottom: 4px;}
+        .MENU-item i {font-size: 20px; margin-bottom: 4px; transition: all 0.3s ease; /* co giãn mượt khi xoay */}
         .MENU-item.active {color: #ffffff; font-weight: 700;} /* Tab đang được chọn */
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
+        /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
+        @media (orientation: landscape) {
+            .KHUNG-CAC-TAB {padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
+            .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} /* Hạ chiều cao menu xuống 45px và ép sát đáy */
+            .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } /* Đổi bố cục nút sang hàng ngang (icon nằm trước chữ) */
+            .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
+            .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
+            .MENU-item.add-btn i {font-size: 16px;} }
     </style>
 </head>
 <body>
