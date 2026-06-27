@@ -3,174 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web App Quản Lý - HAMACO TMS Firestore</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>HAMACO-TMS - Hệ Thống Điều Phối Vận Chuyển</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        /* Tùy chỉnh thanh cuộn cho bảng dữ liệu */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 h-screen flex flex-col md:flex-row overflow-hidden">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <aside class="hidden md:flex flex-col w-64 bg-slate-800 text-white h-full justify-between p-4 shadow-xl">
-        <div>
-            <div class="text-xl font-bold p-2 text-center border-b border-slate-700 mb-6">
-                <i class="fa-solid fa-cube text-teal-400 mr-2"></i>HAMACO TMS
+    <header class="bg-blue-600 text-white shadow-md px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-white text-blue-600 p-2 rounded-lg font-bold text-xl shadow-inner">H</div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide">HAMACO - TMS</h1>
+                <p class="text-xs text-blue-100">Hệ thống giám sát và điều phối vận chuyển đơn hàng</p>
             </div>
-            <nav class="space-y-2">
-                <button onclick="switchTab('HOME')" id="btn-HOME" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-teal-600 text-white font-medium transition">
-                    <i class="fa-solid fa-house w-5"></i> <span>HOME</span>
-                </button>
-                <button onclick="switchTab('Báo cáo')" id="btn-Báo cáo" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition">
-                    <i class="fa-solid fa-chart-pie w-5"></i> <span>Báo cáo</span>
-                </button>
-                <button onclick="switchTab('Thêm')" id="btn-Thêm" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition">
-                    <i class="fa-solid fa-circle-plus w-5 text-emerald-400"></i> <span>Thêm mới</span>
-                </button>
-                <button onclick="switchTab('Vận chuyển')" id="btn-Vận chuyển" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition">
-                    <i class="fa-solid fa-truck w-5"></i> <span>Vận chuyển</span>
-                </button>
-                <button onclick="switchTab('Kho')" id="btn-Kho" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition">
-                    <i class="fa-solid fa-warehouse w-5"></i> <span>Kho</span>
-                </button>
-            </nav>
         </div>
-        <div class="text-xs text-gray-400 text-center border-t border-slate-700 pt-3">
-            © 2026 HAMACO Logistics
+        <div class="flex items-center gap-2 bg-blue-700 px-4 py-2 rounded-full text-sm">
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+            <span>Dữ liệu Realtime kết nối từ Google Sheet</span>
         </div>
-    </aside>
+    </header>
 
-    <main class="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0">
-        <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
-            <h1 id="current-title" class="text-lg md:text-xl font-bold text-gray-800">HOME</h1>
-            <div id="db-status" class="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span>Firestore Active</span>
+    <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tổng số đơn hàng</p>
+                <h3 id="total-orders" class="text-3xl font-bold mt-1 text-slate-800">0</h3>
             </div>
-        </header>
+            <div class="bg-blue-50 text-blue-600 p-3 rounded-xl text-xl">📦</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Trạng thái đồng bộ</p>
+                <h3 id="sync-status" class="text-lg font-bold mt-2 text-green-600">Đang kết nối...</h3>
+            </div>
+            <div class="bg-green-50 text-green-600 p-3 rounded-xl text-xl">🔄</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cập nhật cuối</p>
+                <h3 id="last-update" class="text-sm font-medium mt-3 text-slate-500">Chưa ghi nhận</h3>
+            </div>
+            <div class="bg-purple-50 text-purple-600 p-3 rounded-xl text-xl">⏱️</div>
+        </div>
+    </div>
 
-        <div class="flex-1 p-4 md:p-6 overflow-y-auto">
-            <div id="content-area" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 min-h-[300px]">
-                <div class="flex justify-center items-center py-12">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+    <main class="flex-1 px-6 pb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[calc(100vh-280px)]">
+            
+            <div class="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <span class="text-sm font-semibold text-slate-600">Danh Sách Lịch Trình Vận Chuyển</span>
+                <input type="text" id="search-input" placeholder="Tìm kiếm nhanh đơn hàng..." class="bg-white border border-slate-200 rounded-lg px-4 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-inner w-64">
+            </div>
+
+            <div id="content-area" class="flex-1 overflow-auto">
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 py-12">
+                    <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="text-sm font-medium">Đang tải và đồng bộ dữ liệu từ Cloud Firestore...</p>
                 </div>
             </div>
+
         </div>
     </main>
 
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 text-gray-400 flex justify-around items-center h-16 landscape:h-12 z-50 shadow-2xl">
-        <button onclick="switchTab('HOME')" id="m-btn-HOME" class="mobile-tab-btn flex flex-col items-center justify-center w-full h-full text-teal-400">
-            <i class="fa-solid fa-house text-lg landscape:text-base"></i>
-            <span class="text-[10px] mt-0.5 landscape:hidden">HOME</span>
-        </button>
-        <button onclick="switchTab('Báo cáo')" id="m-btn-Báo cáo" class="mobile-tab-btn flex flex-col items-center justify-center w-full h-full">
-            <i class="fa-solid fa-chart-pie text-lg landscape:text-base"></i>
-            <span class="text-[10px] mt-0.5 landscape:hidden">Báo cáo</span>
-        </button>
-        <button onclick="switchTab('Thêm')" id="m-btn-Thêm" class="mobile-tab-btn relative -top-3 landscape:top-0 bg-teal-500 text-white rounded-full w-12 h-12 landscape:w-9 landscape:h-9 flex items-center justify-center shadow-lg transform active:scale-95 transition-transform border-4 border-slate-900 landscape:border-0">
-            <i class="fa-solid fa-plus text-xl landscape:text-lg"></i>
-        </button>
-        <button onclick="switchTab('Vận chuyển')" id="m-btn-Vận chuyển" class="mobile-tab-btn flex flex-col items-center justify-center w-full h-full">
-            <i class="fa-solid fa-truck text-lg landscape:text-base"></i>
-            <span class="text-[10px] mt-0.5 landscape:hidden">Vận chuyển</span>
-        </button>
-        <button onclick="switchTab('Kho')" id="m-btn-Kho" class="mobile-tab-btn flex flex-col items-center justify-center w-full h-full">
-            <i class="fa-solid fa-warehouse text-lg landscape:text-base"></i>
-            <span class="text-[10px] mt-0.5 landscape:hidden">Kho</span>
-        </button>
-    </nav>
-
     <script type="module">
+        // Nhập các hàm cần thiết từ Firebase SDK thế hệ mới (v10)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Cấu hình Firebase lấy chính xác từ dự án hamaco-tms của bạn
         const firebaseConfig = {
             apiKey: "AIzaSyAUewVDshHW4Dxebo_hLahHUg12muBgsa4",
             authDomain: "hamaco-tms.firebaseapp.com",
             projectId: "hamaco-tms",
-            storageBucket: "hamaco-tms.appspot.com",
-            messagingSenderId: "355627029952",
-            appId: "1:355627029952:web:72095fdd5dbfd2e1b12425",
+            storageBucket: "hamaco-tms.firebasestorage.app",
+            messagingSenderId: "35620729952",
+            appId: "1:35627029952:web:72095fdd5dbfd2e1b12425",
             measurementId: "G-0ECZF7RFNH"
         };
 
+        // Khởi tạo ứng dụng Firebase và cơ sở dữ liệu Firestore
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Biến toàn cục chứa mảng dữ liệu sau khi xử lý
         let globalData = [];
-        let currentTab = "HOME";
 
-        // Lắng nghe dữ liệu real-time từ Collection "Sheet1" và Document "data_list" trên Firestore
-        const docRef = doc(db, "Sheet1", "data_list");
-        onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const firestoreData = docSnap.data();
-                // Giải nén định dạng arrayValue của Firestore về dạng mảng JSON thuần túy để dựng bảng
-                if (firestoreData.list && firestoreData.list.length > 0) {
-                    globalData = firestoreData.list.map(item => {
-                        let row = {};
-                        for (let key in item.fields) {
-                            row[key] = item.fields[key].stringValue || "";
-                        }
-                        return row;
-                    });
-                    renderUI();
+        // LẮNG NGHE REALTIME BỘ SƯU TẬP (COLLECTION) TÊN LÀ "Sheet"
+        const colRef = collection(db, "Sheet");
+        
+        onSnapshot(colRef, (querySnapshot) => {
+            globalData = [];
+            
+            // Duyệt qua từng tài liệu dòng lẻ trên Firestore để bóc tách dữ liệu
+            querySnapshot.forEach((docSnap) => {
+                if (docSnap.exists()) {
+                    const docData = docSnap.data();
+                    
+                    // Khôi phục mảng phẳng từ dạng chuỗi cấu trúc REST API
+                    let cleanRow = {};
+                    for (let key in docData) {
+                        cleanRow[key] = docData[key];
+                    }
+                    globalData.push(cleanRow);
                 }
+            });
+
+            // Cập nhật giao diện khi nhận được dữ liệu mới hoàn chỉnh
+            if (globalData.length > 0) {
+                document.getElementById('sync-status').innerText = "Đã đồng bộ";
+                document.getElementById('sync-status').className = "text-lg font-bold mt-2 text-green-600";
+                document.getElementById('total-orders').innerText = globalData.length;
+                
+                const now = new Date();
+                document.getElementById('last-update').innerText = now.toLocaleTimeString() + " " + now.toLocaleDateString();
+                
+                renderTable(globalData);
             } else {
-                document.getElementById('content-area').innerHTML = `<p class="text-gray-500 text-center py-8">Chưa có dữ liệu đồng bộ trên Firestore.</p>`;
+                document.getElementById('content-area').innerHTML = `
+                    <div class="text-center py-12 text-slate-400">
+                        <p class="text-lg">Trống dữ liệu</p>
+                        <p class="text-xs">Firestore chưa nhận được dữ liệu hoặc bảng tính trống.</p>
+                    </div>`;
+                document.getElementById('sync-status').innerText = "Trống dữ liệu";
             }
         }, (error) => {
-            console.error("Lỗi tải dữ liệu Firestore: ", error);
-            document.getElementById('content-area').innerHTML = `<p class="text-red-500 text-center py-8">Lỗi phân quyền Rules hoặc sai cấu hình.</p>`;
+            console.error("Lỗi kết nối Firestore: ", error);
+            document.getElementById('sync-status').innerText = "Lỗi kết nối";
+            document.getElementById('sync-status').className = "text-lg font-bold mt-2 text-red-600";
+            document.getElementById('content-area').innerHTML = `
+                <div class="text-center py-12 text-red-500">
+                    <p class="font-bold">Lỗi đồng bộ dữ liệu bảo mật (403/401)</p>
+                    <p class="text-xs mt-1 text-slate-500">Hãy đảm bảo bạn đã cấu hình Rules Firestore là 'allow read, write: if true;'</p>
+                </div>`;
         });
 
-        window.renderUI = function() {
-            document.getElementById('current-title').innerText = currentTab;
+        // HÀM DỰNG BẢNG DỮ LIỆU ĐỘNG RA GIAO DIỆN
+        function renderTable(dataArray) {
+            if (dataArray.length === 0) return;
+
+            // Tự động bóc tách danh sách cột tiêu đề dựa trên các Key hiện có (được đặt tên là Cot_A, Cot_B...)
+            const allKeys = Object.keys(dataArray[0]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+
+            let html = `<table class="w-full text-left border-collapse text-xs">`;
             
-            if (currentTab === "Thêm") {
-                document.getElementById('content-area').innerHTML = `<h3 class="text-lg font-semibold mb-4">Thêm mới thông tin</h3><p class="text-gray-600">Giao diện biểu mẫu nhập liệu...</p>`;
+            // Khởi tạo hàng tiêu đề bảng hiển thị trực quan
+            html += `<thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider sticky top-0 shadow-sm"><tr>`;
+            allKeys.forEach(key => {
+                // Đổi hiển thị từ định dạng "Cot_A" thành chữ "Cột A" cho người dùng dễ nhìn
+                let friendlyName = key.replace("Cot_", "Cột ");
+                html += `<th class="px-4 py-3 border-b border-slate-200 font-semibold">${friendlyName}</th>`;
+            });
+            html += `</tr></thead>`;
+
+            // Đổ nội dung từng hàng dữ liệu tương ứng
+            html += `<tbody class="divide-y divide-slate-100 bg-white text-slate-600">`;
+            dataArray.forEach((row, index) => {
+                const rowBg = index % 2 === 0 ? "bg-white" : "bg-slate-50/50";
+                html += `<tr class="${rowBg} hover:bg-blue-50/40 transition-colors">`;
+                allKeys.forEach(key => {
+                    let cellVal = row[key] !== undefined ? row[key] : " ";
+                    html += `<th class="px-4 py-2.5 border-b border-slate-100 font-normal whitespace-nowrap">${cellVal}</th>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+
+            document.getElementById('content-area').innerHTML = html;
+        }
+
+        // TÍNH NĂNG TÌM KIẾM NHANH (SEARCH FILTER)
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase().trim();
+            if (keyword === "") {
+                renderTable(globalData);
                 return;
             }
 
-            if (!globalData || globalData.length === 0) return;
-
-            const headers = Object.keys(globalData[0]);
-            
-            let tableHTML = `
-                <div class="overflow-x-auto rounded-lg border border-gray-200">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
-                        <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-semibold">
-                            <tr>
-                                ${headers.map(h => `<th class="px-4 py-3 whitespace-nowrap">${h}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white text-gray-600">
-                            ${globalData.map(row => `
-                                <tr class="hover:bg-gray-50 transition">
-                                    ${headers.map(h => `<td class="px-4 py-3 whitespace-nowrap">${row[h] !== undefined ? row[h] : ''}</td>`).join('')}
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            document.getElementById('content-area').innerHTML = tableHTML;
-        }
-
-        window.switchTab = function(tabId) {
-            currentTab = tabId;
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.className = "tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 text-gray-300 transition";
+            const filtered = globalData.filter(row => {
+                return Object.values(row).some(val => val.toLowerCase().includes(keyword));
             });
-            const activeBtn = document.getElementById(`btn-${tabId}`);
-            if(activeBtn) activeBtn.className = "tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-teal-600 text-white font-medium transition";
-
-            document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
-                btn.classList.remove('text-teal-400');
-            });
-            const activeMobBtn = document.getElementById(`m-btn-${tabId}`);
-            if(activeMobBtn && tabId !== "Thêm") activeMobBtn.classList.add('text-teal-400');
-
-            renderUI();
-        }
+            renderTable(filtered);
+        });
     </script>
 </body>
 </html>
