@@ -123,10 +123,8 @@
             appId: "1:30608691122:web:55220ddcd6779e71b09eab",
             measurementId: "G-3E90723GR6"};
 
-        // Khởi tạo Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        console.log("Firebase đã được kết nối thành công với dự án app-tms-bf7ec!");
+        const db = getFirestore(app); // Khởi tạo Cloud Firestore và gán vào biến `db` để sử dụng toàn app
+        console.log("Firebase & Firestore đã được kết nối thành công!");
 
         // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
