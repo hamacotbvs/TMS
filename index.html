@@ -172,10 +172,11 @@
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
             if (event && event.currentTarget) {event.currentTarget.classList.add('active');} } // Kích hoạt trạng thái active cho nút menu tương ứng
-        // --- 4. BÁO CÁO XE GIAO HÀNG THEO NGÀY
+        // --- 4. BÁO CÁO XE GIAO HÀNG THEO NGÀY (ĐÃ SỬA LỖI CÚ PHÁP) ---
         const oChonNgay = document.getElementById('input-ngay-xem');
         const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
         let unsubscribeReport = null;
+
         // Tự động gán ngày hiện tại làm mặc định khi mở app
         const homNay = new Date();
         const dinhDangHomNay = homNay.toISOString().split('T')[0];
@@ -185,34 +186,27 @@
             if(!chuoiNgayYMD) return;
 
             const phanTach = chuoiNgayYMD.split('-'); // [YYYY, MM, DD]
-            const dinhDangNgayDuyet = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Chuyển thành DD/MM/YYYY giống dữ liệu Firestore mẫu
+            const ngayTimKiem = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Định dạng DD/MM/YYYY
             const thangChon = phanTach[1]; 
-            const tenCollectionThang = `TUYENDUONG_${thangChon}`; // Tự động đổi bảng theo tháng chọn
+            const tenCollectionThang = `TUYENDUONG_${thangChon}`; 
 
             bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm bảng dữ liệu ${tenCollectionThang}...</td></tr>`;
 
             if (unsubscribeReport) unsubscribeReport();
 
             try {
-                const phanTach = chuoiNgayYMD.split('-'); // [YYYY, MM, DD]
-                const ngayTimKiem = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`;  // Tạo chuỗi ngày dạng DD/MM/YYYY để so sánh chuỗi bắt đầu
-                const thangChon = phanTach[1]; 
-                const tenCollectionThang = `TUYENDUONG_${thangChon}`;
-                bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm bảng dữ liệu ${tenCollectionThang}...</td></tr>`;
-                if (unsubscribeReport) unsubscribeReport();
-                try {
-                    // SỬA TẠI ĐÂY: Lọc các tài liệu có trường "Bắt_đầu_giao_hàng" bắt đầu bằng chuỗi "DD/MM/YYYY"
-                    const q = query(
+                // Lọc theo ngày bắt đầu giao hàng
+                const q = query(
                     collection(db, tenCollectionThang), 
                     where("Bắt_đầu_giao_hàng", ">=", ngayTimKiem),
-                    where("Bắt_đầu_giao_hàng", "<=", ngayTimKiem + "\uf8ff"));
-                    // (Các đoạn code onSnapshot phía dưới giữ nguyên không thay đổi)
+                    where("Bắt_đầu_giao_hàng", "<=", ngayTimKiem + "\uf8ff")
+                );
 
                 unsubscribeReport = onSnapshot(q, (querySnapshot) => {
                     bodyBangBaoCao.innerHTML = "";
 
                     if(querySnapshot.empty) {
-                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${dinhDangNgayDuyet}</td></tr>`;
+                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${ngayTimKiem}</td></tr>`;
                         return;
                     }
 
