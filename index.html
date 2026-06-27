@@ -186,9 +186,9 @@
             if(!chuoiNgayYMD) return;
 
             const phanTach = chuoiNgayYMD.split('-'); // [YYYY, MM, DD]
-            const ngayTimKiem = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Định dạng DD/MM/YYYY
-            const thangChon = phanTach[1]; 
-            const tenCollectionThang = `TUYENDUONG_${thangChon}`; 
+            const ngayTimKiem = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Vẫn giữ định dạng DD/MM/YYYY để lọc ô dữ liệu
+            const thangChon = parseInt(phanTach[1], 10); // Chuyển "06" thành số 6 để khớp với tên bảng TUYENDUONGT6
+            const tenCollectionThang = `TUYENDUONGT${thangChon}`; 
 
             bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm bảng dữ liệu ${tenCollectionThang}...</td></tr>`;
 
