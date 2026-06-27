@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Web App Menu Vàng Cam Bo Tròn</title>
+    <title>Web App Responsive Menu</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -24,36 +24,39 @@
         <div id="header-container" class="flex items-center justify-center mb-2 h-12">
             <h1 id="tab-title" class="text-2xl font-bold text-gray-800">HOME</h1>
         </div>
-        <p class="text-gray-500 text-base">Menu đã chuyển sang màu vàng cam và bo tròn tuyệt đối cả 4 góc.</p>
+        <p class="text-gray-500 text-sm md:text-base">
+            Giao diện Menu thông minh tự động thay đổi theo kích thước màn hình.
+        </p>
     </main>
 
-    <div class="fixed bottom-0 left-0 right-0 w-full z-50 p-3 h-[74px]">
-        <nav class="bg-[#f59e0b] shadow-2xl flex justify-between items-center px-4 md:px-12 relative w-full h-[50px] rounded-[22px] overflow-hidden">
+    <div class="fixed bottom-0 left-0 right-0 w-full z-50 p-3 h-[94px] landscape:h-[64px] md:h-[64px]">
+        
+        <nav id="main-nav" class="bg-[#f59e0b] md:bg-gray-600 shadow-2xl flex justify-between items-center px-4 md:px-12 relative w-full h-[70px] landscape:h-[40px] md:h-[40px] rounded-[22px] overflow-hidden">
             
             <button onclick="switchTab('HOME', this)" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-100 transition-all cursor-pointer h-full">
-                <span class="material-icons text-lg">home</span>
-                <span class="text-[9px] mt-0.5 font-medium">HOME</span>
+                <span class="material-icons text-lg landscape:text-base md:text-base">home</span>
+                <span class="text-[9px] landscape:text-[8px] md:text-[8px] font-medium">HOME</span>
             </button>
 
             <button onclick="switchTab('Báo cáo', this)" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer h-full">
-                <span class="material-icons text-lg">pie_chart</span>
-                <span class="text-[9px] mt-0.5 font-medium">Báo cáo</span>
+                <span class="material-icons text-lg landscape:text-base md:text-base">pie_chart</span>
+                <span class="text-[9px] landscape:text-[8px] md:text-[8px] font-medium">Báo cáo</span>
             </button>
 
             <div class="flex-1 flex justify-center h-full items-center">
-                <button id="add-btn" onclick="switchTab('Thêm mới', this)" class="bg-white text-[#f59e0b] rounded-full w-9 h-9 min-w-[36px] min-h-[36px] shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer">
-                    <span class="material-icons text-xl font-bold">add</span>
+                <button id="add-btn" onclick="switchTab('Thêm mới', this)" class="bg-white text-[#f59e0b] md:text-gray-600 rounded-full w-9 h-9 min-w-[36px] min-h-[36px] landscape:w-7 landscape:h-7 landscape:min-w-[28px] landscape:min-h-[28px] md:w-7 md:h-7 md:min-w-[28px] md:min-h-[28px] shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer">
+                    <span class="material-icons text-xl landscape:text-base md:text-base font-bold">add</span>
                 </button>
             </div>
 
             <button onclick="switchTab('Vận chuyển', this)" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer h-full">
-                <span class="material-icons text-lg">local_shipping</span>
-                <span class="text-[9px] mt-0.5 font-medium">Vận chuyển</span>
+                <span class="material-icons text-lg landscape:text-base md:text-base">local_shipping</span>
+                <span class="text-[9px] landscape:text-[8px] md:text-[8px] font-medium">Vận chuyển</span>
             </button>
 
             <button onclick="switchTab('Kho', this)" class="tab-btn flex flex-col items-center justify-center flex-1 text-white opacity-60 hover:opacity-100 transition-all cursor-pointer h-full">
-                <span class="material-icons text-lg">warehouse</span>
-                <span class="text-[9px] mt-0.5 font-medium">Kho</span>
+                <span class="material-icons text-lg landscape:text-base md:text-base">warehouse</span>
+                <span class="text-[9px] landscape:text-[8px] md:text-[8px] font-medium">Kho</span>
             </button>
 
         </nav>
@@ -63,7 +66,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-        // Sử dụng cấu hình Firebase của dự án app-tms của bạn
         const firebaseConfig = {
             apiKey: "AIzaSyAG1TAeGdizpRS6yLjRf_CFGdk7MeXxifU",
             authDomain: "app-tms-bf7ec.firebaseapp.com",
@@ -112,5 +114,44 @@
                 }
             });
 
+            // Xử lý đổi màu nút Dấu cộng theo thiết bị
             const addBtn = document.getElementById('add-btn');
-            if (tabName === 'Thêm
+            const isPC = window.matchMedia("(min-width: 768px)").matches;
+
+            if (tabName === 'Thêm mới') {
+                // Khi được chọn: Đổi sang dạng mờ xám nhẹ trong suốt độc lập
+                addBtn.className = addBtn.className.replace(/bg-white text-\[[^\]]+\]/g, '');
+                addBtn.classList.add('bg-white/30', 'text-white');
+                
+                tabs.forEach(tab => {
+                    tab.classList.remove('opacity-100');
+                    tab.classList.add('opacity-60');
+                });
+            } else {
+                // Trả về mặc định dựa theo môi trường PC (Chữ xám) hay Mobile (Chữ cam)
+                addBtn.classList.remove('bg-white/30', 'text-white');
+                addBtn.classList.add('bg-white');
+                if(isPC) {
+                    addBtn.classList.add('text-gray-600');
+                } else {
+                    addBtn.classList.add('text-[#f59e0b]');
+                }
+            }
+        }
+
+        // Theo dõi sự kiện thay đổi kích thước để cập nhật màu nút cộng nếu cần
+        window.addEventListener('resize', () => {
+            const activeTabName = document.getElementById('tab-title').innerText;
+            // Nếu không có logo hoặc đang ở tab khác thì text trùng tên tab
+            if (activeTabName !== 'Thêm mới') {
+                const addBtn = document.getElementById('add-btn');
+                const isPC = window.matchMedia("(min-width: 768px)").matches;
+                addBtn.classList.remove('text-gray-600', 'text-[#f59e0b]');
+                addBtn.classList.add(isPC ? 'text-gray-600' : 'text-[#f59e0b]');
+            }
+        });
+
+        loadAppLogo();
+    </script>
+</body>
+</html>
