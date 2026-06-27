@@ -18,107 +18,35 @@
             .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
             .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
         
+        /* ĐỊNH DẠNG CHUNG */
         body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;} /* cấu trúc nền cho toàn app */
-
-        .content-container {flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */} /* Cấu hình cho vùng chứa nội dung các tab */
-
-        .page-content {
-            display: none;
-        }
-
-        .page-content.active {
-            display: block;
-        }
-
-        /* Thẻ mẫu mô phỏng giao diện */
-        .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 16px;
-        }
-
-        /* THANH MENU DƯỚI (Bottom Navigation) - Giống hình mẫu */
-        .bottom-nav {
-            position: fixed;
-            bottom: 20px;
-            left: 5%;
-            right: 5%;
-            height: 70px;
-            background-color: #007acc; /* Màu xanh chủ đạo */
-            border-radius: 35px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3);
-            z-index: 1000;
-            padding: 0 10px;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            flex: 1;
-            height: 100%;
-        }
-
-        .nav-item i {
-            font-size: 20px;
-            margin-bottom: 4px;
-        }
-
-        /* Tab đang được chọn */
-        .nav-item.active {
-            color: #ffffff;
-            font-weight: 700;
-        }
-
-        /* Nút dấu cộng (+) đặc biệt ở giữa */
-        .nav-item.add-btn {
-            flex: none;
-            width: 54px;
-            height: 54px;
-            background-color: #ffffff;
-            color: #007acc;
-            border-radius: 50%;
-            font-size: 24px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            margin-bottom: 10px; /* Hơi nổi lên trên một chút */
-        }
-
-        .nav-item.add-btn i {
-            margin-bottom: 0;
-            font-size: 24px;
-        }
-        
-        .nav-item.add-btn.active {
-            background-color: #e6f2ff;
-            color: #007acc;
-        }
+        .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */} /* Cấu hình cho vùng chứa nội dung các tab */
+        .page-content {display: none;} /* ẩn tất cả các tab */
+        .page-content.active {display: block;} /* chỉ định tab nào hiển thị */
+        .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
+        /* THANH MENU DƯỚI */
+        .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px;} /* định dạng khung menu */
+        .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
+        .MENU-item i {font-size: 20px; margin-bottom: 4px;}
+        .MENU-item.active {color: #ffffff; font-weight: 700;} /* Tab đang được chọn */
+        .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
+        .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
+        .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
     </style>
 </head>
 <body>
 
-    <div class="content-container">
+    <div class="KHUNG-CAC-TAB">
         
         <div id="home" class="page-content active">
-            <div class="card">
+            <div class="KHUNG-CON-TRONG-TAB">
                 <h2>🎯 Ngân sách chi tiêu</h2>
                 <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
             </div>
         </div>
 
         <div id="bao-cao" class="page-content">
-            <div class="card">
+            <div class="KHUNG-CON-TRONG-TAB">
                 <h2>📊 Báo cáo & Thống kê</h2>
                 <p style="margin-top: 10px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
             </div>
@@ -126,21 +54,21 @@
 
         <div id="them-moi" class="page-content">
             <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
-            <div class="card">
+            <div class="KHUNG-CON-TRONG-TAB">
                 <h2>➕ Thêm giao dịch / Dữ liệu mới</h2>
                 <p style="margin-top: 10px; color: #666;">Form nhập nhanh thông tin chi tiêu hoặc chuyến hàng.</p>
             </div>
         </div>
 
         <div id="kho" class="page-content">
-            <div class="card">
+            <div class="KHUNG-CON-TRONG-TAB">
                 <h2>📦 Quản lý Kho hàng</h2>
                 <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
             </div>
         </div>
 
         <div id="van-chuyen" class="page-content">
-            <div class="card">
+            <div class="KHUNG-CON-TRONG-TAB">
                 <h2>🚚 Quản lý Vận chuyển</h2>
                 <p style="margin-top: 10px; color: #666;">Điều phối xe, tài xế và trạng thái đơn vận chuyển.</p>
             </div>
@@ -148,23 +76,23 @@
 
     </div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('home')">
+    <nav class="MENU-DUOI">
+        <div class="MENU-item active" onclick="switchTab('home')">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </div>
-        <div class="nav-item" onclick="switchTab('bao-cao')">
+        <div class="MENU-item" onclick="switchTab('bao-cao')">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Báo cáo</span>
         </div>
-        <div class="nav-item add-btn" onclick="switchTab('them-moi')">
+        <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
             <i class="fa-solid fa-plus"></i>
         </div>
-        <div class="nav-item" onclick="switchTab('kho')">
+        <div class="MENU-item" onclick="switchTab('kho')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Kho</span>
         </div>
-        <div class="nav-item" onclick="switchTab('van-chuyen')">
+        <div class="MENU-item" onclick="switchTab('van-chuyen')">
             <i class="fa-solid fa-truck-ramp-box"></i>
             <span>Vận chuyển</span>
         </div>
@@ -195,26 +123,14 @@
 
         // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';}
-            setTimeout(() => { window.location.reload(); }, 350); });}
+        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
 
         // --- 2. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
         window.switchTab = function(tabId) {
-            // Ẩn tất cả các trang nội dung
-            const pages = document.querySelectorAll('.page-content');
-            pages.forEach(page => page.classList.remove('active'));
-
-            // Gỡ bỏ trạng thái active của tất cả các nút menu
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => item.classList.remove('active'));
-
-            // Hiển thị trang được chọn
-            document.getElementById(tabId).classList.add('active');
-
-            // Kích hoạt trạng thái active cho nút menu tương ứng
-            const clickedTarget = event.currentTarget;
-            clickedTarget.classList.add('active');
-        }
+            const pages = document.querySelectorAll('.page-content'); pages.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
+            const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
+            document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
+            const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
     </script>
 </body>
 </html>
