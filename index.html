@@ -180,7 +180,7 @@
             if (event && event.currentTarget) { event.currentTarget.classList.add('active'); } 
         }
 
-        // --- 4. BÁO CÁO CHI TIẾT THEO CỘT MỚI ---
+        // --- 4. BÁO CÁO CHI TIẾT THEO CỘT MỚI (THÊM SỐ PHIẾU) ---
         const oChonNgay = document.getElementById('input-ngay-xem');
         const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
         let unsubscribeReport = null;
@@ -190,13 +190,14 @@
         const dinhDangHomNay = homNay.toISOString().split('T')[0];
         oChonNgay.value = dinhDangHomNay;
 
-        // Cập nhật lại tiêu đề bảng ở HTML cho đúng các cột bạn yêu cầu
+        // Cập nhật tiêu đề bảng thành 9 cột (Thêm cột Số phiếu ở vị trí thứ 3)
         const theadBang = document.querySelector('.bang-bao-cao thead');
         if (theadBang) {
             theadBang.innerHTML = `
                 <tr>
                     <th>Phương tiện</th>
                     <th>Chuyến</th>
+                    <th>Số phiếu</th>
                     <th>Bột trét (kg)</th>
                     <th>Sơn/TBVS (kg)</th>
                     <th>Tổng tải (kg)</th>
@@ -217,7 +218,7 @@
             const thangChon = parseInt(phanTach[1], 10); 
             const tenCollectionThang = `TUYENDUONGT${thangChon}`; 
 
-            bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>`;
+            bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>`;
 
             if (unsubscribeReport) unsubscribeReport();
 
@@ -233,7 +234,7 @@
                     bodyBangBaoCao.innerHTML = "";
 
                     if(querySnapshot.empty) {
-                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${ngayHienThi}</td></tr>`;
+                        bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${ngayHienThi}</td></tr>`;
                         return;
                     }
 
@@ -243,6 +244,9 @@
                         let classBadge = "status-khac";
                         if(data["Duyệt"] === "Đã giao hàng") classBadge = "status-dagiao";
                         else if(data["Duyệt"] === "Đang giao hàng") classBadge = "status-chuanbi";
+
+                        // Lấy Số phiếu: Ưu tiên lấy trường dữ liệu "Số_phiếu", nếu không có thì lấy chính ID của Document
+                        const soPhieu = data["Số_phiếu"] || data["Số phiếu"] || doc.id;
 
                         // Lấy và kiểm tra các giá trị số lượng từ database
                         const botTret = parseFloat(data["Bột_trét(kg)"] || data["Bột_trét"] || 0);
@@ -262,6 +266,7 @@
                         hangBaoCao.innerHTML = `
                             <td><strong>${data["Phương_tiện"] || '---'}</strong></td>
                             <td>Chuyến ${data["Chuyến"] || '0'}</td>
+                            <td><span style="font-family: monospace; color: #555;">${soPhieu}</span></td>
                             <td>${botTret.toLocaleString()}</td>
                             <td>${sonTBVS.toLocaleString()}</td>
                             <td>${tongTai.toLocaleString()}</td>
@@ -273,10 +278,10 @@
                     });
                 }, (error) => {
                     console.error("Lỗi: ", error);
-                    bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Không đọc được dữ liệu bảng ${tenCollectionThang}.</td></tr>`;
+                    bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong" style="color:red;">Không đọc được dữ liệu bảng ${tenCollectionThang}.</td></tr>`;
                 });
             } catch (err) {
-                bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Lỗi hệ thống lập truy vấn.</td></tr>`;
+                bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong" style="color:red;">Lỗi hệ thống lập truy vấn.</td></tr>`;
             }
         }
 
