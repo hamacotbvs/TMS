@@ -180,7 +180,7 @@
             if (event && event.currentTarget) { event.currentTarget.classList.add('active'); } 
         }
 
-        // --- 4. BÁO CÁO NHÓM THEO PHƯƠNG TIỆN + CHUYẾN ---
+        // --- 4. BÁO CÁO CHI TIẾT THEO CỘT MỚI ---
         const oChonNgay = document.getElementById('input-ngay-xem');
         const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
         let unsubscribeReport = null;
@@ -190,7 +190,7 @@
         const dinhDangHomNay = homNay.toISOString().split('T')[0];
         oChonNgay.value = dinhDangHomNay;
 
-        // Cập nhật lại tiêu đề bảng ở HTML cho khớp với các cột mới
+        // Cập nhật lại tiêu đề bảng ở HTML cho đúng các cột bạn yêu cầu
         const theadBang = document.querySelector('.bang-bao-cao thead');
         if (theadBang) {
             theadBang.innerHTML = `
@@ -201,6 +201,7 @@
                     <th>Sơn/TBVS (kg)</th>
                     <th>Tổng tải (kg)</th>
                     <th>Thành tiền (đ)</th>
+                    <th>Bắt đầu</th>
                     <th>Trạng thái</th>
                 </tr>
             `;
@@ -216,7 +217,7 @@
             const thangChon = parseInt(phanTach[1], 10); 
             const tenCollectionThang = `TUYENDUONGT${thangChon}`; 
 
-            bodyBangBaoCao.innerHTML = `<tr><td colspan="7" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>`;
+            bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>`;
 
             if (unsubscribeReport) unsubscribeReport();
 
@@ -232,77 +233,50 @@
                     bodyBangBaoCao.innerHTML = "";
 
                     if(querySnapshot.empty) {
-                        bodyBangBaoCao.innerHTML = `<tr><td colspan="7" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${ngayHienThi}</td></tr>`;
+                        bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${ngayHienThi}</td></tr>`;
                         return;
                     }
-
-                    // Đối tượng trung gian để lưu trữ dữ liệu gom nhóm
-                    const groups = {};
 
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         
-                        const phuongTien = data["Phương_tiện"] || 'Chưa xác định';
-                        const chuyen = data["Chuyến"] || '1';
-                        
-                        // Tạo Key duy nhất để gom nhóm: kết hợp giữa Tên xe và Số chuyến
-                        const groupKey = `${phuongTien}_Chuyen_${chuyen}`;
+                        let classBadge = "status-khac";
+                        if(data["Duyệt"] === "Đã giao hàng") classBadge = "status-dagiao";
+                        else if(data["Duyệt"] === "Đang giao hàng") classBadge = "status-chuanbi";
 
-                        // Ép kiểu dữ liệu dạng số, nếu trống hoặc lỗi thì mặc định là 0
+                        // Lấy và kiểm tra các giá trị số lượng từ database
                         const botTret = parseFloat(data["Bột_trét(kg)"] || data["Bột_trét"] || 0);
                         const sonTBVS = parseFloat(data["Sơn/TBVS"] || data["Sơn_TBVS"] || 0);
                         const tongTai = parseFloat(data["TTải"] || data["Tổng tải(kg)"] || 0);
                         const thanhTien = parseFloat(data["Thành_tiền"] || data["Thành tiền"] || 0);
-                        const trangThai = data["Duyệt"] || data["Status"] || 'Mới';
 
-                        if (!groups[groupKey]) {
-                            // Nếu nhóm chưa tồn tại, khởi tạo nhóm mới
-                            groups[groupKey] = {
-                                phuongTien: phuongTien,
-                                chuyen: chuyen,
-                                botTret: botTret,
-                                sonTBVS: sonTBVS,
-                                tongTai: tongTai,
-                                thanhTien: thanhTien,
-                                trangThai: trangThai
-                            };
-                        } else {
-                            // Nếu nhóm đã tồn tại, cộng dồn luỹ kế các cột số lượng
-                            groups[groupKey].botTret += botTret;
-                            groups[groupKey].sonTBVS += sonTBVS;
-                            groups[groupKey].tongTai += tongTai;
-                            groups[groupKey].thanhTien += thanhTien;
-                            // Giữ lại trạng thái của bản ghi cuối cùng (hoặc ưu tiên trạng thái "Đã giao hàng")
-                            if (trangThai === "Đã giao hàng") {
-                                groups[groupKey].trangThai = trangThai;
-                            }
+                        // Định dạng lại ngày giờ hiển thị cho dễ nhìn (từ YYYY-MM-DD sang DD/MM/YYYY)
+                        let batDauHienThi = data["Bắt_đầu_giao_hàng"] || '---';
+                        if(batDauHienThi !== '---' && batDauHienThi.includes('-')) {
+                            const [ngayPart, gioPart] = batDauHienThi.split(' ');
+                            const [y, m, d] = ngayPart.split('-');
+                            batDauHienThi = `${d}/${m}/${y} ${gioPart || ''}`;
                         }
-                    });
-
-                    // Duyệt qua đối tượng nhóm và đổ dữ liệu đã tính tổng lên bảng giao diện
-                    Object.values(groups).forEach((group) => {
-                        let classBadge = "status-khac";
-                        if(group.trangThai === "Đã giao hàng") classBadge = "status-dagiao";
-                        else if(group.trangThai === "Đang giao hàng") classBadge = "status-chuanbi";
 
                         const hangBaoCao = document.createElement('tr');
                         hangBaoCao.innerHTML = `
-                            <td><strong>${group.phuongTien}</strong></td>
-                            <td>Chuyến ${group.chuyen}</td>
-                            <td>${group.botTret.toLocaleString()}</td>
-                            <td>${group.sonTBVS.toLocaleString()}</td>
-                            <td>${group.tongTai.toLocaleString()}</td>
-                            <td><strong>${group.thanhTien.toLocaleString()}</strong></td>
-                            <td><span class="badge-status ${classBadge}">${group.trangThai}</span></td>
+                            <td><strong>${data["Phương_tiện"] || '---'}</strong></td>
+                            <td>Chuyến ${data["Chuyến"] || '0'}</td>
+                            <td>${botTret.toLocaleString()}</td>
+                            <td>${sonTBVS.toLocaleString()}</td>
+                            <td>${tongTai.toLocaleString()}</td>
+                            <td><strong>${thanhTien.toLocaleString()}</strong></td>
+                            <td>${batDauHienThi}</td>
+                            <td><span class="badge-status ${classBadge}">${data["Duyệt"] || data["Status"] || 'Mới'}</span></td>
                         `;
                         bodyBangBaoCao.appendChild(hangBaoCao);
                     });
                 }, (error) => {
                     console.error("Lỗi: ", error);
-                    bodyBangBaoCao.innerHTML = `<tr><td colspan="7" class="txt-rong" style="color:red;">Không đọc được dữ liệu bảng ${tenCollectionThang}.</td></tr>`;
+                    bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Không đọc được dữ liệu bảng ${tenCollectionThang}.</td></tr>`;
                 });
             } catch (err) {
-                bodyBangBaoCao.innerHTML = `<tr><td colspan="7" class="txt-rong" style="color:red;">Lỗi hệ thống lập truy vấn.</td></tr>`;
+                bodyBangBaoCao.innerHTML = `<tr><td colspan="8" class="txt-rong" style="color:red;">Lỗi hệ thống lập truy vấn.</td></tr>`;
             }
         }
 
