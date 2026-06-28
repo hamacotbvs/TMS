@@ -180,7 +180,7 @@
             if (event && event.currentTarget) { event.currentTarget.classList.add('active'); } 
         }
 
-        // --- 4. BÁO CÁO CHI TIẾT THEO CỘT MỚI (THÊM SỐ PHIẾU) ---
+        // --- 4. BÁO CÁO ĐƠN HÀNG TRONG NGÀY
         const oChonNgay = document.getElementById('input-ngay-xem');
         const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
         let unsubscribeReport = null;
@@ -209,14 +209,11 @@
         }
 
         function taiBaoCaoTheoNgay(chuoiNgayYMD) {
-            if(!chuoiNgayYMD) return;
-
+            if (!chuoiNgayYMD) return;
             const phanTach = chuoiNgayYMD.split('-'); 
-            const ngayTimKiem = chuoiNgayYMD; // Định dạng YYYY-MM-DD khớp database
-            const ngayHienThi = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`;
-
-            const thangChon = parseInt(phanTach[1], 10); 
-            const tenCollectionThang = `TUYENDUONGT${thangChon}`; 
+            const ngayTimKiem = chuoiNgayYMD; // Định dạng YYYY-MM-DD dùng để lọc dữ liệu
+            const ngayHienThi = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Định dạng DD/MM/YYYY để hiển thị
+            const tenCollectionThang = 'TUYENDUONG'; 
 
             bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>`;
 
