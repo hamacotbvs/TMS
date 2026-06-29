@@ -8,7 +8,7 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const INVENTORY_LINKS = {
   "41": "https://docs.google.com/spreadsheets/d/1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb/edit",
   "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB/edit",
-  "69": "https://docs.google.com/spreadsheets/d/1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf/edit"
+  "69": "https://docs.google.com/spreadsheets/d/1lvbNAvxQ-jXMEIwZ-w3GOsbcd5-TCIf/edit"
 };
 
 const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR/edit"; 
@@ -175,12 +175,12 @@ function parseRoutesToMap(buffer) {
     sonTbvsKg: ["sơn/tbvs", "sontbvs", "sơn", "tbvs"],
     tTai: ["t.tải", "t tải", "ttai", "tổng tải"],
     thanhTien: ["thành tiền", "thanhtien"],
-    batDauGiaoHang: ["bắt đầu giao hàng", "batdau giao hang", "batdaugiaohang"],
+    batDauGiaoHang: ["bắt đầu giao hàng", "bắt đầugiaohàng", "batdau giao hang", "batdaugiaohang", "bắt đầu"],
     chuyen: ["chuyến", "chuyen"],
     ghiChu: ["ghi chú", "ghichu"],
     giaoNhan: ["giao nhận", "giaonhan"],
     htGiaoNhan: ["ht giao nhận", "htgiaonhan", "hình thức giao nhận"],
-    ketThucGiaoHang: ["kết thúc giao hàng", "ketthuc giaohang", "ketthucgiaohang"],
+    ketThucGiaoHang: ["kết thúc giao hàng", "kết thúcgiaohàng", "ketthuc giaohang", "ketthucgiaohang", "kết thúc"],
     kmBatDauGiaoHang: ["km bắt đầu giao hàng", "kmbatdaugiaohang"],
     kmDuKien: ["km dự kiến", "kmdukien"],
     kmKetThucGiaoHang: ["km kết thúc giao hàng", "kmketthucgiaohang"],
@@ -313,6 +313,8 @@ function parseRoutesToMap(buffer) {
       ngayDuKien: getDateVal(row, "ngayDuKien"),
       ngayGiao: getDateVal(row, "ngayGiao"),
       ngayxuatKho: ngayXuatKhoTxt,
+      
+      // 🌟 ĐÃ FIX: Chạy qua hàm getDateVal để tự động quét từ khóa và định dạng chuẩn ngày giờ
       batDauGiaoHang: getDateVal(row, "batDauGiaoHang"),
       ketThucGiaoHang: getDateVal(row, "ketThucGiaoHang")
     };
@@ -350,7 +352,7 @@ async function mainSync() {
   if (invSuccessCount > 0) {
     finalInventoryData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
     
-    // 🌟 THAY ĐỔI THEO YÊU CẦU: Collection "TONKHO" và Document "KHO"
+    // THAY ĐỔI THEO YÊU CẦU: Collection "TONKHO" và Document "KHO"
     await db.collection('TONKHO').doc('KHO').set(finalInventoryData, { merge: true });
     console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho lên Firestore (TONKHO/KHO) thành công!`);
   }
