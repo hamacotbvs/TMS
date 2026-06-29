@@ -4,14 +4,14 @@ const XLSX = require('xlsx');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-// 🔗 ĐƯỜNG LINK CÁC FILE EXCEL CỦA BẠN
+// 🔗 ĐƯỜNG LINK CÁC FILE EXCEL CỦA BẠN (ĐÃ ĐƯỢC CHỈNH CHUẨN XÁC)
 const INVENTORY_LINKS = {
   "41": "https://docs.google.com/spreadsheets/d/1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb/edit",
-  "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB/edit",
-  "69": "https://docs.google.com/spreadsheets/d/1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf/edit",
+  "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7lxZOVbs4udNjEh_JZxYOATLB/edit",
+  "69": "https://docs.google.com/spreadsheets/d/1lvbNAVxQ-jXMEIwZ-w3GOsbcd5-TClf/edit"
 };
 
-const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR/edit"; 
+const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JegCpZzUSDj5MmLqifbOD6cbHj7ggsHR/edit"; 
 
 function extractFileId(input) {
   if (input.includes("spreadsheets/d/")) {
@@ -65,7 +65,7 @@ function formatExcelDate(cellValue) {
   // 2. Nếu đã là chuỗi định dạng sẵn chứa gạch chéo hoặc gạch ngang
   if (strVal.includes('/') || strVal.includes('-')) return strVal;
 
-  // 3. Nếu là dạng số Serial của Excel (Trường hợp phòng hờ)
+  // 3. Nếu là dạng số Serial của Excel
   const numVal = parseFloat(cellValue);
   if (!isNaN(numVal) && numVal > 30000) {
     try {
@@ -110,13 +110,18 @@ function parseInventoryToMap(buffer, khoName) {
   for (let i = startRowIndex; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 3) continue;
+    
+    // 🌟 LỌC TỒN KHO: Cột tên hàng không được null/rỗng mới lấy
+    const tenHang = row[2] ? row[2].toString().trim() : "";
+    if (!tenHang || tenHang === "" || tenHang === "Tên hàng") continue;
+
     const maHang = row[1] ? row[1].toString().trim() : ""; 
     if (!maHang || maHang === "" || maHang === "Mã hàng" || maHang.includes("CÔNG TY")) continue;
 
     dataMap[maHang] = {
       category: row[0] ? row[0].toString().trim() : "",    
       maHang: maHang,
-      tenHang: row[2] ? row[2].toString().trim() : "",     
+      tenHang: tenHang,     
       nsx: row[3] ? row[3].toString().trim() : "",         
       dauKy_sl: parseFloat(row[4]) || 0,                   
       dauKy_tl: parseFloat(row[5]) || 0,                   
@@ -233,6 +238,12 @@ function parseRoutesToMap(buffer) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
 
+    // 🌟 LỌC TUYẾN ĐƯỜNG: Chỉ lấy cột khoXuat = 41, 61, 69
+    const khoXuatVal = getTxt(row, "khoXuat");
+    if (khoXuatVal !== "41" && khoXuatVal !== "61" && khoXuatVal !== "69") {
+      continue; 
+    }
+
     const maPhieu = getTxt(row, "maPhieu");
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
 
@@ -240,151 +251,3 @@ function parseRoutesToMap(buffer) {
     if (lat1 !== undefined && lon1 !== undefined && row[lat1] && row[lon1]) {
       dinhVi = `${row[lat1].toString().trim()},${row[lon1].toString().trim()}`;
     }
-
-    let checkIn = "";
-    if (lat2 !== undefined && lon2 !== undefined && row[lat2] && row[lon2]) {
-      checkIn = `${row[lat2].toString().trim()},${row[lon2].toString().trim()}`;
-    }
-
-    const saiLechKm = getNum(row, "saiLechKm");
-    let theoDoi = getTxt(row, "theoDoi");
-    if (saiLechKm > 0.5) {
-      theoDoi = "Cần kiểm tra";
-    }
-
-    let thang = "";
-    const ngayXuatKhoTxt = getDateVal(row, "ngayXuatKho");
-    if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
-      const parts = ngayXuatKhoTxt.split("/");
-      if (parts[1]) {
-        thang = `Tháng ${parseInt(parts[1])}`;
-      }
-    } else if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
-      const parts = ngayXuatKhoTxt.split("-");
-      if (parts[1]) {
-        thang = `Tháng ${parseInt(parts[1])}`;
-      }
-    }
-
-    routeMap[maPhieu] = {
-      phuongXa: getTxt(row, "phuongXa"),
-      khoXuat: getTxt(row, "khoXuat"), 
-      tuyenDuong: getTxt(row, "tuyenDuong"),
-      maPhieu: maPhieu,
-      doiTuong: getTxt(row, "doiTuong"),
-      duyet: getTxt(row, "duyet"),
-      status: getTxt(row, "status"),
-      botTretKg: getNum(row, "botTretKg"),
-      sonTbvsKg: getNum(row, "sonTbvsKg"),
-      tTai: getNum(row, "tTai"),
-      thanhTien: getNum(row, "thanhTien"),
-      dinhVi: dinhVi,
-      checkIn: checkIn,
-      saiLechKm: saiLechKm,
-      theoDoi: theoDoi,
-      chuyen: getTxt(row, "chuyen"),
-      ghiChu: getTxt(row, "ghiChu"),
-      giaoNhan: getTxt(row, "giaoNhan"),
-      htGiaoNhan: getTxt(row, "htGiaoNhan"),
-      kmBatDauGiaoHang: getNum(row, "kmBatDauGiaoHang"),
-      kmDuKIen: getNum(row, "kmDuKien"), 
-      kmKetThucGiaoHang: getNum(row, "kmKetThucGiaoHang"),
-      noiGiao: getTxt(row, "noiGiao"),
-      phuongTien: getTxt(row, "phuongTien"),
-      pxk: getTxt(row, "pxk"),
-      taiXe: getTxt(row, "taiXe"),
-      thanhPho: getTxt(row, "thanhPho"),
-      thoiGianLamViec: getTxt(row, "thoiGianLamViec"),
-      thang: thang,
-      ngayDatHang: getDateVal(row, "ngayDatHang"),
-      ngayXuLy: getDateVal(row, "ngayXuLy"),
-      ngayDuyet: getDateVal(row, "ngayDuyet"),
-      ngayDuKien: getDateVal(row, "ngayDuKien"),
-      batDauGiaoHang: getDateVal(row, "batDauGiaoHang"),
-      ketThucGiaoHang: getDateVal(row, "ketThucGiaoHang"),
-      ngayGiao: getDateVal(row, "ngayGiao"),
-      ngayxuatKho: ngayXuatKhoTxt
-    };
-  }
-  return routeMap;
-}
-
-// ----------------------------------------------------
-// 3. TIẾN TRÌNH ĐỒNG BỘ CHÍNH
-// ----------------------------------------------------
-async function mainSync() {
-  const drive = getDriveClient();
-
-  // === PHẦN 1: ĐỒNG BỘ TỒN KHO ===
-  console.log('🚀 1. Bắt đầu tiến trình cập nhật Tồn Kho...');
-  let finalInventoryData = {};
-  let invSuccessCount = 0;
-
-  for (const [khoName, rawInput] of Object.entries(INVENTORY_LINKS)) {
-    try {
-      const fileId = extractFileId(rawInput);
-      const buffer = await downloadFileBuffer(drive, fileId);
-      const dataObject = parseInventoryToMap(buffer, khoName);
-      
-      if (Object.keys(dataObject).length > 0) {
-        finalInventoryData[`Kho_${khoName}`] = dataObject;
-        invSuccessCount++;
-        console.log(`✅ Thành công Kho ${khoName}: Đã đọc ${Object.keys(dataObject).length} mặt hàng.`);
-      }
-    } catch (err) {
-      console.error(`❌ Lỗi kết nối Kho ${khoName}:`, err.message);
-    }
-  }
-
-  if (invSuccessCount > 0) {
-    finalInventoryData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
-    await db.collection('BÁO_CÁO').doc('TONKHO').set(finalInventoryData, { merge: true });
-    console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho lên Firestore thành công!`);
-  }
-
-  console.log('\n--------------------------------------------------\n');
-
-  // === PHẦN 2: ĐỒNG BỘ TUYẾN ĐƯỜNG ===
-  console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường...');
-  try {
-    const routeFileId = extractFileId(ROUTE_FILE_LINK);
-    console.log(`📦 Đang tải file Tuyến Đường từ Drive (ID: ${routeFileId})...`);
-    
-    const routeBuffer = await downloadFileBuffer(drive, routeFileId);
-    const routeDataMap = parseRoutesToMap(routeBuffer);
-    const totalRecords = Object.keys(routeDataMap).length;
-
-    if (totalRecords > 0) {
-      console.log(`📡 Đang đẩy dữ liệu tuần tự ${totalRecords} mã phiếu vào collection 'TUYENDUONG'...`);
-      
-      let batch = db.batch();
-      let count = 0;
-
-      for (const [maPhieu, data] of Object.entries(routeDataMap)) {
-        const docRef = db.collection('TUYENDUONG').doc(maPhieu);
-        batch.set(docRef, data, { merge: true });
-        count++;
-
-        if (count % 400 === 0) {
-          await batch.commit();
-          batch = db.batch();
-        }
-      }
-      
-      if (count % 400 !== 0) {
-        await batch.commit();
-      }
-
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${totalRecords} chứng từ lên Firestore!`);
-    } else {
-      console.log('⚠️ Không tìm thấy bản ghi hợp lệ nào trong file Tuyến đường.');
-    }
-  } catch (err) {
-    console.error(`❌ Lỗi đồng bộ Tuyến Đường:`, err.message);
-  }
-}
-
-mainSync().catch(err => {
-  console.error('❌ Lỗi hệ thống nghiêm trọng:', err);
-  process.exit(1);
-});
