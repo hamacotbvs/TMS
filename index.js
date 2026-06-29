@@ -4,7 +4,7 @@ const XLSX = require('xlsx');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-// 🔗 ĐƯỜNG LINK CÁC FILE EXCEL CỦA BẠN (ĐÃ ĐƯỢC CHỈNH CHUẨN XÁC)
+// 🔗 ĐƯỜNG LINK CÁC FILE EXCEL CỦA BẠN
 const INVENTORY_LINKS = {
   "41": "https://docs.google.com/spreadsheets/d/1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb/edit",
   "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB/edit",
@@ -51,12 +51,11 @@ function formatExcelDate(cellValue) {
   
   const pad = (n) => String(n).padStart(2, '0');
 
-  // 1. Nếu cellValue đã được SheetJS chuyển thành đối tượng Date nguyên bản
+  // 1. Nếu cellValue là đối tượng Date nguyên bản
   if (cellValue instanceof Date) {
     const d = cellValue;
     const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
     const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    // Nếu không có giờ phút giây (00:00:00) thì chỉ trả về Ngày
     return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;
   }
 
@@ -65,7 +64,7 @@ function formatExcelDate(cellValue) {
   // 2. Nếu đã là chuỗi định dạng sẵn chứa gạch chéo hoặc gạch ngang
   if (strVal.includes('/') || strVal.includes('-')) return strVal;
 
-  // 3. Nếu là dạng số Serial của Excel
+  // 3. Nếu là dạng số Serial của Excel (ví dụ: 46025.34053)
   const numVal = parseFloat(cellValue);
   if (!isNaN(numVal) && numVal > 30000) {
     try {
@@ -111,7 +110,6 @@ function parseInventoryToMap(buffer, khoName) {
     const row = jsonData[i];
     if (!row || row.length < 3) continue;
     
-    // LỌC TỒN KHO: Cột tên hàng không được null/rỗng mới lấy
     const tenHang = row[2] ? row[2].toString().trim() : "";
     if (!tenHang || tenHang === "" || tenHang === "Tên hàng") continue;
 
@@ -140,7 +138,6 @@ function parseInventoryToMap(buffer, khoName) {
 // 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG
 // ----------------------------------------------------
 function parseRoutesToMap(buffer) {
-  // 🌟 ĐÃ SỬA CHÍNH XÁC: Tắt cellDates để lấy số Serial gốc, tránh lỗi lệch múi giờ và nhảy năm
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
@@ -176,17 +173,17 @@ function parseRoutesToMap(buffer) {
     sonTbvsKg: ["sơn/tbvs", "sontbvs", "sơn", "tbvs"],
     tTai: ["t.tải", "t tải", "ttai", "tổng tải"],
     thanhTien: ["thành tiền", "thanhtien"],
-    batDauGiaoHang: ["bắt đầu giao hàng", "bắt đầugiaohàng", "batdau giao hang", "batdaugiaohang", "bắt đầu"],
+    batDauGiaoHang: ["bắt đầu giao hàng", "bắt đầugiaohàng", "batdau giao hang", "batdaugiaohang", "bắt đầu", "bắt đầu giao"],
     chuyen: ["chuyến", "chuyen"],
     ghiChu: ["ghi chú", "ghichu"],
     giaoNhan: ["giao nhận", "giaonhan"],
     htGiaoNhan: ["ht giao nhận", "htgiaonhan", "hình thức giao nhận"],
-    ketThucGiaoHang: ["kết thúc giao hàng", "kết thúcgiaohàng", "ketthuc giaohang", "ketthucgiaohang", "kết thúc"],
+    ketThucGiaoHang: ["kết thúc giao hàng", "kết thúcgiaohàng", "ketthuc giaohang", "ketthucgiaohang", "kết thúc", "kết thúc giao"],
     kmBatDauGiaoHang: ["km bắt đầu giao hàng", "kmbatdaugiaohang"],
     kmDuKien: ["km dự kiến", "kmdukien"],
     kmKetThucGiaoHang: ["km kết thúc giao hàng", "kmketthucgiaohang"],
     ngayGiao: ["ngày giao", "ngaygiao"],
-    ngayXuatKho: ["ngày xuất kho", "ngayxuatkho"],
+    ngayXuatKho: ["ngày xuất kho", "ngayxuatkho", "ngày xuất"],
     noiGiao: ["nơi giao", "noigiao"],
     phuongTien: ["phương tiện", "phuongtien"],
     pxk: ["pxk"],
@@ -196,7 +193,7 @@ function parseRoutesToMap(buffer) {
 
   headers.forEach((cell, index) => {
     if (!cell) return;
-    const cellTxt = cell.toString().toLowerCase().trim();
+    const cellTxt = cell.toString().replace(/[\r\n]+/g, ' ').toLowerCase().trim().replace(/\s+/g, ' ');
     
     for (const [key, keywords] of Object.entries(colKeywords)) {
       if (keywords.some(kw => cellTxt === kw || cellTxt.includes(kw))) {
@@ -239,7 +236,6 @@ function parseRoutesToMap(buffer) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
 
-    // LỌC TUYẾN ĐƯỜNG: Chỉ lấy cột khoXuat = 41, 61, 69
     const khoXuatVal = getTxt(row, "khoXuat");
     if (khoXuatVal !== "41" && khoXuatVal !== "61" && khoXuatVal !== "69") {
       continue; 
@@ -308,6 +304,7 @@ function parseRoutesToMap(buffer) {
       thanhPho: getTxt(row, "thanhPho"),
       thoiGianLamViec: getTxt(row, "thoiGianLamViec"),
       thang: thang,
+      // 🌟 ĐÃ ĐỒNG BỘ: Cho 2 cột này đi qua hàm getDateVal để tự chuyển đổi số Serial thành Ngày/Giờ chuẩn xác
       ngayDatHang: getDateVal(row, "ngayDatHang"),
       ngayXuLy: getDateVal(row, "ngayXuLy"),
       ngayDuyet: getDateVal(row, "ngayDuyet"),
@@ -327,7 +324,6 @@ function parseRoutesToMap(buffer) {
 async function mainSync() {
   const drive = getDriveClient();
 
-  // === PHẦN 1: ĐỒNG BỘ TỒN KHO ===
   console.log('🚀 1. Bắt đầu tiến trình cập nhật Tồn Kho...');
   let finalInventoryData = {};
   let invSuccessCount = 0;
@@ -350,15 +346,12 @@ async function mainSync() {
 
   if (invSuccessCount > 0) {
     finalInventoryData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
-    
-    // THAY ĐỔI THEO YÊU CẦU: Collection "TONKHO" và Document "KHO"
     await db.collection('TONKHO').doc('KHO').set(finalInventoryData, { merge: true });
     console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho lên Firestore (TONKHO/KHO) thành công!`);
   }
 
   console.log('\n--------------------------------------------------\n');
 
-  // === PHẦN 2: ĐỒNG BỘ TUYẾN ĐƯỜNG ===
   console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường...');
   try {
     const routeFileId = extractFileId(ROUTE_FILE_LINK);
