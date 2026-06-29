@@ -3,7 +3,7 @@ name: HAMACO Inventory Auto Sync
 on:
   schedule:
     - cron: '*/15 * * * *' # Hệ thống tự động quét kiểm tra định kỳ mỗi 15 phút
-  workflow_dispatch: # Cho phép vào nhấn nút "Kích hoạt đồng bộ thủ công" trên GitHub
+  workflow_dispatch: # Cho phép nhấn nút kích hoạt chạy thủ công bất cứ lúc nào
 
 jobs:
   sync-inventory:
@@ -15,8 +15,8 @@ jobs:
     - name: Cài đặt môi trường Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20
-        cache: 'npm'
+        node-version: '20'
+        # Đã loại bỏ dòng cấu hình cache gây lỗi lock file
 
     - name: Cài đặt thư viện xử lý Excel và Firebase
       run: npm install
