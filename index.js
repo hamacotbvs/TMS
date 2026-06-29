@@ -6,8 +6,8 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 const FILE_IDS = {
   "41": "1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb",
-  "61": "1ONnLc9N7lxZOVbs4udNjEh_JZxYOATLB",
-  "69": "1lvbNAVxQ-jXMEIwZ-w3GOsbcd5-TClf"
+  "61": "1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB",
+  "69": "1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf"
 };
 
 if (!admin.apps.length) {
