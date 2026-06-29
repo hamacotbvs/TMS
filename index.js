@@ -35,22 +35,38 @@ async function downloadFileBuffer(drive, fileId) {
   ).then(res => Buffer.from(res.data));
 }
 
-function parseExcelToMap(buffer) {
+function parseExcelToMap(buffer, khoName) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
   
-  // Đọc toàn bộ file thành mảng thô
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
   const dataMap = {};
   
-  // Quét từ dòng index 9 (tức dòng số 10 trong Excel trở đi)
-  for (let i = 9; i < jsonData.length; i++) {
+  console.log(`📊 [Kho ${khoName}] Tổng số dòng đọc được trong file: ${jsonData.length}`);
+  if (jsonData.length > 0) {
+    console.log(`👀 [Kho ${khoName}] Xem trước 12 dòng đầu tiên để check vị trí:`);
+    for (let i = 0; i < Math.min(12, jsonData.length); i++) {
+      console.log(`   Dòng ${i + 1}:`, JSON.stringify(jsonData[i]));
+    }
+  }
+
+  // Tự động tìm dòng tiêu đề chứa dữ liệu chính
+  let startRowIndex = 9; // Mặc định dòng 10
+  for (let i = 0; i < Math.min(20, jsonData.length); i++) {
+    const rowStr = JSON.stringify(jsonData[i]);
+    if (rowStr.includes("Mã hàng") || rowStr.includes("Tên hàng")) {
+      startRowIndex = i + 1; // Bắt đầu quét từ dòng ngay sau dòng tiêu đề
+      console.log(`🎯 [Kho ${khoName}] Đã tìm thấy dòng tiêu đề chuẩn tại hàng số: ${i + 1}. Bắt đầu quét hàng hóa từ hàng: ${startRowIndex + 1}`);
+      break;
+    }
+  }
+  
+  for (let i = startRowIndex; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 3) continue;
 
     const maHang = row[1] ? row[1].toString().trim() : ""; // Cột B
-    // Loại bỏ các dòng tiêu đề phụ lặp lại nếu có
     if (!maHang || maHang === "" || maHang === "Mã hàng" || maHang.includes("CÔNG TY")) continue;
 
     dataMap[maHang] = {
@@ -82,14 +98,14 @@ async function syncInventory() {
     try {
       console.log(`📦 Đang bốc dữ liệu từ Drive cho Kho: ${khoName}...`);
       const buffer = await downloadFileBuffer(drive, fileId);
-      const dataObject = parseExcelToMap(buffer);
+      const dataObject = parseExcelToMap(buffer, khoName);
       
       if (Object.keys(dataObject).length > 0) {
         finalUpdateData[`Kho_${khoName}`] = dataObject;
         successCount++;
         console.log(`✅ Thành công Kho ${khoName}: Tìm thấy ${Object.keys(dataObject).length} mặt hàng.`);
       } else {
-        console.log(`⚠️ Kho ${khoName} không quét được hàng nào. Kiểm tra lại dữ liệu hàng 10 trở đi.`);
+        console.log(`⚠️ Kho ${khoName} quét ra 0 mặt hàng. Vui lòng xem log dòng để chỉnh lại vị trí cột.`);
       }
     } catch (err) {
       console.error(`❌ Lỗi kết nối Kho ${khoName}:`, err.message);
@@ -100,9 +116,9 @@ async function syncInventory() {
     finalUpdateData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
     console.log('\n📡 Đang đẩy toàn bộ mảng dữ liệu gộp lên Firestore...');
     await tonKhoDocRef.set(finalUpdateData, { merge: true });
-    console.log(`\n🎉 HOÀN TẤT: Bảng 'TONKHO' đã được tạo trên Firestore!`);
+    console.log(`\n🎉 HOÀN TẤT: Bảng 'TONKHO' đã được cập nhật thành công trên Firestore!`);
   } else {
-    console.log('\n❌ Thất bại hoàn toàn: Không có dữ liệu kho nào được ghi nhận.');
+    console.log('\n❌ Thất bại: Không gộp được dữ liệu của bất kỳ kho nào.');
   }
 }
 
