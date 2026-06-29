@@ -7,11 +7,11 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 // 🔗 ĐƯỜNG LINK CÁC FILE EXCEL CỦA BẠN
 const INVENTORY_LINKS = {
   "41": "https://docs.google.com/spreadsheets/d/1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb/edit",
-  "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB/edit",
-  "69": "https://docs.google.com/spreadsheets/d/1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf/edit"
+  "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7lxZOVbs4udNjEh_JZxYOATLB/edit",
+  "69": "https://docs.google.com/spreadsheets/d/1lvbNAVxQ-jXMEIwZ-w3GOsbcd5-TClf/edit"
 };
 
-const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR/edit"; 
+const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JegCpZzUSDj5MmLqifbOD6cbHj7ggsHR/edit"; 
 
 function extractFileId(input) {
   if (input.includes("spreadsheets/d/")) {
@@ -45,28 +45,43 @@ async function downloadFileBuffer(drive, fileId) {
   ).then(res => Buffer.from(res.data));
 }
 
-// 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN (yyyy-MM-dd HH:mm:ss giống Apps Script)
+// 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN ĐẸP (DD/MM/YYYY HH:mm:ss)
 function formatExcelDate(cellValue) {
   if (cellValue === undefined || cellValue === null || cellValue === "") return "";
   
+  const pad = (n) => String(n).padStart(2, '0');
+
+  // 1. Nếu cellValue đã được SheetJS chuyển thành đối tượng Date nguyên bản
+  if (cellValue instanceof Date) {
+    const d = cellValue;
+    const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    // Nếu không có giờ phút giây (00:00:00) thì chỉ trả về Ngày
+    return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;
+  }
+
   const strVal = cellValue.toString().trim();
+  
+  // 2. Nếu đã là chuỗi định dạng sẵn chứa gạch chéo hoặc gạch ngang
   if (strVal.includes('/') || strVal.includes('-')) return strVal;
 
+  // 3. Nếu là dạng số Serial của Excel (Trường hợp phòng hờ)
   const numVal = parseFloat(cellValue);
   if (!isNaN(numVal) && numVal > 30000) {
     try {
       const dateObj = XLSX.SSF.parse_date_code(numVal);
       const y = dateObj.y;
-      const m = String(dateObj.m).padStart(2, '0');
-      const d = String(dateObj.d).padStart(2, '0');
-      const hh = String(dateObj.H).padStart(2, '0');
-      const mm = String(dateObj.M).padStart(2, '0');
-      const ss = String(dateObj.S).padStart(2, '0');
+      const m = pad(dateObj.m);
+      const d = pad(dateObj.d);
+      const hh = pad(dateObj.H);
+      const mm = pad(dateObj.M);
+      const ss = pad(dateObj.S);
       
+      const dateStr = `${d}/${m}/${y}`;
       if (dateObj.H === 0 && dateObj.M === 0 && dateObj.S === 0) {
-        return `${y}-${m}-${d}`;
+        return dateStr;
       }
-      return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+      return `${dateStr} ${hh}:${mm}:${ss}`;
     } catch (e) {
       return strVal;
     }
@@ -117,7 +132,7 @@ function parseInventoryToMap(buffer, khoName) {
 }
 
 // ----------------------------------------------------
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (BỎ CỘT KHO TRÙNG LẶP)
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG
 // ----------------------------------------------------
 function parseRoutesToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
@@ -141,7 +156,7 @@ function parseRoutesToMap(buffer) {
   
   const colKeywords = {
     phuongXa: ["phường/xã", "phương/xã", "phuong/xa", "phuong xa"],
-    khoXuat: ["kho xuất", "khoxuat"], // 🟢 Chỉ giữ lại Kho xuất
+    khoXuat: ["kho xuất", "khoxuat"],
     tuyenDuong: ["tuyến đường", "tuyếnđường", "tuyenduong"],
     maPhieu: ["mã phiếu", "mãphiếu", "maphieu"],
     doiTuong: ["đối tượng", "đốitượng", "doituong"],
@@ -239,7 +254,12 @@ function parseRoutesToMap(buffer) {
 
     let thang = "";
     const ngayXuatKhoTxt = getDateVal(row, "ngayXuatKho");
-    if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
+    if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
+      const parts = ngayXuatKhoTxt.split("/");
+      if (parts[1]) {
+        thang = `Tháng ${parseInt(parts[1])}`;
+      }
+    } else if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
       const parts = ngayXuatKhoTxt.split("-");
       if (parts[1]) {
         thang = `Tháng ${parseInt(parts[1])}`;
@@ -248,7 +268,7 @@ function parseRoutesToMap(buffer) {
 
     routeMap[maPhieu] = {
       phuongXa: getTxt(row, "phuongXa"),
-      khoXuat: getTxt(row, "khoXuat"), // 🟢 Chỉ đẩy trường này lên Firestore
+      khoXuat: getTxt(row, "khoXuat"), 
       tuyenDuong: getTxt(row, "tuyenDuong"),
       maPhieu: maPhieu,
       doiTuong: getTxt(row, "doiTuong"),
