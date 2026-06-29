@@ -1,0 +1,27 @@
+name: HAMACO Inventory Auto Sync
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # Hệ thống tự động quét kiểm tra định kỳ mỗi 15 phút
+  workflow_dispatch: # Cho phép vào nhấn nút "Kích hoạt đồng bộ thủ công" trên GitHub
+
+jobs:
+  sync-inventory:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout mã nguồn từ GitHub
+      uses: actions/checkout@v4
+
+    - name: Cài đặt môi trường Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+
+    - name: Cài đặt thư viện xử lý Excel và Firebase
+      run: npm install
+
+    - name: Thực thi so sánh RAM và đồng bộ Firestore
+      env:
+        FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      run: node index.js
