@@ -7,10 +7,11 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 // 🔗 ĐƯỜNG LINK CÁC FILE EXCEL CỦA BẠN
 const INVENTORY_LINKS = {
   "41": "https://docs.google.com/spreadsheets/d/1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb/edit",
-  "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB/edit",
-  "69": "https://docs.google.com/spreadsheets/d/1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf/edit"
+  "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7lxZOVbs4udNjEh_JZxYOATLB/edit",
+  "69": "https://docs.google.com/spreadsheets/d/1lvbNAVxQ-jXMEIwZ-w3GOsbcd5-TClf/edit"
 };
-const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR/edit"; 
+
+const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JegCpZzUSDj5MmLqifbOD6cbHj7ggsHR/edit"; 
 
 function extractFileId(input) {
   if (input.includes("spreadsheets/d/")) {
@@ -42,6 +43,35 @@ async function downloadFileBuffer(drive, fileId) {
     { fileId, alt: 'media' },
     { responseType: 'arraybuffer' }
   ).then(res => Buffer.from(res.data));
+}
+
+// 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN (yyyy-MM-dd HH:mm:ss giống Apps Script)
+function formatExcelDate(cellValue) {
+  if (cellValue === undefined || cellValue === null || cellValue === "") return "";
+  
+  const strVal = cellValue.toString().trim();
+  if (strVal.includes('/') || strVal.includes('-')) return strVal;
+
+  const numVal = parseFloat(cellValue);
+  if (!isNaN(numVal) && numVal > 30000) {
+    try {
+      const dateObj = XLSX.SSF.parse_date_code(numVal);
+      const y = dateObj.y;
+      const m = String(dateObj.m).padStart(2, '0');
+      const d = String(dateObj.d).padStart(2, '0');
+      const hh = String(dateObj.H).padStart(2, '0');
+      const mm = String(dateObj.M).padStart(2, '0');
+      const ss = String(dateObj.S).padStart(2, '0');
+      
+      if (dateObj.H === 0 && dateObj.M === 0 && dateObj.S === 0) {
+        return `${y}-${m}-${d}`;
+      }
+      return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+    } catch (e) {
+      return strVal;
+    }
+  }
+  return strVal;
 }
 
 // ----------------------------------------------------
@@ -87,17 +117,16 @@ function parseInventoryToMap(buffer, khoName) {
 }
 
 // ----------------------------------------------------
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG FULL CỘT
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (BỎ CỘT KHO TRÙNG LẶP)
 // ----------------------------------------------------
 function parseRoutesToMap(buffer) {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
   const routeMap = {};
   
   console.log(`📊 [Tuyến Đường] Tổng số dòng đọc được trong file: ${jsonData.length}`);
   
-  // Dò tìm dòng chứa thanh tiêu đề
   let headerRowIdx = 7; 
   for (let i = 0; i < Math.min(25, jsonData.length); i++) {
     const rowStr = JSON.stringify(jsonData[i]);
@@ -108,14 +137,11 @@ function parseRoutesToMap(buffer) {
   }
   
   const headers = jsonData[headerRowIdx] || [];
-  
-  // Tạo một đối tượng lưu vị trí index tự động của tất cả các cột bằng cách dò theo tên
   const colIdx = {};
   
-  // Định nghĩa danh sách tên cột cần tìm (viết thường để so sánh không phân biệt hoa thường)
   const colKeywords = {
     phuongXa: ["phường/xã", "phương/xã", "phuong/xa", "phuong xa"],
-    khoXuat: ["kho xuất", "khoxuat"],
+    khoXuat: ["kho xuất", "khoxuat"], // 🟢 Chỉ giữ lại Kho xuất
     tuyenDuong: ["tuyến đường", "tuyếnđường", "tuyenduong"],
     maPhieu: ["mã phiếu", "mãphiếu", "maphieu"],
     doiTuong: ["đối tượng", "đốitượng", "doituong"],
@@ -129,14 +155,12 @@ function parseRoutesToMap(buffer) {
     sonTbvsKg: ["sơn/tbvs", "sontbvs", "sơn", "tbvs"],
     tTai: ["t.tải", "t tải", "ttai", "tổng tải"],
     thanhTien: ["thành tiền", "thanhtien"],
-    // Các cột mới bổ sung:
     batDauGiaoHang: ["bắt đầu giao hàng", "batdau giaohang", "batdaugiaohang"],
     chuyen: ["chuyến", "chuyen"],
     ghiChu: ["ghi chú", "ghichu"],
     giaoNhan: ["giao nhận", "giaonhan"],
     htGiaoNhan: ["ht giao nhận", "htgiaonhan", "hình thức giao nhận"],
     ketThucGiaoHang: ["kết thúc giao hàng", "ketthuc giaohang", "ketthucgiaohang"],
-    kho: ["kho"],
     kmBatDauGiaoHang: ["km bắt đầu giao hàng", "kmbatdaugiaohang"],
     kmDuKien: ["km dự kiến", "kmdukien"],
     kmKetThucGiaoHang: ["km kết thúc giao hàng", "kmketthucgiaohang"],
@@ -149,21 +173,17 @@ function parseRoutesToMap(buffer) {
     thanhPho: ["thành phố", "thanhpho"]
   };
 
-  // Tiến hành dò tìm index tự động cho từng cột keyword
   headers.forEach((cell, index) => {
     if (!cell) return;
     const cellTxt = cell.toString().toLowerCase().trim();
     
     for (const [key, keywords] of Object.entries(colKeywords)) {
       if (keywords.some(kw => cellTxt === kw || cellTxt.includes(kw))) {
-        // Riêng với cột kho, tránh nhận nhầm cột "kho xuất"
-        if (key === "kho" && cellTxt.includes("xuất")) continue;
         colIdx[key] = index;
       }
     }
   });
 
-  // Mảng lưu vị trí Lat Long (vì file có nhiều cột Lat Long)
   let latIndexes = [];
   let longIndexes = [];
   headers.forEach((cell, index) => {
@@ -175,23 +195,25 @@ function parseRoutesToMap(buffer) {
     if (txt.includes("theo dõi") || txt.includes("theodoi")) colIdx["theoDoi"] = index;
   });
 
-  // Gán vị trí Lat Long mặc định hoặc theo tìm kiếm
   const lat1 = latIndexes[0], lon1 = longIndexes[0];
   const lat2 = latIndexes[1], lon2 = longIndexes[1];
 
-  // Hàm đọc text an toàn từ ô Excel
   const getTxt = (row, key, defaultVal = "") => {
     const idx = colIdx[key];
-    return (idx !== undefined && row[idx]) ? row[idx].toString().trim() : defaultVal;
+    return (idx !== undefined && row[idx] !== undefined) ? row[idx].toString().trim() : defaultVal;
   };
 
-  // Hàm đọc số an toàn từ ô Excel
+  const getDateVal = (row, key) => {
+    const idx = colIdx[key];
+    if (idx === undefined || row[idx] === undefined) return "";
+    return formatExcelDate(row[idx]);
+  };
+
   const getNum = (row, key) => {
     const idx = colIdx[key];
     return (idx !== undefined && row[idx]) ? (parseFloat(row[idx]) || 0) : 0;
   };
 
-  // Quét dữ liệu từ sau dòng tiêu đề
   for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
@@ -199,86 +221,69 @@ function parseRoutesToMap(buffer) {
     const maPhieu = getTxt(row, "maPhieu");
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
 
-    // 1. Gộp cặp Lat Long đầu tiên thành định vị
     let dinhVi = "";
     if (lat1 !== undefined && lon1 !== undefined && row[lat1] && row[lon1]) {
       dinhVi = `${row[lat1].toString().trim()},${row[lon1].toString().trim()}`;
     }
 
-    // 2. Gộp cặp Lat Long sau thành checkin
     let checkIn = "";
     if (lat2 !== undefined && lon2 !== undefined && row[lat2] && row[lon2]) {
       checkIn = `${row[lat2].toString().trim()},${row[lon2].toString().trim()}`;
     }
 
-    // 3. Đọc sai lệch Km và xử lý cột Theo dõi (>0.5km thì ghi Cần kiểm tra)
     const saiLechKm = getNum(row, "saiLechKm");
     let theoDoi = getTxt(row, "theoDoi");
     if (saiLechKm > 0.5) {
       theoDoi = "Cần kiểm tra";
     }
 
-    // 4. Tính toán Tự động Cột Tháng từ Ngày Xuất Kho
     let thang = "";
-    const ngayXuatKhoTxt = getTxt(row, "ngayXuatKho");
-    if (ngayXuatKhoTxt) {
-      // Tìm các ký tự số đứng sau dấu gạch chéo hoặc dấu gạch ngang đầu tiên (ví dụ: 25/06/2026 hoặc 2026-06-25)
-      const match = ngayXuatKhoTxt.match(/[\/\-](\d{2})[\/\-]/) || ngayXuatKhoTxt.match(/-(\d{2})-/);
-      if (match && match[1]) {
-        thang = `Tháng ${parseInt(match[1])}`;
-      } else {
-        // Fallback thủ công nếu chuỗi không khớp regex chuẩn
-        const parts = ngayXuatKhoTxt.split(/[\/\-\s]/);
-        if (parts.length > 1 && !isNaN(parts[1])) {
-          thang = `Tháng ${parseInt(parts[1])}`;
-        }
+    const ngayXuatKhoTxt = getDateVal(row, "ngayXuatKho");
+    if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
+      const parts = ngayXuatKhoTxt.split("-");
+      if (parts[1]) {
+        thang = `Tháng ${parseInt(parts[1])}`;
       }
     }
 
-    // Đóng gói mảng JSON đầy đủ mọi thuộc tính lên Firestore
     routeMap[maPhieu] = {
       phuongXa: getTxt(row, "phuongXa"),
-      khoXuat: getTxt(row, "khoXuat"),
+      khoXuat: getTxt(row, "khoXuat"), // 🟢 Chỉ đẩy trường này lên Firestore
       tuyenDuong: getTxt(row, "tuyenDuong"),
       maPhieu: maPhieu,
       doiTuong: getTxt(row, "doiTuong"),
-      ngayDatHang: getTxt(row, "ngayDatHang"),
-      ngayXuLy: getTxt(row, "ngayXuLy"),
-      ngayDuyet: getTxt(row, "ngayDuyet"),
-      ngayDuKien: getTxt(row, "ngayDuKien"),
       duyet: getTxt(row, "duyet"),
       status: getTxt(row, "status"),
       botTretKg: getNum(row, "botTretKg"),
       sonTbvsKg: getNum(row, "sonTbvsKg"),
       tTai: getNum(row, "tTai"),
       thanhTien: getNum(row, "thanhTien"),
-      
-      // Các trường nâng cao xử lý tọa độ và cảnh báo km lệch:
       dinhVi: dinhVi,
       checkIn: checkIn,
       saiLechKm: saiLechKm,
       theoDoi: theoDoi,
-
-      // Danh sách các cột mới bổ sung theo yêu cầu:
-      batDauGiaoHang: getTxt(row, "batDauGiaoHang"),
       chuyen: getTxt(row, "chuyen"),
       ghiChu: getTxt(row, "ghiChu"),
       giaoNhan: getTxt(row, "giaoNhan"),
       htGiaoNhan: getTxt(row, "htGiaoNhan"),
-      ketThucGiaoHang: getTxt(row, "ketThucGiaoHang"),
-      kho: getTxt(row, "kho"),
       kmBatDauGiaoHang: getNum(row, "kmBatDauGiaoHang"),
       kmDuKIen: getNum(row, "kmDuKien"), 
       kmKetThucGiaoHang: getNum(row, "kmKetThucGiaoHang"),
-      ngayGiao: getTxt(row, "ngayGiao"),
-      ngayxuatKho: ngayXuatKhoTxt,
       noiGiao: getTxt(row, "noiGiao"),
       phuongTien: getTxt(row, "phuongTien"),
       pxk: getTxt(row, "pxk"),
       taiXe: getTxt(row, "taiXe"),
       thanhPho: getTxt(row, "thanhPho"),
       thoiGianLamViec: getTxt(row, "thoiGianLamViec"),
-      thang: thang // Tự động bốc ra từ ngày xuất kho
+      thang: thang,
+      ngayDatHang: getDateVal(row, "ngayDatHang"),
+      ngayXuLy: getDateVal(row, "ngayXuLy"),
+      ngayDuyet: getDateVal(row, "ngayDuyet"),
+      ngayDuKien: getDateVal(row, "ngayDuKien"),
+      batDauGiaoHang: getDateVal(row, "batDauGiaoHang"),
+      ketThucGiaoHang: getDateVal(row, "ketThucGiaoHang"),
+      ngayGiao: getDateVal(row, "ngayGiao"),
+      ngayxuatKho: ngayXuatKhoTxt
     };
   }
   return routeMap;
@@ -350,7 +355,7 @@ async function mainSync() {
         await batch.commit();
       }
 
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${totalRecords} chứng từ với đầy đủ các cột thuộc tính vào collection 'TUYENDUONG' trên Firestore!`);
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${totalRecords} chứng từ lên Firestore!`);
     } else {
       console.log('⚠️ Không tìm thấy bản ghi hợp lệ nào trong file Tuyến đường.');
     }
