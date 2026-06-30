@@ -14,8 +14,8 @@ const ROUTE_FILE_LINK = "1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR";
 
 // 🔗 BỔ SUNG: ID các file danh mục dùng để dò tìm chéo (VLOOKUP)
 const PRODUCT_CATALOG_LINKS = {
-  "61": "ID_FILE_SAN_PHAM_INAX_CỦA_BẠN", // <-- Bạn điền ID thực tế file SanPhamInax vào đây nhé!
-  "69": "1CutRhZzBvhi24zUsGPvkXWXT3_ufUPmW"  // ID file SanPhamAs lấy từ link của bạn
+  "61": "1HSZMW142a1SeIUhaF8gTCFPGVipwDUPV", // <-- Bạn điền ID thực tế file SanPhamInax vào đây nhé!
+  "69": "1CutRhZzBvh24zUsGPvkXWXQT3_ufUPmW"  // ID file SanPhamAs lấy từ link của bạn
 };
 
 if (!admin.apps.length) {
