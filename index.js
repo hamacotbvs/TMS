@@ -1,79 +1,66 @@
 const { google } = require('googleapis');
 const admin = require('firebase-admin');
 const XLSX = require('xlsx');
-
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
 // 🔗 ĐÃ SỬA: Điền trực tiếp ID file mã hóa của Google Sheets (Không dùng link URL nữa)
 const INVENTORY_LINKS = {
   "41": "1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb",
   "61": "1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB",
   "69": "1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf"
 };
-
 const ROUTE_FILE_LINK = "1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR"; 
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    projectId: serviceAccount.project_id
-  });
-}
+if (!admin.apps.length) {admin.initializeApp({credential: admin.credential.cert(serviceAccount), projectId: serviceAccount.project_id});}
 const db = admin.firestore();
+function getDriveClient() {const auth = new google.auth.JWT(serviceAccount.client_email, null, serviceAccount.private_key, ['https://www.googleapis.com/auth/drive.readonly']); return google.drive({ version: 'v3', auth }); }
 
-function getDriveClient() {
-  const auth = new google.auth.JWT(
-    serviceAccount.client_email,
-    null,
-    serviceAccount.private_key,
-    ['https://www.googleapis.com/auth/drive.readonly']
-  );
-  return google.drive({ version: 'v3', auth });
-}
-
-async function downloadFileBuffer(drive, fileId) {
-  return await drive.files.get(
-    { fileId, alt: 'media' },
-    { responseType: 'arraybuffer' }
-  ).then(res => Buffer.from(res.data));
-}
-
+async function downloadFileBuffer(drive, fileId) {return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));}
 // 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN ĐẸP (DD/MM/YYYY HH:mm:ss)
 function formatExcelDate(cellValue) {
   if (cellValue === undefined || cellValue === null || cellValue === "") return "";
-  
+
   const pad = (n) => String(n).padStart(2, '0');
 
+  // 1. Nếu đã là đối tượng Date chuẩn
   if (cellValue instanceof Date) {
-    const d = cellValue;
-    const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const d = cellValue; 
+    const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`; 
+    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; 
     return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;
   }
 
-  const strVal = cellValue.toString().trim();
-  if (strVal.includes('/') || strVal.includes('-')) return strVal;
+  // 2. Chuyển thành chuỗi để kiểm tra
+  const strVal = cellValue.toString().trim(); 
+  
+  // ĐÃ SỬA: Nếu chuỗi đã chứa định dạng ngày tháng sẵn (ví dụ: "29/06/2026 10:33:03")
+  // thì TRẢ VỀ LUÔN, tuyệt đối không cho chạy xuống lệnh parseFloat ở dưới nữa.
+  if (strVal.includes('/') || strVal.includes('-')) return strVal; 
 
-  const numVal = parseFloat(cellValue);
-  if (!isNaN(numVal) && numVal > 30000) {
-    try {
-      const dateObj = XLSX.SSF.parse_date_code(numVal);
-      const y = dateObj.y;
-      const m = pad(dateObj.m);
-      const d = pad(dateObj.d);
-      const hh = pad(dateObj.H);
-      const mm = pad(dateObj.M);
-      const ss = pad(dateObj.S);
-      
-      const dateStr = `${d}/${m}/${y}`;
-      if (dateObj.H === 0 && dateObj.M === 0 && dateObj.S === 0) {
-        return dateStr;
+  // 3. Nếu là số Serial thuần túy của Excel
+  // ĐÃ SỬA: Chỉ xử lý nếu chuỗi toàn chữ số (không chứa khoảng trắng hay ký tự lạ của giờ)
+  if (!isNaN(strVal) && !isNaN(parseFloat(strVal))) {
+    const numVal = parseFloat(strVal);
+    if (numVal > 30000) {
+      try {
+        const dateObj = XLSX.SSF.parse_date_code(numVal); 
+        const y = dateObj.y; 
+        const m = pad(dateObj.m); 
+        const d = pad(dateObj.d); 
+        const hh = pad(dateObj.H); 
+        const mm = pad(dateObj.M);
+        const ss = pad(dateObj.S);
+        
+        const dateStr = `${d}/${m}/${y}`;
+        if (dateObj.H === 0 && dateObj.M === 0 && dateObj.S === 0) {
+          return dateStr;
+        }
+        return `${dateStr} ${hh}:${mm}:${ss}`;
+      } catch (e) {
+        return strVal;
       }
-      return `${dateStr} ${hh}:${mm}:${ss}`;
-    } catch (e) {
-      return strVal;
     }
-  }
+  } 
+  
   return strVal;
 }
 
@@ -89,24 +76,16 @@ function parseInventoryToMap(buffer, khoName) {
   let startRowIndex = 9; 
   for (let i = 0; i < Math.min(20, jsonData.length); i++) {
     const rowStr = JSON.stringify(jsonData[i]);
-    if (rowStr.includes("Mã hàng") || rowStr.includes("Tên hàng")) {
-      startRowIndex = i + 1; 
-      break;
-    }
-  }
+    if (rowStr.includes("Mã hàng") || rowStr.includes("Tên hàng")) {startRowIndex = i + 1; break;} }
   
   for (let i = startRowIndex; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 3) continue;
-    
     const tenHang = row[2] ? row[2].toString().trim() : "";
-    if (!tenHang || tenHang === "" || tenHang === "Tên hàng") continue;
-
+    if (!tenHang || tenHang === "" || tenHang === "Tên hàng") continue
     const maHang = row[1] ? row[1].toString().trim() : ""; 
     if (!maHang || maHang === "" || maHang === "Mã hàng" || maHang.includes("CÔNG TY")) continue;
-
     const nsxTxt = formatExcelDate(row[3]);
-    
     let thang = "";
     let nam = "";
     if (nsxTxt && nsxTxt.includes("/")) {
@@ -119,7 +98,7 @@ function parseInventoryToMap(buffer, khoName) {
       if (parts[0] && parts[0].length === 4) nam = parts[0]; 
     }
 
-    dataMap[maHang] = {
+    dataMap[tenHang] = {
       category: row[0] ? row[0].toString().trim() : "",    
       maHang: maHang,
       tenHang: tenHang,     
@@ -135,8 +114,7 @@ function parseInventoryToMap(buffer, khoName) {
       cuoiKy_sl: parseFloat(row[10]) || 0,                 
       cuoiKy_tl: parseFloat(row[11]) || 0                  
     };
-  }
-  return dataMap;
+  }return dataMap;
 }
 
 // ----------------------------------------------------
@@ -147,9 +125,7 @@ function parseRoutesToMap(buffer) {
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
   const routeMap = {};
-  
   console.log(`📊 [Tuyến Đường] Tổng số dòng đọc được trong file: ${jsonData.length}`);
-  
   let headerRowIdx = 7; 
   for (let i = 0; i < Math.min(25, jsonData.length); i++) {
     const rowStr = JSON.stringify(jsonData[i]);
@@ -158,10 +134,8 @@ function parseRoutesToMap(buffer) {
       break;
     }
   }
-  
   const headers = jsonData[headerRowIdx] || [];
   const colIdx = {};
-  
   const colKeywords = {
     phuongXa: ["phường/xã", "phương/xã", "phuong/xa", "phuong xa"],
     khoXuat: ["kho xuất", "khoxuat"],
@@ -195,11 +169,9 @@ function parseRoutesToMap(buffer) {
     taiXe: ["tài xế", "taixe"],
     thanhPho: ["thành phố", "thanhpho"]
   };
-
   headers.forEach((cell, index) => {
     if (!cell) return;
     const cellTxt = cell.toString().replace(/[\r\n]+/g, ' ').toLowerCase().trim().replace(/\s+/g, ' ');
-    
     for (const [key, keywords] of Object.entries(colKeywords)) {
       if (keywords.some(kw => cellTxt === kw || cellTxt.includes(kw))) {
         colIdx[key] = index;
@@ -207,8 +179,7 @@ function parseRoutesToMap(buffer) {
     }
   });
 
-  let latIndexes = [];
-  let longIndexes = [];
+  let latIndexes = []; let longIndexes = [];
   headers.forEach((cell, index) => {
     if (!cell) return;
     const txt = cell.toString().toLowerCase().trim();
@@ -217,7 +188,6 @@ function parseRoutesToMap(buffer) {
     if (txt.includes("sai lệch") || txt.includes("sailech") || txt.includes("km lệch")) colIdx["saiLechKm"] = index;
     if (txt.includes("theo dõi") || txt.includes("theodoi")) colIdx["theoDoi"] = index;
   });
-
   const lat1 = latIndexes[0], lon1 = longIndexes[0];
   const lat2 = latIndexes[1], lon2 = longIndexes[1];
 
@@ -225,46 +195,37 @@ function parseRoutesToMap(buffer) {
     const idx = colIdx[key];
     return (idx !== undefined && row[idx] !== undefined) ? row[idx].toString().trim() : defaultVal;
   };
-
   const getDateVal = (row, key) => {
     const idx = colIdx[key];
     if (idx === undefined || row[idx] === undefined) return "";
     return formatExcelDate(row[idx]);
   };
-
   const getNum = (row, key) => {
     const idx = colIdx[key];
     return (idx !== undefined && row[idx]) ? (parseFloat(row[idx]) || 0) : 0;
   };
-
   for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
-
     const khoXuatVal = getTxt(row, "khoXuat");
     if (khoXuatVal !== "41" && khoXuatVal !== "61" && khoXuatVal !== "69") {
       continue; 
     }
-
     const maPhieu = getTxt(row, "maPhieu");
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
-
     let dinhVi = "";
     if (lat1 !== undefined && lon1 !== undefined && row[lat1] && row[lon1]) {
       dinhVi = `${row[lat1].toString().trim()},${row[lon1].toString().trim()}`;
     }
-
     let checkIn = "";
     if (lat2 !== undefined && lon2 !== undefined && row[lat2] && row[lon2]) {
       checkIn = `${row[lat2].toString().trim()},${row[lon2].toString().trim()}`;
     }
-
     const saiLechKm = getNum(row, "saiLechKm");
     let theoDoi = getTxt(row, "theoDoi");
     if (saiLechKm > 0.5) {
       theoDoi = "Cần kiểm tra";
     }
-
     let thang = "";
     const ngayXuatKhoTxt = getDateVal(row, "ngayXuatKho");
     if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
