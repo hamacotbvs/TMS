@@ -156,13 +156,13 @@ function parseRoutesToMap(buffer) {
 
     // Lấy tọa độ Định vị (Cột AJ, AK cũ hoặc dựa theo bộ cột Lat/Long 1)
     let dinhVi = "";
-    if (row[25] && row[26]) dinhVi = `${row[25].toString().trim()},${row[26].toString().trim()}`; // Cột Z, AA
+    if (row[24] && row[25]) dinhVi = `${row[24].toString().trim()},${row[25].toString().trim()}`; // Cột Y, Z
 
     // Lấy tọa độ CheckIn (Bộ Lat/Long số 2)
     let checkIn = "";
-    if (row[35] && row[36]) checkIn = `${row[35].toString().trim()},${row[36].toString().trim()}`; // Cột AJ, AK
+    if (row[34] && row[35]) checkIn = `${row[34].toString().trim()},${row[35].toString().trim()}`; // Cột AI, AJ
 
-    const saiLechKm = getNumByIdx(row, 37); // Giả định cột sai lệch nằm sau
+    const saiLechKm = getNumByIdx(row, 36); // Giả định cột sai lệch nằm sau
     let theoDoi = "";
     if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
 
@@ -203,7 +203,7 @@ function parseRoutesToMap(buffer) {
       taiXe:            getTxtByIdx(row, 21),  // Cột V
       chuyen:           getTxtByIdx(row, 22),  // Cột W
       giaoNhan:         getTxtByIdx(row, 23),  // Cột X
-      pxk:              getTxtByIdx(row, 24),  // Cột Y
+      pxk:              getTxtByIdx(row, 26),  // Cột AA
       dinhVi:           dinhVi,
       ngayxuatKho:      ngayXuatKhoTxt,        // Cột AB (Index 27)
       thoiGianLamViec:  getTxtByIdx(row, 28),  // Cột AC
@@ -211,7 +211,7 @@ function parseRoutesToMap(buffer) {
       batDauGiaoHang:   getDateByIdx(row, 30), // Cột AE (Index 30)
       ketThucGiaoHang:  getDateByIdx(row, 31), // Cột AF (Index 31)
       kmBatDauGiaoHang: getNumByIdx(row, 32),  // Cột AG
-      kmKetThucGiaoHang:getNumByIdx(row, 34),  // Cột AI
+      kmKetThucGiaoHang:getNumByIdx(row, 33),  // Cột AI
       checkIn:          checkIn,
       saiLechKm:        saiLechKm,
       theoDoi:          theoDoi,
