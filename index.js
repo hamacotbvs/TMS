@@ -269,7 +269,7 @@ function parseRoutesToMap(buffer) {
       thoiGianLamViec: getTxt(row, "thoiGianLamViec"),
       thang: thang,
       ngayDatHang: getDateVal(row, "ngayDatHang"),
-      ngayXuLy: gettXT(row, "ngayXuLy"),
+      ngayXuLy: getTxt(row, "ngayXuLy"),
       ngayDuyet: getDateVal(row, "ngayDuyet"),
       ngayDuKien: getDateVal(row, "ngayDuKien"),
       ngayGiao: getDateVal(row, "ngayGiao"),
