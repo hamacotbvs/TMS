@@ -4,21 +4,14 @@ const XLSX = require('xlsx');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-// 🔗 ĐƯỜNG LINK CÁC FILE EXCEL CỦA BẠN
+// 🔗 ĐÃ SỬA: Điền trực tiếp ID file mã hóa của Google Sheets (Không dùng link URL nữa)
 const INVENTORY_LINKS = {
-  "41": "https://docs.google.com/spreadsheets/d/1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb/edit",
-  "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB/edit",
-  "69": "https://docs.google.com/spreadsheets/d/1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf/edit"
+  "41": "1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb",
+  "61": "1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB",
+  "69": "1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf"
 };
 
-const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR/edit"; 
-
-function extractFileId(input) {
-  if (input.includes("spreadsheets/d/")) {
-    return input.split("spreadsheets/d/")[1].split("/")[0];
-  }
-  return input.trim();
-}
+const ROUTE_FILE_LINK = "1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR"; 
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -51,7 +44,6 @@ function formatExcelDate(cellValue) {
   
   const pad = (n) => String(n).padStart(2, '0');
 
-  // 1. Nếu cellValue là đối tượng Date nguyên bản
   if (cellValue instanceof Date) {
     const d = cellValue;
     const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
@@ -60,11 +52,8 @@ function formatExcelDate(cellValue) {
   }
 
   const strVal = cellValue.toString().trim();
-  
-  // 2. Nếu đã là chuỗi định dạng sẵn chứa gạch chéo hoặc gạch ngang
   if (strVal.includes('/') || strVal.includes('-')) return strVal;
 
-  // 3. Nếu là dạng số Serial của Excel (ví dụ: 46025.34053)
   const numVal = parseFloat(cellValue);
   if (!isNaN(numVal) && numVal > 30000) {
     try {
@@ -116,20 +105,18 @@ function parseInventoryToMap(buffer, khoName) {
     const maHang = row[1] ? row[1].toString().trim() : ""; 
     if (!maHang || maHang === "" || maHang === "Mã hàng" || maHang.includes("CÔNG TY")) continue;
 
-    // Lấy chuỗi NSX đã được format chuẩn ngày tháng
     const nsxTxt = formatExcelDate(row[3]);
     
-    // Tách lấy Tháng và Năm dựa trên chuỗi NSX
     let thang = "";
     let nam = "";
     if (nsxTxt && nsxTxt.includes("/")) {
       const parts = nsxTxt.split("/");
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
-      if (parts[2]) nam = parts[2].split(" ")[0]; // Cắt lấy năm nếu có kèm giờ phía sau
+      if (parts[2]) nam = parts[2].split(" ")[0]; 
     } else if (nsxTxt && nsxTxt.includes("-")) {
       const parts = nsxTxt.split("-");
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
-      if (parts[0] && parts[0].length === 4) nam = parts[0]; // Dạng YYYY-MM-DD
+      if (parts[0] && parts[0].length === 4) nam = parts[0]; 
     }
 
     dataMap[maHang] = {
@@ -137,8 +124,8 @@ function parseInventoryToMap(buffer, khoName) {
       maHang: maHang,
       tenHang: tenHang,     
       nsx: nsxTxt,
-      thang: thang, // 🌟 ĐÃ THÊM: Cột tháng trích từ NSX
-      nam: nam,     // 🌟 ĐÃ THÊM: Cột năm trích từ NSX
+      thang: thang, 
+      nam: nam,     
       dauKy_sl: parseFloat(row[4]) || 0,                   
       dauKy_tl: parseFloat(row[5]) || 0,                   
       nhap_sl: parseFloat(row[6]) || 0,                    
@@ -345,9 +332,9 @@ async function mainSync() {
   let finalInventoryData = {};
   let invSuccessCount = 0;
 
-  for (const [khoName, rawInput] of Object.entries(INVENTORY_LINKS)) {
+  for (const [khoName, fileId] of Object.entries(INVENTORY_LINKS)) {
     try {
-      const fileId = extractFileId(rawInput);
+      // Gọi trực tiếp fileId từ cấu hình sạch ở trên
       const buffer = await downloadFileBuffer(drive, fileId);
       const dataObject = parseInventoryToMap(buffer, khoName);
       
@@ -371,10 +358,9 @@ async function mainSync() {
 
   console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường...');
   try {
-    const routeFileId = extractFileId(ROUTE_FILE_LINK);
-    console.log(`📦 Đang tải file Tuyến Đường từ Drive (ID: ${routeFileId})...`);
+    console.log(`📦 Đang tải file Tuyến Đường từ Drive (ID: ${ROUTE_FILE_LINK})...`);
     
-    const routeBuffer = await downloadFileBuffer(drive, routeFileId);
+    const routeBuffer = await downloadFileBuffer(drive, ROUTE_FILE_LINK);
     const routeDataMap = parseRoutesToMap(routeBuffer);
     const totalRecords = Object.keys(routeDataMap).length;
 
