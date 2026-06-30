@@ -21,32 +21,30 @@ function formatExcelDate(cellValue) {
 
   const pad = (n) => String(n).padStart(2, '0');
 
-  // 1. Nếu đã là đối tượng Date chuẩn
+  // Khi cellDates: true, logic này sẽ xử lý chính xác 100% dữ liệu ngày giờ từ Excel
   if (cellValue instanceof Date) {
-    const d = cellValue; 
-    const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`; 
-    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; 
+    const d = cellValue;
+    
+    // Nếu ngày bị lệch múi giờ khi đọc (đôi khi thư viện đọc dạng UTC), 
+    // bạn có thể dùng các hàm Get chuẩn của JS:
+    const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    
     return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;
   }
 
-  // 2. Chuyển thành chuỗi để kiểm tra
-  const strVal = cellValue.toString().trim(); 
-  
-  // ĐÃ SỬA: Nếu chuỗi đã chứa định dạng ngày tháng sẵn (ví dụ: "29/06/2026 10:33:03")
-  // thì TRẢ VỀ LUÔN, tuyệt đối không cho chạy xuống lệnh parseFloat ở dưới nữa.
-  if (strVal.includes('/') || strVal.includes('-')) return strVal; 
+  const strVal = cellValue.toString().trim();
+  if (strVal.includes('/') || strVal.includes('-')) return strVal;
 
-  // 3. Nếu là số Serial thuần túy của Excel
-  // ĐÃ SỬA: Chỉ xử lý nếu chuỗi toàn chữ số (không chứa khoảng trắng hay ký tự lạ của giờ)
   if (!isNaN(strVal) && !isNaN(parseFloat(strVal))) {
     const numVal = parseFloat(strVal);
     if (numVal > 30000) {
       try {
-        const dateObj = XLSX.SSF.parse_date_code(numVal); 
-        const y = dateObj.y; 
-        const m = pad(dateObj.m); 
-        const d = pad(dateObj.d); 
-        const hh = pad(dateObj.H); 
+        const dateObj = XLSX.SSF.parse_date_code(numVal);
+        const y = dateObj.y;
+        const m = pad(dateObj.m);
+        const d = pad(dateObj.d);
+        const hh = pad(dateObj.H);
         const mm = pad(dateObj.M);
         const ss = pad(dateObj.S);
         
@@ -59,8 +57,7 @@ function formatExcelDate(cellValue) {
         return strVal;
       }
     }
-  } 
-  
+  }
   return strVal;
 }
 
@@ -121,7 +118,8 @@ function parseInventoryToMap(buffer, khoName) {
 // 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG
 // ----------------------------------------------------
 function parseRoutesToMap(buffer) {
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false });
+  // ĐÃ SỬA: Đổi cellDates thành true để thư viện tự chuyển đổi ngày giờ chuẩn
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
   const routeMap = {};
