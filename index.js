@@ -154,4 +154,244 @@ function parseRoutesToMap(buffer) {
     }
   }
   
-  const headers =
+  const headers = jsonData[headerRowIdx] || [];
+  const colIdx = {};
+  
+  const colKeywords = {
+    phuongXa: ["phường/xã", "phương/xã", "phuong/xa", "phuong xa"],
+    khoXuat: ["kho xuất", "khoxuat"],
+    tuyenDuong: ["tuyến đường", "tuyếnđường", "tuyenduong"],
+    maPhieu: ["mã phiếu", "mãphiếu", "maphieu"],
+    doiTuong: ["đối tượng", "đốitượng", "doituong"],
+    ngayDatHang: ["ngày đặt hàng", "ngaydathang"],
+    ngayXuLy: ["ngày xử lý", "ngayxuly"],
+    ngayDuyet: ["ngày duyệt", "ngayduyet"],
+    ngayDuKien: ["ngày dự kiến", "ngaydukien"],
+    duyet: ["duyệt", "duyet"],
+    status: ["status", "trạng thái", "trangthai"],
+    botTretKg: ["bột trét", "bottret"],
+    sonTbvsKg: ["sơn/tbvs", "sontbvs", "sơn", "tbvs"],
+    tTai: ["t.tải", "t tải", "ttai", "tổng tải"],
+    thanhTien: ["thành tiền", "thanhtien"],
+    batDauGiaoHang: ["bắt đầu giao hàng", "bắt đầugiaohàng", "batdau giao hang", "batdaugiaohang", "bắt đầu", "bắt đầu giao"],
+    chuyen: ["chuyến", "chuyen"],
+    ghiChu: ["ghi chú", "ghichu"],
+    giaoNhan: ["giao nhận", "giaonhan"],
+    htGiaoNhan: ["ht giao nhận", "htgiaonhan", "hình thức giao nhận"],
+    ketThucGiaoHang: ["kết thúc giao hàng", "kết thúcgiaohàng", "ketthuc giaohang", "ketthucgiaohang", "kết thúc", "kết thúc giao"],
+    kmBatDauGiaoHang: ["km bắt đầu giao hàng", "kmbatdaugiaohang"],
+    kmDuKien: ["km dự kiến", "kmdukien"],
+    kmKetThucGiaoHang: ["km kết thúc giao hàng", "kmketthucgiaohang"],
+    ngayGiao: ["ngày giao", "ngaygiao"],
+    ngayXuatKho: ["ngày xuất kho", "ngayxuatkho", "ngày xuất"],
+    noiGiao: ["nơi giao", "noigiao"],
+    phuongTien: ["phương tiện", "phuongtien"],
+    pxk: ["pxk"],
+    taiXe: ["tài xế", "taixe"],
+    thanhPho: ["thành phố", "thanhpho"]
+  };
+
+  headers.forEach((cell, index) => {
+    if (!cell) return;
+    // Chuẩn hóa loại bỏ các ký tự xuống dòng ẩn \n \r do Alt+Enter trong Excel
+    const cellTxt = cell.toString().replace(/[\r\n]+/g, ' ').toLowerCase().trim().replace(/\s+/g, ' ');
+    
+    for (const [key, keywords] of Object.entries(colKeywords)) {
+      if (keywords.some(kw => cellTxt === kw || cellTxt.includes(kw))) {
+        colIdx[key] = index;
+      }
+    }
+  });
+
+  let latIndexes = [];
+  let longIndexes = [];
+  headers.forEach((cell, index) => {
+    if (!cell) return;
+    const txt = cell.toString().toLowerCase().trim();
+    if (txt.includes("lat") || txt === "vĩ độ") latIndexes.push(index);
+    if (txt.includes("long") || txt === "kinh độ") longIndexes.push(index);
+    if (txt.includes("sai lệch") || txt.includes("sailech") || txt.includes("km lệch")) colIdx["saiLechKm"] = index;
+    if (txt.includes("theo dõi") || txt.includes("theodoi")) colIdx["theoDoi"] = index;
+  });
+
+  const lat1 = latIndexes[0], lon1 = longIndexes[0];
+  const lat2 = latIndexes[1], lon2 = longIndexes[1];
+
+  const getTxt = (row, key, defaultVal = "") => {
+    const idx = colIdx[key];
+    return (idx !== undefined && row[idx] !== undefined) ? row[idx].toString().trim() : defaultVal;
+  };
+
+  const getDateVal = (row, key) => {
+    const idx = colIdx[key];
+    if (idx === undefined || row[idx] === undefined) return "";
+    return formatExcelDate(row[idx]);
+  };
+
+  const getNum = (row, key) => {
+    const idx = colIdx[key];
+    return (idx !== undefined && row[idx]) ? (parseFloat(row[idx]) || 0) : 0;
+  };
+
+  for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
+    const row = jsonData[i];
+    if (!row || row.length < 5) continue;
+
+    const khoXuatVal = getTxt(row, "khoXuat");
+    if (khoXuatVal !== "41" && khoXuatVal !== "61" && khoXuatVal !== "69") {
+      continue; 
+    }
+
+    const maPhieu = getTxt(row, "maPhieu");
+    if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
+
+    let dinhVi = "";
+    if (lat1 !== undefined && lon1 !== undefined && row[lat1] && row[lon1]) {
+      dinhVi = `${row[lat1].toString().trim()},${row[lon1].toString().trim()}`;
+    }
+
+    let checkIn = "";
+    if (lat2 !== undefined && lon2 !== undefined && row[lat2] && row[lon2]) {
+      checkIn = `${row[lat2].toString().trim()},${row[lon2].toString().trim()}`;
+    }
+
+    const saiLechKm = getNum(row, "saiLechKm");
+    let theoDoi = getTxt(row, "theoDoi");
+    if (saiLechKm > 0.5) {
+      theoDoi = "Cần kiểm tra";
+    }
+
+    let thang = "";
+    const ngayXuatKhoTxt = getDateVal(row, "ngayXuatKho");
+    if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
+      const parts = ngayXuatKhoTxt.split("/");
+      if (parts[1]) {
+        thang = `Tháng ${parseInt(parts[1])}`;
+      }
+    } else if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
+      const parts = ngayXuatKhoTxt.split("-");
+      if (parts[1]) {
+        thang = `Tháng ${parseInt(parts[1])}`;
+      }
+    }
+
+    routeMap[maPhieu] = {
+      phuongXa: getTxt(row, "phuongXa"),
+      khoXuat: khoXuatVal, 
+      tuyenDuong: getTxt(row, "tuyenDuong"),
+      maPhieu: maPhieu,
+      doiTuong: getTxt(row, "doiTuong"),
+      duyet: getTxt(row, "duyet"),
+      status: getTxt(row, "status"),
+      botTretKg: getNum(row, "botTretKg"),
+      sonTbvsKg: getNum(row, "sonTbvsKg"),
+      tTai: getNum(row, "tTai"),
+      thanhTien: getNum(row, "thanhTien"),
+      dinhVi: dinhVi,
+      checkIn: checkIn,
+      saiLechKm: saiLechKm,
+      theoDoi: theoDoi,
+      chuyen: getTxt(row, "chuyen"),
+      ghiChu: getTxt(row, "ghiChu"),
+      giaoNhan: getTxt(row, "giaoNhan"),
+      htGiaoNhan: getTxt(row, "htGiaoNhan"),
+      kmBatDauGiaoHang: getNum(row, "kmBatDauGiaoHang"),
+      kmDuKIen: getNum(row, "kmDuKien"), 
+      kmKetThucGiaoHang: getNum(row, "kmKetThucGiaoHang"),
+      noiGiao: getTxt(row, "noiGiao"),
+      phuongTien: getTxt(row, "phuongTien"),
+      pxk: getTxt(row, "pxk"),
+      taiXe: getTxt(row, "taiXe"),
+      thanhPho: getTxt(row, "thanhPho"),
+      thoiGianLamViec: getTxt(row, "thoiGianLamViec"),
+      thang: thang,
+      ngayDatHang: getDateVal(row, "ngayDatHang"),
+      ngayXuLy: getDateVal(row, "ngayXuLy"),
+      ngayDuyet: getDateVal(row, "ngayDuyet"),
+      ngayDuKien: getDateVal(row, "ngayDuKien"),
+      ngayGiao: getDateVal(row, "ngayGiao"),
+      ngayxuatKho: ngayXuatKhoTxt,
+      batDauGiaoHang: getDateVal(row, "batDauGiaoHang"),
+      ketThucGiaoHang: getDateVal(row, "ketThucGiaoHang")
+    };
+  }
+  return routeMap;
+}
+
+// ----------------------------------------------------
+// 3. TIẾN TRÌNH ĐỒNG BỘ CHÍNH
+// ----------------------------------------------------
+async function mainSync() {
+  const drive = getDriveClient();
+
+  console.log('🚀 1. Bắt đầu tiến trình cập nhật Tồn Kho...');
+  let finalInventoryData = {};
+  let invSuccessCount = 0;
+
+  for (const [khoName, rawInput] of Object.entries(INVENTORY_LINKS)) {
+    try {
+      const fileId = extractFileId(rawInput);
+      const buffer = await downloadFileBuffer(drive, fileId);
+      const dataObject = parseInventoryToMap(buffer, khoName);
+      
+      if (Object.keys(dataObject).length > 0) {
+        finalInventoryData[`Kho_${khoName}`] = dataObject;
+        invSuccessCount++;
+        console.log(`✅ Thành công Kho ${khoName}: Đã đọc ${Object.keys(dataObject).length} mặt hàng.`);
+      }
+    } catch (err) {
+      console.error(`❌ Lỗi kết nối Kho ${khoName}:`, err.message);
+    }
+  }
+
+  if (invSuccessCount > 0) {
+    finalInventoryData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
+    await db.collection('TONKHO').doc('KHO').set(finalInventoryData, { merge: true });
+    console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho lên Firestore (TONKHO/KHO) thành công!`);
+  }
+
+  console.log('\n--------------------------------------------------\n');
+
+  console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường...');
+  try {
+    const routeFileId = extractFileId(ROUTE_FILE_LINK);
+    console.log(`📦 Đang tải file Tuyến Đường từ Drive (ID: ${routeFileId})...`);
+    
+    const routeBuffer = await downloadFileBuffer(drive, routeFileId);
+    const routeDataMap = parseRoutesToMap(routeBuffer);
+    const totalRecords = Object.keys(routeDataMap).length;
+
+    if (totalRecords > 0) {
+      console.log(`📡 Đang đẩy dữ liệu tuần tự ${totalRecords} mã phiếu vào collection 'TUYENDUONG'...`);
+      
+      let batch = db.batch();
+      let count = 0;
+
+      for (const [maPhieu, data] of Object.entries(routeDataMap)) {
+        const docRef = db.collection('TUYENDUONG').doc(maPhieu);
+        batch.set(docRef, data, { merge: true });
+        count++;
+
+        if (count % 400 === 0) {
+          await batch.commit();
+          batch = db.batch();
+        }
+      }
+      
+      if (count % 400 !== 0) {
+        await batch.commit();
+      }
+
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${totalRecords} chứng từ lên Firestore!`);
+    } else {
+      console.log('⚠️ Không tìm thấy bản ghi hợp lệ nào thuộc các kho 41, 61, 69 trong file Tuyến đường.');
+    }
+  } catch (err) {
+    console.error(`❌ Lỗi đồng bộ Tuyến Đường:`, err.message);
+  }
+}
+
+mainSync().catch(err => {
+  console.error('❌ Lỗi hệ thống nghiêm trọng:', err);
+  process.exit(1);
+});
