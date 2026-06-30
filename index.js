@@ -274,7 +274,7 @@ function parseRoutesToMap(buffer) {
       ngayDuKien: getDateVal(row, "ngayDuKien"),
       ngayGiao: getDateVal(row, "ngayGiao"),
       ngayxuatKho: ngayXuatKhoTxt,
-      batDauGiaoHang: ggetTxt(row, "batDauGiaoHang"),
+      batDauGiaoHang: getTxt(row, "batDauGiaoHang"),
       ketThucGiaoHang: getTxt(row, "ketThucGiaoHang")
     };
   }
