@@ -201,7 +201,7 @@ function parseRoutesToMap(buffer) {
       ngayGiao:         getDateByIdx(row, 19), // Cột T
       phuongTien:       getTxtByIdx(row, 20),  // Cột U
       taiXe:            getTxtByIdx(row, 21),  // Cột V
-      chuyen:           getTxtByIdx(row, 22),  // Cột W
+      chuyen:           getNumByIdx(row, 22),  // Cột W
       giaoNhan:         getTxtByIdx(row, 23),  // Cột X
       pxk:              getTxtByIdx(row, 26),  // Cột AA
       dinhVi:           dinhVi,
