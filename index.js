@@ -155,15 +155,15 @@ function parseRoutesToMap(buffer) {
     sonTbvsKg: ["sơn/tbvs", "sontbvs"], // Bỏ chữ "sơn" rời rạc
     tTai: ["t.tải", "t tải", "ttai", "tổng tải"],
     thanhTien: ["thành tiền", "thanhtien"],
-    batDauGiaoHang: ["bắt đầu giao hàng", "bắt đầugiaohàng", "batdau giao hang", "batdaugiaohang"], // Bỏ chữ "bắt đầu"
+    batDauGiaoHang: ["bắt đầu giao hàng"], // Bỏ chữ "bắt đầu"
     chuyen: ["chuyến", "chuyen"],
     ghiChu: ["ghi chú", "ghichu"],
     giaoNhan: ["giao nhận", "giaonhan"],
     htGiaoNhan: ["ht giao nhận", "htgiaonhan", "hình thức giao nhận"],
-    ketThucGiaoHang: ["kết thúc giao hàng", "kết thúcgiaohàng", "ketthuc giaohang", "ketthucgiaohang"], // Bỏ chữ "kết thúc"
-    kmBatDauGiaoHang: ["km bắt đầu giao hàng", "kmbatdaugiaohang", "km bắt đầu"],
+    ketThucGiaoHang: ["kết thúc giao hàng"], // Bỏ chữ "kết thúc"
+    kmBatDauGiaoHang: ["km bắt đầu giao hàng"],
     kmDuKien: ["km dự kiến", "kmdukien"],
-    kmKetThucGiaoHang: ["km kết thúc giao hàng", "kmketthucgiaohang", "km kết thúc"],
+    kmKetThucGiaoHang: ["km kết thúc giao hàng",],
     ngayGiao: ["ngày giao", "ngaygiao"],
     ngayXuatKho: ["ngày xuất kho", "ngayxuatkho"],
     noiGiao: ["nơi giao", "noigiao"],
