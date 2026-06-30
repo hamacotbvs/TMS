@@ -118,7 +118,7 @@ function parseInventoryToMap(buffer, khoName) {
 // 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG
 // ----------------------------------------------------
 function parseRoutesToMap(buffer) {
-  // ĐỂ cellDates: true là chính xác, giúp xử lý các ô ngày giờ có cả phút giây
+  // GIỮ NGUYÊN cellDates: true để thư viện tự chuyển đổi ô ngày giờ sang Object Date của JS
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
@@ -126,6 +126,7 @@ function parseRoutesToMap(buffer) {
   
   console.log(`📊 [Tuyến Đường] Tổng số dòng đọc được trong file: ${jsonData.length}`);
   
+  // Xác định dòng tiêu đề để bắt đầu lấy dữ liệu từ dòng kế tiếp
   let headerRowIdx = 7; 
   for (let i = 0; i < Math.min(25, jsonData.length); i++) {
     const rowStr = JSON.stringify(jsonData[i]);
@@ -134,114 +135,40 @@ function parseRoutesToMap(buffer) {
       break;
     }
   }
-  
-  const headers = jsonData[headerRowIdx] || [];
-  const colIdx = {};
-  
-  // ĐÃ LỌC SẠCH: Loại bỏ các từ khóa ngắn gây trùng lặp cột (như "bắt đầu", "kết thúc")
-  const colKeywords = {
-    phuongXa: ["phường/xã", "phương/xã", "phuong/xa", "phuong xa"],
-    khoXuat: ["kho xuất", "khoxuat"],
-    tuyenDuong: ["tuyến đường", "tuyếnđường", "tuyenduong"],
-    maPhieu: ["mã phiếu", "mãphiếu", "maphieu"],
-    doiTuong: ["đối tượng", "đốitượng", "doituong"],
-    ngayDatHang: ["ngày đặt hàng", "ngaydathang"],
-    ngayXuLy: ["ngày xử lý", "ngayxuly"],
-    ngayDuyet: ["ngày duyệt", "ngayduyet"],
-    ngayDuKien: ["ngày dự kiến", "ngaydukien"],
-    duyet: ["duyệt", "duyet"],
-    status: ["status", "trạng thái", "trangthai"],
-    botTretKg: ["bột trét", "bottret"],
-    sonTbvsKg: ["sơn/tbvs", "sontbvs"], // Bỏ chữ "sơn" rời rạc
-    tTai: ["t.tải", "t tải", "ttai", "tổng tải"],
-    thanhTien: ["thành tiền", "thanhtien"],
-    batDauGiaoHang: ["bắt đầu giao hàng"], // Bỏ chữ "bắt đầu"
-    chuyen: ["chuyến", "chuyen"],
-    ghiChu: ["ghi chú", "ghichu"],
-    giaoNhan: ["giao nhận", "giaonhan"],
-    htGiaoNhan: ["ht giao nhận", "htgiaonhan", "hình thức giao nhận"],
-    ketThucGiaoHang: ["kết thúc giao hàng"], // Bỏ chữ "kết thúc"
-    kmBatDauGiaoHang: ["km bắt đầu giao hàng"],
-    kmDuKien: ["km dự kiến", "kmdukien"],
-    kmKetThucGiaoHang: ["km kết thúc giao hàng",],
-    ngayGiao: ["ngày giao", "ngaygiao"],
-    ngayXuatKho: ["ngày xuất kho", "ngayxuatkho"],
-    noiGiao: ["nơi giao", "noigiao"],
-    phuongTien: ["phương tiện", "phuongtien"],
-    pxk: ["pxk"],
-    taiXe: ["tài xế", "taixe"],
-    thanhPho: ["thành phố", "thanhpho"]
-  };
 
-  headers.forEach((cell, index) => {
-    if (!cell) return;
-    const cellTxt = cell.toString().replace(/[\r\n]+/g, ' ').toLowerCase().trim().replace(/\s+/g, ' ');
-    
-    for (const [key, keywords] of Object.entries(colKeywords)) {
-      if (keywords.some(kw => cellTxt === kw || cellTxt.includes(kw))) {
-        colIdx[key] = index;
-      }
-    }
-  });
+  // Hàm phụ trợ bốc dữ liệu theo số cột cố định (Index) chống crash lỗi undefined
+  const getTxtByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? row[idx].toString().trim() : "";
+  const getDateByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? formatExcelDate(row[idx]) : "";
+  const getNumByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? (parseFloat(row[idx]) || 0) : 0;
 
-  let latIndexes = [];
-  let longIndexes = [];
-  headers.forEach((cell, index) => {
-    if (!cell) return;
-    const txt = cell.toString().toLowerCase().trim();
-    if (txt.includes("lat") || txt === "vĩ độ") latIndexes.push(index);
-    if (txt.includes("long") || txt === "kinh độ") longIndexes.push(index);
-    if (txt.includes("sai lệch") || txt.includes("sailech") || txt.includes("km lệch")) colIdx["saiLechKm"] = index;
-    if (txt.includes("theo dõi") || txt.includes("theodoi")) colIdx["theoDoi"] = index;
-  });
-
-  const lat1 = latIndexes[0], lon1 = longIndexes[0];
-  const lat2 = latIndexes[1], lon2 = longIndexes[1];
-
-  const getTxt = (row, key, defaultVal = "") => {
-    const idx = colIdx[key];
-    return (idx !== undefined && row[idx] !== undefined) ? row[idx].toString().trim() : defaultVal;
-  };
-
-  const getDateVal = (row, key) => {
-    const idx = colIdx[key];
-    if (idx === undefined || row[idx] === undefined) return "";
-    return formatExcelDate(row[idx]);
-  };
-
-  const getNum = (row, key) => {
-    const idx = colIdx[key];
-    return (idx !== undefined && row[idx]) ? (parseFloat(row[idx]) || 0) : 0;
-  };
-
+  // Duyệt từ dòng sau tiêu đề đến hết file
   for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
 
-    const khoXuatVal = getTxt(row, "khoXuat");
+    // Cột B (Kho xuất) - Index 1
+    const khoXuatVal = getTxtByIdx(row, 1);
     if (khoXuatVal !== "41" && khoXuatVal !== "61" && khoXuatVal !== "69") continue; 
 
-    const maPhieu = getTxt(row, "maPhieu");
+    // Cột D (Mã Phiếu) - Index 3
+    const maPhieu = getTxtByIdx(row, 3);
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
 
+    // Lấy tọa độ Định vị (Cột AJ, AK cũ hoặc dựa theo bộ cột Lat/Long 1)
     let dinhVi = "";
-    if (lat1 !== undefined && lon1 !== undefined && row[lat1] && row[lon1]) {
-      dinhVi = `${row[lat1].toString().trim()},${row[lon1].toString().trim()}`;
-    }
+    if (row[25] && row[26]) dinhVi = `${row[25].toString().trim()},${row[26].toString().trim()}`; // Cột Z, AA
 
+    // Lấy tọa độ CheckIn (Bộ Lat/Long số 2)
     let checkIn = "";
-    if (lat2 !== undefined && lon2 !== undefined && row[lat2] && row[lon2]) {
-      checkIn = `${row[lat2].toString().trim()},${row[lon2].toString().trim()}`;
-    }
+    if (row[35] && row[36]) checkIn = `${row[35].toString().trim()},${row[36].toString().trim()}`; // Cột AJ, AK
 
-    const saiLechKm = getNum(row, "saiLechKm");
-    let theoDoi = getTxt(row, "theoDoi");
-    if (saiLechKm > 0.5) {
-      theoDoi = "Cần kiểm tra";
-    }
+    const saiLechKm = getNumByIdx(row, 37); // Giả định cột sai lệch nằm sau
+    let theoDoi = "";
+    if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
 
+    // Xử lý tách Tháng/Năm dựa trên cột Ngày xuất kho (Index 27 - Cột AB)
     let thang = "";
-    const ngayXuatKhoTxt = getDateVal(row, "ngayXuatKho");
+    const ngayXuatKhoTxt = getDateByIdx(row, 27);
     if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
       const parts = ngayXuatKhoTxt.split("/");
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
@@ -250,45 +177,45 @@ function parseRoutesToMap(buffer) {
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
     }
 
-    // ĐÃ ĐỔI: Sử dụng ĐÚNG getDateVal cho các trường ngày tháng để format chuẩn đẹp
+    // Đổ dữ liệu chuẩn xác tuyệt đối vào Map dựa trên số cột cố định
     routeMap[maPhieu] = {
-      phuongXa: getTxt(row, "phuongXa"),
-      khoXuat: khoXuatVal, 
-      tuyenDuong: getTxt(row, "tuyenDuong"),
-      maPhieu: maPhieu,
-      doiTuong: getTxt(row, "doiTuong"),
-      duyet: getTxt(row, "duyet"),
-      status: getTxt(row, "status"),
-      botTretKg: getNum(row, "botTretKg"),
-      sonTbvsKg: getNum(row, "sonTbvsKg"),
-      tTai: getNum(row, "tTai"),
-      thanhTien: getNum(row, "thanhTien"),
-      dinhVi: dinhVi,
-      checkIn: checkIn,
-      saiLechKm: saiLechKm,
-      theoDoi: theoDoi,
-      chuyen: getTxt(row, "chuyen"),
-      ghiChu: getTxt(row, "ghiChu"),
-      giaoNhan: getTxt(row, "giaoNhan"),
-      htGiaoNhan: getTxt(row, "htGiaoNhan"),
-      kmBatDauGiaoHang: getNum(row, "kmBatDauGiaoHang"),
-      kmDuKIen: getNum(row, "kmDuKien"), 
-      kmKetThucGiaoHang: getNum(row, "kmKetThucGiaoHang"),
-      noiGiao: getTxt(row, "noiGiao"),
-      phuongTien: getTxt(row, "phuongTien"),
-      pxk: getTxt(row, "pxk"),
-      taiXe: getTxt(row, "taiXe"),
-      thanhPho: getTxt(row, "thanhPho"),
-      thoiGianLamViec: getTxt(row, "thoiGianLamViec"),
-      thang: thang,
-      ngayDatHang: getDateVal(row, "ngayDatHang"),
-      ngayXuLy: getDateVal(row, "ngayXuLy"),            // <-- Dùng getDateVal
-      ngayDuyet: getDateVal(row, "ngayDuyet"),
-      ngayDuKien: getDateVal(row, "ngayDuKien"),
-      ngayGiao: getDateVal(row, "ngayGiao"),
-      ngayxuatKho: ngayXuatKhoTxt,
-      batDauGiaoHang: getDateVal(row, "batDauGiaoHang"),   // <-- Dùng getDateVal
-      ketThucGiaoHang: getDateVal(row, "ketThucGiaoHang") // <-- Dùng getDateVal
+      phuongXa:         getTxtByIdx(row, 0),   // Cột A
+      khoXuat:          khoXuatVal,            // Cột B
+      tuyenDuong:       getTxtByIdx(row, 2),   // Cột C
+      maPhieu:          maPhieu,               // Cột D
+      doiTuong:         getTxtByIdx(row, 4),   // Cột E
+      ngayDatHang:      getDateByIdx(row, 5),  // Cột F
+      ngayXuLy:         getDateByIdx(row, 6),  // Cột G
+      ngayDuyet:        getDateByIdx(row, 7),  // Cột H
+      ngayDuKien:       getDateByIdx(row, 8),  // Cột I
+      duyet:            getTxtByIdx(row, 9),   // Cột J
+      status:           getTxtByIdx(row, 10),  // Cột K
+      botTretKg:        getNumByIdx(row, 11),  // Cột L
+      sonTbvsKg:        getNumByIdx(row, 12),  // Cột M
+      tTai:             getNumByIdx(row, 13),  // Cột N
+      thanhTien:        getNumByIdx(row, 14),  // Cột O
+      noiGiao:          getTxtByIdx(row, 15),  // Cột P
+      ghiChu:           getTxtByIdx(row, 16),  // Cột Q
+      kmDuKIen:         getNumByIdx(row, 17),  // Cột R
+      htGiaoNhan:       getTxtByIdx(row, 18),  // Cột S
+      ngayGiao:         getDateByIdx(row, 19), // Cột T
+      phuongTien:       getTxtByIdx(row, 20),  // Cột U
+      taiXe:            getTxtByIdx(row, 21),  // Cột V
+      chuyen:           getTxtByIdx(row, 22),  // Cột W
+      giaoNhan:         getTxtByIdx(row, 23),  // Cột X
+      pxk:              getTxtByIdx(row, 24),  // Cột Y
+      dinhVi:           dinhVi,
+      ngayxuatKho:      ngayXuatKhoTxt,        // Cột AB (Index 27)
+      thoiGianLamViec:  getTxtByIdx(row, 28),  // Cột AC
+      thanhPho:         getTxtByIdx(row, 29),  // Cột AD
+      batDauGiaoHang:   getDateByIdx(row, 30), // Cột AE (Index 30)
+      ketThucGiaoHang:  getDateByIdx(row, 31), // Cột AF (Index 31)
+      kmBatDauGiaoHang: getNumByIdx(row, 32),  // Cột AG
+      kmKetThucGiaoHang:getNumByIdx(row, 34),  // Cột AI
+      checkIn:          checkIn,
+      saiLechKm:        saiLechKm,
+      theoDoi:          theoDoi,
+      thang:            thang
     };
   }
   return routeMap;
