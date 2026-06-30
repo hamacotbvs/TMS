@@ -8,7 +8,7 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 const INVENTORY_LINKS = {
   "41": "https://docs.google.com/spreadsheets/d/1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb/edit",
   "61": "https://docs.google.com/spreadsheets/d/1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB/edit",
-  "69": "https://docs.google.com/spreadsheets/d/1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf/edit",
+  "69": "https://docs.google.com/spreadsheets/d/1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf/edit"
 };
 
 const ROUTE_FILE_LINK = "https://docs.google.com/spreadsheets/d/1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR/edit"; 
@@ -116,11 +116,29 @@ function parseInventoryToMap(buffer, khoName) {
     const maHang = row[1] ? row[1].toString().trim() : ""; 
     if (!maHang || maHang === "" || maHang === "Mã hàng" || maHang.includes("CÔNG TY")) continue;
 
+    // Lấy chuỗi NSX đã được format chuẩn ngày tháng
+    const nsxTxt = formatExcelDate(row[3]);
+    
+    // Tách lấy Tháng và Năm dựa trên chuỗi NSX
+    let thang = "";
+    let nam = "";
+    if (nsxTxt && nsxTxt.includes("/")) {
+      const parts = nsxTxt.split("/");
+      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
+      if (parts[2]) nam = parts[2].split(" ")[0]; // Cắt lấy năm nếu có kèm giờ phía sau
+    } else if (nsxTxt && nsxTxt.includes("-")) {
+      const parts = nsxTxt.split("-");
+      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
+      if (parts[0] && parts[0].length === 4) nam = parts[0]; // Dạng YYYY-MM-DD
+    }
+
     dataMap[maHang] = {
       category: row[0] ? row[0].toString().trim() : "",    
       maHang: maHang,
       tenHang: tenHang,     
-      nsx: formatExcelDate(row[3]), // 🌟 ĐÃ SỬA: Ép định dạng ngày tháng chuẩn cho cột NSX
+      nsx: nsxTxt,
+      thang: thang, // 🌟 ĐÃ THÊM: Cột tháng trích từ NSX
+      nam: nam,     // 🌟 ĐÃ THÊM: Cột năm trích từ NSX
       dauKy_sl: parseFloat(row[4]) || 0,                   
       dauKy_tl: parseFloat(row[5]) || 0,                   
       nhap_sl: parseFloat(row[6]) || 0,                    
@@ -193,7 +211,6 @@ function parseRoutesToMap(buffer) {
 
   headers.forEach((cell, index) => {
     if (!cell) return;
-    // Chuẩn hóa loại bỏ các ký tự xuống dòng ẩn \n \r do Alt+Enter trong Excel
     const cellTxt = cell.toString().replace(/[\r\n]+/g, ' ').toLowerCase().trim().replace(/\s+/g, ' ');
     
     for (const [key, keywords] of Object.entries(colKeywords)) {
