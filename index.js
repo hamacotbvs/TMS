@@ -1,8 +1,10 @@
 const { google } = require('googleapis');
 const admin = require('firebase-admin');
 const XLSX = require('xlsx');
+
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-// 🔗 ĐÃ SỬA: Điền trực tiếp ID file mã hóa của Google Sheets (Không dùng link URL nữa)
+
+// 🔗 Link ID các file gốc của bạn
 const INVENTORY_LINKS = {
   "41": "1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb",
   "61": "1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB",
@@ -10,23 +12,42 @@ const INVENTORY_LINKS = {
 };
 const ROUTE_FILE_LINK = "1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR"; 
 
-if (!admin.apps.length) {admin.initializeApp({credential: admin.credential.cert(serviceAccount), projectId: serviceAccount.project_id});}
-const db = admin.firestore();
-function getDriveClient() {const auth = new google.auth.JWT(serviceAccount.client_email, null, serviceAccount.private_key, ['https://www.googleapis.com/auth/drive.readonly']); return google.drive({ version: 'v3', auth }); }
+// 🔗 BỔ SUNG: ID các file danh mục dùng để dò tìm chéo (VLOOKUP)
+const PRODUCT_CATALOG_LINKS = {
+  "61": "ID_FILE_SAN_PHAM_INAX_CỦA_BẠN", // <-- Bạn điền ID thực tế file SanPhamInax vào đây nhé!
+  "69": "1CutRhZzBvhi24zUsGPvkXWXT3_ufUPmW"  // ID file SanPhamAs lấy từ link của bạn
+};
 
-async function downloadFileBuffer(drive, fileId) {return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));}
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount), 
+    projectId: serviceAccount.project_id
+  });
+}
+const db = admin.firestore();
+
+function getDriveClient() {
+  const auth = new google.auth.JWT(
+    serviceAccount.client_email, 
+    null, 
+    serviceAccount.private_key, 
+    ['https://www.googleapis.com/auth/drive.readonly']
+  ); 
+  return google.drive({ version: 'v3', auth }); 
+}
+
+async function downloadFileBuffer(drive, fileId) {
+  return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));
+}
+
 // 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN ĐẸP (DD/MM/YYYY HH:mm:ss)
 function formatExcelDate(cellValue) {
   if (cellValue === undefined || cellValue === null || cellValue === "") return "";
 
   const pad = (n) => String(n).padStart(2, '0');
 
-  // Khi cellDates: true, logic này sẽ xử lý chính xác 100% dữ liệu ngày giờ từ Excel
   if (cellValue instanceof Date) {
     const d = cellValue;
-    
-    // Nếu ngày bị lệch múi giờ khi đọc (đôi khi thư viện đọc dạng UTC), 
-    // bạn có thể dùng các hàm Get chuẩn của JS:
     const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
     const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     
@@ -62,9 +83,38 @@ function formatExcelDate(cellValue) {
 }
 
 // ----------------------------------------------------
-// 1. XỬ LÝ ĐỌC FILE TỒN KHO
+// BỔ SUNG: HÀM ĐỌC FILE DANH MỤC SẢN PHẨM (SAN PHAM AS / INAX)
 // ----------------------------------------------------
-function parseInventoryToMap(buffer, khoName) {
+function parseCatalogToMap(buffer) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  const catalogMap = {};
+
+  // Duyệt từ dòng index 1 (bỏ qua dòng tiêu đề cố định ở dòng 0)
+  for (let i = 1; i < jsonData.length; i++) {
+    const row = jsonData[i];
+    if (!row || row.length === 0) continue;
+
+    // Cột A: Mã CTKT (Index 0) làm khóa chính để tra cứu
+    const maCTKT = row[0] ? row[0].toString().trim() : "";
+    if (!maCTKT) continue;
+
+    // Tra cứu index tương ứng theo cấu trúc file ảnh bạn gửi
+    catalogMap[maCTKT] = {
+      sanPham:   row[7]  ? row[7].toString().trim()  : "", // Cột H: Sản phẩm (Index 7)
+      phanLoai:  row[9]  ? row[9].toString().trim()  : "", // Cột J: Phân loại (Index 9)
+      maCatalo:  row[14] ? row[14].toString().trim() : "", // Cột O: Mã catalo (Index 14)
+      tenCatalo: row[15] ? row[15].toString().trim() : ""  // Cột P: Tên catalo (Index 15)
+    };
+  }
+  return catalogMap;
+}
+
+// ----------------------------------------------------
+// 1. XỬ LÝ ĐỌC FILE TỒN KHO (ĐÃ CẬP NHẬT TRA CỨU CHÉO)
+// ----------------------------------------------------
+function parseInventoryToMap(buffer, khoName, catalogMap = null) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
@@ -73,13 +123,14 @@ function parseInventoryToMap(buffer, khoName) {
   let startRowIndex = 9; 
   for (let i = 0; i < Math.min(20, jsonData.length); i++) {
     const rowStr = JSON.stringify(jsonData[i]);
-    if (rowStr.includes("Mã hàng") || rowStr.includes("Tên hàng")) {startRowIndex = i + 1; break;} }
+    if (rowStr.includes("Mã hàng") || rowStr.includes("Tên hàng")) { startRowIndex = i + 1; break; } 
+  }
   
   for (let i = startRowIndex; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 3) continue;
     const tenHang = row[2] ? row[2].toString().trim() : "";
-    if (!tenHang || tenHang === "" || tenHang === "Tên hàng") continue
+    if (!tenHang || tenHang === "" || tenHang === "Tên hàng") continue;
     const maHang = row[1] ? row[1].toString().trim() : ""; 
     if (!maHang || maHang === "" || maHang === "Mã hàng" || maHang.includes("CÔNG TY")) continue;
     const nsxTxt = formatExcelDate(row[3]);
@@ -93,6 +144,20 @@ function parseInventoryToMap(buffer, khoName) {
       const parts = nsxTxt.split("-");
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
       if (parts[0] && parts[0].length === 4) nam = parts[0]; 
+    }
+
+    // 🔍 TIẾN HÀNH DÒ TÌM VLOOKUP SANG BẢNG DANH MỤC
+    let boSung_maCatalo = "";
+    let boSung_tenCatalo = "";
+    let boSung_sanPham = "";
+    let boSung_phanLoai = "";
+
+    // Nếu tồn tại bảng danh mục (Kho 61, 69) và tìm thấy Mã hàng khớp với Mã CTKT
+    if (catalogMap && catalogMap[maHang]) {
+      boSung_maCatalo  = catalogMap[maHang].maCatalo;
+      boSung_tenCatalo = catalogMap[maHang].tenCatalo;
+      boSung_sanPham   = catalogMap[maHang].sanPham;
+      boSung_phanLoai  = catalogMap[maHang].phanLoai;
     }
 
     dataMap[tenHang] = {
@@ -109,16 +174,22 @@ function parseInventoryToMap(buffer, khoName) {
       xuat_sl: parseFloat(row[8]) || 0,                    
       xuat_tl: parseFloat(row[9]) || 0,                    
       cuoiKy_sl: parseFloat(row[10]) || 0,                 
-      cuoiKy_tl: parseFloat(row[11]) || 0                  
+      cuoiKy_tl: parseFloat(row[11]) || 0,
+      
+      // ĐÃ BỔ SUNG: Các trường thông tin lấy tự động từ bảng phụ ghép ra phía sau
+      maCatalo: boSung_maCatalo,
+      tenCatalo: boSung_tenCatalo,
+      sanPham: boSung_sanPham,
+      phanLoai: boSung_phanLoai
     };
-  }return dataMap;
+  }
+  return dataMap;
 }
 
 // ----------------------------------------------------
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (Duy trì theo số cột cố định)
 // ----------------------------------------------------
 function parseRoutesToMap(buffer) {
-  // GIỮ NGUYÊN cellDates: true để thư viện tự chuyển đổi ô ngày giờ sang Object Date của JS
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
@@ -126,7 +197,6 @@ function parseRoutesToMap(buffer) {
   
   console.log(`📊 [Tuyến Đường] Tổng số dòng đọc được trong file: ${jsonData.length}`);
   
-  // Xác định dòng tiêu đề để bắt đầu lấy dữ liệu từ dòng kế tiếp
   let headerRowIdx = 7; 
   for (let i = 0; i < Math.min(25, jsonData.length); i++) {
     const rowStr = JSON.stringify(jsonData[i]);
@@ -136,37 +206,30 @@ function parseRoutesToMap(buffer) {
     }
   }
 
-  // Hàm phụ trợ bốc dữ liệu theo số cột cố định (Index) chống crash lỗi undefined
   const getTxtByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? row[idx].toString().trim() : "";
   const getDateByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? formatExcelDate(row[idx]) : "";
   const getNumByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? (parseFloat(row[idx]) || 0) : 0;
 
-  // Duyệt từ dòng sau tiêu đề đến hết file
   for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
 
-    // Cột B (Kho xuất) - Index 1
     const khoXuatVal = getTxtByIdx(row, 1);
     if (khoXuatVal !== "41" && khoXuatVal !== "61" && khoXuatVal !== "69") continue; 
 
-    // Cột D (Mã Phiếu) - Index 3
     const maPhieu = getTxtByIdx(row, 3);
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
 
-    // Lấy tọa độ Định vị (Cột AJ, AK cũ hoặc dựa theo bộ cột Lat/Long 1)
     let dinhVi = "";
-    if (row[24] && row[25]) dinhVi = `${row[24].toString().trim()},${row[25].toString().trim()}`; // Cột Y, Z
+    if (row[24] && row[25]) dinhVi = `${row[24].toString().trim()},${row[25].toString().trim()}`;
 
-    // Lấy tọa độ CheckIn (Bộ Lat/Long số 2)
     let checkIn = "";
-    if (row[34] && row[35]) checkIn = `${row[34].toString().trim()},${row[35].toString().trim()}`; // Cột AI, AJ
+    if (row[34] && row[35]) checkIn = `${row[34].toString().trim()},${row[35].toString().trim()}`;
 
-    const saiLechKm = getNumByIdx(row, 36); // Giả định cột sai lệch nằm sau
+    const saiLechKm = getNumByIdx(row, 36); 
     let theoDoi = "";
     if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
 
-    // Xử lý tách Tháng/Năm dựa trên cột Ngày xuất kho (Index 27 - Cột AB)
     let thang = "";
     const ngayXuatKhoTxt = getDateByIdx(row, 27);
     if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
@@ -177,41 +240,40 @@ function parseRoutesToMap(buffer) {
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
     }
 
-    // Đổ dữ liệu chuẩn xác tuyệt đối vào Map dựa trên số cột cố định
     routeMap[maPhieu] = {
-      phuongXa:         getTxtByIdx(row, 0),   // Cột A
-      khoXuat:          khoXuatVal,            // Cột B
-      tuyenDuong:       getTxtByIdx(row, 2),   // Cột C
-      maPhieu:          maPhieu,               // Cột D
-      doiTuong:         getTxtByIdx(row, 4),   // Cột E
-      ngayDatHang:      getDateByIdx(row, 5),  // Cột F
-      ngayXuLy:         getDateByIdx(row, 6),  // Cột G
-      ngayDuyet:        getDateByIdx(row, 7),  // Cột H
-      ngayDuKien:       getDateByIdx(row, 8),  // Cột I
-      duyet:            getTxtByIdx(row, 9),   // Cột J
-      status:           getTxtByIdx(row, 10),  // Cột K
-      botTretKg:        getNumByIdx(row, 11),  // Cột L
-      sonTbvsKg:        getNumByIdx(row, 12),  // Cột M
-      tTai:             getNumByIdx(row, 13),  // Cột N
-      thanhTien:        getNumByIdx(row, 14),  // Cột O
-      noiGiao:          getTxtByIdx(row, 15),  // Cột P
-      ghiChu:           getTxtByIdx(row, 16),  // Cột Q
-      kmDuKIen:         getNumByIdx(row, 17),  // Cột R
-      htGiaoNhan:       getTxtByIdx(row, 18),  // Cột S
-      ngayGiao:         getDateByIdx(row, 19), // Cột T
-      phuongTien:       getTxtByIdx(row, 20),  // Cột U
-      taiXe:            getTxtByIdx(row, 21),  // Cột V
-      chuyen:           getNumByIdx(row, 22),  // Cột W
-      giaoNhan:         getTxtByIdx(row, 23),  // Cột X
-      pxk:              getTxtByIdx(row, 26),  // Cột AA
+      phuongXa:         getTxtByIdx(row, 0),   
+      khoXuat:          khoXuatVal,            
+      tuyenDuong:       getTxtByIdx(row, 2),   
+      maPhieu:          maPhieu,               
+      doiTuong:         getTxtByIdx(row, 4),   
+      ngayDatHang:      getDateByIdx(row, 5),  
+      ngayXuLy:         getDateByIdx(row, 6),  
+      ngayDuyet:        getDateByIdx(row, 7),  
+      ngayDuKien:       getDateByIdx(row, 8),  
+      duyet:            getTxtByIdx(row, 9),   
+      status:           getTxtByIdx(row, 10),  
+      botTretKg:        getNumByIdx(row, 11),  
+      sonTbvsKg:        getNumByIdx(row, 12),  
+      tTai:             getNumByIdx(row, 13),  
+      thanhTien:        getNumByIdx(row, 14),  
+      noiGiao:          getTxtByIdx(row, 15),  
+      ghiChu:           getTxtByIdx(row, 16),  
+      kmDuKIen:         getNumByIdx(row, 17),  
+      htGiaoNhan:       getTxtByIdx(row, 18),  
+      ngayGiao:         getDateByIdx(row, 19), 
+      phuongTien:       getTxtByIdx(row, 20),  
+      taiXe:            getTxtByIdx(row, 21),  
+      chuyen:           getNumByIdx(row, 22),  
+      giaoNhan:         getTxtByIdx(row, 23),  
+      pxk:              getTxtByIdx(row, 26),  
       dinhVi:           dinhVi,
-      ngayxuatKho:      ngayXuatKhoTxt,        // Cột AB (Index 27)
-      thoiGianLamViec:  getTxtByIdx(row, 28),  // Cột AC
-      thanhPho:         getTxtByIdx(row, 29),  // Cột AD
-      batDauGiaoHang:   getDateByIdx(row, 30), // Cột AE (Index 30)
-      ketThucGiaoHang:  getDateByIdx(row, 31), // Cột AF (Index 31)
-      kmBatDauGiaoHang: getNumByIdx(row, 32),  // Cột AG
-      kmKetThucGiaoHang:getNumByIdx(row, 33),  // Cột AI
+      ngayxuatKho:      ngayXuatKhoTxt,        
+      thoiGianLamViec:  getTxtByIdx(row, 28),  
+      thanhPho:         getTxtByIdx(row, 29),  
+      batDauGiaoHang:   getDateByIdx(row, 30), 
+      ketThucGiaoHang:  getDateByIdx(row, 31), 
+      kmBatDauGiaoHang: getNumByIdx(row, 32),  
+      kmKetThucGiaoHang:getNumByIdx(row, 33),  
       checkIn:          checkIn,
       saiLechKm:        saiLechKm,
       theoDoi:          theoDoi,
@@ -220,6 +282,7 @@ function parseRoutesToMap(buffer) {
   }
   return routeMap;
 }
+
 // ----------------------------------------------------
 // 3. TIẾN TRÌNH ĐỒNG BỘ CHÍNH
 // ----------------------------------------------------
@@ -232,9 +295,23 @@ async function mainSync() {
 
   for (const [khoName, fileId] of Object.entries(INVENTORY_LINKS)) {
     try {
-      // Gọi trực tiếp fileId từ cấu hình sạch ở trên
+      let catalogMap = null;
+
+      // Kiểm tra nếu là kho 61 hoặc 69 thì tải thêm file danh mục sản phẩm tương ứng để khớp dữ liệu
+      if (PRODUCT_CATALOG_LINKS[khoName]) {
+        console.log(`🔍 [Kho ${khoName}] Phát hiện yêu cầu dò tìm danh mục mở rộng. Đang tải file đối chiếu...`);
+        try {
+          const catalogBuffer = await downloadFileBuffer(drive, PRODUCT_CATALOG_LINKS[khoName]);
+          catalogMap = parseCatalogToMap(catalogBuffer);
+          console.log(`   -> Cấu trúc Map danh mục cho Kho ${khoName} đã sẵn sàng.`);
+        } catch (catErr) {
+          console.error(`   ⚠️ Cảnh báo: Không thể nạp file danh mục cho Kho ${khoName} (${catErr.message}). Chạy chế độ không có dữ liệu gộp.`);
+        }
+      }
+
       const buffer = await downloadFileBuffer(drive, fileId);
-      const dataObject = parseInventoryToMap(buffer, khoName);
+      // Truyền catalogMap vào để tự động gộp các cột mở rộng
+      const dataObject = parseInventoryToMap(buffer, khoName, catalogMap);
       
       if (Object.keys(dataObject).length > 0) {
         finalInventoryData[`Kho_${khoName}`] = dataObject;
@@ -249,7 +326,7 @@ async function mainSync() {
   if (invSuccessCount > 0) {
     finalInventoryData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
     await db.collection('TONKHO').doc('KHO').set(finalInventoryData, { merge: true });
-    console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho lên Firestore (TONKHO/KHO) thành công!`);
+    console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho kèm dữ liệu mở rộng lên Firestore thành công!`);
   }
 
   console.log('\n--------------------------------------------------\n');
