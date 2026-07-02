@@ -12,11 +12,11 @@
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
         
         /* Nút reset */
-        .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
-            background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
-        .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
-        .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
+            .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
+                background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
+            .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
+            .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
         /* ĐỊNH DẠNG CHUNG */
         body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
         .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
@@ -41,23 +41,6 @@
             .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
             .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
             .MENU-item.add-btn i {font-size: 16px;} }
-        /* --- CSS CHO BÁO CÁO TAB HOME --- */
-        .bo-loc-ngay {display: flex; align-items: center; gap: 10px; margin-top: 15px; margin-bottom: 15px;}
-        .bo-loc-ngay label {font-weight: 500; color: #555; font-size: 14px;}
-        .o-chon-ngay {padding: 8px 12px; border: 1.5px solid #007acc; border-radius: 8px; font-size: 14px; outline: none; color: #333; font-weight: 500; cursor: pointer;}
-        
-        .khung-bang-bao-cao {width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #eef2f5;}
-        .bang-bao-cao {width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;}
-        .bang-bao-cao th {background-color: #007acc; color: white; padding: 12px 10px; font-weight: 500; white-space: nowrap;}
-        .bang-bao-cao td {padding: 12px 10px; border-bottom: 1px solid #eef2f5; color: #444; white-space: nowrap;}
-        .bang-bao-cao tr:nth-child(even) {background-color: #f9fbfd;}
-        .bang-bao-cao tr:hover {background-color: #f1f5f9;}
-        
-        .badge-status {padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;}
-        .status-dagiao {background-color: #e6f4ea; color: #137333;}
-        .status-chuanbi {background-color: #fef7e0; color: #b06000;}
-        .status-khac {background-color: #f1f3f4; color: #3c4043;}
-        .txt-rong {text-align: center; padding: 30px !important; color: #888; font-style: italic;}
     </style>
 </head>
 <body>
@@ -66,30 +49,10 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Tình hình giao hàng theo xe</h2>
-                <div class="bo-loc-ngay">
-                    <label for="input-ngay-xem"><i class="fa-regular fa-calendar-days"></i> Chọn ngày xem:</label>
-                    <input type="date" id="input-ngay-xem" class="o-chon-ngay"> </div>
-                <div class="khung-bang-bao-cao">
-                    <table class="bang-bao-cao">
-                        <thead>
-                            <tr>
-                                <th>Phương tiện (Xe)</th>
-                                <th>Chuyến</th>
-                                <th>Tài xế</th>
-                                <th>Nơi giao</th>
-                                <th>Tổng tải (kg)</th>
-                                <th>Trạng thái</th>
-                                <th>Bắt đầu</th>
-                                <th>Kết thúc</th>
-                            </tr>
-                        </thead>
-                        <tbody id="du-lieu-bao-cao-xe">
-                            <tr>
-                                <td colspan="8" class="txt-rong">Đang tải dữ liệu...</td>
-                            </tr>
-                        </tbody>
-                    </table> </div> </div> </div>
+                <h2>🎯 Ngân sách chi tiêu</h2>
+                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
+            </div>
+        </div>
 
         <div id="bao-cao" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
@@ -123,22 +86,22 @@
     </div>
 
     <nav class="MENU-DUOI">
-        <div class="MENU-item active" onclick="switchTab('home', event)">
+        <div class="MENU-item active" onclick="switchTab('home')">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </div>
-        <div class="MENU-item" onclick="switchTab('bao-cao', event)">
+        <div class="MENU-item" onclick="switchTab('bao-cao')">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Báo cáo</span>
         </div>
-        <div class="MENU-item add-btn" onclick="switchTab('them-moi', event)">
+        <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
             <i class="fa-solid fa-plus"></i>
         </div>
-        <div class="MENU-item" onclick="switchTab('kho', event)">
+        <div class="MENU-item" onclick="switchTab('kho')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Kho</span>
         </div>
-        <div class="MENU-item" onclick="switchTab('van-chuyen', event)">
+        <div class="MENU-item" onclick="switchTab('van-chuyen')">
             <i class="fa-solid fa-car-side"></i>
             <span>Vận chuyển</span>
         </div>
@@ -146,108 +109,37 @@
 
     <script type="module">
         // --- 1. CẤU HÌNH FIREBASE ---
+        // Thêm các thư viện Firebase SDK cần thiết
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        // Nếu dùng Firestore thì thay bằng: import { getFirestore } from "...firebase-firestore.js";
+
+        // Thay thế thông tin cấu hình này bằng tài khoản Firebase thực tế của bạn
         const firebaseConfig = {
-            apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
-            authDomain: "hamaco-tms-c4b70.firebaseapp.com",
-            projectId: "hamaco-tms-c4b70",
-            storageBucket: "hamaco-tms-c4b70.firebasestorage.app",
-            messagingSenderId: "685425304488",
-            appId: "1:685425304488:web:6a999a4a6bf1147a21b39d",
-            measurementId: "G-L7RQZWHQ4J"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
+
+        // Khởi tạo Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        console.log("Firebase & Firestore đã được kết nối thành công!");
+        const database = getDatabase(app);
+        console.log("Firebase đã được cấu hình thành công!");
 
-        // --- 2. NÚT RESET ---
+        // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {
-            idNutLamMoi.addEventListener('click', () => {
-                const iconSvg = idNutLamMoi.querySelector('svg'); 
-                if (iconSvg) { iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease'; } 
-                setTimeout(() => { window.location.reload(); }, 350); 
-            });
-        }
+        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
 
-        // --- 3. XỬ LÝ CHUYỂN TAB ---
-        window.switchTab = function(tabId, event) {
-            const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active'));
-            const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            if (event && event.currentTarget) { event.currentTarget.classList.add('active'); } 
-        }
-
-        // --- 4. BÁO CÁO ĐƠN HÀNG TRONG NGÀY
-        const oChonNgay = document.getElementById('input-ngay-xem');
-        const bodyBangBaoCao = document.getElementById('du-lieu-bao-cao-xe');
-        let unsubscribeReport = null;
-        const homNay = new Date(); const dinhDangHomNay = homNay.toISOString().split('T')[0]; oChonNgay.value = dinhDangHomNay; // Tự động gán ngày hiện tại làm mặc định
-        // Cập nhật tiêu đề bảng thành 9 cột (Thêm cột Số phiếu ở vị trí thứ 3)
-        const theadBang = document.querySelector('.bang-bao-cao thead');
-        if (theadBang) {
-            theadBang.innerHTML = `<tr>
-                    <th>Phương tiện</th>
-                    <th>Chuyến</th>
-                    <th>Số phiếu</th>
-                    <th>Bột trét (kg)</th>
-                    <th>Sơn/TBVS (kg)</th>
-                    <th>Tổng tải (kg)</th>
-                    <th>Thành tiền (đ)</th>
-                    <th>Bắt đầu</th>
-                    <th>Trạng thái</th></tr> `; }
-        function taiBaoCaoTheoNgay(chuoiNgayYMD) {
-            if (!chuoiNgayYMD) return;
-            const phanTach = chuoiNgayYMD.split('-'); 
-            const ngayTimKiem = chuoiNgayYMD; // Định dạng YYYY-MM-DD dùng để lọc dữ liệu
-            const ngayHienThi = `${phanTach[2]}/${phanTach[1]}/${phanTach[0]}`; // Định dạng DD/MM/YYYY để hiển thị
-            const tenCollectionThang = 'TUYENDUONG'; 
-            bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>`;
-            if (unsubscribeReport) unsubscribeReport();
-            try {
-                const q = query(collection(db, tenCollectionThang), where("batDauGiaoHang", ">=", ngayTimKiem), where("batDauGiaoHang", "<=", ngayTimKiem + "\uf8ff")); // Lọc dữ liệu theo ngày bắt đầu giao hàng
-                unsubscribeReport = onSnapshot(q, (querySnapshot) => {
-                    bodyBangBaoCao.innerHTML = "";
-                    if(querySnapshot.empty) {bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong">Chưa có xe nào được duyệt đi giao trong ngày ${ngayHienThi}</td></tr>`;return;}
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        let classBadge = "status-khac";
-                        if(data["duyet"] === "Đã giao hàng") classBadge = "status-dagiao"; else if(data["duyet"] === "Đang giao hàng") classBadge = "status-chuanbi";
-                        const soPhieu = data["maPhieu"] || data["Số phiếu"] || doc.id; // Lấy Số phiếu: Ưu tiên lấy trường dữ liệu "Số_phiếu", nếu không có thì lấy chính ID của Document
-                        // Lấy và kiểm tra các giá trị số lượng từ database
-                        const botTret = parseFloat(data["botTretKg"] || 0);
-                        const sonTBVS = parseFloat(data["sonTbvsKg"] || 0);
-                        const tongTai = parseFloat(data["tongTai"] || 0);
-                        const thanhTien = parseFloat(data["thanhTien"] || 0);
-                        // Định dạng lại ngày giờ hiển thị cho dễ nhìn (từ YYYY-MM-DD sang DD/MM/YYYY)
-                        let batDauHienThi = data["batDauGiaoHang"] || '---';
-                        if(batDauHienThi !== '---' && batDauHienThi.includes('-')) {
-                            const [ngayPart, gioPart] = batDauHienThi.split(' ');
-                            const [y, m, d] = ngayPart.split('-');
-                            batDauHienThi = `${d}/${m}/${y} ${gioPart || ''}`;}
-                        const hangBaoCao = document.createElement('tr');
-                        hangBaoCao.innerHTML = `
-                            <td><strong>${data["phuongTien"] || '---'}</strong></td>
-                            <td>Chuyến ${data["chuyen"] || '0'}</td>
-                            <td><span style="font-family: monospace; color: #555;">${soPhieu}</span></td>
-                            <td>${botTret.toLocaleString()}</td>
-                            <td>${sonTBVS.toLocaleString()}</td>
-                            <td>${tongTai.toLocaleString()}</td>
-                            <td><strong>${thanhTien.toLocaleString()}</strong></td>
-                            <td>${batDauHienThi}</td>
-                            <td><span class="badge-status ${classBadge}">${data["duyet"] || data["Status"] || 'Mới'}</span></td> `;
-                        bodyBangBaoCao.appendChild(hangBaoCao); });
-                }, (error) => {
-                    console.error("Lỗi: ", error);
-                    bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong" style="color:red;">Không đọc được dữ liệu bảng ${tenCollectionThang}.</td></tr>`;
-                });
-            } catch (err) {bodyBangBaoCao.innerHTML = `<tr><td colspan="9" class="txt-rong" style="color:red;">Lỗi hệ thống lập truy vấn.</td></tr>`;}
-        }
-        // Khởi chạy lần đầu và lắng nghe sự kiện
-        taiBaoCaoTheoNgay(oChonNgay.value);
-        oChonNgay.addEventListener('change', (e) => { taiBaoCaoTheoNgay(e.target.value); });
+        // --- 2. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
+        window.switchTab = function(tabId) {
+            const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
+            const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
+            document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
+            const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
     </script>
 </body>
 </html>
