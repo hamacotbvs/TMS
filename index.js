@@ -5,58 +5,33 @@ const XLSX = require('xlsx');
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 // 🔗 Link ID các file gốc của bạn
-const INVENTORY_LINKS = {
+const ID_TONKHO = {
   "41": "1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb",
   "61": "1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB",
-  "69": "1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf"
-};
-const ROUTE_FILE_LINK = "1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR"; 
-
-// 🔗 BỔ SUNG: ID các file danh mục dùng để dò tìm chéo (VLOOKUP)
-const PRODUCT_CATALOG_LINKS = {
-  "61": "1HSZMW142a1SeIUhaF8gTCFPGVipwDUPV", // <-- Bạn điền ID thực tế file SanPhamInax vào đây nhé!
-  "69": "1CutRhZzBvh24zUsGPvkXWXQT3_ufUPmW"  // ID file SanPhamAs lấy từ link của bạn
-};
+  "69": "1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf"};
+const ID_TUYENDUONG = "1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR"; 
+const ID_SANPHAM = {
+  "61": "1HSZMW142a1SeIUhaF8gTCFPGVipwDUPV",
+  "69": "1CutRhZzBvh24zUsGPvkXWXQT3_ufUPmW"};
 
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount), 
-    projectId: serviceAccount.project_id
-  });
-}
+  admin.initializeApp({credential: admin.credential.cert(serviceAccount), projectId: serviceAccount.project_id}); }
 const db = admin.firestore();
-
 function getDriveClient() {
-  const auth = new google.auth.JWT(
-    serviceAccount.client_email, 
-    null, 
-    serviceAccount.private_key, 
-    ['https://www.googleapis.com/auth/drive.readonly']
-  ); 
-  return google.drive({ version: 'v3', auth }); 
-}
-
-async function downloadFileBuffer(drive, fileId) {
-  return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));
-}
+  const auth = new google.auth.JWT(serviceAccount.client_email, null, serviceAccount.private_key, ['https://www.googleapis.com/auth/drive.readonly']); return google.drive({ version: 'v3', auth }); }
+async function downloadFileBuffer(drive, fileId) {return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));}
 
 // 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN ĐẸP (DD/MM/YYYY HH:mm:ss)
 function formatExcelDate(cellValue) {
   if (cellValue === undefined || cellValue === null || cellValue === "") return "";
-
   const pad = (n) => String(n).padStart(2, '0');
-
   if (cellValue instanceof Date) {
     const d = cellValue;
     const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
     const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    
-    return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;
-  }
-
+    return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;}
   const strVal = cellValue.toString().trim();
   if (strVal.includes('/') || strVal.includes('-')) return strVal;
-
   if (!isNaN(strVal) && !isNaN(parseFloat(strVal))) {
     const numVal = parseFloat(strVal);
     if (numVal > 30000) {
@@ -68,52 +43,28 @@ function formatExcelDate(cellValue) {
         const hh = pad(dateObj.H);
         const mm = pad(dateObj.M);
         const ss = pad(dateObj.S);
-        
         const dateStr = `${d}/${m}/${y}`;
-        if (dateObj.H === 0 && dateObj.M === 0 && dateObj.S === 0) {
-          return dateStr;
-        }
+        if (dateObj.H === 0 && dateObj.M === 0 && dateObj.S === 0) {return dateStr;}
         return `${dateStr} ${hh}:${mm}:${ss}`;
-      } catch (e) {
-        return strVal;
-      }
-    }
-  }
-  return strVal;
-}
+      } catch (e) {return strVal;} } } return strVal;}
 
-// ----------------------------------------------------
-// BỔ SUNG: HÀM ĐỌC FILE DANH MỤC SẢN PHẨM (SAN PHAM AS / INAX)
-// ----------------------------------------------------
+// HÀM ĐỌC FILE SẢN PHẨM
 function parseCatalogToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
   const catalogMap = {};
-
   // Duyệt từ dòng index 1 (bỏ qua dòng tiêu đề cố định ở dòng 0)
-  for (let i = 1; i < jsonData.length; i++) {
-    const row = jsonData[i];
-    if (!row || row.length === 0) continue;
-
-    // Cột A: Mã CTKT (Index 0) làm khóa chính để tra cứu
-    const maCTKT = row[0] ? row[0].toString().trim() : "";
-    if (!maCTKT) continue;
-
+  for (let i = 1; i < jsonData.length; i++) {const row = jsonData[i]; if (!row || row.length === 0) continue;
+    const maCTKT = row[0] ? row[0].toString().trim() : ""; if (!maCTKT) continue; // Cột A: Mã CTKT (Index 0) làm khóa chính để tra cứu
     // Tra cứu index tương ứng theo cấu trúc file ảnh bạn gửi
     catalogMap[maCTKT] = {
-      sanPham:   row[7]  ? row[7].toString().trim()  : "", // Cột H: Sản phẩm (Index 7)
-      phanLoai:  row[9]  ? row[9].toString().trim()  : "", // Cột J: Phân loại (Index 9)
-      maCatalo:  row[14] ? row[14].toString().trim() : "", // Cột O: Mã catalo (Index 14)
-      tenCatalo: row[15] ? row[15].toString().trim() : ""  // Cột P: Tên catalo (Index 15)
-    };
-  }
-  return catalogMap;
-}
+      sanPham:   row[5]  ? row[5].toString().trim()  : "",
+      phanLoai:  row[6]  ? row[6].toString().trim()  : "",
+      maCatalo:  row[10] ? row[10].toString().trim() : "",
+      tenCatalo: row[11] ? row[11].toString().trim() : ""}; } return catalogMap;}
 
-// ----------------------------------------------------
 // 1. XỬ LÝ ĐỌC FILE TỒN KHO (ĐÃ CẬP NHẬT TRA CỨU CHÉO)
-// ----------------------------------------------------
 function parseInventoryToMap(buffer, khoName, catalogMap = null) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -123,9 +74,7 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
   let startRowIndex = 9; 
   for (let i = 0; i < Math.min(20, jsonData.length); i++) {
     const rowStr = JSON.stringify(jsonData[i]);
-    if (rowStr.includes("Mã hàng") || rowStr.includes("Tên hàng")) { startRowIndex = i + 1; break; } 
-  }
-  
+    if (rowStr.includes("Mã hàng") || rowStr.includes("Tên hàng")) { startRowIndex = i + 1; break; } }
   for (let i = startRowIndex; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 3) continue;
@@ -143,23 +92,18 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
     } else if (nsxTxt && nsxTxt.includes("-")) {
       const parts = nsxTxt.split("-");
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
-      if (parts[0] && parts[0].length === 4) nam = parts[0]; 
-    }
-
+      if (parts[0] && parts[0].length === 4) nam = parts[0];}
     // 🔍 TIẾN HÀNH DÒ TÌM VLOOKUP SANG BẢNG DANH MỤC
     let boSung_maCatalo = "";
     let boSung_tenCatalo = "";
     let boSung_sanPham = "";
     let boSung_phanLoai = "";
-
     // Nếu tồn tại bảng danh mục (Kho 61, 69) và tìm thấy Mã hàng khớp với Mã CTKT
     if (catalogMap && catalogMap[maHang]) {
       boSung_maCatalo  = catalogMap[maHang].maCatalo;
       boSung_tenCatalo = catalogMap[maHang].tenCatalo;
       boSung_sanPham   = catalogMap[maHang].sanPham;
-      boSung_phanLoai  = catalogMap[maHang].phanLoai;
-    }
-
+      boSung_phanLoai  = catalogMap[maHang].phanLoai;}
     dataMap[tenHang] = {
       category: row[0] ? row[0].toString().trim() : "",    
       maHang: maHang,
@@ -175,20 +119,13 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
       xuat_tl: parseFloat(row[9]) || 0,                    
       cuoiKy_sl: parseFloat(row[10]) || 0,                 
       cuoiKy_tl: parseFloat(row[11]) || 0,
-      
-      // ĐÃ BỔ SUNG: Các trường thông tin lấy tự động từ bảng phụ ghép ra phía sau
+      // BỔ SUNG: Các trường thông tin lấy tự động từ bảng SAN PHAM
       maCatalo: boSung_maCatalo,
       tenCatalo: boSung_tenCatalo,
       sanPham: boSung_sanPham,
-      phanLoai: boSung_phanLoai
-    };
-  }
-  return dataMap;
-}
+      phanLoai: boSung_phanLoai}; } return dataMap; }
 
-// ----------------------------------------------------
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (Duy trì theo số cột cố định)
-// ----------------------------------------------------
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG
 function parseRoutesToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -202,34 +139,24 @@ function parseRoutesToMap(buffer) {
     const rowStr = JSON.stringify(jsonData[i]);
     if (rowStr.includes("Mã Phiếu") || rowStr.includes("Đối tượng") || rowStr.includes("Kho xuất")) {
       headerRowIdx = i; 
-      break;
-    }
-  }
-
+      break;} }
   const getTxtByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? row[idx].toString().trim() : "";
   const getDateByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? formatExcelDate(row[idx]) : "";
   const getNumByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? (parseFloat(row[idx]) || 0) : 0;
-
   for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
-
     const khoXuatVal = getTxtByIdx(row, 1);
     if (khoXuatVal !== "41" && khoXuatVal !== "61" && khoXuatVal !== "69") continue; 
-
     const maPhieu = getTxtByIdx(row, 3);
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
-
     let dinhVi = "";
     if (row[24] && row[25]) dinhVi = `${row[24].toString().trim()},${row[25].toString().trim()}`;
-
     let checkIn = "";
     if (row[34] && row[35]) checkIn = `${row[34].toString().trim()},${row[35].toString().trim()}`;
-
     const saiLechKm = getNumByIdx(row, 36); 
     let theoDoi = "";
     if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
-
     let thang = "";
     const ngayXuatKhoTxt = getDateByIdx(row, 27);
     if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
@@ -237,8 +164,7 @@ function parseRoutesToMap(buffer) {
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
     } else if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
       const parts = ngayXuatKhoTxt.split("-");
-      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
-    }
+      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;}
 
     routeMap[maPhieu] = {
       phuongXa:         getTxtByIdx(row, 0),   
@@ -277,98 +203,58 @@ function parseRoutesToMap(buffer) {
       checkIn:          checkIn,
       saiLechKm:        saiLechKm,
       theoDoi:          theoDoi,
-      thang:            thang
-    };
-  }
-  return routeMap;
-}
+      thang:            thang }; } return routeMap; }
 
-// ----------------------------------------------------
 // 3. TIẾN TRÌNH ĐỒNG BỘ CHÍNH
-// ----------------------------------------------------
 async function mainSync() {
   const drive = getDriveClient();
-
   console.log('🚀 1. Bắt đầu tiến trình cập nhật Tồn Kho...');
   let finalInventoryData = {};
   let invSuccessCount = 0;
-
-  for (const [khoName, fileId] of Object.entries(INVENTORY_LINKS)) {
-    try {
-      let catalogMap = null;
-
+  for (const [khoName, fileId] of Object.entries(ID_TONKHO)) {
+    try {let catalogMap = null;
       // Kiểm tra nếu là kho 61 hoặc 69 thì tải thêm file danh mục sản phẩm tương ứng để khớp dữ liệu
-      if (PRODUCT_CATALOG_LINKS[khoName]) {
+      if (ID_SANPHAM[khoName]) {
         console.log(`🔍 [Kho ${khoName}] Phát hiện yêu cầu dò tìm danh mục mở rộng. Đang tải file đối chiếu...`);
         try {
-          const catalogBuffer = await downloadFileBuffer(drive, PRODUCT_CATALOG_LINKS[khoName]);
+          const catalogBuffer = await downloadFileBuffer(drive, ID_SANPHAM[khoName]);
           catalogMap = parseCatalogToMap(catalogBuffer);
-          console.log(`   -> Cấu trúc Map danh mục cho Kho ${khoName} đã sẵn sàng.`);
-        } catch (catErr) {
-          console.error(`   ⚠️ Cảnh báo: Không thể nạp file danh mục cho Kho ${khoName} (${catErr.message}). Chạy chế độ không có dữ liệu gộp.`);
-        }
-      }
-
+          console.log(`   -> Cấu trúc Map danh mục cho Kho ${khoName} đã sẵn sàng.`); } catch (catErr) {
+          console.error(`   ⚠️ Cảnh báo: Không thể nạp file danh mục cho Kho ${khoName} (${catErr.message}). Chạy chế độ không có dữ liệu gộp.`);}
       const buffer = await downloadFileBuffer(drive, fileId);
       // Truyền catalogMap vào để tự động gộp các cột mở rộng
       const dataObject = parseInventoryToMap(buffer, khoName, catalogMap);
-      
       if (Object.keys(dataObject).length > 0) {
         finalInventoryData[`Kho_${khoName}`] = dataObject;
         invSuccessCount++;
-        console.log(`✅ Thành công Kho ${khoName}: Đã đọc ${Object.keys(dataObject).length} mặt hàng.`);
-      }
-    } catch (err) {
-      console.error(`❌ Lỗi kết nối Kho ${khoName}:`, err.message);
-    }
-  }
-
+        console.log(`✅ Thành công Kho ${khoName}: Đã đọc ${Object.keys(dataObject).length} mặt hàng.`);} } catch (err) {console.error(`❌ Lỗi kết nối Kho ${khoName}:`, err.message);} }
   if (invSuccessCount > 0) {
     finalInventoryData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
     await db.collection('TONKHO').doc('KHO').set(finalInventoryData, { merge: true });
-    console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho kèm dữ liệu mở rộng lên Firestore thành công!`);
-  }
-
+    console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho kèm dữ liệu mở rộng lên Firestore thành công!`);}
   console.log('\n--------------------------------------------------\n');
-
   console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường...');
   try {
-    console.log(`📦 Đang tải file Tuyến Đường từ Drive (ID: ${ROUTE_FILE_LINK})...`);
-    
-    const routeBuffer = await downloadFileBuffer(drive, ROUTE_FILE_LINK);
+    console.log(`📦 Đang tải file Tuyến Đường từ Drive (ID: ${ID_TUYENDUONG})...`);
+    const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
     const routeDataMap = parseRoutesToMap(routeBuffer);
     const totalRecords = Object.keys(routeDataMap).length;
-
     if (totalRecords > 0) {
       console.log(`📡 Đang đẩy dữ liệu tuần tự ${totalRecords} mã phiếu vào collection 'TUYENDUONG'...`);
-      
       let batch = db.batch();
       let count = 0;
-
       for (const [maPhieu, data] of Object.entries(routeDataMap)) {
         const docRef = db.collection('TUYENDUONG').doc(maPhieu);
         batch.set(docRef, data, { merge: true });
         count++;
-
         if (count % 400 === 0) {
           await batch.commit();
-          batch = db.batch();
-        }
-      }
-      
+          batch = db.batch();} }
       if (count % 400 !== 0) {
-        await batch.commit();
-      }
-
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${totalRecords} chứng từ lên Firestore!`);
-    } else {
-      console.log('⚠️ Không tìm thấy bản ghi hợp lệ nào thuộc các kho 41, 61, 69 trong file Tuyến đường.');
-    }
-  } catch (err) {
-    console.error(`❌ Lỗi đồng bộ Tuyến Đường:`, err.message);
-  }
-}
-
+        await batch.commit();}
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${totalRecords} chứng từ lên Firestore!`); } else {
+      console.log('⚠️ Không tìm thấy bản ghi hợp lệ nào thuộc các kho 41, 61, 69 trong file Tuyến đường.'); } } catch (err) {
+    console.error(`❌ Lỗi đồng bộ Tuyến Đường:`, err.message);} }
 mainSync().catch(err => {
   console.error('❌ Lỗi hệ thống nghiêm trọng:', err);
   process.exit(1);
