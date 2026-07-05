@@ -117,7 +117,6 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
       if (parts[0] && parts[0].length === 4) nam = parts[0];
     }
     
-    // 🔍 TIẾN HÀNH DÒ TÌM VLOOKUP SANG BẢNG DANH MỤC
     let boSung_maCatalo = "";
     let boSung_tenCatalo = "";
     let boSung_sanPham = "";
@@ -145,7 +144,6 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
       xuat_tl: parseFloat(row[9]) || 0,                    
       cuoiKy_sl: parseFloat(row[10]) || 0,                 
       cuoiKy_tl: parseFloat(row[11]) || 0,
-      // BỔ SUNG: Các trường thông tin từ danh mục sản phẩm mở rộng
       maCatalo: boSung_maCatalo,
       tenCatalo: boSung_tenCatalo,
       sanPham: boSung_sanPham,
@@ -155,7 +153,7 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
   return dataMap; 
 }
 
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (ĐÃ BỔ SUNG CỘT NĂM)
 function parseRoutesToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -193,14 +191,18 @@ function parseRoutesToMap(buffer) {
     let theoDoi = "";
     if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
     
+    // 📅 XỬ LÝ TÍNH TOÁN THÁNG / NĂM TỪ NGÀY XUẤT KHO
     let thang = "";
+    let nam = "";
     const ngayXuatKhoTxt = getDateByIdx(row, 27);
     if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
       const parts = ngayXuatKhoTxt.split("/");
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
+      if (parts[2]) nam = parts[2].split(" ")[0]; // Cắt lấy năm trước khoảng trắng của giờ (nếu có)
     } else if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
       const parts = ngayXuatKhoTxt.split("-");
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
+      if (parts[0] && parts[0].length === 4) nam = parts[0];
     }
 
     routeMap[maPhieu] = {
@@ -240,7 +242,8 @@ function parseRoutesToMap(buffer) {
       checkIn:          checkIn,
       saiLechKm:        saiLechKm,
       theoDoi:          theoDoi,
-      thang:            thang 
+      thang:            thang,
+      nam:              nam // 🌟 ĐÃ BỔ SUNG: Cột năm lấy theo Ngày xuất kho phục vụ AppSheet filter
     }; 
   } 
   return routeMap; 
@@ -257,7 +260,6 @@ async function mainSync() {
     try {
       let catalogMap = null;
       
-      // ĐÃ SỬA: Tách biệt khối tải danh mục sản phẩm (Chỉ áp dụng cho kho 61, 69)
       if (ID_SANPHAM[khoName]) {
         console.log(`🔍 [Kho ${khoName}] Phát hiện yêu cầu dò tìm danh mục mở rộng. Đang tải file đối chiếu...`);
         try {
@@ -269,7 +271,6 @@ async function mainSync() {
         }
       }
 
-      // ĐÃ SỬA: Đưa logic đọc file tồn kho ra ngoài IF để Kho 41 cũng được xử lý mượt mà
       const buffer = await downloadFileBuffer(drive, fileId);
       const dataObject = parseInventoryToMap(buffer, khoName, catalogMap);
       
