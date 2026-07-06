@@ -7,8 +7,9 @@
     <title>HAMACO-TMS</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style> /* CSS */
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
         /* NÚT RESET */
@@ -23,6 +24,15 @@
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
+        
+        /* Cấu hình khung chứa biểu đồ để responsive tốt trên mobile */
+        .khung-bieu-do {
+            position: relative;
+            width: 100%;
+            margin-top: 15px;
+            min-height: 220px;
+        }
+
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
@@ -31,6 +41,7 @@
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
+        
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
         .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
@@ -51,34 +62,25 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiêu</h2>
-                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
+                <h2>🎯 Ngân sách chi tiêu tháng này</h2>
+                <div class="khung-bieu-do">
+                    <canvas id="chartNganSach"></canvas>
+                </div>
             </div>
         </div>
 
         <div id="bao-cao" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB" style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                <h3 style="font-size: 16px; color: #007acc;"><i class="fa-solid fa-filter"></i> Bộ lọc báo cáo</h3>
-                <div style="display: flex; gap: 8px;">
-                    <select id="loc-thang" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #ccc; font-weight: 500;">
-                        <option value="all">-- Cả Năm --</option>
-                        <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
-                        <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
-                        <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-                        <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
-                        <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
-                        <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-                    </select>
-                    <select id="loc-nam" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #ccc; font-weight: 500;">
-                        <option value="2026">2026</option>
-                        <option value="2025">2025</option>
-                    </select>
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h2>📊 Phân bổ chi phí vận hành</h2>
+                <div class="khung-bieu-do">
+                    <canvas id="chartChiPhiTron"></canvas>
                 </div>
             </div>
-
-            <div class="KHUNG-CON-TRONG-TAB" style="position: relative; height: 320px; width: 100%;">
-                <h2 id="tieuDeBieuDo" style="font-size: 16px; margin-bottom: 15px;">📊 Biểu đồ Sản lượng Vận chuyển (Tấn)</h2>
-                <canvas id="bieuDoSanLuong"></canvas>
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h2>📈 Doanh thu xu hướng (6 tháng qua)</h2>
+                <div class="khung-bieu-do">
+                    <canvas id="chartDoanhThuCot"></canvas>
+                </div>
             </div>
         </div>
 
@@ -99,49 +101,43 @@
 
         <div id="van-chuyen" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🚚 Quản lý Vận chuyển</h2>
-                <p style="margin-top: 10px; color: #666;">Điều phối xe, tài xế và trạng thái đơn vận chuyển.</p>
+                <h2>🚚 Hiệu suất vận chuyển theo xe</h2>
+                <div class="khung-bieu-do">
+                    <canvas id="chartVanChuyen"></canvas>
+                </div>
             </div>
         </div>
 
     </div>
 
     <nav class="MENU-DUOI">
-
         <div class="MENU-item active" onclick="switchTab('home')">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </div>
-
         <div class="MENU-item" onclick="switchTab('bao-cao')">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Báo cáo</span>
         </div>
-
         <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
             <i class="fa-solid fa-plus"></i>
         </div>
-
         <div class="MENU-item" onclick="switchTab('kho')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Kho</span>
         </div>
-
         <div class="MENU-item" onclick="switchTab('van-chuyen')">
             <i class="fa-solid fa-car-side"></i>
             <span>Vận chuyển</span>
         </div>
-
     </nav>
 
     <script type="module">
-        // GOM TOÀN BỘ CÁC LỆNH IMPORT LÊN TRÊN CÙNG
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // ĐÃ SỬA: Thêm getDocs vào danh sách import để tránh lỗi crash script ngầm
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
         // CẤU HÌNH FIREBASE
-        const firebaseConfig = {
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const firebaseConfig = { 
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
             authDomain: "hamaco-tms-c4b70.firebaseapp.com",
             projectId: "hamaco-tms-c4b70",
@@ -151,12 +147,12 @@
             measurementId: "G-L7RQZWHQ4J"
         };
 
-        // KHỞI TẠO FIREBASE & FIRESTORE
+        // KHỞI TẠO FIREBASE
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
-        // NÚT RESET APP
+        // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
         if (idNutLamMoi) {
             idNutLamMoi.addEventListener('click', () => {
@@ -179,181 +175,96 @@
             
             document.getElementById(tabId).classList.add('active'); 
             
-            // Tìm nút menu tương ứng với tabId để active chuẩn xác
-            const targetMenu = document.querySelector(`.MENU-item[onclick="switchTab('${tabId}')"]`);
-            if (targetMenu) { targetMenu.classList.add('active'); }
-
-            // Nếu người dùng bấm vào tab báo cáo thì tự động nạp/vẽ lại biểu đồ ngay
-            if (tabId === 'bao-cao') {
-                xuLyDuLieuBaoCao();
-            }
+            // Tìm đúng nút menu vừa click dựa vào tabId để gán class active chính xác
+            const targetItem = document.querySelector(`.MENU-item[onclick*="${tabId}"]`);
+            if(targetItem) targetItem.classList.add('active');
         }
-        
-        let bieuDoGlobal = null; 
 
-        // HÀM KHỞI TẠO HOẶC CẬP NHẬT BIỂU ĐỒ (DÙNG CHUNG CHO CẢ NGÀY VÀ THÁNG)
-        function veBieuDo(nhanX, mangGiaoHang, mangGuiChanh, mangTong) {
-            const ctx = document.getElementById('bieuDoSanLuong').getContext('2d');
-
-            if (bieuDoGlobal) { bieuDoGlobal.destroy(); }
-
-            bieuDoGlobal = new Chart(ctx, {
+        // --- KHỞI TẠO CÁC BIỂU ĐỒ (CHART.JS) ---
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // 1. Biểu đồ Ngân sách (Trang Home) - Dạng Thanh Ngang (Bar)
+            const ctxNganSach = document.getElementById('chartNganSach').getContext('2d');
+            new Chart(ctxNganSach, {
                 type: 'bar',
                 data: {
-                    labels: nhanX,
-                    datasets: [
-                        {
-                            label: 'Tổng Sản Lượng (Đường)',
-                            type: 'line',
-                            data: mangTong,
-                            borderColor: '#e74c3c',
-                            backgroundColor: '#e74c3c',
-                            borderWidth: 2,
-                            tension: 0.2,
-                            fill: false,
-                            order: 1
-                        },
-                        {
-                            label: 'Gửi chành',
-                            data: mangGuiChanh,
-                            backgroundColor: '#ffb703',
-                            borderColor: '#ffb703',
-                            borderWidth: 1,
-                            barPercentage: 0.6, 
-                            categoryPercentage: 0.8,
-                            order: 2
-                        },
-                        {
-                            label: 'Giao hàng',
-                            data: mangGiaoHang,
-                            backgroundColor: 'rgba(0, 122, 204, 0.6)', 
-                            borderColor: '#007acc',
-                            borderWidth: 1,
-                            barPercentage: 0.6, 
-                            categoryPercentage: 0.8,
-                            order: 3
-                        }
-                    ]
+                    labels: ['Đã chi tiêu', 'Ngân sách còn lại'],
+                    datasets: [{
+                        label: 'Số tiền (VNĐ)',
+                        data: [65000000, 35000000],
+                        backgroundColor: ['#e63946', '#2a9d8f'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Biến thành thanh ngang
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 2. Biểu đồ Phân bổ chi phí (Trang Báo cáo) - Dạng Tròn (Doughnut)
+            const ctxChiPhi = document.getElementById('chartChiPhiTron').getContext('2d');
+            new Chart(ctxChiPhi, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Xăng dầu', 'Sửa chữa', 'Cầu đường', 'Lương tài xế'],
+                    datasets: [{
+                        data: [40, 15, 20, 25],
+                        backgroundColor: ['#007acc', '#f4a261', '#e76f51', '#2a9d8f']
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { beginAtZero: true, title: { display: true, text: 'Trọng lượng (Tấn)' } }
-                    },
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
-                    }
+                    plugins: { legend: { position: 'bottom' } }
                 }
             });
-        }
 
-        // HÀM TỰ ĐỘNG PHÂN TÍCH VÀ ĐIỀU HƯỚNG BÁO CÁO (NGÀY hoặc THÁNG TỰ ĐỘNG)
-        async function xuLyDuLieuBaoCao() {
-            const thangS = document.getElementById('loc-thang').value; // Lấy "all" hoặc số tháng
-            const namS = document.getElementById('loc-nam').value.toString().trim(); // Năm (Vd: "2026")
-            const txtTieuDe = document.getElementById('tieuDeBieuDo');
-
-            if (thangS === "all") {
-                // CHẾ ĐỘ 1: VẼ QUA CÁC THÁNG TRONG NĂM
-                txtTieuDe.innerText = `📊 Biểu đồ Sản lượng Vận chuyển Năm ${namS} (Tấn)`;
-                
-                let duLieuGiaoHang12T = Array(12).fill(0);
-                let duLieuGuiChanh12T = Array(12).fill(0);
-                let duLieuTong12T = Array(12).fill(0);
-                const nhanThang = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-
-                try {
-                    // Lọc trên server theo Năm trước
-                    const phanDoanTruyVan = query(
-                        collection(db, "TUYENDUONG"),
-                        where("nam", "==", namS)
-                    );
-                    const querySnapshot = await getDocs(phanDoanTruyVan);
-                    
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        if (data.thang) {
-                            // Ép chuỗi "Tháng 7" -> Số 7 chuẩn xác
-                            const soThang = parseInt(data.thang.toString().replace("Tháng", "").trim(), 10);
-                            const thangIndex = soThang - 1;
-
-                            if (thangIndex >= 0 && thangIndex < 12) {
-                                // Quy đổi trường tTai từ kg sang Tấn (chia 1000)
-                                const sanLuongTai = parseFloat(data.tTai || 0) / 1000;
-
-                                if (data.htGiaoNhan === "Giao hàng") {
-                                    duLieuGiaoHang12T[thangIndex] += sanLuongTai;
-                                } else if (data.htGiaoNhan === "Gửi chành") {
-                                    duLieuGuiChanh12T[thangIndex] += sanLuongTai;
-                                }
-                                duLieuTong12T[thangIndex] += sanLuongTai;
-                            }
-                        }
-                    });
-
-                    // Tiến hành vẽ biểu đồ 12 Tháng cố định
-                    veBieuDo(nhanThang, duLieuGiaoHang12T, duLieuGuiChanh12T, duLieuTong12T);
-
-                } catch (error) {
-                    console.error("Lỗi lấy dữ liệu báo cáo năm: ", error);
+            // 3. Biểu đồ Doanh thu (Trang Báo cáo) - Dạng Cột Đứng (Bar)
+            const ctxDoanhThu = document.getElementById('chartDoanhThuCot').getContext('2d');
+            new Chart(ctxDoanhThu, {
+                type: 'bar',
+                data: {
+                    labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                    datasets: [{
+                        label: 'Doanh thu (Triệu)',
+                        data: [120, 150, 180, 140, 210, 230],
+                        backgroundColor: '#0082C8',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
                 }
+            });
 
-            } else {
-                // CHẾ ĐỘ 2: VẼ CHI TIẾT 31 NGÀY TRONG THÁNG
-                txtTieuDe.innerText = `📊 Biểu đồ Sản lượng Vận chuyển - Tháng ${thangS}/${namS} (Tấn)`;
-                
-                const chuoiThangTimKiem = `Tháng ${thangS}`;
-                let duLieuGiaoHang31N = Array(31).fill(0);
-                let duLieuGuiChanh31N = Array(31).fill(0);
-                let duLieuTong31N = Array(31).fill(0);
-                const nhanNgay = Array.from({length: 31}, (_, i) => `N${i + 1}`);
-
-                try {
-                    const phanDoanTruyVan = query(
-                        collection(db, "TUYENDUONG"),
-                        where("thang", "==", chuoiThangTimKiem),
-                        where("nam", "==", namS)
-                    );
-                    const querySnapshot = await getDocs(phanDoanTruyVan);
-                    
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        if (data.ngayXuatKho) {
-                            const phanNgayThangNam = data.ngayXuatKho.split(' ')[0]; 
-                            const phanTachNgay = phanNgayThangNam.split('/');
-                            const ngayIndex = parseInt(phanTachNgay[0], 10) - 1; 
-
-                            if (ngayIndex >= 0 && ngayIndex < 31) {
-                                const sanLuongTai = parseFloat(data.tTai || 0) / 1000; 
-
-                                if (data.htGiaoNhan === "Giao hàng") {
-                                    duLieuGiaoHang31N[ngayIndex] += sanLuongTai;
-                                } else if (data.htGiaoNhan === "Gửi chành") {
-                                    duLieuGuiChanh31N[ngayIndex] += sanLuongTai;
-                                }
-                                duLieuTong31N[ngayIndex] += sanLuongTai;
-                            }
-                        }
-                    });
-
-                    // Tiến hành vẽ biểu đồ 31 Ngày
-                    veBieuDo(nhanNgay, duLieuGiaoHang31N, duLieuGuiChanh31N, duLieuTong31N);
-
-                } catch (error) {
-                    console.error("Lỗi lấy dữ liệu báo cáo tháng: ", error);
+            // 4. Biểu đồ Vận chuyển (Trang Vận chuyển) - Dạng Đường (Line)
+            const ctxVanChuyen = document.getElementById('chartVanChuyen').getContext('2d');
+            new Chart(ctxVanChuyen, {
+                type: 'line',
+                data: {
+                    labels: ['Đội xe A', 'Đội xe B', 'Đội xe C', 'Đội xe D'],
+                    datasets: [{
+                        label: 'Số chuyến hàng hoàn thành',
+                        data: [45, 32, 58, 24],
+                        borderColor: '#007acc',
+                        backgroundColor: 'rgba(0, 122, 204, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
                 }
-            }
-        }
-
-        // LẮNG NGHE SỰ KIỆN ĐỔI BỘ LỌC TRÊN GIAO DIỆN
-        document.getElementById('loc-thang').addEventListener('change', xuLyDuLieuBaoCao);
-        document.getElementById('loc-nam').addEventListener('change', xuLyDuLieuBaoCao);
-
-        // TỰ ĐỘNG CHẠY LẦN ĐẦU KHI TẢI TRANG (Mặc định mở ra xem cả năm hiện tại)
-        document.getElementById('loc-thang').value = "all";
-        xuLyDuLieuBaoCao();
+            });
+        });
     </script>
 </body>
 </html>
