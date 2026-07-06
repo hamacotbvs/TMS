@@ -59,6 +59,17 @@
             @media (orientation: landscape) {
                 .bo-loc-treo-phai {margin-bottom: 8px;}
                 .select-mini {padding: 4px 24px 4px 10px; font-size: 11px; background-position: calc(100% - 10px) center;} }
+        /* VÙNG BIỂU ĐỒ */
+        .vung-bieu-do {
+            background: #ffffff;
+            padding: 5px;
+            border-radius: 8px;
+        }
+        @media (orientation: landscape) {
+            .vung-bieu-do {
+                height: 220px !important; /* Thu hẹp chiều cao khi xoay ngang để vừa màn hình */
+            }
+        }
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
         .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
@@ -215,6 +226,87 @@
             elThang.addEventListener('change', xuLyBoLocThoiGian);
             elNam.addEventListener('change', xuLyBoLocThoiGian);
         }
+        // BIỂU ĐỒ GIAO HÀNG/GỬI CHÀNH QUA THÁNG TRONG NĂM //
+        // --- CẤU HÌNH BIỂU ĐỒ CỘT CHỒNG (CHART.JS) ---
+        let bieuDoBaoCao = null;
+
+        function khoiTaoBieuDo() {
+            const ctx = document.getElementById('bieuDoSanLuong');
+            if (!ctx) return;
+
+            // Dữ liệu mẫu ban đầu cho 12 tháng (Bạn sẽ thay bằng dữ liệu thực tế từ Firebase sau này)
+            const dataGiaoHang = [120, 150, 180, 90, 200, 170, 220, 190, 210, 160, 140, 250]; // Sản lượng tTại của Giao Hàng
+            const dataGuiChanh = [50, 70, 60, 40, 80, 55, 90, 65, 75, 60, 50, 85];       // Sản lượng tTại của Gửi Chành
+
+            bieuDoBaoCao = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                    datasets: [
+                        {
+                            label: '🚚 Giao hàng',
+                            data: dataGiaoHang,
+                            backgroundColor: '#007acc', // Màu xanh chủ đạo của app
+                            borderWidth: 0,
+                            borderRadius: 4
+                        },
+                        {
+                            label: '📦 Gửi chành',
+                            data: dataGuiChanh,
+                            backgroundColor: '#ff9f43', // Màu cam phân tách rõ ràng
+                            borderWidth: 0,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top', // Hiển thị chú thích ở phía trên
+                            labels: { font: { family: 'Roboto', size: 12 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: ${context.raw} tấn`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true, // KÍCH HOẠT CỘT CHỒNG TRỤC X
+                            grid: { display: false } // Ẩn lưới sọc dọc cho thoáng
+                        },
+                        y: {
+                            stacked: true, // KÍCH HOẠT CỘT CHỒNG TRỤC Y
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Sản lượng (Tấn)',
+                                font: { font: 'Roboto', weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gọi khởi tạo biểu đồ ngay sau khi tải trang xong
+        document.addEventListener('DOMContentLoaded', () => {
+            khoiTaoBieuDo();
+        });
+
+        // Đảm bảo khi switch sang Tab Báo cáo thì biểu đồ vẽ mượt mà
+        const hàmChuyenTabGốc = window.switchTab;
+        window.switchTab = function(tabId) {
+            hàmChuyenTabGốc(tabId);
+            if (tabId === 'bao-cao' && !bieuDoBaoCao) {
+                setTimeout(khoiTaoBieuDo, 100); // Khởi tạo nếu chưa có
+            }
+        };
     </script>
 </body>
 </html>
