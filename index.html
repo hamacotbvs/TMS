@@ -27,7 +27,7 @@
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px;} 
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
 
-        .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; }
+        .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; width: 90%; text-align: center; justify-content: center;}
         .loading-box i { animation: spin 1s linear infinite; color: #007acc; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -37,7 +37,7 @@
     <div class="KHUNG-CAC-TAB">
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 200px;">
-                <h2>📈 Biểu đồ Tải trọng (Server-Side Aggregate</h2>
+                <h2>📈 Biểu đồ Tải trọng (Server-Side Aggregate)</h2>
                 <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Server đang tính tổng từng tháng...</div>
                 <div class="vung-bieu-do">
                     <canvas id="bieuDoTaiTrongThang"></canvas>
@@ -69,7 +69,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // Import các hàm tính toán tổng hợp trên server: query, where, aggregate, sum
         import { getFirestore, collection, query, where, getAggregateFromServer, sum } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
@@ -108,11 +107,9 @@
                 let mangGuiChanh = Array(12).fill(0);
                 let mangTongTai = Array(12).fill(0);
 
-                // Gom tất cả các lệnh gọi Server chạy song song (Promise.all) để tối ưu tối đa thời gian chờ
                 const cacYeuCauTinhToan = [];
 
                 for (let thang = 1; thang <= 12; thang++) {
-                    // Yêu cầu 1: Tính tổng Giao hàng của tháng này trên Server
                     const qGiaoHang = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));
                     cacYeuCauTinhToan.push(
                         getAggregateFromServer(qGiaoHang, { tongTai: sum('tTai') }).then(res => {
@@ -120,7 +117,6 @@
                         })
                     );
 
-                    // Yêu cầu 2: Tính tổng Gửi chành của tháng này trên Server
                     const qGuiChanh = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Gửi chành"));
                     cacYeuCauTinhToan.push(
                         getAggregateFromServer(qGuiChanh, { tongTai: sum('tTai') }).then(res => {
@@ -129,15 +125,12 @@
                     );
                 }
 
-                // Chờ Server xử lý xong toàn bộ 24 luồng dữ liệu cùng một lúc
                 await Promise.all(cacYeuCauTinhToan);
 
-                // Tính tổng cộng dồn của cả hai hình thức
                 for (let i = 0; i < 12; i++) {
                     mangTongTai[i] = mangGiaoHang[i] + mangGuiChanh[i];
                 }
 
-                // Đẩy số liệu siêu nhẹ lên biểu đồ
                 bieuDo.data.datasets[0].data = mangGiaoHang;
                 bieuDo.data.datasets[1].data = mangGuiChanh;
                 bieuDo.data.datasets[2].data = mangTongTai;
@@ -148,7 +141,6 @@
             } catch (e) { 
                 console.error("Lỗi đầy đủ:", e);
     
-                // Tự động trích xuất đường link tạo Index từ thông báo lỗi của Firebase
                 let linkIndex = "";
                 if (e.message && e.message.includes("https://")) {
                     const match = e.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
@@ -158,13 +150,14 @@
                 const oLoading = document.getElementById('loading');
                 if (oLoading) {
                     if (linkIndex) {
-                        oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi thiếu Index! Bấm vào đây để tạo:</span> <br> 
-                                  <a href="${linkIndex}" target="_blank" style="color:#007acc; text-decoration:underline; font-weight:bold; word-break:break-all;">${linkIndex}</a>`;
+                        oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi thiếu Index! Bấm vào đây để tạo:</span> <br><br> 
+                                              <a href="${linkIndex}" target="_blank" style="color:#007acc; text-decoration:underline; font-weight:bold; word-break:break-all;">${linkIndex}</a>`;
                     } else {
                         oLoading.innerHTML = `<span style="color:red;">Lỗi kết nối: ${e.message}</span>`;
                     }
                 }
             }
+        } // <-- ĐÃ SỬA: Bổ sung dấu đóng ngoặc nhọn bị thiếu ở đây
 
         taiDuLieuBieuDoTuServer();
 
