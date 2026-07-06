@@ -242,62 +242,59 @@
             });
         }
 
-        // HÀM TẢI DỮ LIỆU TỪ FIREBASE VÀ PHÂN TÍCH THEO BỘ LỌC THÁNG / NĂM
-        // HÀM TẢI VÀ LỌC DỮ LIỆU TRỰC TIẾP TỪ SERVER FIRESTORE
+        // HÀM TẢI VÀ LỌC DỮ LIỆU ĐÃ ĐƯỢC CHUẨN HÓA THEO SỐ LIỆU FIRESTORE THỰC TẾ
         async function docDuLieuVaLocBaoCao() {
-            const thangS = document.getElementById('loc-thang').value;
-            const namS = document.getElementById('loc-nam').value;
+            const thangS = document.getElementById('loc-thang').value; // Ví dụ: "7"
+            const namS = document.getElementById('loc-nam').value;     // Ví dụ: "2026"
             
-            // Chuẩn hóa chuỗi tìm kiếm tương ứng với cách lưu trữ trong Database của bạn
-            const chuoiThangTimKiem = `Tháng ${thangS}`;
-            const chuoiNamTimKiem = `Năm ${namS}`; // Nếu DB chỉ lưu số "2026", hãy sửa thành: const chuoiNamTimKiem = namS;
+            // Khớp chính xác định dạng chữ trong Firestore của bạn
+            const chuoiThangTimKiem = `Tháng ${thangS}`; // Kết quả: "Tháng 7"
+            const chuoiNamTimKiem = namS.toString().trim(); // Khớp chính xác chuỗi "2026", bỏ chữ "Năm " đi
 
-            // Tạo sẵn 3 mảng trống chứa dữ liệu ứng với 31 ngày
             let duLieuGiaoHang = Array(31).fill(0);
             let duLieuGuiChanh = Array(31).fill(0);
             let duLieuTong = Array(31).fill(0);
 
             try {
-                // ÉP SERVER LỌC TRƯỚC: Chỉ lấy các tài liệu thỏa mãn cả trường 'thang' và 'nam'
+                // Lọc trực tiếp cực nhanh từ Server Firestore dựa trên 2 trường chính xác
                 const phanDoanTruyVan = query(
                     collection(db, "TUYENDUONG"),
                     where("thang", "==", chuoiThangTimKiem),
                     where("nam", "==", chuoiNamTimKiem)
                 );
                 
-                // Tải gói dữ liệu đã được lọc tinh gọn từ server về
                 const querySnapshot = await getDocs(phanDoanTruyVan);
                 
+                // Vòng lặp xử lý dữ liệu đổ về mảng ngày
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     
-                    // Vì Server đã lọc đúng Tháng và Năm, ở đây ta chỉ cần bóc tách Ngày để vẽ lên biểu đồ
                     if (data.ngayXuatKho) {
-                        const phanTachNgay = data.ngayXuatKho.split('/');
-                        const ngayIndex = parseInt(phanTachNgay[0], 10) - 1; // Ngày 1 nằm ở vị trí số 0
+                        // Tách chuỗi lấy ngày từ "03/01/2026 08:10:21"
+                        const phanNgayThangNam = data.ngayXuatKho.split(' ')[0]; 
+                        const phanTachNgay = phanNgayThangNam.split('/');
+                        const ngayIndex = parseInt(phanTachNgay[0], 10) - 1; 
 
                         if (ngayIndex >= 0 && ngayIndex < 31) {
-                            // Quy đổi trọng lượng từ KG sang Tấn (tTai / 1000)
+                            // tTai chia 1000 để đổi từ KG sang Tấn
                             const sanLuongTai = parseFloat(data.tTai || 0) / 1000; 
 
-                            // Phân loại cột dựa trên hình thức Giao nhận
                             if (data.htGiaoNhan === "Giao hàng") {
                                 duLieuGiaoHang[ngayIndex] += sanLuongTai;
                             } else if (data.htGiaoNhan === "Gửi chành") {
                                 duLieuGuiChanh[ngayIndex] += sanLuongTai;
                             }
                             
-                            // Đường tổng bằng tổng sản lượng trong ngày
                             duLieuTong[ngayIndex] += sanLuongTai;
                         }
                     }
                 });
 
-                // Gửi dữ liệu đã xử lý sang hàm vẽ biểu đồ
+                // Cập nhật và vẽ lại biểu đồ
                 veBieuDo(duLieuGiaoHang, duLieuGuiChanh, duLieuTong);
 
             } catch (error) {
-                console.error("Lỗi truy vấn dữ liệu từ Server: ", error);
+                console.error("Lỗi lấy dữ liệu từ Server: ", error);
             }
         }
 
