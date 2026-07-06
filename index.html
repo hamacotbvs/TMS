@@ -7,9 +7,10 @@
     <title>HAMACO-TMS</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <style> /* CSS ĐỊNH DẠNG WEBAPP*/
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style> /* CSS */
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
         /* NÚT RESET */
         .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
@@ -23,6 +24,10 @@
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
+        
+        /* CSS Khung chứa biểu đồ nhằm tối ưu hiển thị trên Mobile */
+        .vung-bieu-do {position: relative; width: 100%; height: 350px; margin-top: 15px;}
+
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
@@ -31,49 +36,11 @@
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
-        /* BỘ LỌC THÁNG NẰM TAB BÁO CÁO */
-        .bo-loc-treo-phai {
-            display: flex;
-            justify-content: flex-end; /* Đẩy 2 ô chọn về sát lề phải màn hình */
-            gap: 8px;
-            margin-bottom: 12px; /* Tạo khoảng cách trống an toàn với khung trắng bên dưới */
-            padding-right: 4px;  /* Canh đều lề phải với khung nội dung */}
-        .select-mini {
-            padding: 6px 28px 6px 12px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #0082C8;
-            background-color: #ffffff;
-            border: 1px solid #edf2f4;
-            border-radius: 20px;
-            outline: none;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%230082C8' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
-            background-repeat: no-repeat;
-            background-position: calc(100% - 12px) center;
-            transition: all 0.2s;}
-        .select-mini:active {transform: scale(0.95);}
-            /* Khi xoay ngang màn hình */
-            @media (orientation: landscape) {
-                .bo-loc-treo-phai {margin-bottom: 8px;}
-                .select-mini {padding: 4px 24px 4px 10px; font-size: 11px; background-position: calc(100% - 10px) center;} }
-        /* VÙNG BIỂU ĐỒ */
-        .vung-bieu-do {
-            background: #ffffff;
-            padding: 5px;
-            border-radius: 8px;
-        }
-        @media (orientation: landscape) {
-            .vung-bieu-do {
-                height: 220px !important; /* Thu hẹp chiều cao khi xoay ngang để vừa màn hình */
-            }
-        }
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
         .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
         .KHUNG-CON-TRONG-TAB {padding: 12px 16px;    /* Giảm từ 20px xuống còn 12px */ margin-bottom: 10px;   /* Giảm khoảng cách giữa các card */}
+        .vung-bieu-do {height: 220px;} /* Giảm chiều cao biểu đồ khi nằm ngang tránh tràn màn hình */
         .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} /* Đẩy nút reset sát lên góc hơn để không chiếm diện tích */
         .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} /* Hạ chiều cao menu xuống 45px và ép sát đáy */
         .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } /* Đổi bố cục nút sang hàng ngang (icon nằm trước chữ) */
@@ -96,31 +63,12 @@
         </div>
 
         <div id="bao-cao" class="trang-content">
-            <div class="bo-loc-treo-phai">
-                <select id="chon-thang" class="select-mini">
-                    <option value="1">Tháng 1</option>
-                    <option value="2">Tháng 2</option>
-                    <option value="3">Tháng 3</option>
-                    <option value="4">Tháng 4</option>
-                    <option value="5">Tháng 5</option>
-                    <option value="6">Tháng 6</option>
-                    <option value="7">Tháng 7</option>
-                    <option value="8">Tháng 8</option>
-                    <option value="9">Tháng 9</option>
-                    <option value="10">Tháng 10</option>
-                    <option value="11">Tháng 11</option>
-                    <option value="12">Tháng 12</option>
-                </select>
-                <select id="chon-nam" class="select-mini">
-                    <option value="2025">2025</option>
-                    <option value="2026" selected>2026</option>
-                    <option value="2027">2027</option>
-                </select>
-            </div>
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Báo cáo & Thống k</h2>
-                <div class="vung-bieu-do" style="margin-top: 20px; position: relative; width: 100%; height: 300px;">
-                    <canvas id="bieuDoSanLuong"></canvas>
+                <h2>📊 Báo cáo Sản lượng Vận chuyển (2026)</h2>
+                <p style="color: #666; font-size: 13px; margin-top: 4px;">Tổng hợp khối lượng (tTai) theo từng tháng phân loại Giao hàng & Gửi chành</p>
+                
+                <div class="vung-bieu-do">
+                    <canvas id="bieuDoTrongTai"></canvas>
                 </div>
             </div>
         </div>
@@ -177,10 +125,10 @@
 
     </nav>
 
-<script type="module">
+    <script type="module">
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
@@ -197,11 +145,105 @@
         const db = getFirestore(app);
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
-        // BIẾN TOÀN CỤC CỦA BIỂU ĐỒ VÀ FIRESTORE
-        let bieuDoBaoCao = null;
-        let unsubscribeFirebase = null; 
+        // KHỞI TẠO BIỂU ĐỒ TRỐNG TRƯỚC
+        const ctx = document.getElementById('bieuDoTrongTai').getContext('2d');
+        
+        // Mảng chứa dữ liệu ban đầu cho 12 tháng (từ Tháng 1 đến Tháng 12)
+        const dataGiaoHang = Array(12).fill(0);
+        const dataGuiChanh = Array(12).fill(0);
 
-        // NÚT RESET APP
+        const bieuDo = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                datasets: [
+                    {
+                        label: 'Giao hàng (Cột bự)',
+                        data: dataGiaoHang,
+                        backgroundColor: 'rgba(0, 122, 204, 0.4)', // Màu xanh mờ bọc ngoài
+                        borderColor: 'rgba(0, 122, 204, 1)',
+                        borderWidth: 1,
+                        // Thuộc tính tạo độ rộng to cho cột ngoài
+                        categoryPercentage: 0.8,
+                        barPercentage: 0.9,
+                        stack: 'stack0' 
+                    },
+                    {
+                        label: 'Gửi chành (Cột nhỏ lồng trong)',
+                        data: dataGuiChanh,
+                        backgroundColor: 'rgba(255, 99, 132, 1)', // Màu đỏ đặc nổi bật bên trong
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        // Thuộc tính bóp nhỏ cột để lồng gọn vào bên trong cột to
+                        categoryPercentage: 0.8,
+                        barPercentage: 0.4,
+                        stack: 'stack0'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true // Cho phép ghi đè các cột lên chung một tọa độ x
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Trọng tải (tTai)',
+                            font: { weight: 'bold' }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+
+        // LẤY DỮ LIỆU REALTIME TỪ FIRESTORE (TUYENDUONG)
+        // Lọc lấy dữ liệu của năm 2026 dựa trên cấu trúc Firestore của bạn
+        const q = query(collection(db, "TUYENDUONG"), where("nam", "==", 2026));
+
+        onSnapshot(q, (snapshot) => {
+            // Reset mảng dữ liệu về 0 trước khi nạp dữ liệu mới tránh cộng dồn sai
+            const tongGiaoHang = Array(12).fill(0);
+            const tongGuiChanh = Array(12).fill(0);
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                
+                // Ép kiểu tTai và thang về dạng số an toàn
+                const trongTai = parseFloat(data.tTai) || 0;
+                const thangIndex = parseInt(data.thang) - 1; // Trừ 1 vì mảng chạy từ 0 -> 11
+
+                if (thangIndex >= 0 && thangIndex < 12) {
+                    if (data.htGiaoNhan === "Giao hàng") {
+                        tongGiaoHang[thangIndex] += trongTai;
+                    } else if (data.htGiaoNhan === "Gửi chành") {
+                        tongGuiChanh[thangIndex] += trongTai;
+                    }
+                }
+            });
+
+            // Cập nhật lại mảng dữ liệu mới vào biểu đồ và làm mới (update)
+            bieuDo.data.datasets[0].data = tongGiaoHang;
+            bieuDo.data.datasets[1].data = tongGuiChanh;
+            bieuDo.update();
+            console.log("Đã cập nhật dữ liệu biểu đồ mới nhất!");
+        }, (error) => {
+            console.error("Lỗi lấy dữ liệu Firestore: ", error);
+        });
+
+        // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
         if (idNutLamMoi) {
             idNutLamMoi.addEventListener('click', () => {
@@ -215,7 +257,7 @@
         }
 
         // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
-        window.switchTab = function(tabId) { 
+        window.switchTab = function(tabId) {
             const trangs = document.querySelectorAll('.trang-content'); 
             trangs.forEach(page => page.classList.remove('active')); 
             
@@ -223,171 +265,9 @@
             menuItems.forEach(item => item.classList.remove('active')); 
             
             document.getElementById(tabId).classList.add('active'); 
-            if (window.event && window.event.currentTarget) {
-                window.event.currentTarget.classList.add('active');
-            } else {
-                const iconMap = {
-                    'home': '.fa-house',
-                    'bao-cao': '.fa-chart-pie',
-                    'them-moi': '.fa-plus',
-                    'kho': '.fa-boxes-stacked',
-                    'van-chuyen': '.fa-car-side'
-                };
-                const iconClass = iconMap[tabId];
-                if (iconClass) {
-                    const iconEl = document.querySelector(`.MENU-DUOI ${iconClass}`);
-                    if (iconEl) iconEl.parentElement.classList.add('active');
-                }
-            }
-
-            if (tabId === 'bao-cao') {
-                if (!bieuDoBaoCao) {
-                    khoiTaoKhungBieuDo();
-                }
-                const elNam = document.getElementById('chon-nam');
-                if (elNam) {
-                    taiDuLieuBieuDoTheoNam(elNam.value);
-                }
-            }
+            const clickedTarget = event.currentTarget; 
+            clickedTarget.classList.add('active');
         }
-
-        // KHI THAY ĐỔI Ô CHỌN NĂM -> TỰ ĐỘNG TẢI LẠI BIỂU ĐỒ THEO NĂM ĐÓ
-        function xuLyBoLocThoiGian() {
-            const elNam = document.getElementById('chon-nam');
-            if (elNam) {
-                taiDuLieuBieuDoTheoNam(elNam.value);
-            }
-        }
-
-        // CẤU HÌNH KHỞI TẠO KHUNG BIỂU ĐỒ TRỐNG (CHART.JS)
-        function khoiTaoKhungBieuDo() {
-            const ctx = document.getElementById('bieuDoSanLuong');
-            if (!ctx) return;
-
-            if (bieuDoBaoCao) {
-                bieuDoBaoCao.destroy(); 
-            }
-
-            bieuDoBaoCao = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
-                    datasets: [
-                        {
-                            label: '🚚 Giao hàng',
-                            data: Array(12).fill(0), 
-                            backgroundColor: '#007acc',
-                            borderRadius: 4
-                        },
-                        {
-                            label: '📦 Gửi chành',
-                            data: Array(12).fill(0), 
-                            backgroundColor: '#ff9f43',
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: { font: { family: 'Roboto', size: 12 } }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ` ${context.dataset.label}: ${context.raw.toLocaleString('vi-VN')} tấn`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { stacked: true, grid: { display: false } },
-                        y: {
-                            stacked: true,
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Sản lượng (Tấn)',
-                                font: { family: 'Roboto', weight: 'bold' }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // HÀM ĐỌC DỮ LIỆU THÔ KHÔNG QUA BỘ LỌC SERVER FIREBASE
-        function taiDuLieuBieuDoTheoNam(namLoc) {
-            if (unsubscribeFirebase) {
-                unsubscribeFirebase();
-            }
-
-            console.log(`[Đang kết nối] Đang lấy toàn bộ data thô từ collection: TUYENDUONG`);
-            const collectionRef = collection(db, "TUYENDUONG"); 
-
-            // ĐÃ BỎ HOÀN TOÀN 'query' VÀ 'where'. Tải trực tiếp bộ dữ liệu về máy để Client tự xử lý.
-            unsubscribeFirebase = onSnapshot(collectionRef, (querySnapshot) => {
-                const sanLuongGiaoHang = Array(12).fill(0);
-                const sanLuongGuiChanh = Array(12).fill(0);
-                
-                let tongSoDongQuetDuoc = 0;
-                let soDongKhớpNam = 0;
-
-                querySnapshot.forEach((doc) => {
-                    tongSoDongQuetDuoc++;
-                    const data = doc.data();
-                    
-                    // Ép kiểu chuỗi toàn bộ và xóa khoảng trắng thừa thụt đầu đuôi (.trim())
-                    if (data.nam && data.nam.toString().trim() === namLoc.toString().trim()) {
-                        soDongKhớpNam++;
-                        
-                        const thang = parseInt(data.thang) - 1; 
-                        const taiTrong = parseFloat(data.tTai) || 0;
-                        const htGiaoNhan = data.htGiaoNhan ? data.htGiaoNhan.toString().trim() : "";
-
-                        if (thang >= 0 && thang <= 11) {
-                            if (htGiaoNhan === "Giao hàng") {
-                                sanLuongGiaoHang[thang] += taiTrong;
-                            } else if (htGiaoNhan === "Gửi chành") {
-                                sanLuongGuiChanh[thang] += taiTrong;
-                            }
-                        }
-                    }
-                });
-
-                // Kiểm tra Log để bắt bệnh lỗi:
-                console.log(`📥 Tổng số document kéo được từ Firestore: ${tongSoDongQuetDuoc}`);
-                console.log(`🎯 Số dòng trùng khớp với năm cần lọc (${namLoc}): ${soDongKhớpNam}`);
-
-                if (bieuDoBaoCao) {
-                    bieuDoBaoCao.data.datasets[0].data = sanLuongGiaoHang;
-                    bieuDoBaoCao.data.datasets[1].data = sanLuongGuiChanh;
-                    bieuDoBaoCao.update();
-                }
-            }, (error) => {
-                console.error("❌ Lỗi đồng bộ dữ liệu Firestore: ", error);
-            });
-        }
-
-        // SETUP KHỞI CHẠY AN TOÀN KHI TẢI TRANG
-        const elThang = document.getElementById('chon-thang');
-        const elNam = document.getElementById('chon-nam');
-
-        if (elThang && elNam) {
-            elThang.value = new Date().getMonth() + 1;
-            elNam.addEventListener('change', xuLyBoLocThoiGian);
-        }
-
-        // Tự động dựng sẵn khung biểu đồ và nạp dữ liệu năm hiện tại ngay khi mở app
-        document.addEventListener('DOMContentLoaded', () => {
-            khoiTaoKhungBieuDo();
-            if (elNam) {
-                taiDuLieuBieuDoTheoNam(elNam.value);
-            }
-        });
     </script>
 </body>
 </html>
