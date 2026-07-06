@@ -9,6 +9,7 @@
     <link rel="apple-touch-icon" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style> /* CSS */
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
@@ -42,6 +43,10 @@
         .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
         .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
         .MENU-item.add-btn i {font-size: 16px;} }
+        /* BIỂU ĐỒ GIAO HÀNG/GỬI CHÀNH QUA CÁC THÁNG */
+        .khung-bieu-do-nam {background: #ffffff; border-radius: 12px; padding: 15px; margin: 20px 0px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);}
+        #tieu-de-bieu-do {font-size: 15px; font-weight: 600; color: #2c3e50; margin-top: 0; margin-bottom: 15px; text-align: center;}
+        .vung-canvas-bieu-do {position: relative; height: 260px; width: 100%;}
     </style>
 
 </head>
@@ -51,10 +56,10 @@
     <div class="KHUNG-CAC-TAB">
         
         <div id="home" class="trang-content active">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiê</h2>
-                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
-            </div>
+            <div id="khung-bao-bieu-do" style="background: #ffffff; border-radius: 16px; padding: 16px 16px 24px 16px; margin: 12px 0px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); box-sizing: border-box;">
+            <div id="tieu-de-bieu-do" style="font-size: 15px; font-weight: bold; text-align: center; margin-bottom: 12px; color: #1e293b;">Biểu đồ Ngân sách & Chi tiêu năm 2026</div>
+                <div id="thanhThongTinBieuDo" style="margin-bottom: 12px;"></div>
+                <div style="position: relative; height: 260px; width: 100%;"> <canvas id="bieuDoNganSach"></canvas> </div> </div>
         </div>
 
         <div id="bao-cao" class="trang-content">
