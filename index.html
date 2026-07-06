@@ -146,10 +146,25 @@
                 const oLoading = document.getElementById('loading');
                 if (oLoading) oLoading.style.display = 'none';
             } catch (e) { 
-                console.error("Lỗi Server Aggregate:", e);
-                document.getElementById('loading').innerHTML = `<span style="color:red;">Lỗi: Cần tạo Chỉ mục (Index) trên Firebase Console nếu có thông báo trong Log hệ thống.</span>`;
+                console.error("Lỗi đầy đủ:", e);
+    
+                // Tự động trích xuất đường link tạo Index từ thông báo lỗi của Firebase
+                let linkIndex = "";
+                if (e.message && e.message.includes("https://")) {
+                    const match = e.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+                    if (match) linkIndex = match[0];
+                }
+
+                const oLoading = document.getElementById('loading');
+                if (oLoading) {
+                    if (linkIndex) {
+                        oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi thiếu Index! Bấm vào đây để tạo:</span> <br> 
+                                  <a href="${linkIndex}" target="_blank" style="color:#007acc; text-decoration:underline; font-weight:bold; word-break:break-all;">${linkIndex}</a>`;
+                    } else {
+                        oLoading.innerHTML = `<span style="color:red;">Lỗi kết nối: ${e.message}</span>`;
+                    }
+                }
             }
-        }
 
         taiDuLieuBieuDoTuServer();
 
