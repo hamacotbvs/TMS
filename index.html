@@ -95,7 +95,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // ĐĂNG KÝ PLUGIN DATALABELS VỚI CHART.JS
         Chart.register(ChartDataLabels);
 
         const ctx = document.getElementById('bieuDoTaiTrongThang').getContext('2d');
@@ -113,13 +112,7 @@
                         barPercentage: 0.5,         
                         grouped: false, 
                         order: 3,
-                        // Cấu hình nhãn số liệu riêng cho Giao hàng
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            offset: -2,
-                            color: '#3498db'
-                        }
+                        datalabels: { display: false } // Tắt hiển thị nhãn độc lập
                     },
                     { 
                         label: 'Gửi chành', 
@@ -130,13 +123,7 @@
                         barPercentage: 0.25,        
                         grouped: false, 
                         order: 2,
-                        // Cấu hình nhãn số liệu riêng cho Gửi chành
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            offset: 2,
-                            color: '#e74c3c'
-                        }
+                        datalabels: { display: false } // Tắt hiển thị nhãn độc lập
                     },
                     { 
                         label: 'Tổng tTai', 
@@ -150,13 +137,36 @@
                         pointHoverRadius: 0,        
                         fill: false, 
                         order: 1,
-                        // Cấu hình nhãn số liệu riêng cho đường Tổng tải (đặt cao hơn hẳn để không đè cột)
+                        // ĐÃ SỬA: Cấu hình dồn mọi số liệu về đầu đường Tổng Tải / Đỉnh cột cao nhất
                         datalabels: {
+                            display: true,
                             anchor: 'end',
                             align: 'top',
-                            offset: 12,
-                            color: '#d4ac0d', // Màu vàng đậm hơn chút cho dễ nhìn text
-                            font: { weight: 'bold' }
+                            offset: 5,
+                            color: '#333',
+                            font: { size: 10, weight: '600' },
+                            textAlign: 'center',
+                            // Sử dụng formatter để gom nhóm nội dung thành 3 dòng theo đúng thứ tự
+                            formatter: function(value, context) {
+                                const index = context.dataIndex;
+                                const bieuDoXuLy = context.chart;
+                                
+                                // Lấy giá trị thực tế của từng nhóm dữ liệu tại tháng hiện tại
+                                const vGiaoHang = bieuDoXuLy.data.datasets[0].data[index] || 0;
+                                const vGuiChanh = bieuDoXuLy.data.datasets[1].data[index] || 0;
+                                const vTongTai  = bieuDoXuLy.data.datasets[2].data[index] || 0;
+
+                                // Nếu tháng này hoàn toàn không có dữ liệu vận chuyển nào thì không hiện chữ bừa bãi
+                                if (vTongTai === 0) return '';
+
+                                // Đổi dữ liệu từ kg -> tấn, lấy 1 số thập phân gọn gàng
+                                const tTong  = (vTongTai / 1000).toFixed(1);
+                                const tGiao  = (vGiaoHang / 1000).toFixed(1);
+                                const tChanh = (vGuiChanh / 1000).toFixed(1);
+
+                                // Trả về chuỗi gồm 3 dòng xếp chồng lên nhau chuẩn thứ tự đề xuất
+                                return `Tổng: ${tTong}t\nGiao: ${tGiao}t\nChành: ${tChanh}t`;
+                            }
                         }
                     }
                 ]
@@ -165,18 +175,8 @@
                 responsive: true, 
                 maintainAspectRatio: false,
                 plugins: {
-                    // CẤU HÌNH CHUNG CHO TẤT CẢ SỐ LIỆU ĐẦU CỘT
-                    datalabels: {
-                        font: {
-                            size: 10,
-                            weight: '600'
-                        },
-                        // Chỉ hiển thị số liệu khi tháng đó có dữ liệu (lớn hơn 0) để biểu đồ sạch đẹp
-                        formatter: function(value) {
-                            if (value === 0) return '';
-                            return (value / 1000).toFixed(1); // Đổi ra tấn và lấy 1 chữ số thập phân (VD: 5.5)
-                        }
-                    },
+                    // Tắt cấu hình datalabels chung, chỉ sử dụng cấu hình riêng được xử lý ở dataset Tổng Tải phía trên
+                    datalabels: { display: false },
                     legend: {
                         position: 'top',
                         labels: {
@@ -196,8 +196,7 @@
                     y: {
                         beginAtZero: true,
                         grid: { color: '#f0f2f5' }, 
-                        // Tăng khoảng đệm trên đỉnh trục Y để số liệu đầu cột không bị che khuất
-                        grace: '15%',
+                        grace: '25%', // Tăng thêm khoảng trống trên trần biểu đồ để 3 dòng text không bị khuất
                         ticks: {
                             color: '#94a3b8',
                             font: { size: 12 },
