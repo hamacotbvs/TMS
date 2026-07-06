@@ -15,17 +15,17 @@
         /* NÚT RESET */
         .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
             background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
         .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
-        .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
+        .nut-reset-treo:active {transform: scale(0.92); background-color: #f8fafc; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
         /* ĐỊNH DẠNG CHUNG */
-        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
-        .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
-        .trang-content {display: none;} /* ẩn tất cả các tab */
-        .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
+        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh; overflow: hidden;-webkit-text-size-adjust: 100%} 
+        .KHUNG-CAC-TAB {flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 100px; transition: padding-bottom 0.3s ease;} 
+        .trang-content {display: none;} 
+        .trang-content.active {display: block;} 
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
         
-        /* Cấu hình khung chứa biểu đồ để responsive tốt trên mobile */
+        /* Cấu hình khung chứa biểu đồ */
         .khung-bieu-do {
             position: relative;
             width: 100%;
@@ -33,7 +33,7 @@
             min-height: 220px;
         }
 
-        /* ĐỊNH DẠNG Ô CHỌN THÁNG (THÁNG HIỆN HÀNH) */
+        /* ĐỊNH DẠNG Ô CHỌN THÁNG */
         .khung-chon-thang {
             margin: 12px 0 4px 0;
             display: flex;
@@ -63,26 +63,25 @@
         }
 
         /* THANH MENU DƯỚI */
-        .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
-        .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
-        .MENU-item i {font-size: 20px; margin-bottom: 4px; transition: all 0.3s ease; /* co giãn mượt khi xoay */}
-        .MENU-item.active {color: #ffffff; font-weight: 700;} /* Tab đang được chọn */
-        .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
+        .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease;} 
+        .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} 
+        .MENU-item i {font-size: 20px; margin-bottom: 4px; transition: all 0.3s ease;}
+        .MENU-item.active {color: #ffffff; font-weight: 700;} 
+        .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px;} 
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
         
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
-        .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
-        .KHUNG-CON-TRONG-TAB {padding: 12px 16px;    /* Giảm từ 20px xuống còn 12px */ margin-bottom: 10px;   /* Giảm khoảng cách giữa các card */}
-        .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} /* Đẩy nút reset sát lên góc hơn để không chiếm diện tích */
-        .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} /* Hạ chiều cao menu xuống 45px và ép sát đáy */
-        .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } /* Đổi bố cục nút sang hàng ngang (icon nằm trước chữ) */
-        .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
-        .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
+        .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} 
+        .KHUNG-CON-TRONG-TAB {padding: 12px 16px; margin-bottom: 10px;}
+        .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} 
+        .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} 
+        .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } 
+        .MENU-item i {font-size: 15px; margin-bottom: 0;} 
+        .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} 
         .MENU-item.add-btn i {font-size: 16px;} }
     </style>
-
 </head>
 
 <body>
@@ -141,3 +140,132 @@
                 <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
             </div>
         </div>
+
+        <div id="van-chuyen" class="trang-content">
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h2>🚚 Hiệu suất vận chuyển theo xe</h2>
+                <div class="khung-bieu-do">
+                    <canvas id="chartVanChuyen"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <nav class="MENU-DUOI">
+        <div class="MENU-item active" onclick="switchTab('home')">
+            <i class="fa-solid fa-house"></i>
+            <span>HOME</span>
+        </div>
+        <div class="MENU-item" onclick="switchTab('bao-cao')">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Báo cáo</span>
+        </div>
+        <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
+            <i class="fa-solid fa-plus"></i>
+        </div>
+        <div class="MENU-item" onclick="switchTab('kho')">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Kho</span>
+        </div>
+        <div class="MENU-item" onclick="switchTab('van-chuyen')">
+            <i class="fa-solid fa-car-side"></i>
+            <span>Vận chuyển</span>
+        </div>
+    </nav>
+
+    <script>
+        // XỬ LÝ CHUYỂN TAB 
+        function switchTab(tabId) {
+            const trangs = document.querySelectorAll('.trang-content'); 
+            trangs.forEach(page => page.classList.remove('active')); 
+            
+            const menuItems = document.querySelectorAll('.MENU-item'); 
+            menuItems.forEach(item => item.classList.remove('active')); 
+            
+            document.getElementById(tabId).classList.add('active'); 
+            
+            const targetItem = document.querySelector(`.MENU-item[onclick*="${tabId}"]`);
+            if(targetItem) targetItem.classList.add('active');
+        }
+
+        // TỰ ĐỘNG ĐIỀN 12 THÁNG VÀ CHỌN THÁNG HIỆN HÀNH
+        function khoiTaoBoChonThang() {
+            const date = new Date();
+            const thangHienTai = date.getMonth() + 1; 
+            const namHienTai = date.getFullYear();
+
+            const selectHome = document.getElementById('thangHome');
+            const selectBaoCao = document.getElementById('thangBaoCao');
+
+            let danhSachOptions = "";
+            for (let i = 1; i <= 12; i++) {
+                const giaTriThang = `${namHienTai}-${String(i).padStart(2, '0')}`; 
+                const selected = (i === thangHienTai) ? "selected" : "";
+                danhSachOptions += `<option value="${giaTriThang}" ${selected}>Tháng ${i}/${namHienTai}</option>`;
+            }
+
+            if(selectHome) selectHome.innerHTML = danhSachOptions;
+            if(selectBaoCao) selectBaoCao.innerHTML = danhSachOptions;
+        }
+
+        // ĐỒNG BỘ GIÁ TRỊ GIỮA CÁC Ô CHỌN THÁNG
+        function xuLyThayDoiThang(thangNamDuocChon) {
+            document.getElementById('thangHome').value = thangNamDuocChon;
+            document.getElementById('thangBaoCao').value = thangNamDuocChon;
+            console.log("Đã chọn tháng hành chính mới:", thangNamDuocChon);
+            // Bạn có thể kích hoạt hàm gọi Firebase lấy dữ liệu mới tại đây
+        }
+
+        // Chạy khởi tạo ngay lập tức khi trình duyệt đọc đến đây
+        khoiTaoBoChonThang();
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const firebaseConfig = { 
+            apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
+            authDomain: "hamaco-tms-c4b70.firebaseapp.com",
+            projectId: "hamaco-tms-c4b70",
+            storageBucket: "hamaco-tms-c4b70.firebasestorage.app",
+            messagingSenderId: "685425304488",
+            appId: "1:685425304488:web:6a999a4a6bf1147a21b39d",
+            measurementId: "G-L7RQZWHQ4J"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        console.log("Firebase đã kết nối!");
+
+        // NÚT RESET APP
+        const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
+        if (idNutLamMoi) {
+            idNutLamMoi.addEventListener('click', () => {
+                const iconSvg = idNutLamMoi.querySelector('svg'); 
+                if (iconSvg) { iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease'; } 
+                setTimeout(() => { window.location.reload(); }, 350); 
+            });
+        }
+
+        // VẼ BIỂU ĐỒ SAU KHI LOAD XONG ĐỒ HỌA
+        document.addEventListener("DOMContentLoaded", () => {
+            // 1. Biểu đồ Ngân sách
+            const ctxNganSach = document.getElementById('chartNganSach').getContext('2d');
+            new Chart(ctxNganSach, {
+                type: 'bar',
+                data: {
+                    labels: ['Đã chi tiêu', 'Ngân sách còn lại'],
+                    datasets: [{
+                        label: 'Số tiền (VNĐ)',
+                        data: [65000000, 35000000],
+                        backgroundColor: ['#e63946', '#2a9d8f'],
+                        borderRadius: 8
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            // 2. Biểu đồ Phân bổ chi phí
+            const ctxChiPhi = document.getElementById('chartChiPhi
