@@ -316,7 +316,7 @@
             }
 
             // Lưu ý: Thay "vanchuyen" bằng đúng tên Collection (bảng) thực tế trên Firestore của bạn
-            const collectionRef = collection(db, "vanchuyen"); 
+            const collectionRef = collection(db, "TUYENDUONG"); 
             const q = query(collectionRef, where("nam", "==", parseInt(namLoc)));
 
             // Lắng nghe dữ liệu thay đổi thời gian thực
