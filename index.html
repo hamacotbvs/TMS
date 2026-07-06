@@ -137,7 +137,8 @@
     <script type="module">
         // GOM TOÀN BỘ CÁC LỆNH IMPORT LÊN TRÊN CÙNG
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // ĐÃ SỬA: Thêm getDocs vào danh sách import để tránh lỗi crash script ngầm
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, deleteDoc, updateDoc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         // CẤU HÌNH FIREBASE
         const firebaseConfig = {
@@ -178,8 +179,14 @@
             
             document.getElementById(tabId).classList.add('active'); 
             
-            const clickedTarget = event.currentTarget; 
-            if(clickedTarget) { clickedTarget.classList.add('active'); }
+            // Tìm nút menu tương ứng với tabId để active chuẩn xác
+            const targetMenu = document.querySelector(`.MENU-item[onclick="switchTab('${tabId}')"]`);
+            if (targetMenu) { targetMenu.classList.add('active'); }
+
+            // Nếu người dùng bấm vào tab báo cáo thì tự động nạp/vẽ lại biểu đồ ngay
+            if (tabId === 'bao-cao') {
+                xuLyDuLieuBaoCao();
+            }
         }
         
         let bieuDoGlobal = null; 
@@ -268,11 +275,12 @@
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         if (data.thang) {
-                            // Ép chuỗi "Tháng 7" -> Số 7
-                            const soThang = parseInt(data.thang.replace("Tháng", "").trim(), 10);
+                            // Ép chuỗi "Tháng 7" -> Số 7 chuẩn xác
+                            const soThang = parseInt(data.thang.toString().replace("Tháng", "").trim(), 10);
                             const thangIndex = soThang - 1;
 
                             if (thangIndex >= 0 && thangIndex < 12) {
+                                // Quy đổi trường tTai từ kg sang Tấn (chia 1000)
                                 const sanLuongTai = parseFloat(data.tTai || 0) / 1000;
 
                                 if (data.htGiaoNhan === "Giao hàng") {
@@ -285,7 +293,7 @@
                         }
                     });
 
-                    // Tiến hành vẽ biểu đồ 12 Tháng
+                    // Tiến hành vẽ biểu đồ 12 Tháng cố định
                     veBieuDo(nhanThang, duLieuGiaoHang12T, duLieuGuiChanh12T, duLieuTong12T);
 
                 } catch (error) {
@@ -293,7 +301,7 @@
                 }
 
             } else {
-                // CHẾ ĐỘ 2: VẼ CHI TIẾT 31 NGÀY TRONG THÁNG (CŨ)
+                // CHẾ ĐỘ 2: VẼ CHI TIẾT 31 NGÀY TRONG THÁNG
                 txtTieuDe.innerText = `📊 Biểu đồ Sản lượng Vận chuyển - Tháng ${thangS}/${namS} (Tấn)`;
                 
                 const chuoiThangTimKiem = `Tháng ${thangS}`;
