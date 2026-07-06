@@ -61,6 +61,7 @@
                 <h3 style="font-size: 16px; color: #007acc;"><i class="fa-solid fa-filter"></i> Bộ lọc báo cáo</h3>
                 <div style="display: flex; gap: 8px;">
                     <select id="loc-thang" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #ccc; font-weight: 500;">
+                        <option value="all">-- Cả Năm --</option>
                         <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
                         <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
                         <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
@@ -76,7 +77,7 @@
             </div>
 
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; height: 320px; width: 100%;">
-                <h2 style="font-size: 16px; margin-bottom: 15px;">📊 Biểu đồ Sản lượng Vận chuyển (Tấn)</h2>
+                <h2 id="tieuDeBieuDo" style="font-size: 16px; margin-bottom: 15px;">📊 Biểu đồ Sản lượng Vận chuyển (Tấn)</h2>
                 <canvas id="bieuDoSanLuong"></canvas>
             </div>
         </div>
@@ -151,7 +152,7 @@
 
         // KHỞI TẠO FIREBASE & FIRESTORE
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app); // Đồng nhất sử dụng biến 'db'
+        const db = getFirestore(app);
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
         // NÚT RESET APP
@@ -183,17 +184,16 @@
         
         let bieuDoGlobal = null; 
 
-        // HÀM KHỞI TẠO HOẶC CẬP NHẬT BIỂU ĐỒ
-        function veBieuDo(mangGiaoHang, mangGuiChanh, mangTong) {
+        // HÀM KHỞI TẠO HOẶC CẬP NHẬT BIỂU ĐỒ (DÙNG CHUNG CHO CẢ NGÀY VÀ THÁNG)
+        function veBieuDo(nhanX, mangGiaoHang, mangGuiChanh, mangTong) {
             const ctx = document.getElementById('bieuDoSanLuong').getContext('2d');
-            const nhanNgay = Array.from({length: 31}, (_, i) => `N ${i + 1}`);
 
             if (bieuDoGlobal) { bieuDoGlobal.destroy(); }
 
             bieuDoGlobal = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: nhanNgay,
+                    labels: nhanX,
                     datasets: [
                         {
                             label: 'Tổng Sản Lượng (Đường)',
@@ -207,22 +207,22 @@
                             order: 1
                         },
                         {
-                            label: 'Gửi chành (Cột Trong)',
+                            label: 'Gửi chành',
                             data: mangGuiChanh,
                             backgroundColor: '#ffb703',
                             borderColor: '#ffb703',
                             borderWidth: 1,
-                            barPercentage: 0.4, 
+                            barPercentage: 0.6, 
                             categoryPercentage: 0.8,
                             order: 2
                         },
                         {
-                            label: 'Giao hàng (Cột Ngoài)',
+                            label: 'Giao hàng',
                             data: mangGiaoHang,
                             backgroundColor: 'rgba(0, 122, 204, 0.6)', 
                             borderColor: '#007acc',
                             borderWidth: 1,
-                            barPercentage: 0.8, 
+                            barPercentage: 0.6, 
                             categoryPercentage: 0.8,
                             order: 3
                         }
@@ -232,7 +232,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { stacked: true, grid: { display: false } },
+                        x: { grid: { display: false } },
                         y: { beginAtZero: true, title: { display: true, text: 'Trọng lượng (Tấn)' } }
                     },
                     plugins: {
@@ -242,70 +242,110 @@
             });
         }
 
-        // HÀM TẢI VÀ LỌC DỮ LIỆU ĐÃ ĐƯỢC CHUẨN HÓA THEO SỐ LIỆU FIRESTORE THỰC TẾ
-        async function docDuLieuVaLocBaoCao() {
-            const thangS = document.getElementById('loc-thang').value; // Ví dụ: "7"
-            const namS = document.getElementById('loc-nam').value;     // Ví dụ: "2026"
-            
-            // Khớp chính xác định dạng chữ trong Firestore của bạn
-            const chuoiThangTimKiem = `Tháng ${thangS}`; // Kết quả: "Tháng 7"
-            const chuoiNamTimKiem = namS.toString().trim(); // Khớp chính xác chuỗi "2026", bỏ chữ "Năm " đi
+        // HÀM TỰ ĐỘNG PHÂN TÍCH VÀ ĐIỀU HƯỚNG BÁO CÁO (NGÀY hoặc THÁNG TỰ ĐỘNG)
+        async function xuLyDuLieuBaoCao() {
+            const thangS = document.getElementById('loc-thang').value; // Lấy "all" hoặc số tháng
+            const namS = document.getElementById('loc-nam').value.toString().trim(); // Năm (Vd: "2026")
+            const txtTieuDe = document.getElementById('tieuDeBieuDo');
 
-            let duLieuGiaoHang = Array(31).fill(0);
-            let duLieuGuiChanh = Array(31).fill(0);
-            let duLieuTong = Array(31).fill(0);
+            if (thangS === "all") {
+                // CHẾ ĐỘ 1: VẼ QUA CÁC THÁNG TRONG NĂM
+                txtTieuDe.innerText = `📊 Biểu đồ Sản lượng Vận chuyển Năm ${namS} (Tấn)`;
+                
+                let duLieuGiaoHang12T = Array(12).fill(0);
+                let duLieuGuiChanh12T = Array(12).fill(0);
+                let duLieuTong12T = Array(12).fill(0);
+                const nhanThang = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
 
-            try {
-                // Lọc trực tiếp cực nhanh từ Server Firestore dựa trên 2 trường chính xác
-                const phanDoanTruyVan = query(
-                    collection(db, "TUYENDUONG"),
-                    where("thang", "==", chuoiThangTimKiem),
-                    where("nam", "==", chuoiNamTimKiem)
-                );
-                
-                const querySnapshot = await getDocs(phanDoanTruyVan);
-                
-                // Vòng lặp xử lý dữ liệu đổ về mảng ngày
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
+                try {
+                    // Lọc trên server theo Năm trước
+                    const phanDoanTruyVan = query(
+                        collection(db, "TUYENDUONG"),
+                        where("nam", "==", namS)
+                    );
+                    const querySnapshot = await getDocs(phanDoanTruyVan);
                     
-                    if (data.ngayXuatKho) {
-                        // Tách chuỗi lấy ngày từ "03/01/2026 08:10:21"
-                        const phanNgayThangNam = data.ngayXuatKho.split(' ')[0]; 
-                        const phanTachNgay = phanNgayThangNam.split('/');
-                        const ngayIndex = parseInt(phanTachNgay[0], 10) - 1; 
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.thang) {
+                            // Ép chuỗi "Tháng 7" -> Số 7
+                            const soThang = parseInt(data.thang.replace("Tháng", "").trim(), 10);
+                            const thangIndex = soThang - 1;
 
-                        if (ngayIndex >= 0 && ngayIndex < 31) {
-                            // tTai chia 1000 để đổi từ KG sang Tấn
-                            const sanLuongTai = parseFloat(data.tTai || 0) / 1000; 
+                            if (thangIndex >= 0 && thangIndex < 12) {
+                                const sanLuongTai = parseFloat(data.tTai || 0) / 1000;
 
-                            if (data.htGiaoNhan === "Giao hàng") {
-                                duLieuGiaoHang[ngayIndex] += sanLuongTai;
-                            } else if (data.htGiaoNhan === "Gửi chành") {
-                                duLieuGuiChanh[ngayIndex] += sanLuongTai;
+                                if (data.htGiaoNhan === "Giao hàng") {
+                                    duLieuGiaoHang12T[thangIndex] += sanLuongTai;
+                                } else if (data.htGiaoNhan === "Gửi chành") {
+                                    duLieuGuiChanh12T[thangIndex] += sanLuongTai;
+                                }
+                                duLieuTong12T[thangIndex] += sanLuongTai;
                             }
-                            
-                            duLieuTong[ngayIndex] += sanLuongTai;
                         }
-                    }
-                });
+                    });
 
-                // Cập nhật và vẽ lại biểu đồ
-                veBieuDo(duLieuGiaoHang, duLieuGuiChanh, duLieuTong);
+                    // Tiến hành vẽ biểu đồ 12 Tháng
+                    veBieuDo(nhanThang, duLieuGiaoHang12T, duLieuGuiChanh12T, duLieuTong12T);
 
-            } catch (error) {
-                console.error("Lỗi lấy dữ liệu từ Server: ", error);
+                } catch (error) {
+                    console.error("Lỗi lấy dữ liệu báo cáo năm: ", error);
+                }
+
+            } else {
+                // CHẾ ĐỘ 2: VẼ CHI TIẾT 31 NGÀY TRONG THÁNG (CŨ)
+                txtTieuDe.innerText = `📊 Biểu đồ Sản lượng Vận chuyển - Tháng ${thangS}/${namS} (Tấn)`;
+                
+                const chuoiThangTimKiem = `Tháng ${thangS}`;
+                let duLieuGiaoHang31N = Array(31).fill(0);
+                let duLieuGuiChanh31N = Array(31).fill(0);
+                let duLieuTong31N = Array(31).fill(0);
+                const nhanNgay = Array.from({length: 31}, (_, i) => `N${i + 1}`);
+
+                try {
+                    const phanDoanTruyVan = query(
+                        collection(db, "TUYENDUONG"),
+                        where("thang", "==", chuoiThangTimKiem),
+                        where("nam", "==", namS)
+                    );
+                    const querySnapshot = await getDocs(phanDoanTruyVan);
+                    
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.ngayXuatKho) {
+                            const phanNgayThangNam = data.ngayXuatKho.split(' ')[0]; 
+                            const phanTachNgay = phanNgayThangNam.split('/');
+                            const ngayIndex = parseInt(phanTachNgay[0], 10) - 1; 
+
+                            if (ngayIndex >= 0 && ngayIndex < 31) {
+                                const sanLuongTai = parseFloat(data.tTai || 0) / 1000; 
+
+                                if (data.htGiaoNhan === "Giao hàng") {
+                                    duLieuGiaoHang31N[ngayIndex] += sanLuongTai;
+                                } else if (data.htGiaoNhan === "Gửi chành") {
+                                    duLieuGuiChanh31N[ngayIndex] += sanLuongTai;
+                                }
+                                duLieuTong31N[ngayIndex] += sanLuongTai;
+                            }
+                        }
+                    });
+
+                    // Tiến hành vẽ biểu đồ 31 Ngày
+                    veBieuDo(nhanNgay, duLieuGiaoHang31N, duLieuGuiChanh31N, duLieuTong31N);
+
+                } catch (error) {
+                    console.error("Lỗi lấy dữ liệu báo cáo tháng: ", error);
+                }
             }
         }
 
         // LẮNG NGHE SỰ KIỆN ĐỔI BỘ LỌC TRÊN GIAO DIỆN
-        document.getElementById('loc-thang').addEventListener('change', docDuLieuVaLocBaoCao);
-        document.getElementById('loc-nam').addEventListener('change', docDuLieuVaLocBaoCao);
+        document.getElementById('loc-thang').addEventListener('change', xuLyDuLieuBaoCao);
+        document.getElementById('loc-nam').addEventListener('change', xuLyDuLieuBaoCao);
 
-        // TỰ ĐỘNG CHẠY LẦN ĐẦU KHI TẢI TRANG
-        const thangHienTai = new Date().getMonth() + 1;
-        document.getElementById('loc-thang').value = thangHienTai;
-        docDuLieuVaLocBaoCao();
+        // TỰ ĐỘNG CHẠY LẦN ĐẦU KHI TẢI TRANG (Mặc định mở ra xem cả năm hiện tại)
+        document.getElementById('loc-thang').value = "all";
+        xuLyDuLieuBaoCao();
     </script>
 </body>
 </html>
