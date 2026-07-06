@@ -134,11 +134,12 @@
     </nav>
 
     <script type="module">
-        // CẤU HÌNH FIREBASE
+        // 1. GOM TOÀN BỘ CÁC LỆNH IMPORT LÊN TRÊN CÙNG
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
-        const firebaseConfig = { // địa chỉ Fire
+        // CẤU HÌNH FIREBASE
+        const firebaseConfig = {
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
             authDomain: "hamaco-tms-c4b70.firebaseapp.com",
             projectId: "hamaco-tms-c4b70",
@@ -148,36 +149,45 @@
             measurementId: "G-L7RQZWHQ4J"
         };
 
-        // KHỞI TẠO FIREBASE
+        // KHỞI TẠO FIREBASE & FIRESTORE
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = getFirestore(app); // Đồng nhất sử dụng biến 'db'
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
-        // NÚT RESET
+        // NÚT RESET APP
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
+        if (idNutLamMoi) {
+            idNutLamMoi.addEventListener('click', () => {
+                const iconSvg = idNutLamMoi.querySelector('svg'); 
+                if (iconSvg) {
+                    iconSvg.style.transform = 'rotate(360deg)'; 
+                    iconSvg.style.transition = 'transform 0.4s ease';
+                } 
+                setTimeout(() => { window.location.reload(); }, 350); 
+            });
+        }
 
         // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
-        window.switchTab = function(tabId) { // chuyển tab
-            const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
-            const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
-            document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
-            const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
+        window.switchTab = function(tabId) {
+            const trangs = document.querySelectorAll('.trang-content'); 
+            trangs.forEach(page => page.classList.remove('active')); 
+            
+            const menuItems = document.querySelectorAll('.MENU-item'); 
+            menuItems.forEach(item => item.classList.remove('active')); 
+            
+            document.getElementById(tabId).classList.add('active'); 
+            
+            const clickedTarget = event.currentTarget; 
+            if(clickedTarget) { clickedTarget.classList.add('active'); }
+        }
         
-        // Nhập các hàm Firestore cần thiết từ Firebase CDN công khai
-        import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        // Lưu ý: Nếu bạn dùng Realtime Database thì đổi sang dùng 'ref', 'get', 'child' tương ứng. Ở đây viết theo cấu trúc Firestore (Collection/Document) như trong ảnh database của bạn.
-
-        let bieuDoGlobal = null; // Biến lưu trữ đối tượng biểu đồ để cập nhật lại khi đổi bộ lọc
+        let bieuDoGlobal = null; 
 
         // HÀM KHỞI TẠO HOẶC CẬP NHẬT BIỂU ĐỒ
         function veBieuDo(mangGiaoHang, mangGuiChanh, mangTong) {
             const ctx = document.getElementById('bieuDoSanLuong').getContext('2d');
-            
-            // Danh sách nhãn trục X đại diện cho các ngày từ 1 đến 31
             const nhanNgay = Array.from({length: 31}, (_, i) => `N ${i + 1}`);
 
-            // Nếu đã có biểu đồ trước đó, hủy đi để vẽ mới tránh lỗi đè dữ liệu
             if (bieuDoGlobal) { bieuDoGlobal.destroy(); }
 
             bieuDoGlobal = new Chart(ctx, {
@@ -187,14 +197,14 @@
                     datasets: [
                         {
                             label: 'Tổng Sản Lượng (Đường)',
-                            type: 'line', // Định dạng Đường chạy phía trên
+                            type: 'line',
                             data: mangTong,
                             borderColor: '#e74c3c',
                             backgroundColor: '#e74c3c',
                             borderWidth: 2,
                             tension: 0.2,
                             fill: false,
-                            order: 1 // Ưu tiên hiển thị lớp trên cùng
+                            order: 1
                         },
                         {
                             label: 'Gửi chành (Cột Trong)',
@@ -202,17 +212,17 @@
                             backgroundColor: '#ffb703',
                             borderColor: '#ffb703',
                             borderWidth: 1,
-                            barPercentage: 0.4, // Làm cột nhỏ lại để lồng vào bên trong
+                            barPercentage: 0.4, 
                             categoryPercentage: 0.8,
                             order: 2
                         },
                         {
                             label: 'Giao hàng (Cột Ngoài)',
                             data: mangGiaoHang,
-                            backgroundColor: 'rgba(0, 122, 204, 0.6)', // Đổ màu trong suốt cho dễ nhìn cột lồng bên trong
+                            backgroundColor: 'rgba(0, 122, 204, 0.6)', 
                             borderColor: '#007acc',
                             borderWidth: 1,
-                            barPercentage: 0.8, // Cột bự bao bên ngoài
+                            barPercentage: 0.8, 
                             categoryPercentage: 0.8,
                             order: 3
                         }
@@ -222,7 +232,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { stacked: true, grid: { display: false } }, // Kỹ thuật stacked kết hợp cấu hình kích thước giúp cột lồng vào nhau
+                        x: { stacked: true, grid: { display: false } },
                         y: { beginAtZero: true, title: { display: true, text: 'Trọng lượng (Tấn)' } }
                     },
                     plugins: {
@@ -236,47 +246,40 @@
         async function docDuLieuVaLocBaoCao() {
             const thangS = document.getElementById('loc-thang').value;
             const namS = document.getElementById('loc-nam').value;
-            
-            // Chuẩn hóa chuỗi so sánh khớp với trường dữ liệu trong database của bạn (ví dụ: "Tháng 1", "Tháng 2"...)
             const chuoiThangTimKiem = `Tháng ${thangS}`;
 
-            // Tạo sẵn 3 mảng trống chứa dữ liệu ứng với 31 ngày trong tháng
             let duLieuGiaoHang = Array(31).fill(0);
             let duLieuGuiChanh = Array(31).fill(0);
             let duLieuTong = Array(31).fill(0);
 
             try {
-                // Gọi trực tiếp vào collection tổng 'TUYENDUONG' như bạn đã gộp
-                const querySnapshot = await getDocs(collection(database, "TUYENDUONG"));
+                // ĐÃ SỬA: Đổi 'database' thành 'db' cho khớp với khai báo dòng 19
+                const querySnapshot = await getDocs(collection(db, "TUYENDUONG"));
                 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     
-                    // Lọc dữ liệu: Kiểm tra bản ghi có đúng trường 'thang' chọn và đúng năm trong 'ngayXuatKho' không
-                    if (data.thang === chuoiThangTimKiem && data.ngayXuatKho && data.ngayXuatKho.startsWith(namS)) {
+                    // Lọc dữ liệu theo cấu trúc chuỗi ngày xuất kho trong DB của bạn
+                    if (data.thang === chuoiThangTimKiem && data.ngayXuatKho && data.ngayXuatKho.endsWith(namS)) {
                         
-                        // Trích xuất ngày từ chuỗi ngayXuatKho (Định dạng DD/MM/YYYY) để biết bỏ vào cột thứ mấy
                         const phanTachNgay = data.ngayXuatKho.split('/');
-                        const ngayIndex = parseInt(phanTachNgay[0], 10) - 1; // Ngày 1 ứng với vị trí số 0 trong mảng
+                        const ngayIndex = parseInt(phanTachNgay[0], 10) - 1; 
 
                         if (ngayIndex >= 0 && ngayIndex < 31) {
-                            // Chuyển đổi tTai từ KG sang Tấn nếu cần (ví dụ dữ liệu đang là 940kg -> 0.94 tấn), nếu database đã là tấn thì bỏ chia 1000
+                            // Chuyển đổi tTai từ dạng chuỗi/số KG sang đơn vị Tấn
                             const sanLuongTai = parseFloat(data.tTai || 0) / 1000; 
 
-                            // Phân loại hình thức giao nhận dựa vào trường 'htGiaoNhan'
                             if (data.htGiaoNhan === "Giao hàng") {
                                 duLieuGiaoHang[ngayIndex] += sanLuongTai;
                             } else if (data.htGiaoNhan === "Gửi chành") {
                                 duLieuGuiChanh[ngayIndex] += sanLuongTai;
                             }
                             
-                            // Đường tổng bằng tổng tất cả sản lượng của ngày đó
                             duLieuTong[ngayIndex] += sanLuongTai;
                         }
                     }
                 });
 
-                // Chạy hàm vẽ biểu đồ sau khi phân tách xong dữ liệu
                 veBieuDo(duLieuGiaoHang, duLieuGuiChanh, duLieuTong);
 
             } catch (error) {
@@ -288,7 +291,7 @@
         document.getElementById('loc-thang').addEventListener('change', docDuLieuVaLocBaoCao);
         document.getElementById('loc-nam').addEventListener('change', docDuLieuVaLocBaoCao);
 
-        // TỰ ĐỘNG CHẠY LẦN ĐẦU KHI TẢI TRANG (Mặc định lấy tháng hiện tại)
+        // TỰ ĐỘNG CHẠY LẦN ĐẦU KHI TẢI TRANG
         const thangHienTai = new Date().getMonth() + 1;
         document.getElementById('loc-thang').value = thangHienTai;
         docDuLieuVaLocBaoCao();
