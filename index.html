@@ -240,23 +240,33 @@
             const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
-            const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
+            if (event && event.currentTarget) {event.currentTarget.classList.add('active');} } // Kích hoạt trạng thái active cho nút menu tương ứng
 
-        // TỰ ĐỘNG ĐẶT THÁNG HIỆN TẠI KHI MỞ APP (Tùy chọn)
-        const thangHienTai = new Date().getMonth() + 1; // Lấy tháng thực tế (1-12)
-        const selectThang = document.getElementById('chon-thang');
-        if(selectThang) selectThang.value = thangHienTai;
-        // HÀM LẮNG NGHE SỰ KIỆN KHI THAY ĐỔI BỘ LỌC THỜI GIAN
-        function xu LyBoLocThoiGian() {
+        // 1. ĐỊNH NGHĨA HÀM XỬ LÝ KHI THAY ĐỔI THÁNG/NĂM
+        // ========================================================
+        function xuLyBoLocThoiGian() {
             const thangDaChon = document.getElementById('chon-thang').value;
             const namDaChon = document.getElementById('chon-nam').value;
-            console.log(`Đang truy vấn dữ liệu Báo cáo cho: Tháng ${thangDaChon} / Năm ${namDaChon}`);
-            // Ví dụ sau này bạn viết hàm lấy data từ Firestore:
-            // taiDuLieuBaoCaoTheoThangNam(thangDaChon, namDaChon);
+            
+            console.log(`Đang lọc dữ liệu cho: Tháng ${thangDaChon} / Năm ${namDaChon}`);
+            // Bạn có thể viết thêm logic tải lại dữ liệu Firebase tại đây
         }
-        // Gán sự kiện change cho các thẻ select
-        document.getElementById('chon-thang').addEventListener('change', xuLyBoLocThoiGian);
-        document.getElementById('chon-nam').addEventListener('change', xuLyBoLocThoiGian);
+
+        // ========================================================
+        // 2. ĐOẠN CODE CỦA BẠN: LẮNG NGHE SỰ KIỆN CHỌN (ĐẶT TẠI ĐÂY)
+        // ========================================================
+        const elThang = document.getElementById('chon-thang');
+        const elNam = document.getElementById('chon-nam');
+
+        if (elThang && elNam) {
+            // Tự động chọn tháng hiện tại khi mới mở app
+            const thangHienTai = new Date().getMonth() + 1;
+            elThang.value = thangHienTai;
+
+            // Lắng nghe sự kiện thay đổi trên 2 ô chọn
+            elThang.addEventListener('change', xuLyBoLocThoiGian);
+            elNam.addEventListener('change', xuLyBoLocThoiGian);
+        }
     </script>
 </body>
 </html>
