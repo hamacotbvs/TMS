@@ -170,69 +170,66 @@
         // ====== ĐOẠN MÃ KẾT NỐI VÀ LỌC CÁC CHUYẾN XE THÁNG 7 ======
         const vungHienThi = document.getElementById('danh-sach-van-chuyen');
 
-        if (vungHienThi) {
-            const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-            
-            // Tạo câu lệnh truy vấn: 
-            // 1. Lọc trường 'thang' bằng 7 (Lưu ý: Nếu trên Firestore bạn nhập số 7 thì ghi là 7, nếu nhập chuỗi "7" thì sửa lại thành "7")
-            // 2. Sắp xếp theo 'ngayXuatKho' giảm dần (mới nhất lên trên)
-            const truyVanThang7 = query(
-                thamChieuTuyenDuong, 
-                where("thang", "==", 7), 
-                orderBy("ngayXuatKho", "desc")
-            );
+if (vungHienThi) {
+    const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
+    
+    // ĐÃ SỬA: Chỉ giữ lại điều kiện lọc where, bỏ hoàn toàn orderBy
+    const truyVanThang7 = query(
+        thamChieuTuyenDuong, 
+        where("thang", "==", 7)
+    );
 
-            // Lắng nghe dữ liệu thời gian thực
-            onSnapshot(truyVanThang7, (snapshot) => {
-                if (snapshot.empty) {
-                    vungHienThi.innerHTML = `<p style="color: #999; text-align: center;">Không có chuyến xe nào trong tháng 7.</p>`;
-                    return;
-                }
-
-                let chuoiHtml = '';
-
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const dinhDangTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + 'đ' : '0đ';
-
-                    chuoiHtml += `
-                        <div class="the-chuyen-xe ${data.status === 'Đã duyệt' ? 'da-duyet' : ''}">
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-id-card"></i> Mã phiếu:</span>
-                                <span class="gia-tri-so" style="color: #007acc;">${data.maPhiieu || doc.id}</span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-user-tie"></i> Tài xế:</span>
-                                <span>${data.taiXe || 'Chưa rõ'}</span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-truck"></i> Số xe:</span>
-                                <span class="gia-tri-so">${data.phuongTien || 'N/A'}</span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-location-dot"></i> Nơi giao:</span>
-                                <span style="font-size: 13px; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${data.noiGiao || 'Chưa cập nhật'}
-                                </span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-coins"></i> Thành tiền:</span>
-                                <span class="gia-tri-so" style="color: #e63946;">${dinhDangTien}</span>
-                            </div>
-                            <div class="dong-thong-tin" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee;">
-                                <span class="nhan-tieu-de">Trạng thái:</span>
-                                <span class="trang-thai-nhan ${data.status === 'Đã duyệt' ? 'duyet' : ''}">${data.status || 'Chờ duyệt'}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                vungHienThi.innerHTML = chuoiHtml;
-            }, (error) => {
-                console.error("Lỗi khi tải dữ liệu từ TUYENDUONG:", error);
-                vungHienThi.innerHTML = `<p style="color: red; text-align: center;">Lỗi kết nối dữ liệu: ${error.message}</p>`;
-            });
+    // Lắng nghe dữ liệu thời gian thực
+    onSnapshot(truyVanThang7, (snapshot) => {
+        if (snapshot.empty) {
+            vungHienThi.innerHTML = `<p style="color: #999; text-align: center;">Không có chuyến xe nào trong tháng 7.</p>`;
+            return;
         }
+
+        let chuoiHtml = '';
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const dinhDangTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + 'đ' : '0đ';
+
+            chuoiHtml += `
+                <div class="the-chuyen-xe ${data.status === 'Đã duyệt' ? 'da-duyet' : ''}">
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-id-card"></i> Mã phiếu:</span>
+                        <span class="gia-tri-so" style="color: #007acc;">${data.maPhiieu || doc.id}</span>
+                    </div>
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-user-tie"></i> Tài xế:</span>
+                        <span>${data.taiXe || 'Chưa rõ'}</span>
+                    </div>
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-truck"></i> Số xe:</span>
+                        <span class="gia-tri-so">${data.phuongTien || 'N/A'}</span>
+                    </div>
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-location-dot"></i> Nơi giao:</span>
+                        <span style="font-size: 13px; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${data.noiGiao || 'Chưa cập nhật'}
+                        </span>
+                    </div>
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-coins"></i> Thành tiền:</span>
+                        <span class="gia-tri-so" style="color: #e63946;">${dinhDangTien}</span>
+                    </div>
+                    <div class="dong-thong-tin" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee;">
+                        <span class="nhan-tieu-de">Trạng thái:</span>
+                        <span class="trang-thai-nhan ${data.status === 'Đã duyệt' ? 'duyet' : ''}">${data.status || 'Chờ duyệt'}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        vungHienThi.innerHTML = chuoiHtml;
+    }, (error) => {
+        console.error("Lỗi khi tải dữ liệu từ TUYENDUONG:", error);
+        vungHienThi.innerHTML = `<p style="color: red; text-align: center;">Lỗi kết nối dữ liệu: ${error.message}</p>`;
+    });
+}
         // =========================================================
 
         console.log("Firebase & Firestore đã được kết nối thành công!");
