@@ -227,34 +227,35 @@
             elNam.addEventListener('change', xuLyBoLocThoiGian);
         }
         // BIỂU ĐỒ GIAO HÀNG/GỬI CHÀNH QUA THÁNG TRONG NĂM //
-        // --- CẤU HÌNH BIỂU ĐỒ CỘT CHỒNG (CHART.JS) ---
+        // --- KHỞI TẠO BIẾN TOÀN CỤC ---
         let bieuDoBaoCao = null;
+        let unsubscribeFirebase = null; // Dùng để hủy đăng ký lắng nghe khi đổi năm
 
-        function khoiTaoBieuDo() {
+        // Hàm khởi tạo khung biểu đồ trống ban đầu
+        function khoiTaoKhungBieuDo() {
             const ctx = document.getElementById('bieuDoSanLuong');
             if (!ctx) return;
 
-            // Dữ liệu mẫu ban đầu cho 12 tháng (Bạn sẽ thay bằng dữ liệu thực tế từ Firebase sau này)
-            const dataGiaoHang = [120, 150, 180, 90, 200, 170, 220, 190, 210, 160, 140, 250]; // Sản lượng tTại của Giao Hàng
-            const dataGuiChanh = [50, 70, 60, 40, 80, 55, 90, 65, 75, 60, 50, 85];       // Sản lượng tTại của Gửi Chành
+            // Nếu đã có biểu đồ trước đó thì hủy để vẽ mới hoàn toàn
+            if (bieuDoBaoCao) {
+                bieuDoBaoCao.destroy();
+            }
 
             bieuDoBaoCao = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
                     datasets: [
                         {
                             label: '🚚 Giao hàng',
-                            data: dataGiaoHang,
-                            backgroundColor: '#007acc', // Màu xanh chủ đạo của app
-                            borderWidth: 0,
+                            data: Array(12).fill(0), // Khởi tạo 12 tháng bằng số 0
+                            backgroundColor: '#007acc',
                             borderRadius: 4
                         },
                         {
                             label: '📦 Gửi chành',
-                            data: dataGuiChanh,
-                            backgroundColor: '#ff9f43', // Màu cam phân tách rõ ràng
-                            borderWidth: 0,
+                            data: Array(12).fill(0), // Khởi tạo 12 tháng bằng số 0
+                            backgroundColor: '#ff9f43',
                             borderRadius: 4
                         }
                     ]
@@ -263,50 +264,108 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            position: 'top', // Hiển thị chú thích ở phía trên
-                            labels: { font: { family: 'Roboto', size: 12 } }
-                        },
+                        legend: { position: 'top', labels: { font: { family: 'Roboto', size: 12 } } },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return ` ${context.dataset.label}: ${context.raw} tấn`;
+                                    return ` ${context.dataset.label}: ${context.raw.toLocaleString('vi-VN')} tấn`;
                                 }
                             }
                         }
                     },
                     scales: {
-                        x: {
-                            stacked: true, // KÍCH HOẠT CỘT CHỒNG TRỤC X
-                            grid: { display: false } // Ẩn lưới sọc dọc cho thoáng
-                        },
+                        x: { stacked: true, grid: { display: false } },
                         y: {
-                            stacked: true, // KÍCH HOẠT CỘT CHỒNG TRỤC Y
+                            stacked: true,
                             beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Sản lượng (Tấn)',
-                                font: { font: 'Roboto', weight: 'bold' }
-                            }
+                            title: { display: true, text: 'Sản lượng (Tấn)', font: { family: 'Roboto', weight: 'bold' } }
                         }
                     }
                 }
             });
         }
 
-        // Gọi khởi tạo biểu đồ ngay sau khi tải trang xong
+        // --- HÀM LẤY DỮ LIỆU THỜI GIAN THỰC TỪ FIRESTORE ---
+        function taiDuLieuBieuDoTheoNam(namLoc) {
+            // Nếu đang lắng nghe năm cũ thì ngắt kết nối để lắng nghe năm mới
+            if (unsubscribeFirebase) {
+                unsubscribeFirebase();
+            }
+
+            // Giả định tên collection trên Firestore của bạn là 'chuyen_hang' hoặc 'vận chuyển'.
+            // BẠN HÃY THAY 'vanchuyen' THÀNH TÊN COLLECTION CHÍNH XÁC CỦA BẠN TRÊN FIREBASE
+            const collectionRef = collection(db, "vanchuyen"); 
+
+            // Tạo truy vấn lọc dữ liệu theo trường 'nam' dạng số nguyên (integer)
+            const q = query(collectionRef, where("nam", "==", parseInt(namLoc)));
+
+            // Lắng nghe dữ liệu thay đổi theo thời gian thực
+            unsubscribeFirebase = onSnapshot(q, (querySnapshot) => {
+                // Khởi tạo lại mảng sản lượng 12 tháng bằng 0 cho cả 2 hình thức
+                const sanLuongGiaoHang = Array(12).fill(0);
+                const sanLuongGuiChanh = Array(12).fill(0);
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const thang = parseInt(data.thang) - 1; // Mảng trong JS chạy từ 0 đến 11 (Tháng 1 -> index 0)
+                    const taiTrong = parseFloat(data.tTai) || 0; // Lấy giá trị trường tTai
+                    const htGiaoNhan = data.htGiaoNhan; // Lấy hình thức giao nhận
+
+                    // Kiểm tra tháng hợp lệ (từ 0 đến 11) trước khi cộng dồn sản lượng
+                    if (thang >= 0 && thang <= 11) {
+                        if (htGiaoNhan === "Giao hàng") {
+                            sanLuongGiaoHang[thang] += taiTrong;
+                        } else if (htGiaoNhan === "Gửi chành") {
+                            sanLuongGuiChanh[thang] += taiTrong;
+                        }
+                    }
+                });
+
+                // Cập nhật mảng dữ liệu mới vào biểu đồ Chart.js
+                if (bieuDoBaoCao) {
+                    bieuDoBaoCao.data.datasets[0].data = sanLuongGiaoHang;
+                    bieuDoBaoCao.data.datasets[1].data = sanLuongGuiChanh;
+                    bieuDoBaoCao.update(); // Lệnh làm mới thanh cột trên giao diện
+                }
+            }, (error) => {
+                console.error("Lỗi khi tải dữ liệu từ Firestore: ", error);
+            });
+        }
+
+        // --- XỬ LÝ SỰ KIỆN KHI THAY ĐỔI BỘ LỌC THỜI GIAN ---
+        function xuLyBoLocThoiGian() {
+            const elNam = document.getElementById('chon-nam');
+            if (elNam) {
+                // Mỗi lần chọn năm mới, tự động nạp lại dữ liệu cả năm đó lên biểu đồ
+                taiDuLieuBieuDoTheoNam(elNam.value);
+            }
+        }
+
+        // --- ĐỒNG BỘ VÀ KÍCH HOẠT KHI TẢI TRANG ---
         document.addEventListener('DOMContentLoaded', () => {
-            khoiTaoBieuDo();
+            khoiTaoKhungBieuDo();
         });
 
-        // Đảm bảo khi switch sang Tab Báo cáo thì biểu đồ vẽ mượt mà
-        const hàmChuyenTabGốc = window.switchTab;
+        // Đảm bảo khi bấm chọn thanh menu dưới chuyển tab 'Báo cáo' thì biểu đồ được kích hoạt đúng
+        const hamChuyenTabGoc = window.switchTab;
         window.switchTab = function(tabId) {
-            hàmChuyenTabGốc(tabId);
-            if (tabId === 'bao-cao' && !bieuDoBaoCao) {
-                setTimeout(khoiTaoBieuDo, 100); // Khởi tạo nếu chưa có
+            hamChuyenTabGoc(tabId);
+            if (tabId === 'bao-cao') {
+                if (!bieuDoBaoCao) khoiTaoKhungBieuDo();
+                
+                // Lấy năm đang chọn hiện tại trên giao diện để nạp dữ liệu
+                const elNam = document.getElementById('chon-nam');
+                if (elNam) {
+                    taiDuLieuBieuDoTheoNam(elNam.value);
+                }
             }
         };
+
+        // Gán sự kiện thay đổi cho ô chọn Năm để kích hoạt lọc dữ liệu
+        const selectNamMini = document.getElementById('chon-nam');
+        if (selectNamMini) {
+            selectNamMini.addEventListener('change', xuLyBoLocThoiGian);
+        }
     </script>
 </body>
 </html>
