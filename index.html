@@ -30,73 +30,52 @@
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
-        /* CSS CHO THANH CHỌN THÁNG NĂM */
-        .bo-loc-thoi-gian {
-            display: flex;
-            gap: 12px;
-            margin-top: 15px;
-            background-color: #f8fafc;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
+        /* CSS TREO BỘ LỌC THÁNG/NĂM MINI GÓC PHẢI TRONG TAB BÁO CÁO */
+        .khung-tieu-de-bao-cao {
+            position: relative; /* Làm gốc tọa độ cho bộ lọc treo */
         }
-        .o-chon {
-            flex: 1;
+        .bo-loc-treo-phai {
+            position: absolute;
+            top: 15px;
+            right: 15px;
             display: flex;
-            flex-direction: column;
             gap: 6px;
+            z-index: 10;
         }
-        .o-chon label {
-            font-size: 12px;
+        .select-mini {
+            padding: 6px 24px 6px 10px; /* Chừa khoảng trống bên phải cho mũi tên */
+            font-size: 13px;
             font-weight: 500;
-            color: #64748b;
-        }
-        .o-chon label i {
-            color: #007acc;
-            margin-right: 2px;
-        }
-        .o-chon select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
+            color: #0082C8;
             background-color: #ffffff;
-            font-size: 14px;
-            font-weight: 500;
-            color: #334155;
+            border: 1px solid #edf2f4;
+            border-radius: 20px; /* Bo tròn elip cho đẹp giống nút reset */
             outline: none;
             cursor: pointer;
-            -webkit-appearance: none; /* Xóa bỏ giao diện select mặc định của iOS */
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            -webkit-appearance: none; /* Tắt giao diện mặc định của iOS */
+            
+            /* Tạo mũi tên nhỏ gọn bên phải */
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%230082C8' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
             background-repeat: no-repeat;
-            background-position: calc(100% - 12px) center;
-            padding-right: 30px;
-            transition: border-color 0.2s;
+            background-position: calc(100% - 10px) center;
+            transition: all 0.2s;
         }
-        .o-chon select:focus {
-            border-color: #007acc;
-            box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.1);
+        .select-mini:active {
+            transform: scale(0.95);
+            background-color: #f8fafc;
         }
 
-        /* Tối ưu hóa khi màn hình xoay ngang */
+        /* Tối ưu khi xoay ngang màn hình */
         @media (orientation: landscape) {
-            .bo-loc-thoi-gian {
-                padding: 6px 10px;
-                margin-top: 8px;
+            .bo-loc-treo-phai {
+                top: 10px;
+                right: 12px;
             }
-            .o-chon {
-                flex-direction: row;
-                align-items: center;
-                gap: 8px;
-            }
-            .o-chon label {
+            .select-mini {
+                padding: 4px 20px 4px 8px;
                 font-size: 11px;
-                white-space: nowrap;
-            }
-            .o-chon select {
-                padding: 6px 10px;
-                font-size: 13px;
-                padding-right: 25px;
+                background-position: calc(100% - 8px) center;
             }
         }
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
@@ -125,37 +104,33 @@
         </div>
 
         <div id="bao-cao" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
+            <div class="KHUNG-CON-TRONG-TAB khung-tieu-de-bao-cao">
                 <h2>📊 Báo cáo & Thống kê</h2>
                 
-                <div class="bo-loc-thoi-gian">
-                    <div class="o-chon">
-                        <label for="chon-thang"><i class="fa-solid fa-calendar-days"></i> Tháng</label>
-                        <select id="chon-thang">
-                            <option value="1">Tháng 1</option>
-                            <option value="2">Tháng 2</option>
-                            <option value="3">Tháng 3</option>
-                            <option value="4">Tháng 4</option>
-                            <option value="5">Tháng 5</option>
-                            <option value="6">Tháng 6</option>
-                            <option value="7">Tháng 7</option>
-                            <option value="8">Tháng 8</option>
-                            <option value="9">Tháng 9</option>
-                            <option value="10">Tháng 10</option>
-                            <option value="11">Tháng 11</option>
-                            <option value="12">Tháng 12</option>
-                        </select>
-                    </div>
+                <div class="bo-loc-treo-phai">
+                    <select id="chon-thang" class="select-mini">
+                        <option value="1">T1</option>
+                        <option value="2">T2</option>
+                        <option value="3">T3</option>
+                        <option value="4">T4</option>
+                        <option value="5">T5</option>
+                        <option value="6">T6</option>
+                        <option value="7">T7</option>
+                        <option value="8">T8</option>
+                        <option value="9">T9</option>
+                        <option value="10">T10</option>
+                        <option value="11">T11</option>
+                        <option value="12">T12</option>
+                    </select>
                     
-                    <div class="o-chon">
-                        <label for="chon-nam"><i class="fa-solid fa-timeline"></i> Năm</label>
-                        <select id="chon-nam">
-                            <option value="2025">2025</option>
-                            <option value="2026" selected>2026</option> <option value="2027">2027</option>
-                        </select>
-                    </div>
+                    <select id="chon-nam" class="select-mini">
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2027">2027</option>
+                    </select>
                 </div>
-                <p style="margin-top: 15px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
+                
+                <p style="margin-top: 20px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
             </div>
         </div>
 
