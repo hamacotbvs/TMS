@@ -125,7 +125,8 @@
                         data: Array(12).fill(0), 
                         type: 'line', 
                         borderColor: '#f1c40f',     
-                        borderWidth: 0.5, 
+                        backgroundColor: '#f1c40f', // ĐÃ SỬA: Thêm màu nền vàng để full đồng bộ chú thích & tooltip
+                        borderWidth: 1, 
                         tension: 0,                 
                         pointRadius: 0,             
                         pointHoverRadius: 0,        
@@ -160,10 +161,7 @@
                         ticks: {
                             color: '#94a3b8',
                             font: { size: 12 },
-                            // ĐÃ SỬA: Chuyển đổi hiển thị trục đứng thành đơn vị "tấn"
                             callback: function(value) {
-                                // Nếu DB của bạn lưu bằng kg, chia cho 1000 để đổi thành tấn. 
-                                // Nếu DB đã lưu sẵn bằng tấn, sửa đoạn dưới thành: return value + ' tấn';
                                 return (value / 1000).toLocaleString('vi-VN') + ' tấn';
                             }
                         }
