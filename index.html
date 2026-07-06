@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
     <title>HAMACO-TMS</title>
-    <link rel="icon" type="image/png" href="logo.png">
-    <link rel="apple-touch-icon" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <style> /* CSS */
+    <style> /* CSS ĐỊNH DẠNG WEBAPP*/
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
         /* NÚT RESET */
         .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
@@ -32,6 +31,45 @@
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
+        /* BỘ LỌC THÁNG NẰM TAB BÁO CÁO */
+        .bo-loc-treo-phai {
+            display: flex;
+            justify-content: flex-end; /* Đẩy 2 ô chọn về sát lề phải màn hình */
+            gap: 8px;
+            margin-bottom: 12px; /* Tạo khoảng cách trống an toàn với khung trắng bên dưới */
+            padding-right: 4px;  /* Canh đều lề phải với khung nội dung */}
+        .select-mini {
+            padding: 6px 28px 6px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #0082C8;
+            background-color: #ffffff;
+            border: 1px solid #edf2f4;
+            border-radius: 20px;
+            outline: none;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%230082C8' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: calc(100% - 12px) center;
+            transition: all 0.2s;}
+        .select-mini:active {transform: scale(0.95);}
+            /* Khi xoay ngang màn hình */
+            @media (orientation: landscape) {
+                .bo-loc-treo-phai {margin-bottom: 8px;}
+                .select-mini {padding: 4px 24px 4px 10px; font-size: 11px; background-position: calc(100% - 10px) center;} }
+        /* VÙNG BIỂU ĐỒ */
+        .vung-bieu-do {
+            background: #ffffff;
+            padding: 5px;
+            border-radius: 8px;
+        }
+        @media (orientation: landscape) {
+            .vung-bieu-do {
+                height: 220px !important; /* Thu hẹp chiều cao khi xoay ngang để vừa màn hình */
+            }
+        }
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
         .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
@@ -42,33 +80,6 @@
         .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
         .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
         .MENU-item.add-btn i {font-size: 16px;} }
-        /* CSS CHO DANH SÁCH VẬN CHUYỂN */
-        .the-chuyen-xe {
-            background: #f8fafc;
-            border-left: 5px solid #007acc;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-        }
-        .the-chuyen-xe.da-duyet { border-left-color: #2ec4b6; } /* Màu xanh lá nếu trạng thái Đã duyệt */
-        .dong-thong-tin {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-            font-size: 14px;
-        }
-        .nhan-tieu-de { color: #666; font-weight: 500; }
-        .gia-tri-so { font-weight: 700; color: #333; }
-        .trang-thai-nhan {
-            background: #e6f2ff;
-            color: #007acc;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-        .trang-thai-nhan.duyet { background: #e7fbf7; color: #2ec4b6; }
     </style>
 
 </head>
@@ -85,9 +96,32 @@
         </div>
 
         <div id="bao-cao" class="trang-content">
+            <div class="bo-loc-treo-phai">
+                <select id="chon-thang" class="select-mini">
+                    <option value="1">Tháng 1</option>
+                    <option value="2">Tháng 2</option>
+                    <option value="3">Tháng 3</option>
+                    <option value="4">Tháng 4</option>
+                    <option value="5">Tháng 5</option>
+                    <option value="6">Tháng 6</option>
+                    <option value="7">Tháng 7</option>
+                    <option value="8">Tháng 8</option>
+                    <option value="9">Tháng 9</option>
+                    <option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option>
+                    <option value="12">Tháng 12</option>
+                </select>
+                <select id="chon-nam" class="select-mini">
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                </select>
+            </div>
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Báo cáo & Thống kê</h2>
-                <p style="margin-top: 10px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
+                <h2>📊 Báo cáo & Thống k</h2>
+                <div class="vung-bieu-do" style="margin-top: 20px; position: relative; width: 100%; height: 300px;">
+                    <canvas id="bieuDoSanLuong"></canvas>
+                </div>
             </div>
         </div>
 
@@ -108,12 +142,8 @@
 
         <div id="van-chuyen" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🚚 Quản lý Vận chuyển Thực tế</h2>
-                <p style="margin-top: 5px; margin-bottom: 15px; color: #666; font-size: 13px;">Danh sách chuyến hàng cập nhật trực tiếp từ Firestore:</p>
-        
-                <div id="danh-sach-van-chuyen">
-                    <p style="color: #999; text-align: center;">Đang tải dữ liệu chuyến xe...</p>
-                </div>
+                <h2>🚚 Quản lý Vận chuyển</h2>
+                <p style="margin-top: 10px; color: #666;">Điều phối xe, tài xế và trạng thái đơn vận chuyển.</p>
             </div>
         </div>
 
@@ -121,36 +151,36 @@
 
     <nav class="MENU-DUOI">
 
-        <div class="MENU-item active" onclick="switchTab(event, 'home')">
+        <div class="MENU-item active" onclick="switchTab('home')">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </div>
 
-        <div class="MENU-item" onclick="switchTab(event, 'bao-cao')">
+        <div class="MENU-item" onclick="switchTab('bao-cao')">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Báo cáo</span>
         </div>
 
-        <div class="MENU-item add-btn" onclick="switchTab(event, 'them-moi')">
+        <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
             <i class="fa-solid fa-plus"></i>
         </div>
 
-        <div class="MENU-item" onclick="switchTab(event, 'kho')">
+        <div class="MENU-item" onclick="switchTab('kho')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Kho</span>
         </div>
 
-        <div class="MENU-item" onclick="switchTab(event, 'van-chuyen')">
+        <div class="MENU-item" onclick="switchTab('van-chuyen')">
             <i class="fa-solid fa-car-side"></i>
             <span>Vận chuyển</span>
         </div>
 
     </nav>
 
-    <script type="module">
+<script type="module">
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
@@ -165,73 +195,13 @@
         // KHỞI TẠO FIREBASE
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        // ====== ĐOẠN MÃ KẾT NỐI VÀ LẤY DỮ LIỆU TỪ TUYENDUONG ======
-const vungHienThi = document.getElementById('danh-sach-van-chuyen');
-
-if (vungHienThi) {
-    // Chỉ định kết nối tới collection 'TUYENDUONG' trên Firestore của bạn
-    const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-
-    // Lắng nghe dữ liệu thời gian thực (Realtime)
-    onSnapshot(thamChieuTuyenDuong, (snapshot) => {
-        // Nếu không có dữ liệu nào
-        if (snapshot.empty) {
-            vungHienThi.innerHTML = `<p style="color: #999; text-align: center;">Chưa có dữ liệu chuyến xe nào trên hệ thống.</p>`;
-            return;
-        }
-
-        let chuoiHtml = ''; // Biến tạm chứa giao diện
-
-        snapshot.forEach((doc) => {
-            const data = doc.data(); // Lấy toàn bộ các field trong document mẫu của bạn
-
-            // Định dạng hiển thị số tiền thành dạng 3.603.780đ
-            const dinhDangTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + 'đ' : '0đ';
-
-            // Tạo cấu trúc HTML cho từng chuyến hàng đổ ra màn hình
-            chuoiHtml += `
-                <div class="the-chuyen-xe ${data.status === 'Đã duyệt' ? 'da-duyet' : ''}">
-                    <div class="dong-thong-tin">
-                        <span class="nhan-tieu-de"><i class="fa-solid fa-id-card"></i> Mã phiếu:</span>
-                        <span class="gia-tri-so" style="color: #007acc;">${data.maPhiieu || doc.id}</span>
-                    </div>
-                    <div class="dong-thong-tin">
-                        <span class="nhan-tieu-de"><i class="fa-solid fa-user-tie"></i> Tài xế:</span>
-                        <span>${data.taiXe || 'Chưa rõ'}</span>
-                    </div>
-                    <div class="dong-thong-tin">
-                        <span class="nhan-tieu-de"><i class="fa-solid fa-truck"></i> Số xe:</span>
-                        <span class="gia-tri-so">${data.phuongTien || 'N/A'}</span>
-                    </div>
-                    <div class="dong-thong-tin">
-                        <span class="nhan-tieu-de"><i class="fa-solid fa-location-dot"></i> Nơi giao:</span>
-                        <span style="font-size: 13px; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${data.noiGiao || 'Chưa cập nhật'}
-                        </span>
-                    </div>
-                    <div class="dong-thong-tin">
-                        <span class="nhan-tieu-de"><i class="fa-solid fa-coins"></i> Thành tiền:</span>
-                        <span class="gia-tri-so" style="color: #e63946;">${dinhDangTien}</span>
-                    </div>
-                    <div class="dong-thong-tin" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee;">
-                        <span class="nhan-tieu-de">Trạng thái:</span>
-                        <span class="trang-thai-nhan ${data.status === 'Đã duyệt' ? 'duyet' : ''}">${data.status || 'Chờ duyệt'}</span>
-                    </div>
-                </div>
-            `;
-        });
-
-        // Đổ toàn bộ danh sách thẻ chuyến xe vào giao diện ứng dụng
-        vungHienThi.innerHTML = chuoiHtml;
-    }, (error) => {
-        console.error("Lỗi khi tải dữ liệu từ TUYENDUONG:", error);
-        vungHienThi.innerHTML = `<p style="color: red; text-align: center;">Lỗi kết nối dữ liệu: ${error.message}</p>`;
-    });
-}
-// =========================================================
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
-        // NÚT RESET
+        // BIẾN TOÀN CỤC CỦA BIỂU ĐỒ VÀ FIRESTORE
+        let bieuDoBaoCao = null;
+        let unsubscribeFirebase = null; 
+
+        // NÚT RESET APP
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
         if (idNutLamMoi) {
             idNutLamMoi.addEventListener('click', () => {
@@ -244,24 +214,180 @@ if (vungHienThi) {
             });
         }
 
-        // SỬA TẠI ĐÂY: Nhận thêm tham số 'e' (event) để tránh lỗi crash trên Mobile/Web
-        window.switchTab = function(e, tabId) { 
-            // Ẩn tất cả các trang nội dung
+        // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
+        window.switchTab = function(tabId) { 
             const trangs = document.querySelectorAll('.trang-content'); 
             trangs.forEach(page => page.classList.remove('active')); 
             
-            // Gỡ bỏ trạng thái active của tất cả các nút menu
             const menuItems = document.querySelectorAll('.MENU-item'); 
             menuItems.forEach(item => item.classList.remove('active')); 
             
-            // Hiển thị trang được chọn
             document.getElementById(tabId).classList.add('active'); 
-            
-            // Kích hoạt trạng thái active cho nút menu được click thông qua e.currentTarget
-            if (e && e.currentTarget) {
-                e.currentTarget.classList.add('active');
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('active');
+            } else {
+                const iconMap = {
+                    'home': '.fa-house',
+                    'bao-cao': '.fa-chart-pie',
+                    'them-moi': '.fa-plus',
+                    'kho': '.fa-boxes-stacked',
+                    'van-chuyen': '.fa-car-side'
+                };
+                const iconClass = iconMap[tabId];
+                if (iconClass) {
+                    const iconEl = document.querySelector(`.MENU-DUOI ${iconClass}`);
+                    if (iconEl) iconEl.parentElement.classList.add('active');
+                }
             }
-        } 
+
+            if (tabId === 'bao-cao') {
+                if (!bieuDoBaoCao) {
+                    khoiTaoKhungBieuDo();
+                }
+                const elNam = document.getElementById('chon-nam');
+                if (elNam) {
+                    taiDuLieuBieuDoTheoNam(elNam.value);
+                }
+            }
+        }
+
+        // KHI THAY ĐỔI Ô CHỌN NĂM -> TỰ ĐỘNG TẢI LẠI BIỂU ĐỒ THEO NĂM ĐÓ
+        function xuLyBoLocThoiGian() {
+            const elNam = document.getElementById('chon-nam');
+            if (elNam) {
+                taiDuLieuBieuDoTheoNam(elNam.value);
+            }
+        }
+
+        // CẤU HÌNH KHỞI TẠO KHUNG BIỂU ĐỒ TRỐNG (CHART.JS)
+        function khoiTaoKhungBieuDo() {
+            const ctx = document.getElementById('bieuDoSanLuong');
+            if (!ctx) return;
+
+            if (bieuDoBaoCao) {
+                bieuDoBaoCao.destroy(); 
+            }
+
+            bieuDoBaoCao = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                    datasets: [
+                        {
+                            label: '🚚 Giao hàng',
+                            data: Array(12).fill(0), 
+                            backgroundColor: '#007acc',
+                            borderRadius: 4
+                        },
+                        {
+                            label: '📦 Gửi chành',
+                            data: Array(12).fill(0), 
+                            backgroundColor: '#ff9f43',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { family: 'Roboto', size: 12 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: ${context.raw.toLocaleString('vi-VN')} tấn`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Sản lượng (Tấn)',
+                                font: { family: 'Roboto', weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // HÀM ĐỌC DỮ LIỆU THÔ KHÔNG QUA BỘ LỌC SERVER FIREBASE
+        function taiDuLieuBieuDoTheoNam(namLoc) {
+            if (unsubscribeFirebase) {
+                unsubscribeFirebase();
+            }
+
+            console.log(`[Đang kết nối] Đang lấy toàn bộ data thô từ collection: TUYENDUONG`);
+            const collectionRef = collection(db, "TUYENDUONG"); 
+
+            // ĐÃ BỎ HOÀN TOÀN 'query' VÀ 'where'. Tải trực tiếp bộ dữ liệu về máy để Client tự xử lý.
+            unsubscribeFirebase = onSnapshot(collectionRef, (querySnapshot) => {
+                const sanLuongGiaoHang = Array(12).fill(0);
+                const sanLuongGuiChanh = Array(12).fill(0);
+                
+                let tongSoDongQuetDuoc = 0;
+                let soDongKhớpNam = 0;
+
+                querySnapshot.forEach((doc) => {
+                    tongSoDongQuetDuoc++;
+                    const data = doc.data();
+                    
+                    // Ép kiểu chuỗi toàn bộ và xóa khoảng trắng thừa thụt đầu đuôi (.trim())
+                    if (data.nam && data.nam.toString().trim() === namLoc.toString().trim()) {
+                        soDongKhớpNam++;
+                        
+                        const thang = parseInt(data.thang) - 1; 
+                        const taiTrong = parseFloat(data.tTai) || 0;
+                        const htGiaoNhan = data.htGiaoNhan ? data.htGiaoNhan.toString().trim() : "";
+
+                        if (thang >= 0 && thang <= 11) {
+                            if (htGiaoNhan === "Giao hàng") {
+                                sanLuongGiaoHang[thang] += taiTrong;
+                            } else if (htGiaoNhan === "Gửi chành") {
+                                sanLuongGuiChanh[thang] += taiTrong;
+                            }
+                        }
+                    }
+                });
+
+                // Kiểm tra Log để bắt bệnh lỗi:
+                console.log(`📥 Tổng số document kéo được từ Firestore: ${tongSoDongQuetDuoc}`);
+                console.log(`🎯 Số dòng trùng khớp với năm cần lọc (${namLoc}): ${soDongKhớpNam}`);
+
+                if (bieuDoBaoCao) {
+                    bieuDoBaoCao.data.datasets[0].data = sanLuongGiaoHang;
+                    bieuDoBaoCao.data.datasets[1].data = sanLuongGuiChanh;
+                    bieuDoBaoCao.update();
+                }
+            }, (error) => {
+                console.error("❌ Lỗi đồng bộ dữ liệu Firestore: ", error);
+            });
+        }
+
+        // SETUP KHỞI CHẠY AN TOÀN KHI TẢI TRANG
+        const elThang = document.getElementById('chon-thang');
+        const elNam = document.getElementById('chon-nam');
+
+        if (elThang && elNam) {
+            elThang.value = new Date().getMonth() + 1;
+            elNam.addEventListener('change', xuLyBoLocThoiGian);
+        }
+
+        // Tự động dựng sẵn khung biểu đồ và nạp dữ liệu năm hiện tại ngay khi mở app
+        document.addEventListener('DOMContentLoaded', () => {
+            khoiTaoKhungBieuDo();
+            if (elNam) {
+                taiDuLieuBieuDoTheoNam(elNam.value);
+            }
+        });
     </script>
 </body>
 </html>
