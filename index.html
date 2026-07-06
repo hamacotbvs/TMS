@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
     <style>
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} 
@@ -94,6 +95,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // ĐĂNG KÝ PLUGIN DATALABELS VỚI CHART.JS
+        Chart.register(ChartDataLabels);
+
         const ctx = document.getElementById('bieuDoTaiTrongThang').getContext('2d');
         const bieuDo = new Chart(ctx, {
             type: 'bar',
@@ -108,7 +112,14 @@
                         borderSkipped: 'bottom',    
                         barPercentage: 0.5,         
                         grouped: false, 
-                        order: 3 
+                        order: 3,
+                        // Cấu hình nhãn số liệu riêng cho Giao hàng
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            offset: -2,
+                            color: '#3498db'
+                        }
                     },
                     { 
                         label: 'Gửi chành', 
@@ -118,20 +129,35 @@
                         borderSkipped: 'bottom',    
                         barPercentage: 0.25,        
                         grouped: false, 
-                        order: 2 
+                        order: 2,
+                        // Cấu hình nhãn số liệu riêng cho Gửi chành
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 2,
+                            color: '#e74c3c'
+                        }
                     },
                     { 
                         label: 'Tổng tTai', 
                         data: Array(12).fill(0), 
                         type: 'line', 
                         borderColor: '#f1c40f',     
-                        backgroundColor: '#f1c40f', // ĐÃ SỬA: Thêm màu nền vàng để full đồng bộ chú thích & tooltip
+                        backgroundColor: '#f1c40f', 
                         borderWidth: 1, 
                         tension: 0,                 
                         pointRadius: 0,             
                         pointHoverRadius: 0,        
                         fill: false, 
-                        order: 1 
+                        order: 1,
+                        // Cấu hình nhãn số liệu riêng cho đường Tổng tải (đặt cao hơn hẳn để không đè cột)
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 12,
+                            color: '#d4ac0d', // Màu vàng đậm hơn chút cho dễ nhìn text
+                            font: { weight: 'bold' }
+                        }
                     }
                 ]
             },
@@ -139,6 +165,18 @@
                 responsive: true, 
                 maintainAspectRatio: false,
                 plugins: {
+                    // CẤU HÌNH CHUNG CHO TẤT CẢ SỐ LIỆU ĐẦU CỘT
+                    datalabels: {
+                        font: {
+                            size: 10,
+                            weight: '600'
+                        },
+                        // Chỉ hiển thị số liệu khi tháng đó có dữ liệu (lớn hơn 0) để biểu đồ sạch đẹp
+                        formatter: function(value) {
+                            if (value === 0) return '';
+                            return (value / 1000).toFixed(1); // Đổi ra tấn và lấy 1 chữ số thập phân (VD: 5.5)
+                        }
+                    },
                     legend: {
                         position: 'top',
                         labels: {
@@ -158,11 +196,13 @@
                     y: {
                         beginAtZero: true,
                         grid: { color: '#f0f2f5' }, 
+                        // Tăng khoảng đệm trên đỉnh trục Y để số liệu đầu cột không bị che khuất
+                        grace: '15%',
                         ticks: {
                             color: '#94a3b8',
                             font: { size: 12 },
                             callback: function(value) {
-                                return (value / 1000).toLocaleString('vi-VN') + ' tấn';
+                                return (value / 1000).toLocaleString('vi-VN') + ' t';
                             }
                         }
                     }
