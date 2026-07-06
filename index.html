@@ -1,186 +1,7 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
-    <title>HAMACO-TMS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <style> /* CSS ĐỊNH DẠNG WEBAPP*/
-        * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
-        /* NÚT RESET */
-        .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
-            background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
-        .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
-        .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
-        /* ĐỊNH DẠNG CHUNG */
-        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
-        .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
-        .trang-content {display: none;} /* ẩn tất cả các tab */
-        .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
-        .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
-        /* THANH MENU DƯỚI */
-        .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
-        .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
-        .MENU-item i {font-size: 20px; margin-bottom: 4px; transition: all 0.3s ease; /* co giãn mượt khi xoay */}
-        .MENU-item.active {color: #ffffff; font-weight: 700;} /* Tab đang được chọn */
-        .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
-        .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
-        .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
-        /* BỘ LỌC THÁNG NẰM TAB BÁO CÁO */
-        .bo-loc-treo-phai {
-            display: flex;
-            justify-content: flex-end; /* Đẩy 2 ô chọn về sát lề phải màn hình */
-            gap: 8px;
-            margin-bottom: 12px; /* Tạo khoảng cách trống an toàn với khung trắng bên dưới */
-            padding-right: 4px;  /* Canh đều lề phải với khung nội dung */}
-        .select-mini {
-            padding: 6px 28px 6px 12px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #0082C8;
-            background-color: #ffffff;
-            border: 1px solid #edf2f4;
-            border-radius: 20px;
-            outline: none;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%230082C8' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
-            background-repeat: no-repeat;
-            background-position: calc(100% - 12px) center;
-            transition: all 0.2s;}
-        .select-mini:active {transform: scale(0.95);}
-            /* Khi xoay ngang màn hình */
-            @media (orientation: landscape) {
-                .bo-loc-treo-phai {margin-bottom: 8px;}
-                .select-mini {padding: 4px 24px 4px 10px; font-size: 11px; background-position: calc(100% - 10px) center;} }
-        /* VÙNG BIỂU ĐỒ */
-        .vung-bieu-do {
-            background: #ffffff;
-            padding: 5px;
-            border-radius: 8px;
-        }
-        @media (orientation: landscape) {
-            .vung-bieu-do {
-                height: 220px !important; /* Thu hẹp chiều cao khi xoay ngang để vừa màn hình */
-            }
-        }
-        /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
-        @media (orientation: landscape) {
-        .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
-        .KHUNG-CON-TRONG-TAB {padding: 12px 16px;    /* Giảm từ 20px xuống còn 12px */ margin-bottom: 10px;   /* Giảm khoảng cách giữa các card */}
-        .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} /* Đẩy nút reset sát lên góc hơn để không chiếm diện tích */
-        .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} /* Hạ chiều cao menu xuống 45px và ép sát đáy */
-        .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } /* Đổi bố cục nút sang hàng ngang (icon nằm trước chữ) */
-        .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
-        .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
-        .MENU-item.add-btn i {font-size: 16px;} }
-    </style>
-
-</head>
-
-<body>
-
-    <div class="KHUNG-CAC-TAB">
-        
-        <div id="home" class="trang-content active">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiêu</h2>
-                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
-            </div>
-        </div>
-
-        <div id="bao-cao" class="trang-content">
-            <div class="bo-loc-treo-phai">
-                <select id="chon-thang" class="select-mini">
-                    <option value="1">Tháng 1</option>
-                    <option value="2">Tháng 2</option>
-                    <option value="3">Tháng 3</option>
-                    <option value="4">Tháng 4</option>
-                    <option value="5">Tháng 5</option>
-                    <option value="6">Tháng 6</option>
-                    <option value="7">Tháng 7</option>
-                    <option value="8">Tháng 8</option>
-                    <option value="9">Tháng 9</option>
-                    <option value="10">Tháng 10</option>
-                    <option value="11">Tháng 11</option>
-                    <option value="12">Tháng 12</option>
-                </select>
-                <select id="chon-nam" class="select-mini">
-                    <option value="2025">2025</option>
-                    <option value="2026" selected>2026</option>
-                    <option value="2027">2027</option>
-                </select>
-            </div>
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Báo cáo & Thống kê</h2>
-                <div class="vung-bieu-do" style="margin-top: 20px; position: relative; width: 100%; height: 300px;">
-                    <canvas id="bieuDoSanLuong"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div id="them-moi" class="trang-content">
-            <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>➕ Thêm giao dịch / Dữ liệu mới</h2>
-                <p style="margin-top: 10px; color: #666;">Form nhập nhanh thông tin chi tiêu hoặc chuyến hàng.</p>
-            </div>
-        </div>
-
-        <div id="kho" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📦 Quản lý Kho hàng</h2>
-                <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
-            </div>
-        </div>
-
-        <div id="van-chuyen" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🚚 Quản lý Vận chuyển</h2>
-                <p style="margin-top: 10px; color: #666;">Điều phối xe, tài xế và trạng thái đơn vận chuyển.</p>
-            </div>
-        </div>
-
-    </div>
-
-    <nav class="MENU-DUOI">
-
-        <div class="MENU-item active" onclick="switchTab('home')">
-            <i class="fa-solid fa-house"></i>
-            <span>HOME</span>
-        </div>
-
-        <div class="MENU-item" onclick="switchTab('bao-cao')">
-            <i class="fa-solid fa-chart-pie"></i>
-            <span>Báo cáo</span>
-        </div>
-
-        <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
-            <i class="fa-solid fa-plus"></i>
-        </div>
-
-        <div class="MENU-item" onclick="switchTab('kho')">
-            <i class="fa-solid fa-boxes-stacked"></i>
-            <span>Kho</span>
-        </div>
-
-        <div class="MENU-item" onclick="switchTab('van-chuyen')">
-            <i class="fa-solid fa-car-side"></i>
-            <span>Vận chuyển</span>
-        </div>
-
-    </nav>
-
-    <script type="module">
+<script type="module">
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
@@ -199,7 +20,7 @@
 
         // BIẾN TOÀN CỤC CỦA BIỂU ĐỒ VÀ FIRESTORE
         let bieuDoBaoCao = null;
-        let unsubscribeFirebase = null; // Quản lý ngắt/kết nối khi chuyển năm
+        let unsubscribeFirebase = null; 
 
         // NÚT RESET APP
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
@@ -214,7 +35,7 @@
             });
         }
 
-        // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN (ĐÃ SỬA LỖI KHÔNG TẢI BIỂU ĐỒ)
+        // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
         window.switchTab = function(tabId) { 
             const trangs = document.querySelectorAll('.trang-content'); 
             trangs.forEach(page => page.classList.remove('active')); 
@@ -226,7 +47,6 @@
             if (window.event && window.event.currentTarget) {
                 window.event.currentTarget.classList.add('active');
             } else {
-                // Sửa lỗi kích hoạt class active cho nút menu dưới đáy khi chuyển tab bằng mã lệnh
                 const iconMap = {
                     'home': '.fa-house',
                     'bao-cao': '.fa-chart-pie',
@@ -241,7 +61,6 @@
                 }
             }
 
-            // --- ĐÃ BỔ SUNG: Kích hoạt tải dữ liệu ngay khi bấm vào Tab Báo cáo ---
             if (tabId === 'bao-cao') {
                 if (!bieuDoBaoCao) {
                     khoiTaoKhungBieuDo();
@@ -257,7 +76,6 @@
         function xuLyBoLocThoiGian() {
             const elNam = document.getElementById('chon-nam');
             if (elNam) {
-                console.log(`Đang truy vấn dữ liệu Firestore cho Năm: ${elNam.value}`);
                 taiDuLieuBieuDoTheoNam(elNam.value);
             }
         }
@@ -322,27 +140,32 @@
             });
         }
 
-        // HÀM ĐỌC VÀ CẬP NHẬT DỮ LIỆU TỪ FIRESTORE LÊN BIỂU ĐỒ (CẢI TIẾN TÌM KIẾM LINH HOẠT)
+        // HÀM ĐỌC VÀ CẬP NHẬT DỮ LIỆU TỪ FIRESTORE (ĐÃ FIX LỖI SAI KIỂU DỮ LIỆU ĐUÔI)
         function taiDuLieuBieuDoTheoNam(namLoc) {
             if (unsubscribeFirebase) {
                 unsubscribeFirebase();
             }
 
+            console.log(`Bắt đầu kết nối và quét bảng TUYENDUONG cho năm: ${namLoc}`);
             const collectionRef = collection(db, "TUYENDUONG"); 
 
-            // Sử dụng cơ chế lắng nghe bộ dữ liệu tổng và tự lọc bằng code để chống lỗi lệch kiểu (String/Number) trên DB
+            // Loại bỏ hoàn toàn 'query' và 'where' của Firebase để tự lọc dữ liệu bằng JS
+            // Giải pháp này giải quyết triệt để việc db lưu chuỗi "2026" hay số 2026.
             unsubscribeFirebase = onSnapshot(collectionRef, (querySnapshot) => {
                 const sanLuongGiaoHang = Array(12).fill(0);
                 const sanLuongGuiChanh = Array(12).fill(0);
+                let soDongQuetDuoc = 0;
 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     
-                    // So sánh an toàn tuyệt đối bằng việc chuyển dữ liệu năm về chuỗi .toString()
-                    if (data.nam && data.nam.toString() === namLoc.toString()) {
+                    // Kiểm tra và ép toàn bộ về kiểu Chuỗi (.toString()) để so sánh chính xác tuyệt đối
+                    if (data.nam && data.nam.toString().trim() === namLoc.toString().trim()) {
+                        soDongQuetDuoc++;
+                        
                         const thang = parseInt(data.thang) - 1; 
                         const taiTrong = parseFloat(data.tTai) || 0;
-                        const htGiaoNhan = data.htGiaoNhan;
+                        const htGiaoNhan = data.htGiaoNhan ? data.htGiaoNhan.toString().trim() : "";
 
                         if (thang >= 0 && thang <= 11) {
                             if (htGiaoNhan === "Giao hàng") {
@@ -353,6 +176,8 @@
                         }
                     }
                 });
+
+                console.log(`[Kết quả]: Tìm thấy tổng cộng ${soDongQuetDuoc} chuyến hàng hợp lệ của năm ${namLoc}`);
 
                 if (bieuDoBaoCao) {
                     bieuDoBaoCao.data.datasets[0].data = sanLuongGiaoHang;
@@ -373,7 +198,7 @@
             elNam.addEventListener('change', xuLyBoLocThoiGian);
         }
 
-        // --- ĐÃ BỔ SUNG: Chạy liên kết nạp dữ liệu ngay khi mở app thành công ---
+        // Tự động dựng sẵn khung biểu đồ và nạp dữ liệu năm hiện tại ngay khi mở app
         document.addEventListener('DOMContentLoaded', () => {
             khoiTaoKhungBieuDo();
             if (elNam) {
@@ -381,5 +206,3 @@
             }
         });
     </script>
-</body>
-</html>
