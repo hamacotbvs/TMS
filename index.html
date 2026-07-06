@@ -31,51 +31,45 @@
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
         /* CSS TREO BỘ LỌC THÁNG/NĂM MINI GÓC PHẢI TRONG TAB BÁO CÁO */
-        .khung-tieu-de-bao-cao {
-            position: relative; /* Làm gốc tọa độ cho bộ lọc treo */
-        }
+        /* CSS MỚI: ĐẨY BỘ LỌC NẰM TRÊN KHUNG TRẮNG */
         .bo-loc-treo-phai {
-            position: absolute;
-            top: 15px;
-            right: 15px;
             display: flex;
-            gap: 6px;
-            z-index: 10;
+            justify-content: flex-end; /* Đẩy 2 ô chọn về sát lề phải màn hình */
+            gap: 8px;
+            margin-bottom: 12px; /* Tạo khoảng cách trống an toàn với khung trắng bên dưới */
+            padding-right: 4px;  /* Canh đều lề phải với khung nội dung */
         }
         .select-mini {
-            padding: 6px 24px 6px 10px; /* Chừa khoảng trống bên phải cho mũi tên */
+            padding: 6px 28px 6px 12px;
             font-size: 13px;
             font-weight: 500;
             color: #0082C8;
             background-color: #ffffff;
             border: 1px solid #edf2f4;
-            border-radius: 20px; /* Bo tròn elip cho đẹp giống nút reset */
+            border-radius: 20px;
             outline: none;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            -webkit-appearance: none; /* Tắt giao diện mặc định của iOS */
+            -webkit-appearance: none;
             
-            /* Tạo mũi tên nhỏ gọn bên phải */
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%230082C8' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
             background-repeat: no-repeat;
-            background-position: calc(100% - 10px) center;
+            background-position: calc(100% - 12px) center;
             transition: all 0.2s;
         }
         .select-mini:active {
             transform: scale(0.95);
-            background-color: #f8fafc;
         }
 
-        /* Tối ưu khi xoay ngang màn hình */
+        /* Khi xoay ngang màn hình */
         @media (orientation: landscape) {
             .bo-loc-treo-phai {
-                top: 10px;
-                right: 12px;
+                margin-bottom: 8px;
             }
             .select-mini {
-                padding: 4px 20px 4px 8px;
+                padding: 4px 24px 4px 10px;
                 font-size: 11px;
-                background-position: calc(100% - 8px) center;
+                background-position: calc(100% - 10px) center;
             }
         }
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
@@ -104,34 +98,35 @@
         </div>
 
         <div id="bao-cao" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB khung-tieu-de-bao-cao">
-                <h2>📊 Báo cáo & Thống kê</h2>
+            
+            <div class="bo-loc-treo-phai">
+                <select id="chon-thang" class="select-mini">
+                    <option value="1">Tháng 1</option>
+                    <option value="2">Tháng 2</option>
+                    <option value="3">Tháng 3</option>
+                    <option value="4">Tháng 4</option>
+                    <option value="5">Tháng 5</option>
+                    <option value="6">Tháng 6</option>
+                    <option value="7">Tháng 7</option>
+                    <option value="8">Tháng 8</option>
+                    <option value="9">Tháng 9</option>
+                    <option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option>
+                    <option value="12">Tháng 12</option>
+                </select>
                 
-                <div class="bo-loc-treo-phai">
-                    <select id="chon-thang" class="select-mini">
-                        <option value="1">Tháng 1</option>
-                        <option value="2">Tháng 2</option>
-                        <option value="3">Tháng 3</option>
-                        <option value="4">Tháng 4</option>
-                        <option value="5">Tháng 5</option>
-                        <option value="6">Tháng 6</option>
-                        <option value="7">Tháng 7</option>
-                        <option value="8">Tháng 8</option>
-                        <option value="9">Tháng 9</option>
-                        <option value="10">Tháng 10</option>
-                        <option value="11">Tháng 11</option>
-                        <option value="12">Tháng 12</option>
-                    </select>
-                    
-                    <select id="chon-nam" class="select-mini">
-                        <option value="2025">2025</option>
-                        <option value="2026" selected>2026</option>
-                        <option value="2027">2027</option>
-                    </select>
-                </div>
-                
-                <p style="margin-top: 20px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
+                <select id="chon-nam" class="select-mini">
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                </select>
             </div>
+            
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h2>📊 Báo cáo & Thống kê</h2>
+                <p style="margin-top: 15px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
+            </div>
+
         </div>
 
         <div id="them-moi" class="trang-content">
