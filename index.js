@@ -191,18 +191,18 @@ function parseRoutesToMap(buffer) {
     let theoDoi = "";
     if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
     
-    // 📅 XỬ LÝ TÍNH TOÁN THÁNG / NĂM TỪ NGÀY XUẤT KHO
+    // 📅 XỬ LÝ TÍNH TOÁN THÁNG / NĂM TỪ NGÀY XUẤT KHO (DẠNG SỐ)
     let thang = "";
     let nam = "";
     const ngayXuatKhoTxt = getDateByIdx(row, 27);
     if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
       const parts = ngayXuatKhoTxt.split("/");
-      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
-      if (parts[2]) nam = parts[2].split(" ")[0]; // Cắt lấy năm trước khoảng trắng của giờ (nếu có)
+      if (parts[1]) thang = parseInt(parts[1], 10); // Chuyển thành số (VD: 1, 2, 3...)
+      if (parts[2]) nam = parseInt(parts[2].split(" ")[0], 10); // Chuyển thành số (VD: 2026)
     } else if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
       const parts = ngayXuatKhoTxt.split("-");
-      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
-      if (parts[0] && parts[0].length === 4) nam = parts[0];
+      if (parts[1]) thang = parseInt(parts[1], 10); // Chuyển thành số
+      if (parts[0] && parts[0].length === 4) nam = parseInt(parts[0], 10); // Chuyển thành số
     }
 
     routeMap[maPhieu] = {
