@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <style> /* CSS */
+    <style> /* CSS ĐỊNH DẠNG WEBAPP*/
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
         /* NÚT RESET */
         .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
@@ -30,15 +30,13 @@
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
-        /* CSS TREO BỘ LỌC THÁNG/NĂM MINI GÓC PHẢI TRONG TAB BÁO CÁO */
-        /* CSS MỚI: ĐẨY BỘ LỌC NẰM TRÊN KHUNG TRẮNG */
+        /* BỘ LỌC THÁNG NẰM TAB BÁO CÁO */
         .bo-loc-treo-phai {
             display: flex;
             justify-content: flex-end; /* Đẩy 2 ô chọn về sát lề phải màn hình */
             gap: 8px;
             margin-bottom: 12px; /* Tạo khoảng cách trống an toàn với khung trắng bên dưới */
-            padding-right: 4px;  /* Canh đều lề phải với khung nội dung */
-        }
+            padding-right: 4px;  /* Canh đều lề phải với khung nội dung */}
         .select-mini {
             padding: 6px 28px 6px 12px;
             font-size: 13px;
@@ -51,27 +49,15 @@
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
             -webkit-appearance: none;
-            
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%230082C8' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
             background-repeat: no-repeat;
             background-position: calc(100% - 12px) center;
-            transition: all 0.2s;
-        }
-        .select-mini:active {
-            transform: scale(0.95);
-        }
-
-        /* Khi xoay ngang màn hình */
-        @media (orientation: landscape) {
-            .bo-loc-treo-phai {
-                margin-bottom: 8px;
-            }
-            .select-mini {
-                padding: 4px 24px 4px 10px;
-                font-size: 11px;
-                background-position: calc(100% - 10px) center;
-            }
-        }
+            transition: all 0.2s;}
+        .select-mini:active {transform: scale(0.95);}
+            /* Khi xoay ngang màn hình */
+            @media (orientation: landscape) {
+                .bo-loc-treo-phai {margin-bottom: 8px;}
+                .select-mini {padding: 4px 24px 4px 10px; font-size: 11px; background-position: calc(100% - 10px) center;} }
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
         .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
@@ -98,7 +84,6 @@
         </div>
 
         <div id="bao-cao" class="trang-content">
-            
             <div class="bo-loc-treo-phai">
                 <select id="chon-thang" class="select-mini">
                     <option value="1">Tháng 1</option>
@@ -114,19 +99,16 @@
                     <option value="11">Tháng 11</option>
                     <option value="12">Tháng 12</option>
                 </select>
-                
                 <select id="chon-nam" class="select-mini">
                     <option value="2025">2025</option>
                     <option value="2026" selected>2026</option>
                     <option value="2027">2027</option>
                 </select>
             </div>
-            
             <div class="KHUNG-CON-TRONG-TAB">
                 <h2>📊 Báo cáo & Thống kê</h2>
                 <p style="margin-top: 15px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
             </div>
-
         </div>
 
         <div id="them-moi" class="trang-content">
@@ -212,27 +194,20 @@
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
             if (event && event.currentTarget) {event.currentTarget.classList.add('active');} } // Kích hoạt trạng thái active cho nút menu tương ứng
 
-        // 1. ĐỊNH NGHĨA HÀM XỬ LÝ KHI THAY ĐỔI THÁNG/NĂM
-        // ========================================================
+        // XỬ LÝ KHI THAY ĐỔI THÁNG/NĂM
         function xuLyBoLocThoiGian() {
             const thangDaChon = document.getElementById('chon-thang').value;
             const namDaChon = document.getElementById('chon-nam').value;
-            
             console.log(`Đang lọc dữ liệu cho: Tháng ${thangDaChon} / Năm ${namDaChon}`);
             // Bạn có thể viết thêm logic tải lại dữ liệu Firebase tại đây
         }
-
-        // ========================================================
-        // 2. ĐOẠN CODE CỦA BẠN: LẮNG NGHE SỰ KIỆN CHỌN (ĐẶT TẠI ĐÂY)
-        // ========================================================
+        // LẮNG NGHE SỰ KIỆN CHỌN
         const elThang = document.getElementById('chon-thang');
         const elNam = document.getElementById('chon-nam');
-
         if (elThang && elNam) {
             // Tự động chọn tháng hiện tại khi mới mở app
             const thangHienTai = new Date().getMonth() + 1;
             elThang.value = thangHienTai;
-
             // Lắng nghe sự kiện thay đổi trên 2 ô chọn
             elThang.addEventListener('change', xuLyBoLocThoiGian);
             elNam.addEventListener('change', xuLyBoLocThoiGian);
