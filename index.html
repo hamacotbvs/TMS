@@ -9,6 +9,7 @@
     <link rel="apple-touch-icon" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style> /* CSS */
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
@@ -24,6 +25,10 @@
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
+        
+        /* ĐỊNH DẠNG VÙNG CHỨA BIỂU ĐỒ */
+        .khung-bieu-do {position: relative; width: 100%; height: 280px; margin-top: 15px;}
+
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
@@ -52,8 +57,10 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiê</h2>
-                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
+                <h2>📊 Tổng trọng tải vận chuyển theo tháng (2026)</h2>
+                <div class="khung-bieu-do">
+                    <canvas id="bieuDoTrongTai"></canvas>
+                </div>
             </div>
         </div>
 
@@ -90,26 +97,26 @@
 
     <nav class="MENU-DUOI">
 
-        <div class="MENU-item active" onclick="switchTab('home')">
+        <div class="MENU-item active" onclick="switchTab('home', event)">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </div>
 
-        <div class="MENU-item" onclick="switchTab('bao-cao')">
+        <div class="MENU-item" onclick="switchTab('bao-cao', event)">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Báo cáo</span>
         </div>
 
-        <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
+        <div class="MENU-item add-btn" onclick="switchTab('them-moi', event)">
             <i class="fa-solid fa-plus"></i>
         </div>
 
-        <div class="MENU-item" onclick="switchTab('kho')">
+        <div class="MENU-item" onclick="switchTab('kho', event)">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Kho</span>
         </div>
 
-        <div class="MENU-item" onclick="switchTab('van-chuyen')">
+        <div class="MENU-item" onclick="switchTab('van-chuyen', event)">
             <i class="fa-solid fa-car-side"></i>
             <span>Vận chuyển</span>
         </div>
@@ -121,7 +128,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
-        const firebaseConfig = { // địa chỉ Fire
+        const firebaseConfig = {
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
             authDomain: "hamaco-tms-c4b70.firebaseapp.com",
             projectId: "hamaco-tms-c4b70",
@@ -136,16 +143,70 @@
         const db = getFirestore(app);
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
+        // KHỞI TẠO BIỂU ĐỒ CHART.JS
+        const ctx = document.getElementById('bieuDoTrongTai').getContext('2d');
+        const labelsThang = Array.from({length: 12}, (_, i) => `Thg ${i + 1}`);
+        const bieuDo = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labelsThang,
+                datasets: [{
+                    label: 'Tổng trọng tải (tTai)',
+                    data: Array(12).fill(0),
+                    backgroundColor: 'rgba(0, 122, 204, 0.75)',
+                    borderColor: 'rgba(0, 122, 204, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // LẮNG NGHE REALTIME TỪ FIRESTORE
+        const q = query(collection(db, "TUYENDUONG"), where("nam", "==", 2026));
+        onSnapshot(q, (snapshot) => {
+            const duLieuThang = Array(12).fill(0);
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const thang = parseInt(data.thang);
+                const tTai = parseFloat(data.tTai) || 0;
+                if (thang >= 1 && thang <= 12) {
+                    duLieuThang[thang - 1] += tTai;
+                }
+            });
+            bieuDo.data.datasets[0].data = duLieuThang;
+            bieuDo.update();
+        }, (error) => {
+            console.error("Lỗi Firestore: ", error);
+        });
+
         // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
+        if (idNutLamMoi) {
+            idNutLamMoi.addEventListener('click', () => {
+                const iconSvg = idNutLamMoi.querySelector('svg'); 
+                if (iconSvg) { iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease'; } 
+                setTimeout(() => { window.location.reload(); }, 350); 
+            });
+        }
 
-        // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
-        window.switchTab = function(tabId) { // chuyển tab
-            const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
-            const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
-            document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
-            const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
+        // XỬ LÝ CHUYỂN TAB (Đã sửa lỗi nhận diện biến sự kiện e)
+        window.switchTab = function(tabId, e) {
+            const trangs = document.querySelectorAll('.trang-content'); 
+            trangs.forEach(page => page.classList.remove('active')); 
+            
+            const menuItems = document.querySelectorAll('.MENU-item'); 
+            menuItems.forEach(item => item.classList.remove('active')); 
+            
+            document.getElementById(tabId).classList.add('active'); 
+            if(e && e.currentTarget) {
+                e.currentTarget.classList.add('active');
+            }
+        }
     </script>
 </body>
 </html>
