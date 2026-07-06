@@ -10,21 +10,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style> /* CSS */
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} 
-        /* NÚT RESET */
         .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
             background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
         .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
         .nut-reset-treo:active {transform: scale(0.92); background-color: #f8fafc; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
-        /* ĐỊNH DẠNG CHUNG */
+        
         body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh; overflow: hidden;-webkit-text-size-adjust: 100%;} 
         .KHUNG-CAC-TAB {flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 100px; transition: padding-bottom 0.3s ease;} 
         .trang-content {display: none;} 
         .trang-content.active {display: block;} 
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
-        /* THANH MENU DƯỚI */
+        
+        /* MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease;} 
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} 
         .MENU-item i {font-size: 20px; margin-bottom: 4px; transition: all 0.3s ease;}
@@ -32,43 +34,29 @@
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px;} 
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
-        /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
+
         @media (orientation: landscape) {
-        .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} 
-        .KHUNG-CON-TRONG-TAB {padding: 12px 16px; margin-bottom: 10px;}
-        .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} 
-        .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} 
-        .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } 
-        .MENU-item i {font-size: 15px; margin-bottom: 0;} 
-        .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} 
-        .MENU-item.add-btn i {font-size: 16px;} }
-        /* CSS CHO DANH SÁCH VẬN CHUYỂN */
-        .the-chuyen-xe {
-            background: #f8fafc;
-            border-left: 5px solid #007acc;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} 
+            .KHUNG-CON-TRONG-TAB {padding: 12px 16px; margin-bottom: 10px;}
+            .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} 
+            .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} 
+            .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } 
+            .MENU-item i {font-size: 15px; margin-bottom: 0;} 
+            .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} 
+            .MENU-item.add-btn i {font-size: 16px;} 
         }
+
+        /* CARD DANH SÁCH */
+        .the-chuyen-xe { background: #f8fafc; border-left: 5px solid #007acc; border-radius: 8px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
         .the-chuyen-xe.da-duyet { border-left-color: #2ec4b6; } 
-        .dong-thong-tin {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-            font-size: 14px;
-        }
+        .dong-thong-tin { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
         .nhan-tieu-de { color: #666; font-weight: 500; }
         .gia-tri-so { font-weight: 700; color: #333; }
-        .trang-thai-nhan {
-            background: #e6f2ff;
-            color: #007acc;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-        }
+        .trang-thai-nhan { background: #e6f2ff; color: #007acc; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
         .trang-thai-nhan.duyet { background: #e7fbf7; color: #2ec4b6; }
+        
+        /* Khung chứa biểu đồ */
+        .vung-bieu-do { position: relative; width: 100%; max-height: 300px; margin-top: 15px; }
     </style>
 </head>
 
@@ -76,8 +64,14 @@
     <div class="KHUNG-CAC-TAB">
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiêu.</h2>
-                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
+                <h2>📊 Phân tích Tải trọng Tháng 7</h2>
+                <div class="vung-bieu-do">
+                    <canvas id="bieuDoTaiTrong"></canvas>
+                </div>
+            </div>
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h2>🎯 Ngân sách chi tiêu</h2>
+                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu khác của trang Home.</p>
             </div>
         </div>
 
@@ -107,7 +101,6 @@
             <div class="KHUNG-CON-TRONG-TAB">
                 <h2>🚚 Quản lý Vận chuyển Thực tế</h2>
                 <p style="margin-top: 5px; margin-bottom: 15px; color: #666; font-size: 13px;">Danh sách chuyến hàng cập nhật trực tiếp từ Firestore (Tháng 7):</p>
-        
                 <div id="danh-sach-van-chuyen">
                     <p style="color: #999; text-align: center;">Đang tải dữ liệu chuyến xe...</p>
                 </div>
@@ -138,9 +131,7 @@
     </nav>
 
     <script type="module">
-        // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // CHỈ IMPORT NHỮNG HÀM CẦN THIẾT, BỎ ORDERBY ĐỂ KHÔNG BỊ LỖI COMPOSITE INDEX
         import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
@@ -153,11 +144,46 @@
             measurementId: "G-L7RQZWHQ4J"
         };
 
-        // KHỞI TẠO FIREBASE
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // LẤY DỮ LIỆU THÁNG 7 CHUẨN KHÔNG CẦN INDEX
+        // --- KHỞI TẠO BIỂU ĐỒ TRỐNG TRƯỚC ---
+        const ctx = document.getElementById('bieuDoTaiTrong').getContext('2d');
+        const bieuDo = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Giao hàng', 'Gửi chành'],
+                datasets: [
+                    {
+                        label: 'tTai theo Hình thức (Cột)',
+                        data: [0, 0],
+                        backgroundColor: ['#3a86ff', '#ff006e'],
+                        borderWidth: 1,
+                        order: 2 // Hiển thị phía sau đường
+                    },
+                    {
+                        label: 'Tổng tTai Tích lũy (Đường)',
+                        data: [0, 0],
+                        type: 'line',
+                        borderColor: '#ffbe0b',
+                        backgroundColor: '#ffbe0b',
+                        borderWidth: 3,
+                        tension: 0.2,
+                        fill: false,
+                        order: 1 // Hiển thị đè lên trên cột
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Trọng lượng (tTai)' } }
+                }
+            }
+        });
+
+        // --- LẤY DỮ LIỆU THÁNG 7 VÀ CẬP NHẬT KÈM THEO BIỂU ĐỒ ---
         const vungHienThi = document.getElementById('danh-sach-van-chuyen');
 
         if (vungHienThi) {
@@ -167,13 +193,28 @@
             onSnapshot(truyVanThang7, (snapshot) => {
                 if (snapshot.empty) {
                     vungHienThi.innerHTML = `<p style="color: #999; text-align: center;">Không có chuyến xe nào trong tháng 7.</p>`;
+                    // Cập nhật biểu đồ về 0
+                    bieuDo.data.datasets[0].data = [0, 0];
+                    bieuDo.data.datasets[1].data = [0, 0];
+                    bieuDo.update();
                     return;
                 }
 
                 let chuoiHtml = '';
+                let taiTrongGiaoHang = 0;
+                let taiTrongGuiChanh = 0;
+
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     const dinhDangTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + 'đ' : '0đ';
+                    
+                    // Lấy và cộng dồn dữ liệu tTai theo htGiaoNhan
+                    const giaTriTai = Number(data.tTai) || 0;
+                    if (data.htGiaoNhan === 'Giao hàng') {
+                        taiTrongGiaoHang += giaTriTai;
+                    } else if (data.htGiaoNhan === 'Gửi chành') {
+                        taiTrongGuiChanh += giaTriTai;
+                    }
 
                     chuoiHtml += `
                         <div class="the-chuyen-xe ${data.status === 'Đã duyệt' ? 'da-duyet' : ''}">
@@ -190,10 +231,12 @@
                                 <span class="gia-tri-so">${data.phuongTien || 'N/A'}</span>
                             </div>
                             <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-location-dot"></i> Nơi giao:</span>
-                                <span style="font-size: 13px; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${data.noiGiao || 'Chưa cập nhật'}
-                                </span>
+                                <span class="nhan-tieu-de"><i class="fa-solid fa-route"></i> Hình thức:</span>
+                                <span class="gia-tri-so" style="color: #2ec4b6;">${data.htGiaoNhan || 'Chưa phân loại'}</span>
+                            </div>
+                            <div class="dong-thong-tin">
+                                <span class="nhan-tieu-de"><i class="fa-solid fa-weight-hanging"></i> Tải trọng:</span>
+                                <span class="gia-tri-so">${giaTriTai}</span>
                             </div>
                             <div class="dong-thong-tin">
                                 <span class="nhan-tieu-de"><i class="fa-solid fa-coins"></i> Thành tiền:</span>
@@ -206,13 +249,25 @@
                         </div>
                     `;
                 });
+
                 vungHienThi.innerHTML = chuoiHtml;
+
+                // --- CẬP NHẬT DỮ LIỆU LÊN BIỂU ĐỒ REALTIME ---
+                const tongTaiTrong = taiTrongGiaoHang + taiTrongGuiChanh;
+                
+                // Cập nhật Cột (Dataset 0)
+                bieuDo.data.datasets[0].data = [taiTrongGiaoHang, taiTrongGuiChanh];
+                // Cập nhật Đường hiển thị tổng cả hai (Dataset 1)
+                bieuDo.data.datasets[1].data = [tongTaiTrong, tongTaiTrong];
+                
+                bieuDo.update(); // Làm mới biểu đồ
+
             }, (error) => {
                 vungHienThi.innerHTML = `<p style="color: red; text-align: center;">Lỗi kết nối dữ liệu: ${error.message}</p>`;
             });
         }
 
-        console.log("Firebase & Firestore đã được kết nối thành công!");
+        console.log("Firebase, Firestore & Biểu đồ đã kết nối thành công!");
 
         // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
