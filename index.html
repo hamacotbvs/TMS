@@ -8,8 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style> /* CSS */
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
         /* NÚT RESET */
@@ -24,15 +22,6 @@
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
-        
-        /* Cấu hình khung chứa biểu đồ để responsive tốt trên mobile */
-        .khung-bieu-do {
-            position: relative;
-            width: 100%;
-            margin-top: 15px;
-            min-height: 220px;
-        }
-
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
@@ -41,7 +30,75 @@
         .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
-        
+        /* CSS CHO THANH CHỌN THÁNG NĂM */
+        .bo-loc-thoi-gian {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            background-color: #f8fafc;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .o-chon {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .o-chon label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #64748b;
+        }
+        .o-chon label i {
+            color: #007acc;
+            margin-right: 2px;
+        }
+        .o-chon select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background-color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            color: #334155;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none; /* Xóa bỏ giao diện select mặc định của iOS */
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: calc(100% - 12px) center;
+            padding-right: 30px;
+            transition: border-color 0.2s;
+        }
+        .o-chon select:focus {
+            border-color: #007acc;
+            box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.1);
+        }
+
+        /* Tối ưu hóa khi màn hình xoay ngang */
+        @media (orientation: landscape) {
+            .bo-loc-thoi-gian {
+                padding: 6px 10px;
+                margin-top: 8px;
+            }
+            .o-chon {
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+            }
+            .o-chon label {
+                font-size: 11px;
+                white-space: nowrap;
+            }
+            .o-chon select {
+                padding: 6px 10px;
+                font-size: 13px;
+                padding-right: 25px;
+            }
+        }
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
         .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
@@ -62,25 +119,43 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiêu tháng này</h2>
-                <div class="khung-bieu-do">
-                    <canvas id="chartNganSach"></canvas>
-                </div>
+                <h2>🎯 Ngân sách chi tiêu</h2>
+                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu trang Home sẽ hiển thị ở đây.</p>
             </div>
         </div>
 
         <div id="bao-cao" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Phân bổ chi phí vận hành</h2>
-                <div class="khung-bieu-do">
-                    <canvas id="chartChiPhiTron"></canvas>
+                <h2>📊 Báo cáo & Thống kê</h2>
+                
+                <div class="bo-loc-thoi-gian">
+                    <div class="o-chon">
+                        <label for="chon-thang"><i class="fa-solid fa-calendar-days"></i> Tháng</label>
+                        <select id="chon-thang">
+                            <option value="1">Tháng 1</option>
+                            <option value="2">Tháng 2</option>
+                            <option value="3">Tháng 3</option>
+                            <option value="4">Tháng 4</option>
+                            <option value="5">Tháng 5</option>
+                            <option value="6">Tháng 6</option>
+                            <option value="7">Tháng 7</option>
+                            <option value="8">Tháng 8</option>
+                            <option value="9">Tháng 9</option>
+                            <option value="10">Tháng 10</option>
+                            <option value="11">Tháng 11</option>
+                            <option value="12">Tháng 12</option>
+                        </select>
+                    </div>
+                    
+                    <div class="o-chon">
+                        <label for="chon-nam"><i class="fa-solid fa-timeline"></i> Năm</label>
+                        <select id="chon-nam">
+                            <option value="2025">2025</option>
+                            <option value="2026" selected>2026</option> <option value="2027">2027</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📈 Doanh thu xu hướng (6 tháng qua)</h2>
-                <div class="khung-bieu-do">
-                    <canvas id="chartDoanhThuCot"></canvas>
-                </div>
+                <p style="margin-top: 15px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
             </div>
         </div>
 
@@ -101,35 +176,39 @@
 
         <div id="van-chuyen" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🚚 Hiệu suất vận chuyển theo xe</h2>
-                <div class="khung-bieu-do">
-                    <canvas id="chartVanChuyen"></canvas>
-                </div>
+                <h2>🚚 Quản lý Vận chuyển</h2>
+                <p style="margin-top: 10px; color: #666;">Điều phối xe, tài xế và trạng thái đơn vận chuyển.</p>
             </div>
         </div>
 
     </div>
 
     <nav class="MENU-DUOI">
+
         <div class="MENU-item active" onclick="switchTab('home')">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </div>
+
         <div class="MENU-item" onclick="switchTab('bao-cao')">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Báo cáo</span>
         </div>
+
         <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
             <i class="fa-solid fa-plus"></i>
         </div>
+
         <div class="MENU-item" onclick="switchTab('kho')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Kho</span>
         </div>
+
         <div class="MENU-item" onclick="switchTab('van-chuyen')">
             <i class="fa-solid fa-car-side"></i>
             <span>Vận chuyển</span>
         </div>
+
     </nav>
 
     <script type="module">
@@ -137,7 +216,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
-        const firebaseConfig = { 
+        const firebaseConfig = { // địa chỉ Fire
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
             authDomain: "hamaco-tms-c4b70.firebaseapp.com",
             projectId: "hamaco-tms-c4b70",
@@ -154,117 +233,14 @@
 
         // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {
-            idNutLamMoi.addEventListener('click', () => {
-                const iconSvg = idNutLamMoi.querySelector('svg'); 
-                if (iconSvg) {
-                    iconSvg.style.transform = 'rotate(360deg)'; 
-                    iconSvg.style.transition = 'transform 0.4s ease';
-                } 
-                setTimeout(() => { window.location.reload(); }, 350); 
-            });
-        }
+        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
 
         // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
-        window.switchTab = function(tabId) {
-            const trangs = document.querySelectorAll('.trang-content'); 
-            trangs.forEach(page => page.classList.remove('active')); 
-            
-            const menuItems = document.querySelectorAll('.MENU-item'); 
-            menuItems.forEach(item => item.classList.remove('active')); 
-            
-            document.getElementById(tabId).classList.add('active'); 
-            
-            // Tìm đúng nút menu vừa click dựa vào tabId để gán class active chính xác
-            const targetItem = document.querySelector(`.MENU-item[onclick*="${tabId}"]`);
-            if(targetItem) targetItem.classList.add('active');
-        }
-
-        // --- KHỞI TẠO CÁC BIỂU ĐỒ (CHART.JS) ---
-        document.addEventListener("DOMContentLoaded", () => {
-            
-            // 1. Biểu đồ Ngân sách (Trang Home) - Dạng Thanh Ngang (Bar)
-            const ctxNganSach = document.getElementById('chartNganSach').getContext('2d');
-            new Chart(ctxNganSach, {
-                type: 'bar',
-                data: {
-                    labels: ['Đã chi tiêu', 'Ngân sách còn lại'],
-                    datasets: [{
-                        label: 'Số tiền (VNĐ)',
-                        data: [65000000, 35000000],
-                        backgroundColor: ['#e63946', '#2a9d8f'],
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    indexAxis: 'y', // Biến thành thanh ngang
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-            // 2. Biểu đồ Phân bổ chi phí (Trang Báo cáo) - Dạng Tròn (Doughnut)
-            const ctxChiPhi = document.getElementById('chartChiPhiTron').getContext('2d');
-            new Chart(ctxChiPhi, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Xăng dầu', 'Sửa chữa', 'Cầu đường', 'Lương tài xế'],
-                    datasets: [{
-                        data: [40, 15, 20, 25],
-                        backgroundColor: ['#007acc', '#f4a261', '#e76f51', '#2a9d8f']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
-
-            // 3. Biểu đồ Doanh thu (Trang Báo cáo) - Dạng Cột Đứng (Bar)
-            const ctxDoanhThu = document.getElementById('chartDoanhThuCot').getContext('2d');
-            new Chart(ctxDoanhThu, {
-                type: 'bar',
-                data: {
-                    labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-                    datasets: [{
-                        label: 'Doanh thu (Triệu)',
-                        data: [120, 150, 180, 140, 210, 230],
-                        backgroundColor: '#0082C8',
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-
-            // 4. Biểu đồ Vận chuyển (Trang Vận chuyển) - Dạng Đường (Line)
-            const ctxVanChuyen = document.getElementById('chartVanChuyen').getContext('2d');
-            new Chart(ctxVanChuyen, {
-                type: 'line',
-                data: {
-                    labels: ['Đội xe A', 'Đội xe B', 'Đội xe C', 'Đội xe D'],
-                    datasets: [{
-                        label: 'Số chuyến hàng hoàn thành',
-                        data: [45, 32, 58, 24],
-                        borderColor: '#007acc',
-                        backgroundColor: 'rgba(0, 122, 204, 0.1)',
-                        fill: true,
-                        tension: 0.3,
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        });
+        window.switchTab = function(tabId) { // chuyển tab
+            const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
+            const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
+            document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
+            const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
     </script>
 </body>
 </html>
