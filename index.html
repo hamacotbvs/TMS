@@ -98,9 +98,9 @@
                         label: 'Giao hàng', 
                         data: Array(12).fill(0), 
                         backgroundColor: '#3498db', // Xanh dương tươi (giống màu Ngân sách)
-                        borderRadius: 12,           // Bo tròn đầu cột giống mẫu hình
-                        borderSkipped: false,
-                        barPercentage: 0.5,         // Chỉnh độ rộng cột to ngoài
+                        borderRadius: 12,           // Độ bo tròn góc đỉnh
+                        borderSkipped: 'bottom',    // CHỈ BO TRÒN TRÊN ĐỈNH (Dưới đáy phẳng sát trục)
+                        barPercentage: 0.5,         // Độ rộng cột to ngoài
                         grouped: false, 
                         order: 3 
                     },
@@ -108,9 +108,9 @@
                         label: 'Gửi chành', 
                         data: Array(12).fill(0), 
                         backgroundColor: '#e74c3c', // Đỏ tươi nổi bật lồng phía trong (giống màu Chi tiêu)
-                        borderRadius: 6,            // Bo tròn đầu cột nhỏ
-                        borderSkipped: false,
-                        barPercentage: 0.25,        // Cột nhỏ lồng bên trong bằng một nửa cột ngoài
+                        borderRadius: 6,            // Độ bo tròn góc đỉnh cột nhỏ
+                        borderSkipped: 'bottom',    // CHỈ BO TRÒN TRÊN ĐỈNH (Dưới đáy phẳng sát trục)
+                        barPercentage: 0.25,        // Cột nhỏ lồng bên trong
                         grouped: false, 
                         order: 2 
                     },
@@ -120,7 +120,7 @@
                         type: 'line', 
                         borderColor: '#f1c40f',     // Đường line màu vàng nghệ (giống màu Còn lại)
                         borderWidth: 2, 
-                        tension: 0.4,               // Bo cong cong mềm mại (Smooth line) giống hình mẫu
+                        tension: 0.4,               // Bo cong mềm mại đường vẽ
                         pointBackgroundColor: '#f1c40f',
                         pointRadius: 3,
                         fill: false, 
@@ -135,7 +135,7 @@
                     legend: {
                         position: 'top',
                         labels: {
-                            usePointStyle: true,    // Biến các ô vuông chú thích thành chấm tròn tinh tế
+                            usePointStyle: true,    // Chuyển ô vuông chú thích thành chấm tròn tinh tế
                             pointStyle: 'rectRounded',
                             font: { size: 12, weight: '500' },
                             padding: 20
@@ -145,7 +145,7 @@
                 },
                 scales: { 
                     x: {
-                        grid: { display: false },  // Ẩn các đường lưới dọc (giống hình mẫu)
+                        grid: { display: false },  // Ẩn các đường lưới dọc chống rối mắt
                         ticks: { color: '#94a3b8', font: { size: 12 } }
                     },
                     y: {
@@ -154,7 +154,7 @@
                         ticks: {
                             color: '#94a3b8',
                             font: { size: 12 },
-                            // Định dạng trục dọc thông minh (ví dụ: chuyển 5000000 thành 5tr)
+                            // Định dạng số lớn thành đơn vị chữ viết tắt "tr" (Ví dụ: 5.000.000 thành 5tr)
                             callback: function(value) {
                                 if (value >= 1000000) return (value / 1000000) + 'tr';
                                 return value;
@@ -224,7 +224,7 @@
                     }
                 }
             }
-        }
+        } // Đã đóng ngoặc hàm đầy đủ chuẩn xác
 
         taiDuLieuBieuDoTuServer();
 
