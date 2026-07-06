@@ -56,7 +56,7 @@
         .trang-thai-nhan.duyet { background: #e7fbf7; color: #2ec4b6; }
         
         /* Khung chứa biểu đồ */
-        .vung-bieu-do { position: relative; width: 100%; max-height: 300px; margin-top: 15px; }
+        .vung-bieu-do { position: relative; width: 100%; max-height: 320px; margin-top: 15px; }
     </style>
 </head>
 
@@ -64,9 +64,9 @@
     <div class="KHUNG-CAC-TAB">
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Phân tích Tải trọng Tháng 7</h2>
+                <h2>📈 Biểu đồ Tải trọng (Cột lồng nhau)</h2>
                 <div class="vung-bieu-do">
-                    <canvas id="bieuDoTaiTrong"></canvas>
+                    <canvas id="bieuDoTaiTrongThang"></canvas>
                 </div>
             </div>
             <div class="KHUNG-CON-TRONG-TAB">
@@ -100,7 +100,7 @@
         <div id="van-chuyen" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
                 <h2>🚚 Quản lý Vận chuyển Thực tế</h2>
-                <p style="margin-top: 5px; margin-bottom: 15px; color: #666; font-size: 13px;">Danh sách chuyến hàng cập nhật trực tiếp từ Firestore (Tháng 7):</p>
+                <p style="margin-top: 5px; margin-bottom: 15px; color: #666; font-size: 13px;">Danh sách các chuyến hàng trên hệ thống (Tháng 7):</p>
                 <div id="danh-sach-van-chuyen">
                     <p style="color: #999; text-align: center;">Đang tải dữ liệu chuyến xe...</p>
                 </div>
@@ -132,7 +132,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
@@ -147,152 +147,26 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- KHỞI TẠO BIỂU ĐỒ TRỐNG TRƯỚC ---
-        const ctx = document.getElementById('bieuDoTaiTrong').getContext('2d');
+        // --- KHỞI TẠO BIỂU ĐỒ 12 THÁNG ---
+        const danhSachLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+        
+        const ctx = document.getElementById('bieuDoTaiTrongThang').getContext('2d');
         const bieuDo = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Giao hàng', 'Gửi chành'],
+                labels: danhSachLabels,
                 datasets: [
                     {
-                        label: 'tTai theo Hình thức (Cột)',
-                        data: [0, 0],
-                        backgroundColor: ['#3a86ff', '#ff006e'],
+                        label: 'Giao hàng',
+                        data: Array(12).fill(0),
+                        backgroundColor: 'rgba(58, 134, 255, 0.85)', // Màu xanh dương
+                        borderColor: '#3a86ff',
                         borderWidth: 1,
-                        order: 2 // Hiển thị phía sau đường
+                        categoryPercentage: 0.7, // Giúp các cột đè chung lên 1 tọa độ X
+                        barPercentage: 1.0,
+                        order: 3 // Thứ tự dựng layer
                     },
                     {
-                        label: 'Tổng tTai Tích lũy (Đường)',
-                        data: [0, 0],
-                        type: 'line',
-                        borderColor: '#ffbe0b',
-                        backgroundColor: '#ffbe0b',
-                        borderWidth: 3,
-                        tension: 0.2,
-                        fill: false,
-                        order: 1 // Hiển thị đè lên trên cột
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Trọng lượng (tTai)' } }
-                }
-            }
-        });
-
-        // --- LẤY DỮ LIỆU THÁNG 7 VÀ CẬP NHẬT KÈM THEO BIỂU ĐỒ ---
-        const vungHienThi = document.getElementById('danh-sach-van-chuyen');
-
-        if (vungHienThi) {
-            const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-            const truyVanThang7 = query(thamChieuTuyenDuong, where("thang", "==", 7));
-
-            onSnapshot(truyVanThang7, (snapshot) => {
-                if (snapshot.empty) {
-                    vungHienThi.innerHTML = `<p style="color: #999; text-align: center;">Không có chuyến xe nào trong tháng 7.</p>`;
-                    // Cập nhật biểu đồ về 0
-                    bieuDo.data.datasets[0].data = [0, 0];
-                    bieuDo.data.datasets[1].data = [0, 0];
-                    bieuDo.update();
-                    return;
-                }
-
-                let chuoiHtml = '';
-                let taiTrongGiaoHang = 0;
-                let taiTrongGuiChanh = 0;
-
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const dinhDangTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + 'đ' : '0đ';
-                    
-                    // Lấy và cộng dồn dữ liệu tTai theo htGiaoNhan
-                    const giaTriTai = Number(data.tTai) || 0;
-                    if (data.htGiaoNhan === 'Giao hàng') {
-                        taiTrongGiaoHang += giaTriTai;
-                    } else if (data.htGiaoNhan === 'Gửi chành') {
-                        taiTrongGuiChanh += giaTriTai;
-                    }
-
-                    chuoiHtml += `
-                        <div class="the-chuyen-xe ${data.status === 'Đã duyệt' ? 'da-duyet' : ''}">
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-id-card"></i> Mã phiếu:</span>
-                                <span class="gia-tri-so" style="color: #007acc;">${data.maPhiieu || doc.id}</span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-user-tie"></i> Tài xế:</span>
-                                <span>${data.taiXe || 'Chưa rõ'}</span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-truck"></i> Số xe:</span>
-                                <span class="gia-tri-so">${data.phuongTien || 'N/A'}</span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-route"></i> Hình thức:</span>
-                                <span class="gia-tri-so" style="color: #2ec4b6;">${data.htGiaoNhan || 'Chưa phân loại'}</span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-weight-hanging"></i> Tải trọng:</span>
-                                <span class="gia-tri-so">${giaTriTai}</span>
-                            </div>
-                            <div class="dong-thong-tin">
-                                <span class="nhan-tieu-de"><i class="fa-solid fa-coins"></i> Thành tiền:</span>
-                                <span class="gia-tri-so" style="color: #e63946;">${dinhDangTien}</span>
-                            </div>
-                            <div class="dong-thong-tin" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee;">
-                                <span class="nhan-tieu-de">Trạng thái:</span>
-                                <span class="trang-thai-nhan ${data.status === 'Đã duyệt' ? 'duyet' : ''}">${data.status || 'Chờ duyệt'}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                vungHienThi.innerHTML = chuoiHtml;
-
-                // --- CẬP NHẬT DỮ LIỆU LÊN BIỂU ĐỒ REALTIME ---
-                const tongTaiTrong = taiTrongGiaoHang + taiTrongGuiChanh;
-                
-                // Cập nhật Cột (Dataset 0)
-                bieuDo.data.datasets[0].data = [taiTrongGiaoHang, taiTrongGuiChanh];
-                // Cập nhật Đường hiển thị tổng cả hai (Dataset 1)
-                bieuDo.data.datasets[1].data = [tongTaiTrong, tongTaiTrong];
-                
-                bieuDo.update(); // Làm mới biểu đồ
-
-            }, (error) => {
-                vungHienThi.innerHTML = `<p style="color: red; text-align: center;">Lỗi kết nối dữ liệu: ${error.message}</p>`;
-            });
-        }
-
-        console.log("Firebase, Firestore & Biểu đồ đã kết nối thành công!");
-
-        // NÚT RESET
-        const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {
-            idNutLamMoi.addEventListener('click', () => {
-                const iconSvg = idNutLamMoi.querySelector('svg'); 
-                if (iconSvg) {
-                    iconSvg.style.transform = 'rotate(360deg)'; 
-                    iconSvg.style.transition = 'transform 0.4s ease';
-                } 
-                setTimeout(() => { window.location.reload(); }, 350); 
-            });
-        }
-
-        // XỬ LÝ CHUYỂN TAB
-        window.switchTab = function(e, tabId) { 
-            const trangs = document.querySelectorAll('.trang-content'); 
-            trangs.forEach(page => page.classList.remove('active')); 
-            const menuItems = document.querySelectorAll('.MENU-item'); 
-            menuItems.forEach(item => item.classList.remove('active')); 
-            document.getElementById(tabId).classList.add('active'); 
-            if (e && e.currentTarget) {
-                e.currentTarget.classList.add('active');
-            }
-        } 
-    </script>
-</body>
-</html>
+                        label: 'Gửi chành',
+                        data: Array(12).fill(0),
+                        backgroundColor: 'rgba(255, 0,
