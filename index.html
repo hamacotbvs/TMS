@@ -319,28 +319,30 @@
             });
         }
 
-        // HÀM ĐỌC VÀ CẬP NHẬT DỮ LIỆU TỪ FIRESTORE (ĐÃ FIX LỖI SAI KIỂU DỮ LIỆU ĐUÔI)
+        // HÀM ĐỌC DỮ LIỆU THÔ KHÔNG QUA BỘ LỌC SERVER FIREBASE
         function taiDuLieuBieuDoTheoNam(namLoc) {
             if (unsubscribeFirebase) {
                 unsubscribeFirebase();
             }
 
-            console.log(`Bắt đầu kết nối và quét bảng TUYENDUONG cho năm: ${namLoc}`);
+            console.log(`[Đang kết nối] Đang lấy toàn bộ data thô từ collection: TUYENDUONG`);
             const collectionRef = collection(db, "TUYENDUONG"); 
 
-            // Loại bỏ hoàn toàn 'query' và 'where' của Firebase để tự lọc dữ liệu bằng JS
-            // Giải pháp này giải quyết triệt để việc db lưu chuỗi "2026" hay số 2026.
+            // ĐÃ BỎ HOÀN TOÀN 'query' VÀ 'where'. Tải trực tiếp bộ dữ liệu về máy để Client tự xử lý.
             unsubscribeFirebase = onSnapshot(collectionRef, (querySnapshot) => {
                 const sanLuongGiaoHang = Array(12).fill(0);
                 const sanLuongGuiChanh = Array(12).fill(0);
-                let soDongQuetDuoc = 0;
+                
+                let tongSoDongQuetDuoc = 0;
+                let soDongKhớpNam = 0;
 
                 querySnapshot.forEach((doc) => {
+                    tongSoDongQuetDuoc++;
                     const data = doc.data();
                     
-                    // Kiểm tra và ép toàn bộ về kiểu Chuỗi (.toString()) để so sánh chính xác tuyệt đối
+                    // Ép kiểu chuỗi toàn bộ và xóa khoảng trắng thừa thụt đầu đuôi (.trim())
                     if (data.nam && data.nam.toString().trim() === namLoc.toString().trim()) {
-                        soDongQuetDuoc++;
+                        soDongKhớpNam++;
                         
                         const thang = parseInt(data.thang) - 1; 
                         const taiTrong = parseFloat(data.tTai) || 0;
@@ -356,7 +358,9 @@
                     }
                 });
 
-                console.log(`[Kết quả]: Tìm thấy tổng cộng ${soDongQuetDuoc} chuyến hàng hợp lệ của năm ${namLoc}`);
+                // Kiểm tra Log để bắt bệnh lỗi:
+                console.log(`📥 Tổng số document kéo được từ Firestore: ${tongSoDongQuetDuoc}`);
+                console.log(`🎯 Số dòng trùng khớp với năm cần lọc (${namLoc}): ${soDongKhớpNam}`);
 
                 if (bieuDoBaoCao) {
                     bieuDoBaoCao.data.datasets[0].data = sanLuongGiaoHang;
@@ -364,7 +368,7 @@
                     bieuDoBaoCao.update();
                 }
             }, (error) => {
-                console.error("Lỗi đồng bộ dữ liệu Firestore: ", error);
+                console.error("❌ Lỗi đồng bộ dữ liệu Firestore: ", error);
             });
         }
 
