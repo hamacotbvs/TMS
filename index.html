@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
-    <title>HAMACO-TMS</title>
+    <title>HAMACO-TMS - Biểu đồ</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -12,127 +11,35 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style> /* CSS */
+    <style>
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} 
-        .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
-            background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
-        .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
-        .nut-reset-treo:active {transform: scale(0.92); background-color: #f8fafc; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
-        
-        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh; overflow: hidden;-webkit-text-size-adjust: 100%;} 
-        .KHUNG-CAC-TAB {flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 100px; transition: padding-bottom 0.3s ease;} 
-        .trang-content {display: none;} 
-        .trang-content.active {display: block;} 
+        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh; overflow: hidden;} 
+        .KHUNG-CAC-TAB {flex: 1; overflow-y: auto; padding: 16px;} 
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
+        .vung-bieu-do { position: relative; width: 100%; height: 350px; margin-top: 15px; }
         
-        /* MENU DƯỚI */
-        .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease;} 
-        .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} 
-        .MENU-item i {font-size: 20px; margin-bottom: 4px; transition: all 0.3s ease;}
-        .MENU-item.active {color: #ffffff; font-weight: 700;} 
-        .MENU-item.add-btn {flex: none; width: 54px; height: 54px; background-color: #ffffff; color: #007acc; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: 10px;} 
-        .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
-        .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
-
-        @media (orientation: landscape) {
-            .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} 
-            .KHUNG-CON-TRONG-TAB {padding: 12px 16px; margin-bottom: 10px;}
-            .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} 
-            .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} 
-            .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } 
-            .MENU-item i {font-size: 15px; margin-bottom: 0;} 
-            .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} 
-            .MENU-item.add-btn i {font-size: 16px;} 
-        }
-
-        /* CARD DANH SÁCH */
-        .the-chuyen-xe { background: #f8fafc; border-left: 5px solid #007acc; border-radius: 8px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
-        .the-chuyen-xe.da-duyet { border-left-color: #2ec4b6; } 
-        .dong-thong-tin { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
-        .nhan-tieu-de { color: #666; font-weight: 500; }
-        .gia-tri-so { font-weight: 700; color: #333; }
-        .trang-thai-nhan { background: #e6f2ff; color: #007acc; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
-        .trang-thai-nhan.duyet { background: #e7fbf7; color: #2ec4b6; }
-        
-        /* Khung chứa biểu đồ */
-        .vung-bieu-do { position: relative; width: 100%; max-height: 320px; margin-top: 15px; }
+        /* Hiệu ứng loading quay vòng nhẹ nhàng khi chưa có dữ liệu */
+        .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .loading-box i { animation: spin 1s linear infinite; color: #007acc; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 
 <body>
     <div class="KHUNG-CAC-TAB">
-        <div id="home" class="trang-content active">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📈 Biểu đồ Tải trọng (Cột lồng cột)</h2>
-                <div class="vung-bieu-do">
-                    <canvas id="bieuDoTaiTrongThang"></canvas>
-                </div>
-            </div>
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiêu.</h2>
-                <p style="margin-top: 10px; color: #666;">Khung biểu đồ và dữ liệu khác của trang Home.</p>
-            </div>
-        </div>
-
-        <div id="bao-cao" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Báo cáo & Thống kê</h2>
-                <p style="margin-top: 10px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
-            </div>
-        </div>
-
-        <div id="them-moi" class="trang-content">
-            <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>➕ Thêm giao dịch / Dữ liệu mới</h2>
-                <p style="margin-top: 10px; color: #666;">Form nhập nhanh thông tin chi tiêu hoặc chuyến hàng.</p>
-            </div>
-        </div>
-
-        <div id="kho" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📦 Quản lý Kho hàng</h2>
-                <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
-            </div>
-        </div>
-
-        <div id="van-chuyen" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🚚 Quản lý Vận chuyển Thực tế</h2>
-                <p style="margin-top: 5px; margin-bottom: 15px; color: #666; font-size: 13px;">Danh sách các chuyến hàng trên hệ thống (Tháng 7):</p>
-                <div id="danh-sach-van-chuyen">
-                    <p style="color: #999; text-align: center;">Đang tải dữ liệu chuyến xe...</p>
-                </div>
+        <div class="KHUNG-CON-TRONG-TAB" style="position: relative;">
+            <h2>📈 Biểu đồ Tải trọng (Cột lồng cột).</h2>
+            <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang tính toán dữ liệu...</div>
+            <div class="vung-bieu-do">
+                <canvas id="bieuDoTaiTrongThang"></canvas>
             </div>
         </div>
     </div>
 
-    <nav class="MENU-DUOI">
-        <div class="MENU-item active" onclick="switchTab(event, 'home')">
-            <i class="fa-solid fa-house"></i>
-            <span>HOME</span>
-        </div>
-        <div class="MENU-item" onclick="switchTab(event, 'bao-cao')">
-            <i class="fa-solid fa-chart-pie"></i>
-            <span>Báo cáo</span>
-        </div>
-        <div class="MENU-item add-btn" onclick="switchTab(event, 'them-moi')">
-            <i class="fa-solid fa-plus"></i>
-        </div>
-        <div class="MENU-item" onclick="switchTab(event, 'kho')">
-            <i class="fa-solid fa-boxes-stacked"></i>
-            <span>Kho</span>
-        </div>
-        <div class="MENU-item" onclick="switchTab(event, 'van-chuyen')">
-            <i class="fa-solid fa-car-side"></i>
-            <span>Vận chuyển</span>
-        </div>
-    </nav>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // CHỈ DÙNG GETDOCS ĐỂ TẢI DỮ LIỆU SIÊU NHẸ 1 LẦN DUY NHẤT
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
             apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
@@ -140,183 +47,107 @@
             projectId: "hamaco-tms-c4b70",
             storageBucket: "hamaco-tms-c4b70.firebasestorage.app",
             messagingSenderId: "685425304488",
-            appId: "1:685425304488:web:6a999a4a6bf1147a21b39d",
-            measurementId: "G-L7RQZWHQ4J"
+            appId: "1:685425304488:web:6a999a4a6bf1147a21b39d"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- KHỞI TẠO BIỂU ĐỒ 12 THÁNG ---
-        const danhSachLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-        
+        // --- KHỞI TẠO KHUNG BIỂU ĐỒ 12 THÁNG ---
         const ctx = document.getElementById('bieuDoTaiTrongThang').getContext('2d');
         const bieuDo = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: danhSachLabels,
+                labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
                 datasets: [
-                    {
-                        label: 'Giao hàng (Cột To)',
-                        data: Array(12).fill(0),
-                        backgroundColor: 'rgba(58, 134, 255, 0.4)', // Màu xanh dương nhạt trong suốt
-                        borderColor: '#3a86ff',
-                        borderWidth: 1.5,
-                        barPercentage: 0.8, // Cột Giao hàng bự chiếm 80% ô
-                        grouped: false, // Tắt gom nhóm để 2 cột đè chung 1 tọa độ gốc X
-                        order: 3
+                    { 
+                        label: 'Giao hàng (To)', 
+                        data: Array(12).fill(0), 
+                        backgroundColor: 'rgba(58, 134, 255, 0.35)', 
+                        borderColor: '#3a86ff', 
+                        borderWidth: 1.5, 
+                        barPercentage: 0.8, 
+                        grouped: false, 
+                        order: 3 
                     },
-                    {
-                        label: 'Gửi chành (Cột Nhỏ)',
-                        data: Array(12).fill(0),
-                        backgroundColor: 'rgba(255, 0, 110, 0.85)', // Màu hồng đậm nổi bật
-                        borderColor: '#ff006e',
-                        borderWidth: 1.5,
-                        barPercentage: 0.4, // Cột Gửi chành nhỏ chiếm 40% ô (nằm lọt lòng cột to)
-                        grouped: false,
-                        order: 2 // Đẩy layer lên trước để không bị che khuất
+                    { 
+                        label: 'Gửi chành (Nhỏ)', 
+                        data: Array(12).fill(0), 
+                        backgroundColor: 'rgba(255, 0, 110, 0.85)', 
+                        borderColor: '#ff006e', 
+                        borderWidth: 1.5, 
+                        barPercentage: 0.4, 
+                        grouped: false, 
+                        order: 2 
                     },
-                    {
-                        label: 'Tổng tTai (Đường)',
-                        data: Array(12).fill(0),
-                        type: 'line',
-                        borderColor: '#ffbe0b', // Đường vàng
-                        backgroundColor: '#ffbe0b',
-                        borderWidth: 3,
-                        tension: 0.2,
-                        fill: false,
+                    { 
+                        label: 'Tổng tTai (Đường)', 
+                        data: Array(12).fill(0), 
+                        type: 'line', 
+                        borderColor: '#ffbe0b', 
+                        backgroundColor: '#ffbe0b', 
+                        borderWidth: 3, 
+                        tension: 0.2, 
+                        fill: false, 
                         order: 1 
                     }
                 ]
             },
-            options: {
-                responsive: true,
+            options: { 
+                responsive: true, 
                 maintainAspectRatio: false,
                 scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        title: { display: true, text: 'Trọng lượng (tTai)' } 
-                    }
+                    y: { beginAtZero: true, title: { display: true, text: 'Trọng lượng (tTai)' } }
                 }
             }
         });
 
-        // --- LẤY TOÀN BỘ DATABASE VÀ PHÂN TÍCH THỜI GIAN THỰC ---
-        const vungHienThi = document.getElementById('danh-sach-van-chuyen');
-
-        if (vungHienThi) {
-            const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-
-            onSnapshot(thamChieuTuyenDuong, (snapshot) => {
-                if (snapshot.empty) {
-                    vungHienThi.innerHTML = `<p style="color: #999; text-align: center;">Chưa có dữ liệu chuyến xe nào.</p>`;
-                    return;
-                }
-
+        // --- HÀM TẢI DỮ LIỆU TỐI ƯU HÓA HIỆU NĂNG ---
+        async function taiDuLieuBieuDo() {
+            try {
+                const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
+                // Lấy dữ liệu nhanh gọn 1 lần từ Firestore
+                const snapshot = await getDocs(thamChieuTuyenDuong);
+                
                 let mangGiaoHang = Array(12).fill(0);
                 let mangGuiChanh = Array(12).fill(0);
                 let mangTongTai = Array(12).fill(0);
-
-                let chuoiHtmlTabVanChuyen = '';
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     const soThang = parseInt(data.thang) || 0;
                     const giaTriTai = Number(data.tTai) || 0;
 
+                    // Gom nhóm dữ liệu theo tháng trực tiếp tại client
                     if (soThang >= 1 && soThang <= 12) {
-                        const indexThang = soThang - 1;
-                        
+                        const idx = soThang - 1;
                         if (data.htGiaoNhan === 'Giao hàng') {
-                            mangGiaoHang[indexThang] += giaTriTai;
+                            mangGiaoHang[idx] += giaTriTai;
                         } else if (data.htGiaoNhan === 'Gửi chành') {
-                            mangGuiChanh[indexThang] += giaTriTai;
+                            mangGuiChanh[idx] += giaTriTai;
                         }
-                        mangTongTai[indexThang] += giaTriTai;
-                    }
-
-                    // Riêng tab danh sách vẫn chỉ hiện tháng 7
-                    if (soThang === 7) {
-                        const dinhDangTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + 'đ' : '0đ';
-                        chuoiHtmlTabVanChuyen += `
-                            <div class="the-chuyen-xe ${data.status === 'Đã duyệt' ? 'da-duyet' : ''}">
-                                <div class="dong-thong-tin">
-                                    <span class="nhan-tieu-de"><i class="fa-solid fa-id-card"></i> Mã phiếu:</span>
-                                    <span class="gia-tri-so" style="color: #007acc;">${data.maPhiieu || doc.id}</span>
-                                </div>
-                                <div class="dong-thong-tin">
-                                    <span class="nhan-tieu-de"><i class="fa-solid fa-user-tie"></i> Tài xế:</span>
-                                    <span>${data.taiXe || 'Chưa rõ'}</span>
-                                </div>
-                                <div class="dong-thong-tin">
-                                    <span class="nhan-tieu-de"><i class="fa-solid fa-truck"></i> Số xe:</span>
-                                    <span class="gia-tri-so">${data.phuongTien || 'N/A'}</span>
-                                </div>
-                                <div class="dong-thong-tin">
-                                    <span class="nhan-tieu-de"><i class="fa-solid fa-route"></i> Hình thức:</span>
-                                    <span class="gia-tri-so" style="color: #2ec4b6;">${data.htGiaoNhan || 'Chưa phân loại'}</span>
-                                </div>
-                                <div class="dong-thong-tin">
-                                    <span class="nhan-tieu-de"><i class="fa-solid fa-weight-hanging"></i> Tải trọng:</span>
-                                    <span class="gia-tri-so">${giaTriTai}</span>
-                                </div>
-                                <div class="dong-thong-tin">
-                                    <span class="nhan-tieu-de"><i class="fa-solid fa-coins"></i> Thành tiền:</span>
-                                    <span class="gia-tri-so" style="color: #e63946;">${dinhDangTien}</span>
-                                </div>
-                                <div class="dong-thong-tin" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee;">
-                                    <span class="nhan-tieu-de">Trạng thái:</span>
-                                    <span class="trang-thai-nhan ${data.status === 'Đã duyệt' ? 'duyet' : ''}">${data.status || 'Chờ duyệt'}</span>
-                                </div>
-                            </div>
-                        `;
+                        mangTongTai[idx] += giaTriTai;
                     }
                 });
 
-                if (chuoiHtmlTabVanChuyen === '') {
-                    vungHienThi.innerHTML = `<p style="color: #999; text-align: center;">Không có chuyến xe nào trong tháng 7.</p>`;
-                } else {
-                    vungHienThi.innerHTML = chuoiHtmlTabVanChuyen;
-                }
-
-                // --- CẬP NHẬT CHUẨN REALTIME KHÔNG SỢ TREO APP ---
+                // Cập nhật mảng số liệu vào biểu đồ
                 bieuDo.data.datasets[0].data = mangGiaoHang;
                 bieuDo.data.datasets[1].data = mangGuiChanh;
                 bieuDo.data.datasets[2].data = mangTongTai;
+                bieuDo.update(); // Vẽ biểu đồ
 
-                bieuDo.update(); // Mượt mà 100%
+                // Ẩn dòng chữ loading sau khi xử lý xong dữ liệu
+                const oLoading = document.getElementById('loading');
+                if (oLoading) oLoading.style.display = 'none';
 
-            }, (error) => {
-                vungHienThi.innerHTML = `<p style="color: red; text-align: center;">Lỗi kết nối dữ liệu: ${error.message}</p>`;
-            });
-        }
-
-        console.log("Hệ thống biểu đồ lồng cột hiệu năng cao ổn định!");
-
-        // NÚT RESET
-        const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {
-            idNutLamMoi.addEventListener('click', () => {
-                const iconSvg = idNutLamMoi.querySelector('svg'); 
-                if (iconSvg) {
-                    iconSvg.style.transform = 'rotate(360deg)'; 
-                    iconSvg.style.transition = 'transform 0.4s ease';
-                } 
-                setTimeout(() => { window.location.reload(); }, 350); 
-            });
-        }
-
-        // XỬ LÝ CHUYỂN TAB
-        window.switchTab = function(e, tabId) { 
-            const trangs = document.querySelectorAll('.trang-content'); 
-            trangs.forEach(page => page.classList.remove('active')); 
-            const menuItems = document.querySelectorAll('.MENU-item'); 
-            menuItems.forEach(item => item.classList.remove('active')); 
-            document.getElementById(tabId).classList.add('active'); 
-            if (e && e.currentTarget) {
-                e.currentTarget.classList.add('active');
+            } catch (e) { 
+                console.error("Lỗi nạp dữ liệu:", e); 
+                document.getElementById('loading').innerHTML = `<span style="color:red;">Lỗi tải dữ liệu biểu đồ!</span>`;
             }
-        } 
+        }
+
+        // Kích hoạt nạp dữ liệu ngay khi load trang
+        taiDuLieuBieuDo();
     </script>
 </body>
 </html>
