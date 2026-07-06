@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
     <title>HAMACO-TMS</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <style>
-
+    <style> /* CSS */
         * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
-        
-        /* Nút reset */
-            .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
-                background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
-            .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
-            .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
+        /* NÚT RESET */
+        .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
+            background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
+        .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
+        .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
         /* ĐỊNH DẠNG CHUNG */
         body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
         .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 16px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
@@ -33,16 +33,18 @@
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
-            .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
-            .KHUNG-CON-TRONG-TAB {padding: 12px 16px;    /* Giảm từ 20px xuống còn 12px */ margin-bottom: 10px;   /* Giảm khoảng cách giữa các card */}
-            .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} /* Đẩy nút reset sát lên góc hơn để không chiếm diện tích */
-            .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} /* Hạ chiều cao menu xuống 45px và ép sát đáy */
-            .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } /* Đổi bố cục nút sang hàng ngang (icon nằm trước chữ) */
-            .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
-            .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
-            .MENU-item.add-btn i {font-size: 16px;} }
+        .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
+        .KHUNG-CON-TRONG-TAB {padding: 12px 16px;    /* Giảm từ 20px xuống còn 12px */ margin-bottom: 10px;   /* Giảm khoảng cách giữa các card */}
+        .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} /* Đẩy nút reset sát lên góc hơn để không chiếm diện tích */
+        .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} /* Hạ chiều cao menu xuống 45px và ép sát đáy */
+        .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } /* Đổi bố cục nút sang hàng ngang (icon nằm trước chữ) */
+        .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
+        .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
+        .MENU-item.add-btn i {font-size: 16px;} }
     </style>
+
 </head>
+
 <body>
 
     <div class="KHUNG-CAC-TAB">
@@ -55,9 +57,27 @@
         </div>
 
         <div id="bao-cao" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Báo cáo & Thống kê</h2>
-                <p style="margin-top: 10px; color: #666;">Nội dung phân tích tổng quan chi tiêu và hiệu suất.</p>
+            <div class="KHUNG-CON-TRONG-TAB" style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                <h3 style="font-size: 16px; color: #007acc;"><i class="fa-solid fa-filter"></i> Bộ lọc báo cáo</h3>
+                <div style="display: flex; gap: 8px;">
+                    <select id="loc-thang" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #ccc; font-weight: 500;">
+                        <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                        <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                        <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                        <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                        <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                        <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                    </select>
+                    <select id="loc-nam" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #ccc; font-weight: 500;">
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="KHUNG-CON-TRONG-TAB" style="position: relative; height: 320px; width: 100%;">
+                <h2 style="font-size: 16px; margin-bottom: 15px;">📊 Biểu đồ Sản lượng Vận chuyển (Tấn)</h2>
+                <canvas id="bieuDoSanLuong"></canvas>
             </div>
         </div>
 
@@ -86,60 +106,192 @@
     </div>
 
     <nav class="MENU-DUOI">
+
         <div class="MENU-item active" onclick="switchTab('home')">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </div>
+
         <div class="MENU-item" onclick="switchTab('bao-cao')">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Báo cáo</span>
         </div>
+
         <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
             <i class="fa-solid fa-plus"></i>
         </div>
+
         <div class="MENU-item" onclick="switchTab('kho')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Kho</span>
         </div>
+
         <div class="MENU-item" onclick="switchTab('van-chuyen')">
             <i class="fa-solid fa-car-side"></i>
             <span>Vận chuyển</span>
         </div>
+
     </nav>
 
     <script type="module">
-        // --- 1. CẤU HÌNH FIREBASE ---
-        // Thêm các thư viện Firebase SDK cần thiết
+        // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        // Nếu dùng Firestore thì thay bằng: import { getFirestore } from "...firebase-firestore.js";
-
-        // Thay thế thông tin cấu hình này bằng tài khoản Firebase thực tế của bạn
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const firebaseConfig = { // địa chỉ Fire
+            apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
+            authDomain: "hamaco-tms-c4b70.firebaseapp.com",
+            projectId: "hamaco-tms-c4b70",
+            storageBucket: "hamaco-tms-c4b70.firebasestorage.app",
+            messagingSenderId: "685425304488",
+            appId: "1:685425304488:web:6a999a4a6bf1147a21b39d",
+            measurementId: "G-L7RQZWHQ4J"
         };
 
-        // Khởi tạo Firebase
+        // KHỞI TẠO FIREBASE
         const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        console.log("Firebase đã được cấu hình thành công!");
+        const db = getFirestore(app);
+        console.log("Firebase & Firestore đã được kết nối thành công!");
 
         // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
         if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} setTimeout(() => { window.location.reload(); }, 350); });}
 
-        // --- 2. XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN ---
-        window.switchTab = function(tabId) {
+        // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
+        window.switchTab = function(tabId) { // chuyển tab
             const trangs = document.querySelectorAll('.trang-content'); trangs.forEach(page => page.classList.remove('active')); // Ẩn tất cả các trang nội dung
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
             const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
+        
+        // Nhập các hàm Firestore cần thiết từ Firebase CDN công khai
+        import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // Lưu ý: Nếu bạn dùng Realtime Database thì đổi sang dùng 'ref', 'get', 'child' tương ứng. Ở đây viết theo cấu trúc Firestore (Collection/Document) như trong ảnh database của bạn.
+
+        let bieuDoGlobal = null; // Biến lưu trữ đối tượng biểu đồ để cập nhật lại khi đổi bộ lọc
+
+        // HÀM KHỞI TẠO HOẶC CẬP NHẬT BIỂU ĐỒ
+        function veBieuDo(mangGiaoHang, mangGuiChanh, mangTong) {
+            const ctx = document.getElementById('bieuDoSanLuong').getContext('2d');
+            
+            // Danh sách nhãn trục X đại diện cho các ngày từ 1 đến 31
+            const nhanNgay = Array.from({length: 31}, (_, i) => `N ${i + 1}`);
+
+            // Nếu đã có biểu đồ trước đó, hủy đi để vẽ mới tránh lỗi đè dữ liệu
+            if (bieuDoGlobal) { bieuDoGlobal.destroy(); }
+
+            bieuDoGlobal = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: nhanNgay,
+                    datasets: [
+                        {
+                            label: 'Tổng Sản Lượng (Đường)',
+                            type: 'line', // Định dạng Đường chạy phía trên
+                            data: mangTong,
+                            borderColor: '#e74c3c',
+                            backgroundColor: '#e74c3c',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            fill: false,
+                            order: 1 // Ưu tiên hiển thị lớp trên cùng
+                        },
+                        {
+                            label: 'Gửi chành (Cột Trong)',
+                            data: mangGuiChanh,
+                            backgroundColor: '#ffb703',
+                            borderColor: '#ffb703',
+                            borderWidth: 1,
+                            barPercentage: 0.4, // Làm cột nhỏ lại để lồng vào bên trong
+                            categoryPercentage: 0.8,
+                            order: 2
+                        },
+                        {
+                            label: 'Giao hàng (Cột Ngoài)',
+                            data: mangGiaoHang,
+                            backgroundColor: 'rgba(0, 122, 204, 0.6)', // Đổ màu trong suốt cho dễ nhìn cột lồng bên trong
+                            borderColor: '#007acc',
+                            borderWidth: 1,
+                            barPercentage: 0.8, // Cột bự bao bên ngoài
+                            categoryPercentage: 0.8,
+                            order: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } }, // Kỹ thuật stacked kết hợp cấu hình kích thước giúp cột lồng vào nhau
+                        y: { beginAtZero: true, title: { display: true, text: 'Trọng lượng (Tấn)' } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        // HÀM TẢI DỮ LIỆU TỪ FIREBASE VÀ PHÂN TÍCH THEO BỘ LỌC THÁNG / NĂM
+        async function docDuLieuVaLocBaoCao() {
+            const thangS = document.getElementById('loc-thang').value;
+            const namS = document.getElementById('loc-nam').value;
+            
+            // Chuẩn hóa chuỗi so sánh khớp với trường dữ liệu trong database của bạn (ví dụ: "Tháng 1", "Tháng 2"...)
+            const chuoiThangTimKiem = `Tháng ${thangS}`;
+
+            // Tạo sẵn 3 mảng trống chứa dữ liệu ứng với 31 ngày trong tháng
+            let duLieuGiaoHang = Array(31).fill(0);
+            let duLieuGuiChanh = Array(31).fill(0);
+            let duLieuTong = Array(31).fill(0);
+
+            try {
+                // Gọi trực tiếp vào collection tổng 'TUYENDUONG' như bạn đã gộp
+                const querySnapshot = await getDocs(collection(database, "TUYENDUONG"));
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    
+                    // Lọc dữ liệu: Kiểm tra bản ghi có đúng trường 'thang' chọn và đúng năm trong 'ngayXuatKho' không
+                    if (data.thang === chuoiThangTimKiem && data.ngayXuatKho && data.ngayXuatKho.startsWith(namS)) {
+                        
+                        // Trích xuất ngày từ chuỗi ngayXuatKho (Định dạng DD/MM/YYYY) để biết bỏ vào cột thứ mấy
+                        const phanTachNgay = data.ngayXuatKho.split('/');
+                        const ngayIndex = parseInt(phanTachNgay[0], 10) - 1; // Ngày 1 ứng với vị trí số 0 trong mảng
+
+                        if (ngayIndex >= 0 && ngayIndex < 31) {
+                            // Chuyển đổi tTai từ KG sang Tấn nếu cần (ví dụ dữ liệu đang là 940kg -> 0.94 tấn), nếu database đã là tấn thì bỏ chia 1000
+                            const sanLuongTai = parseFloat(data.tTai || 0) / 1000; 
+
+                            // Phân loại hình thức giao nhận dựa vào trường 'htGiaoNhan'
+                            if (data.htGiaoNhan === "Giao hàng") {
+                                duLieuGiaoHang[ngayIndex] += sanLuongTai;
+                            } else if (data.htGiaoNhan === "Gửi chành") {
+                                duLieuGuiChanh[ngayIndex] += sanLuongTai;
+                            }
+                            
+                            // Đường tổng bằng tổng tất cả sản lượng của ngày đó
+                            duLieuTong[ngayIndex] += sanLuongTai;
+                        }
+                    }
+                });
+
+                // Chạy hàm vẽ biểu đồ sau khi phân tách xong dữ liệu
+                veBieuDo(duLieuGiaoHang, duLieuGuiChanh, duLieuTong);
+
+            } catch (error) {
+                console.error("Lỗi lấy dữ liệu báo cáo: ", error);
+            }
+        }
+
+        // LẮNG NGHE SỰ KIỆN ĐỔI BỘ LỌC TRÊN GIAO DIỆN
+        document.getElementById('loc-thang').addEventListener('change', docDuLieuVaLocBaoCao);
+        document.getElementById('loc-nam').addEventListener('change', docDuLieuVaLocBaoCao);
+
+        // TỰ ĐỘNG CHẠY LẦN ĐẦU KHI TẢI TRANG (Mặc định lấy tháng hiện tại)
+        const thangHienTai = new Date().getMonth() + 1;
+        document.getElementById('loc-thang').value = thangHienTai;
+        docDuLieuVaLocBaoCao();
     </script>
 </body>
 </html>
