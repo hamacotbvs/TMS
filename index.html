@@ -42,6 +42,33 @@
         .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
         .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
         .MENU-item.add-btn i {font-size: 16px;} }
+        /* CSS CHO DANH SÁCH VẬN CHUYỂN */
+        .the-chuyen-xe {
+            background: #f8fafc;
+            border-left: 5px solid #007acc;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .the-chuyen-xe.da-duyet { border-left-color: #2ec4b6; } /* Màu xanh lá nếu trạng thái Đã duyệt */
+        .dong-thong-tin {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        .nhan-tieu-de { color: #666; font-weight: 500; }
+        .gia-tri-so { font-weight: 700; color: #333; }
+        .trang-thai-nhan {
+            background: #e6f2ff;
+            color: #007acc;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .trang-thai-nhan.duyet { background: #e7fbf7; color: #2ec4b6; }
     </style>
 
 </head>
@@ -81,8 +108,12 @@
 
         <div id="van-chuyen" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🚚 Quản lý Vận chuyển</h2>
-                <p style="margin-top: 10px; color: #666;">Điều phối xe, tài xế và trạng thái đơn vận chuyển.</p>
+                <h2>🚚 Quản lý Vận chuyển Thực tế</h2>
+                <p style="margin-top: 5px; margin-bottom: 15px; color: #666; font-size: 13px;">Danh sách chuyến hàng cập nhật trực tiếp từ Firestore:</p>
+        
+                <div id="danh-sach-van-chuyen">
+                    <p style="color: #999; text-align: center;">Đang tải dữ liệu chuyến xe...</p>
+                </div>
             </div>
         </div>
 
@@ -134,6 +165,70 @@
         // KHỞI TẠO FIREBASE
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        // ====== ĐOẠN MÃ KẾT NỐI VÀ LẤY DỮ LIỆU TỪ TUYENDUONG ======
+const vungHienThi = document.getElementById('danh-sach-van-chuyen');
+
+if (vungHienThi) {
+    // Chỉ định kết nối tới collection 'TUYENDUONG' trên Firestore của bạn
+    const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
+
+    // Lắng nghe dữ liệu thời gian thực (Realtime)
+    onSnapshot(thamChieuTuyenDuong, (snapshot) => {
+        // Nếu không có dữ liệu nào
+        if (snapshot.empty) {
+            vungHienThi.innerHTML = `<p style="color: #999; text-align: center;">Chưa có dữ liệu chuyến xe nào trên hệ thống.</p>`;
+            return;
+        }
+
+        let chuoiHtml = ''; // Biến tạm chứa giao diện
+
+        snapshot.forEach((doc) => {
+            const data = doc.data(); // Lấy toàn bộ các field trong document mẫu của bạn
+
+            // Định dạng hiển thị số tiền thành dạng 3.603.780đ
+            const dinhDangTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + 'đ' : '0đ';
+
+            // Tạo cấu trúc HTML cho từng chuyến hàng đổ ra màn hình
+            chuoiHtml += `
+                <div class="the-chuyen-xe ${data.status === 'Đã duyệt' ? 'da-duyet' : ''}">
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-id-card"></i> Mã phiếu:</span>
+                        <span class="gia-tri-so" style="color: #007acc;">${data.maPhiieu || doc.id}</span>
+                    </div>
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-user-tie"></i> Tài xế:</span>
+                        <span>${data.taiXe || 'Chưa rõ'}</span>
+                    </div>
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-truck"></i> Số xe:</span>
+                        <span class="gia-tri-so">${data.phuongTien || 'N/A'}</span>
+                    </div>
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-location-dot"></i> Nơi giao:</span>
+                        <span style="font-size: 13px; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${data.noiGiao || 'Chưa cập nhật'}
+                        </span>
+                    </div>
+                    <div class="dong-thong-tin">
+                        <span class="nhan-tieu-de"><i class="fa-solid fa-coins"></i> Thành tiền:</span>
+                        <span class="gia-tri-so" style="color: #e63946;">${dinhDangTien}</span>
+                    </div>
+                    <div class="dong-thong-tin" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee;">
+                        <span class="nhan-tieu-de">Trạng thái:</span>
+                        <span class="trang-thai-nhan ${data.status === 'Đã duyệt' ? 'duyet' : ''}">${data.status || 'Chờ duyệt'}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Đổ toàn bộ danh sách thẻ chuyến xe vào giao diện ứng dụng
+        vungHienThi.innerHTML = chuoiHtml;
+    }, (error) => {
+        console.error("Lỗi khi tải dữ liệu từ TUYENDUONG:", error);
+        vungHienThi.innerHTML = `<p style="color: red; text-align: center;">Lỗi kết nối dữ liệu: ${error.message}</p>`;
+    });
+}
+// =========================================================
         console.log("Firebase & Firestore đã được kết nối thành công!");
 
         // NÚT RESET
