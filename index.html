@@ -241,6 +241,22 @@
             const menuItems = document.querySelectorAll('.MENU-item'); menuItems.forEach(item => item.classList.remove('active')); // Gỡ bỏ trạng thái active của tất cả các nút menu
             document.getElementById(tabId).classList.add('active'); // Hiển thị trang được chọn
             const clickedTarget = event.currentTarget; clickedTarget.classList.add('active');} // Kích hoạt trạng thái active cho nút menu tương ứng
+
+        // TỰ ĐỘNG ĐẶT THÁNG HIỆN TẠI KHI MỞ APP (Tùy chọn)
+        const thangHienTai = new Date().getMonth() + 1; // Lấy tháng thực tế (1-12)
+        const selectThang = document.getElementById('chon-thang');
+        if(selectThang) selectThang.value = thangHienTai;
+        // HÀM LẮNG NGHE SỰ KIỆN KHI THAY ĐỔI BỘ LỌC THỜI GIAN
+        function xu LyBoLocThoiGian() {
+            const thangDaChon = document.getElementById('chon-thang').value;
+            const namDaChon = document.getElementById('chon-nam').value;
+            console.log(`Đang truy vấn dữ liệu Báo cáo cho: Tháng ${thangDaChon} / Năm ${namDaChon}`);
+            // Ví dụ sau này bạn viết hàm lấy data từ Firestore:
+            // taiDuLieuBaoCaoTheoThangNam(thangDaChon, namDaChon);
+        }
+        // Gán sự kiện change cho các thẻ select
+        document.getElementById('chon-thang').addEventListener('change', xuLyBoLocThoiGian);
+        document.getElementById('chon-nam').addEventListener('change', xuLyBoLocThoiGian);
     </script>
 </body>
 </html>
