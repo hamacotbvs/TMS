@@ -118,7 +118,7 @@
                 </select>
             </div>
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📊 Báo cáo & Thống k</h2>
+                <h2>📊 Báo cáo & Thống kê</h2>
                 <div class="vung-bieu-do" style="margin-top: 20px; position: relative; width: 100%; height: 300px;">
                     <canvas id="bieuDoSanLuong"></canvas>
                 </div>
@@ -177,7 +177,7 @@
 
     </nav>
 
-<script type="module">
+    <script type="module">
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -214,7 +214,7 @@
             });
         }
 
-        // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
+        // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN (ĐÃ SỬA LỖI KHÔNG TẢI BIỂU ĐỒ)
         window.switchTab = function(tabId) { 
             const trangs = document.querySelectorAll('.trang-content'); 
             trangs.forEach(page => page.classList.remove('active')); 
@@ -223,11 +223,25 @@
             menuItems.forEach(item => item.classList.remove('active')); 
             
             document.getElementById(tabId).classList.add('active'); 
-            if (event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
-            } 
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('active');
+            } else {
+                // Sửa lỗi kích hoạt class active cho nút menu dưới đáy khi chuyển tab bằng mã lệnh
+                const iconMap = {
+                    'home': '.fa-house',
+                    'bao-cao': '.fa-chart-pie',
+                    'them-moi': '.fa-plus',
+                    'kho': '.fa-boxes-stacked',
+                    'van-chuyen': '.fa-car-side'
+                };
+                const iconClass = iconMap[tabId];
+                if (iconClass) {
+                    const iconEl = document.querySelector(`.MENU-DUOI ${iconClass}`);
+                    if (iconEl) iconEl.parentElement.classList.add('active');
+                }
+            }
 
-            // Nếu chuyển sang tab Báo cáo -> Kích hoạt biểu đồ và tải dữ liệu theo Năm hiện tại
+            // --- ĐÃ BỔ SUNG: Kích hoạt tải dữ liệu ngay khi bấm vào Tab Báo cáo ---
             if (tabId === 'bao-cao') {
                 if (!bieuDoBaoCao) {
                     khoiTaoKhungBieuDo();
@@ -254,7 +268,7 @@
             if (!ctx) return;
 
             if (bieuDoBaoCao) {
-                bieuDoBaoCao.destroy(); // Hủy biểu đồ cũ nếu có lỗi chồng lấp tuyến tính
+                bieuDoBaoCao.destroy(); 
             }
 
             bieuDoBaoCao = new Chart(ctx, {
@@ -264,13 +278,13 @@
                     datasets: [
                         {
                             label: '🚚 Giao hàng',
-                            data: Array(12).fill(0), // Khởi tạo ban đầu bằng 0
+                            data: Array(12).fill(0), 
                             backgroundColor: '#007acc',
                             borderRadius: 4
                         },
                         {
                             label: '📦 Gửi chành',
-                            data: Array(12).fill(0), // Khởi tạo ban đầu bằng 0
+                            data: Array(12).fill(0), 
                             backgroundColor: '#ff9f43',
                             borderRadius: 4
                         }
@@ -308,38 +322,38 @@
             });
         }
 
-        // HÀM ĐỌC VÀ CẬP NHẬT DỮ LIỆU TỪ FIRESTORE LÊN BIỂU ĐỒ
+        // HÀM ĐỌC VÀ CẬP NHẬT DỮ LIỆU TỪ FIRESTORE LÊN BIỂU ĐỒ (CẢI TIẾN TÌM KIẾM LINH HOẠT)
         function taiDuLieuBieuDoTheoNam(namLoc) {
-            // Ngắt kết nối lắng nghe Firebase của năm cũ trước đó (tránh tràn RAM)
             if (unsubscribeFirebase) {
                 unsubscribeFirebase();
             }
 
-            // Lưu ý: Thay "vanchuyen" bằng đúng tên Collection (bảng) thực tế trên Firestore của bạn
             const collectionRef = collection(db, "TUYENDUONG"); 
-            const q = query(collectionRef, where("nam", "==", parseInt(namLoc)));
 
-            // Lắng nghe dữ liệu thay đổi thời gian thực
-            unsubscribeFirebase = onSnapshot(q, (querySnapshot) => {
+            // Sử dụng cơ chế lắng nghe bộ dữ liệu tổng và tự lọc bằng code để chống lỗi lệch kiểu (String/Number) trên DB
+            unsubscribeFirebase = onSnapshot(collectionRef, (querySnapshot) => {
                 const sanLuongGiaoHang = Array(12).fill(0);
                 const sanLuongGuiChanh = Array(12).fill(0);
 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    const thang = parseInt(data.thang) - 1; // Index mảng JS chạy từ 0 đến 11
-                    const taiTrong = parseFloat(data.tTai) || 0;
-                    const htGiaoNhan = data.htGiaoNhan;
+                    
+                    // So sánh an toàn tuyệt đối bằng việc chuyển dữ liệu năm về chuỗi .toString()
+                    if (data.nam && data.nam.toString() === namLoc.toString()) {
+                        const thang = parseInt(data.thang) - 1; 
+                        const taiTrong = parseFloat(data.tTai) || 0;
+                        const htGiaoNhan = data.htGiaoNhan;
 
-                    if (thang >= 0 && thang <= 11) {
-                        if (htGiaoNhan === "Giao hàng") {
-                            sanLuongGiaoHang[thang] += taiTrong;
-                        } else if (htGiaoNhan === "Gửi chành") {
-                            sanLuongGuiChanh[thang] += taiTrong;
+                        if (thang >= 0 && thang <= 11) {
+                            if (htGiaoNhan === "Giao hàng") {
+                                sanLuongGiaoHang[thang] += taiTrong;
+                            } else if (htGiaoNhan === "Gửi chành") {
+                                sanLuongGuiChanh[thang] += taiTrong;
+                            }
                         }
                     }
                 });
 
-                // Đổ mảng dữ liệu đã tính toán cộng dồn vào Chart.js và cập nhật giao diện
                 if (bieuDoBaoCao) {
                     bieuDoBaoCao.data.datasets[0].data = sanLuongGiaoHang;
                     bieuDoBaoCao.data.datasets[1].data = sanLuongGuiChanh;
@@ -355,16 +369,16 @@
         const elNam = document.getElementById('chon-nam');
 
         if (elThang && elNam) {
-            // Tự động gán ô chọn tháng về tháng hiện tại của hệ thống
             elThang.value = new Date().getMonth() + 1;
-
-            // Lắng nghe sự kiện thay đổi của ô chọn Năm để kích hoạt bộ lọc
             elNam.addEventListener('change', xuLyBoLocThoiGian);
         }
 
-        // Tự động dựng sẵn khung biểu đồ khi vừa nạp trang xong
+        // --- ĐÃ BỔ SUNG: Chạy liên kết nạp dữ liệu ngay khi mở app thành công ---
         document.addEventListener('DOMContentLoaded', () => {
             khoiTaoKhungBieuDo();
+            if (elNam) {
+                taiDuLieuBieuDoTheoNam(elNam.value);
+            }
         });
     </script>
 </body>
