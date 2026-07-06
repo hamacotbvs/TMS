@@ -33,6 +33,35 @@
             min-height: 220px;
         }
 
+        /* ĐỊNH DẠNG Ô CHỌN THÁNG (THÁNG HIỆN HÀNH) */
+        .khung-chon-thang {
+            margin: 12px 0 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .khung-chon-thang label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+        }
+        .select-thang-hien-hanh {
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid #007acc;
+            border-radius: 20px;
+            background-color: #ffffff;
+            color: #007acc;
+            outline: none;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 122, 204, 0.1);
+            transition: all 0.2s ease;
+        }
+        .select-thang-hien-hanh:focus {
+            background-color: #e6f2ff;
+        }
+
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
@@ -62,7 +91,14 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🎯 Ngân sách chi tiêu tháng này</h2>
+                <h2>🎯 Ngân sách chi tiêu</h2>
+                
+                <div class="khung-chon-thang">
+                    <label for="thangHome"><i class="fa-solid fa-calendar-days"></i> Tháng xem:</label>
+                    <select id="thangHome" class="select-thang-hien-hanh" onchange="xuLyThayDoiThang(this.value)">
+                        </select>
+                </div>
+
                 <div class="khung-bieu-do">
                     <canvas id="chartNganSach"></canvas>
                 </div>
@@ -72,6 +108,13 @@
         <div id="bao-cao" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
                 <h2>📊 Phân bổ chi phí vận hành</h2>
+                
+                <div class="khung-chon-thang">
+                    <label for="thangBaoCao"><i class="fa-solid fa-calendar-days"></i> Kỳ báo cáo:</label>
+                    <select id="thangBaoCao" class="select-thang-hien-hanh" onchange="xuLyThayDoiThang(this.value)">
+                        </select>
+                </div>
+
                 <div class="khung-bieu-do">
                     <canvas id="chartChiPhiTron"></canvas>
                 </div>
@@ -98,173 +141,3 @@
                 <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
             </div>
         </div>
-
-        <div id="van-chuyen" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🚚 Hiệu suất vận chuyển theo xe</h2>
-                <div class="khung-bieu-do">
-                    <canvas id="chartVanChuyen"></canvas>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <nav class="MENU-DUOI">
-        <div class="MENU-item active" onclick="switchTab('home')">
-            <i class="fa-solid fa-house"></i>
-            <span>HOME</span>
-        </div>
-        <div class="MENU-item" onclick="switchTab('bao-cao')">
-            <i class="fa-solid fa-chart-pie"></i>
-            <span>Báo cáo</span>
-        </div>
-        <div class="MENU-item add-btn" onclick="switchTab('them-moi')">
-            <i class="fa-solid fa-plus"></i>
-        </div>
-        <div class="MENU-item" onclick="switchTab('kho')">
-            <i class="fa-solid fa-boxes-stacked"></i>
-            <span>Kho</span>
-        </div>
-        <div class="MENU-item" onclick="switchTab('van-chuyen')">
-            <i class="fa-solid fa-car-side"></i>
-            <span>Vận chuyển</span>
-        </div>
-    </nav>
-
-    <script type="module">
-        // CẤU HÌNH FIREBASE
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
-        const firebaseConfig = { 
-            apiKey: "AIzaSyA7SQQRocTLFzJ3_yz4utnEljaj4Gp6tP8",
-            authDomain: "hamaco-tms-c4b70.firebaseapp.com",
-            projectId: "hamaco-tms-c4b70",
-            storageBucket: "hamaco-tms-c4b70.firebasestorage.app",
-            messagingSenderId: "685425304488",
-            appId: "1:685425304488:web:6a999a4a6bf1147a21b39d",
-            measurementId: "G-L7RQZWHQ4J"
-        };
-
-        // KHỞI TẠO FIREBASE
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        console.log("Firebase & Firestore đã được kết nối thành công!");
-
-        // NÚT RESET
-        const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {
-            idNutLamMoi.addEventListener('click', () => {
-                const iconSvg = idNutLamMoi.querySelector('svg'); 
-                if (iconSvg) {
-                    iconSvg.style.transform = 'rotate(360deg)'; 
-                    iconSvg.style.transition = 'transform 0.4s ease';
-                } 
-                setTimeout(() => { window.location.reload(); }, 350); 
-            });
-        }
-
-        // XỬ LÝ CHUYỂN TAB TRÊN GIAO DIỆN
-        window.switchTab = function(tabId) {
-            const trangs = document.querySelectorAll('.trang-content'); 
-            trangs.forEach(page => page.classList.remove('active')); 
-            
-            const menuItems = document.querySelectorAll('.MENU-item'); 
-            menuItems.forEach(item => item.classList.remove('active')); 
-            
-            document.getElementById(tabId).classList.add('active'); 
-            
-            // Tìm đúng nút menu vừa click dựa vào tabId để gán class active chính xác
-            const targetItem = document.querySelector(`.MENU-item[onclick*="${tabId}"]`);
-            if(targetItem) targetItem.classList.add('active');
-        }
-
-        // --- KHỞI TẠO CÁC BIỂU ĐỒ (CHART.JS) ---
-        document.addEventListener("DOMContentLoaded", () => {
-            
-            // 1. Biểu đồ Ngân sách (Trang Home) - Dạng Thanh Ngang (Bar)
-            const ctxNganSach = document.getElementById('chartNganSach').getContext('2d');
-            new Chart(ctxNganSach, {
-                type: 'bar',
-                data: {
-                    labels: ['Đã chi tiêu', 'Ngân sách còn lại'],
-                    datasets: [{
-                        label: 'Số tiền (VNĐ)',
-                        data: [65000000, 35000000],
-                        backgroundColor: ['#e63946', '#2a9d8f'],
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    indexAxis: 'y', // Biến thành thanh ngang
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-            // 2. Biểu đồ Phân bổ chi phí (Trang Báo cáo) - Dạng Tròn (Doughnut)
-            const ctxChiPhi = document.getElementById('chartChiPhiTron').getContext('2d');
-            new Chart(ctxChiPhi, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Xăng dầu', 'Sửa chữa', 'Cầu đường', 'Lương tài xế'],
-                    datasets: [{
-                        data: [40, 15, 20, 25],
-                        backgroundColor: ['#007acc', '#f4a261', '#e76f51', '#2a9d8f']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
-
-            // 3. Biểu đồ Doanh thu (Trang Báo cáo) - Dạng Cột Đứng (Bar)
-            const ctxDoanhThu = document.getElementById('chartDoanhThuCot').getContext('2d');
-            new Chart(ctxDoanhThu, {
-                type: 'bar',
-                data: {
-                    labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-                    datasets: [{
-                        label: 'Doanh thu (Triệu)',
-                        data: [120, 150, 180, 140, 210, 230],
-                        backgroundColor: '#0082C8',
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-
-            // 4. Biểu đồ Vận chuyển (Trang Vận chuyển) - Dạng Đường (Line)
-            const ctxVanChuyen = document.getElementById('chartVanChuyen').getContext('2d');
-            new Chart(ctxVanChuyen, {
-                type: 'line',
-                data: {
-                    labels: ['Đội xe A', 'Đội xe B', 'Đội xe C', 'Đội xe D'],
-                    datasets: [{
-                        label: 'Số chuyến hàng hoàn thành',
-                        data: [45, 32, 58, 24],
-                        borderColor: '#007acc',
-                        backgroundColor: 'rgba(0, 122, 204, 0.1)',
-                        fill: true,
-                        tension: 0.3,
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        });
-    </script>
-</body>
-</html>
