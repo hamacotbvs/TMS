@@ -157,30 +157,7 @@
             data: {
                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
                 datasets: [
-                    { 
-                        label: 'Giao hàng', 
-                        data: Array(12).fill(0), 
-                        backgroundColor: '#3498db', 
-                        borderRadius: 12,           
-                        borderSkipped: 'bottom',    
-                        barPercentage: 0.8,         // Tăng từ 0.5 lên 0.8 để cột Xanh to ra
-                        categoryPercentage: 0.8,     // Thêm thuộc tính này để tối ưu khoảng cách nhóm         
-                        grouped: false, 
-                        order: 3,
-                        datalabels: { display: false } 
-                    },
-                    { 
-                        label: 'Gửi chành', 
-                        data: Array(12).fill(0), 
-                        backgroundColor: '#e74c3c', 
-                        borderRadius: 6,            
-                        borderSkipped: 'bottom',    
-                        barPercentage: 0.4,         // Tăng từ 0.25 lên 0.4 để cột Đỏ lồng bên trong cũng to lên tương ứng
-                        categoryPercentage: 0.8,     // Đồng bộ với cột xanh        
-                        grouped: false, 
-                        order: 2,
-                        datalabels: { display: false } 
-                    },
+                    // ĐƯA "TỔNG" LÊN VỊ TRÍ ĐẦU TIÊN (INDEX 0) ĐỂ HIỂN THỊ CHÚ THÍCH TRƯỚC
                     { 
                         label: 'Tổng', 
                         data: Array(12).fill(0), 
@@ -192,8 +169,34 @@
                         pointRadius: 0,             
                         pointHoverRadius: 0,        
                         fill: false, 
-                        order: 1,
+                        order: 1, // Thứ tự vẽ lớp trên cùng
                         datalabels: { display: false }
+                    },
+                    // ĐƯA "GIAO HÀNG" VÀO VỊ TRÍ THỨ HAI (INDEX 1) + TĂNG ĐỘ RỘNGbarPercentage
+                    { 
+                        label: 'Giao hàng', 
+                        data: Array(12).fill(0), 
+                        backgroundColor: '#3498db', 
+                        borderRadius: 12,           
+                        borderSkipped: 'bottom',    
+                        barPercentage: 0.8,         // SỬA: Tăng cột xanh mập lên giống biểu đồ ngân sách
+                        categoryPercentage: 0.8,     // SỬA: Tối ưu khoảng trống nhóm cột
+                        grouped: false, 
+                        order: 3, // Lớp dưới cùng để cột đỏ lồng lên trên
+                        datalabels: { display: false } 
+                    },
+                    // ĐƯA "GỬI CHÀNH" XUỐNG VỊ TRÍ CUỐI CÙNG (INDEX 2) + TĂNG ĐỘ RỘNG barPercentage TƯƠNG ỨNG
+                    { 
+                        label: 'Gửi chành', 
+                        data: Array(12).fill(0), 
+                        backgroundColor: '#e74c3c', 
+                        borderRadius: 6,            
+                        borderSkipped: 'bottom',    
+                        barPercentage: 0.4,         // SỬA: Tăng cột đỏ lồng bên trong mập lên theo tỉ lệ
+                        categoryPercentage: 0.8,    
+                        grouped: false, 
+                        order: 2, // Lớp vẽ ở giữa
+                        datalabels: { display: false } 
                     }
                 ]
             },
@@ -236,14 +239,16 @@
                 id: 'customDatalabelsColors',
                 afterDatasetsDraw(chart) {
                     const { ctx } = chart;
-                    const metaCotGiaoHang = chart.getDatasetMeta(0); 
+                    // SỬA: Thay đổi vị trí index lấy dữ liệu cột từ 0 sang 1 vì "Giao hàng" đã chuyển sang vị trí thứ 2 trong mảng
+                    const metaCotGiaoHang = chart.getDatasetMeta(1); 
 
                     metaCotGiaoHang.data.forEach((element, index) => {
-                        const vTongTai = chart.data.datasets[2].data[index] || 0;
+                        // SỬA: Thay đổi index của các trường dữ liệu cho khớp thứ tự khai báo mới
+                        const vTongTai = chart.data.datasets[0].data[index] || 0; // Tổng giờ ở index 0
                         if (vTongTai === 0) return; 
 
-                        const vGiaoHang = chart.data.datasets[0].data[index] || 0;
-                        const vGuiChanh = chart.data.datasets[1].data[index] || 0;
+                        const vGiaoHang = chart.data.datasets[1].data[index] || 0; // Giao hàng giờ ở index 1
+                        const vGuiChanh = chart.data.datasets[2].data[index] || 0; // Gửi chành giờ ở index 2
 
                         const tTong  = (vTongTai / 1000).toFixed(1);
                         const tGiao  = (vGiaoHang / 1000).toFixed(1);
@@ -306,10 +311,10 @@
                     mangTongTai[i] = mangGiaoHang[i] + mangGuiChanh[i];
                 }
 
-                // Đổ dữ liệu vào biểu đồ
-                bieuDo.data.datasets[0].data = mangGiaoHang;
-                bieuDo.data.datasets[1].data = mangGuiChanh;
-                bieuDo.data.datasets[2].data = mangTongTai;
+                // SỬA: Gán lại chính xác chỉ số index phân phối mảng dữ liệu cho biểu đồ mới
+                bieuDo.data.datasets[0].data = mangTongTai;   // Số liệu Tổng gán cho phần tử 0
+                bieuDo.data.datasets[1].data = mangGiaoHang;  // Số liệu Giao hàng gán cho phần tử 1
+                bieuDo.data.datasets[2].data = mangGuiChanh;  // Số liệu Gửi chành gán cho phần tử 2
                 bieuDo.update();
 
                 const oLoading = document.getElementById('loading');
