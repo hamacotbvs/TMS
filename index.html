@@ -167,7 +167,7 @@
             txtNgayThang.innerText = `${homNay.getDate()}/${homNay.getMonth() + 1}`;
             txtNam.innerText = namGoc;
             // Tự động chạy tải dữ liệu theo năm hiện hành ngay khi mở app
-            taiDuLieuBieuDoSanLuongGiaoHangTuServer(namGoc);
+            taiDuLieuBieuDoSanLuongGiaoHangTuServer(namGoc);    // giống như nút START tự động để kích hoạt tất cả các lệnh chạy namGoc
             // 3. Lắng nghe khi bạn bấm chọn lại ngày khác trên lịch
             oChonNgay.addEventListener('change', (e) => {
                 if (!e.target.value) return;
@@ -179,7 +179,7 @@
                 txtNgayThang.innerText = `${d}/${m}`;
                 txtNam.innerText = y;
                 // Gọi lại hàm tải dữ liệu với NĂM MỚI vừa chọn
-                taiDuLieuBieuDoSanLuongGiaoHangTuServer(y);
+                taiDuLieuBieuDoSanLuongGiaoHangTuServer(y);     // giống như nút START tự động để kích hoạt tất cả các lệnh chạy khi năm thay đổi namLoc
                 console.log("Ngày hệ thống nhận:", e.target.value);
             });
         }
@@ -318,7 +318,7 @@
         });
 
         // HÀM TẢI DỮ LIỆU TỪ SERVER FIRE
-        async function taiDuLieuBieuDoSanLuongGiaoHangTuServer() {
+        async function taiDuLieuBieuDoSanLuongGiaoHangTuServer(namLoc) {
             try {
                 // 1. Tự động đổi tên tiêu đề biểu đồ theo năm được chọn
                 const tieuDe = document.getElementById('tieuDeBieuDo'); if (tieuDe) tieuDe.innerText = `Sản lượng giao hàng năm ${namLoc}`;
@@ -361,7 +361,6 @@
                 bieuDoSanLuongGiaoHang.data.datasets[2].data = mangTongTai;
                 bieuDoSanLuongGiaoHang.update();
                 // Ẩn dòng chữ "Đang tải dữ liệu..." đi vì đã tải xong
-                const oLoading = document.getElementById('loading');
                 if (oLoading) oLoading.style.display = 'none';
             // Có nhiệm vụ bắt lỗi. Nếu thiếu phân chỉ mục dữ liệu (Index) của Firebase, phần này sẽ hiển thị một đường link màu xanh hướng dẫn bạn click vào để tạo Index
             } catch (e) { 
@@ -383,7 +382,6 @@
             }
         }
 
-        taiDuLieuBieuDoSanLuongGiaoHangTuServer(); // giống như nút START tự động để kích hoạt tất cả các lệnh trên chạy
     </script>
 </body>
 </html>
