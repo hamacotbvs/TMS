@@ -464,7 +464,7 @@
             try {
                 // 1. Tự động đổi tên tiêu đề biểu đồ theo năm được chọn
                 const tieuDeSLGH = document.getElementById('tieuDeBieuDoSanLuongGiaoHang'); if (tieuDeSLGH) tieuDeSLGH.innerText = `Sản lượng giao hàng năm ${namLoc}`; // Tiêu đề Sản lượng giao hàng
-                const tieuDeDTGH = document.getElementById('tieuDeBieuDoDoanhThuGiaoHang'); if (tieuDeDTGH) tieuDeDTGH.innerText = `Doanh thu năm ${namLoc}`; // Tiêu đề Doanh thu giao hàng
+                const tieuDeDTGH = document.getElementById('tieuDeBieuDoDoanhThuGiaoHang'); if (tieuDeDTGH) tieuDeDTGH.innerText = `Doanh thu giao hàng năm ${namLoc}`; // Tiêu đề Doanh thu giao hàng
                 // 2. Hiện lại khung Loading trong lúc đợi server phản hồi dữ liệu mới
                 const oLoading = document.getElementById('loading'); if (oLoading) {oLoading.innerHTML = `<i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...`;oLoading.style.display = 'flex';}
 
