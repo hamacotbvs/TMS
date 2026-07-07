@@ -62,7 +62,7 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                <h2 class="tieu-de-bieu-do">Sản lượng giao hàng.</h2>
+                <h2 class="tieu-de-bieu-do">Sản lượng giao hàng</h2>
                 <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...</div>
                 <div class="vung-bieu-do">
                     <canvas id="bieuDoSanLuongGiaoHang"></canvas>
@@ -152,14 +152,14 @@
                 datasets: [
                     { 
                         label: 'Giao hàng', 
-                        data: Array(12).fill(0), 
+                        data: Array(12).fill(0), // Tạo sẵn 12 mảng dữ liệu ban đầu bằng 0 để chờ đổ dữ liệu từ server vào sau
                         backgroundColor: '#3498db', 
-                        borderRadius: 4,           
-                        borderSkipped: 'bottom',    
-                        barPercentage: 0.8,         // Tăng từ 0.5 lên 0.8 để cột Xanh to ra
+                        borderRadius: 4,           // Bo tròn nhẹ 4px ở các góc đỉnh cột
+                        borderSkipped: 'bottom',    // Giữ nguyên góc vuông ở đáy cột
+                        barPercentage: 0.8,         // Điều chỉnh độ rộng của cột chiếm 80% không gian cho phép
                         categoryPercentage: 0.8,     // Thêm thuộc tính này để tối ưu khoảng cách nhóm         
-                        grouped: false, 
-                        order: 3,
+                        grouped: false,             // Tắt tính năng tự động chia cụm đứng cạnh nhau, ép các cột phải nằm đè, lồng vào nhau
+                        order: 3,                   // Thứ tự vẽ dưới cùng (vẽ trước) để cột khác có thể đè lên
                         datalabels: { display: false } 
                     },
                     { 
@@ -168,7 +168,7 @@
                         backgroundColor: '#e74c3c', 
                         borderRadius: 4,            
                         borderSkipped: 'bottom',    
-                        barPercentage: 0.7,         // Tăng từ 0.25 lên 0.4 để cột Đỏ lồng bên trong cũng to lên tương ứng
+                        barPercentage: 0.7,         // Nhỏ hơn cột xanh để nằm lọt lòng bên trong
                         categoryPercentage: 0.8,     // Đồng bộ với cột xanh        
                         grouped: false, 
                         order: 2,
@@ -177,25 +177,26 @@
                     { 
                         label: 'Tổng', 
                         data: Array(12).fill(0), 
-                        type: 'line', 
+                        type: 'line',           // Chuyển riêng lớp này thành biểu đồ đường
                         borderColor: '#f1c40f',     
                         backgroundColor: '#f1c40f', 
                         borderWidth: 1, 
-                        tension: 0,                 
-                        pointRadius: 0,             
+                        tension: 0,           // Đường kẻ thăng gãy khúc vuông vắn, không uốn cong    
+                        pointRadius: 0,         // Ẩn các chấm tròn tại các nút giao dữ liệu          
                         pointHoverRadius: 0,        
-                        fill: false, 
+                        fill: false,            // Không đổ màu vùng dưới đường kẻ
                         order: 1,
                         datalabels: { display: false }
                     }
                 ]
             },
+            // Cấu hình Hiển thị và Tương tác (Options)
             options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
+                responsive: true,                   // Giúp biểu đồ tự động co giãn vừa vặn khi xoay ngang/dọc màn hình điện thoại
+                maintainAspectRatio: false,         // Giúp biểu đồ tự động co giãn vừa vặn khi xoay ngang/dọc màn hình điện thoại
                 plugins: {
                     datalabels: { display: false },
-                    legend: {
+                    legend: {                        // Định dạng hộp ghi chú (Tổng, Gửi chành, Giao hàng) nằm ở trên cùng (top) sử dụng biểu tượng hình chữ nhật bo góc (rectRounded).
                         position: 'top',
                         labels: {
                             usePointStyle: true,    
@@ -204,40 +205,40 @@
                             padding: 20
                         }
                     },
-                    tooltip: { enabled: false }
+                    tooltip: { enabled: false }      // Không hiện dữ liệu khi click chuột vào cột
                 },
+                // Định dạng trục tọa độ (Scales)
                 scales: { 
                     x: {
-                        grid: { display: false },  
+                        grid: { display: false },  // Ẩn các đường lưới dọc kẻ xuống
                         ticks: { color: '#94a3b8', font: { size: 12 } }
                     },
                     y: {
-                        beginAtZero: true,
-                        grid: { color: '#f0f2f5' }, 
-                        grace: '35%', 
+                        beginAtZero: true,          // Trục Y luôn bắt đầu từ số 0
+                        grid: { color: '#f0f2f5' }, // Tạo đường lưới ngang màu xám nhạt
+                        grace: '35%',               // Tạo khoảng trống 35% ở trên đỉnh biểu đồ để lấy chỗ viết chữ
                         ticks: {
                             color: '#94a3b8',
                             font: { size: 12 },
                             callback: function(value) {
-                                return (value / 1000).toLocaleString('vi-VN') + 'T';
+                                return (value / 1000).toLocaleString('vi-VN') + 'T';    // Đổi kg thành đơn vị Tấn (T) để hiển thị ở trục dọc
                             }
                         }
                     }
                 }
             },
+            // Tự vẽ 3 dòng chữ trên đầu cột (Custom Plugin)
             plugins: [{
                 id: 'customDatalabelsColors',
                 afterDatasetsDraw(chart) {
                     const { ctx: KhungVeBieuDoSanLuongGiaoHang } = chart;
-                    const metaCotGiaoHang = chart.getDatasetMeta(0); 
-
+                    const metaCotGiaoHang = chart.getDatasetMeta(0);        // Lấy tọa độ pixel của cột Giao hàng
                     metaCotGiaoHang.data.forEach((element, index) => {
                         const vTongTai = chart.data.datasets[2].data[index] || 0;
                         if (vTongTai === 0) return; 
-
                         const vGiaoHang = chart.data.datasets[0].data[index] || 0;
                         const vGuiChanh = chart.data.datasets[1].data[index] || 0;
-
+                        // Xử lý làm tròn hoặc giữ số thập phân tùy thuộc giá trị lớn/nhỏ hơn 1
                         // Đổi chia 1000 sang giá trị số gốc trước
                         const nTong  = vTongTai / 1000;
                         const nGiao  = vGiaoHang / 1000;
@@ -248,85 +249,76 @@
                         const tChanh = nChanh >= 1 ? Math.round(nChanh) : nChanh.toFixed(1);
 
                         const x = element.x;
-                        let y = element.y - 36; 
-
+                        let y = element.y - 36; // Vị trí xuất phát của dòng đầu tiên (cách đỉnh cột 36px)
+                        // Tiến hành viết chữ số tấn thủ công lên màn hình
                         KhungVeBieuDoSanLuongGiaoHang.save();
                         KhungVeBieuDoSanLuongGiaoHang.font = 'bold 10px Roboto, sans-serif';
                         KhungVeBieuDoSanLuongGiaoHang.textAlign = 'center';
                         KhungVeBieuDoSanLuongGiaoHang.textBaseline = 'middle';
-
                         // Dòng 1: Tổng tải (Vàng)
                         KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#d4ac0d';
                         KhungVeBieuDoSanLuongGiaoHang.fillText(tTong, x, y);
-
-                        // Dòng 2: Giao hàng (Xanh)
+                        // Dòng 2: Giao hàng (Xanh) (nằm thấp hơn dòng 1 là 12px)
                         KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#3498db';
                         KhungVeBieuDoSanLuongGiaoHang.fillText(tGiao, x, y + 12);
-
-                        // Dòng 3: Gửi chành (Đỏ)
+                        // Dòng 3: Gửi chành (Đỏ) (nằm thấp hơn dòng 1 là 24px)
                         KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#e74c3c';
                         KhungVeBieuDoSanLuongGiaoHang.fillText(tChanh, x, y + 24);
-
                         KhungVeBieuDoSanLuongGiaoHang.restore();
                     });
                 }
             }]
         });
 
-        // HÀM TẢI DỮ LIỆU TỐI ƯU TỐC ĐỘ (Xử lý song song bằng Promise.all)
-        async function taiDuLieuBieuDoTuServer() {
+        // HÀM TẢI DỮ LIỆU TỪ SERVER FIRE
+        async function taiDuLieuBieuDoSanLuongGiaoHangTuServer() {
             try {
-                const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
+                const thamChieuTuyenDuong = collection(db, "TUYENDUONG"); // Kết nối tới bảng dữ liệu tên là TUYENDUONG trên Cloud Firestore
                 
                 let mangGiaoHang = Array(12).fill(0);
                 let mangGuiChanh = Array(12).fill(0);
                 let mangTongTai = Array(12).fill(0);
 
-                const cacYeuCauTinhToan = [];
+                const cacYeuCauTinhToanSanLuongGiaoHang = [];
 
                 for (let thang = 1; thang <= 12; thang++) {
                     // Gom lệnh tính tổng Giao hàng
-                    const qGiaoHang = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));
-                    cacYeuCauTinhToan.push(
-                        getAggregateFromServer(qGiaoHang, { tongTai: sum('tTai') }).then(res => {
+                    const qGiaoHang = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));  // Lập câu lệnh truy vấn lọc theo tháng và loại hình "Giao hàng"
+                    cacYeuCauTinhToanSanLuongGiaoHang.push(
+                        getAggregateFromServer(qGiaoHang, { tongTai: sum('tTai') }).then(res => {   // Sử dụng hàm tính tổng (sum) trực tiếp từ Server để giảm tải dung lượng mạng
                             mangGiaoHang[thang - 1] = res.data().tongTai || 0;
                         })
                     );
-
                     // Gom lệnh tính tổng Gửi chành
                     const qGuiChanh = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Gửi chành"));
-                    cacYeuCauTinhToan.push(
+                    cacYeuCauTinhToanSanLuongGiaoHang.push(
                         getAggregateFromServer(qGuiChanh, { tongTai: sum('tTai') }).then(res => {
                             mangGuiChanh[thang - 1] = res.data().tongTai || 0;
                         })
                     );
                 }
-
                 // Gửi gộp tất cả yêu cầu lên server cùng một lúc
-                await Promise.all(cacYeuCauTinhToan);
-
-                // Tính toán mảng Tổng tải
+                await Promise.all(cacYeuCauTinhToanSanLuongGiaoHang);
+                // Sau khi có dữ liệu Giao hàng/Gửi chành, cộng dồn lại để ra mảng Tổng tải (Màu Vàng)
                 for (let i = 0; i < 12; i++) {
                     mangTongTai[i] = mangGiaoHang[i] + mangGuiChanh[i];
                 }
-
-                // Cập nhật lại biểu đồ
+                // Cập nhật mảng dữ liệu mới chạy vào biểu đồ và vẽ lại
                 bieuDoSanLuongGiaoHang.data.datasets[0].data = mangGiaoHang;
                 bieuDoSanLuongGiaoHang.data.datasets[1].data = mangGuiChanh;
                 bieuDoSanLuongGiaoHang.data.datasets[2].data = mangTongTai;
                 bieuDoSanLuongGiaoHang.update();
-
+                // Ẩn dòng chữ "Đang tải dữ liệu..." đi vì đã tải xong
                 const oLoading = document.getElementById('loading');
                 if (oLoading) oLoading.style.display = 'none';
+            // Có nhiệm vụ bắt lỗi. Nếu thiếu phân chỉ mục dữ liệu (Index) của Firebase, phần này sẽ hiển thị một đường link màu xanh hướng dẫn bạn click vào để tạo Index
             } catch (e) { 
                 console.error("Lỗi đầy đủ:", e);
-    
                 let linkIndex = "";
                 if (e.message && e.message.includes("https://")) {
                     const match = e.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
                     if (match) linkIndex = match[0];
                 }
-
                 const oLoading = document.getElementById('loading');
                 if (oLoading) {
                     if (linkIndex) {
@@ -339,7 +331,7 @@
             }
         }
 
-        taiDuLieuBieuDoTuServer(); 
+        taiDuLieuBieuDoSanLuongGiaoHangTuServer(); // giống như nút START tự động để kích hoạt tất cả các lệnh trên chạy
     </script>
 </body>
 </html>
