@@ -138,6 +138,10 @@
             appId: "1:593078964705:web:44302d0eb998c2c27542a0",
         };
 
+        // KHỞI TẠO FIREBASE
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         // CHUYỂN QUA LẠI CÁC TAB
         function switchTab(targetElement, tabId) { 
             document.querySelectorAll('.trang-content').forEach(p => p.classList.remove('active'));
@@ -197,10 +201,6 @@
                 console.log("Ngày hệ thống nhận:", e.target.value);
             });
         }
-
-        // KHỞI TẠO FIREBASE
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
 
         // BIỂU ĐỒ CỘT LỒNG VÀ ĐƯỜNG
         Chart.register(ChartDataLabels); // Kích hoạt plugin giúp vẽ các nhãn dữ liệu (chữ, số) trực tiếp lên biểu đồ
