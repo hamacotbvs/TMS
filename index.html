@@ -349,14 +349,14 @@
 
                 for (let thang = 1; thang <= 12; thang++) {
                     // Gom lệnh tính tổng Giao hàng
-                    const qGiaoHang = query(thamChieuTuyenDuong, where("nam", "==", namLoc), where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));  // Lập câu lệnh truy vấn lọc theo năm, tháng và loại hình "Giao hàng"
+                    const qGiaoHang = query(thamChieuTuyenDuong, where("nam", "==", namLoc), where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]), where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));  // Lập câu lệnh truy vấn lọc theo năm, tháng và loại hình "Giao hàng"
                     cacYeuCauTinhToanSanLuongGiaoHang.push(
                         getAggregateFromServer(qGiaoHang, { tongTai: sum('tTai') }).then(res => {   // Sử dụng hàm tính tổng (sum) trực tiếp từ Server để giảm tải dung lượng mạng
                             mangGiaoHang[thang - 1] = res.data().tongTai || 0;
                         })
                     );
                     // Gom lệnh tính tổng Gửi chành
-                    const qGuiChanh = query(thamChieuTuyenDuong, where("nam", "==", namLoc), where("thang", "==", thang), where("htGiaoNhan", "==", "Gửi chành"));
+                    const qGuiChanh = query(thamChieuTuyenDuong, where("nam", "==", namLoc), where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]), where("thang", "==", thang), where("htGiaoNhan", "==", "Gửi chành"));
                     cacYeuCauTinhToanSanLuongGiaoHang.push(
                         getAggregateFromServer(qGuiChanh, { tongTai: sum('tTai') }).then(res => {
                             mangGuiChanh[thang - 1] = res.data().tongTai || 0;
