@@ -65,7 +65,7 @@
                 <h2 class="tieu-de-bieu-do">Sản lượng giao hàng</h2>
                 <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...</div>
                 <div class="vung-bieu-do">
-                    <canvas id="bieuDoTaiTrongThang"></canvas>
+                    <canvas id="bieuDoSanLuongGiaoHang"></canvas>
                 </div>
             </div>
         </div>
@@ -133,26 +133,19 @@
 
         // NÚT RESET
         const idNutLamMoi = document.getElementById('NUT-LAM-MOI-APP');
-        if (idNutLamMoi) {
-            idNutLamMoi.addEventListener('click', () => {
-                const iconSvg = idNutLamMoi.querySelector('svg'); 
-                if (iconSvg) {
-                    iconSvg.style.transform = 'rotate(360deg)'; 
-                    iconSvg.style.transition = 'transform 0.4s ease';
-                } 
-                setTimeout(() => { window.location.reload(); }, 350); 
-            });
-        }
+        if (idNutLamMoi) {idNutLamMoi.addEventListener('click', () => {const iconSvg = idNutLamMoi.querySelector('svg'); 
+                if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} 
+                setTimeout(() => { window.location.reload(); }, 350); });}
 
         // KHỞI TẠO FIREBASE
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         // BIỂU ĐỒ CỘT LỒNG VÀ ĐƯỜNG
-        Chart.register(ChartDataLabels);
+        Chart.register(ChartDataLabels); // Kích hoạt plugin giúp vẽ các nhãn dữ liệu (chữ, số) trực tiếp lên biểu đồ
 
-        const ctx = document.getElementById('bieuDoTaiTrongThang').getContext('2d');
-        const bieuDo = new Chart(ctx, {
+        const KhungVeBieuDoSanLuongGiaoHang = document.getElementById('bieuDoSanLuongGiaoHang').getContext('2d');
+        const bieuDo = new Chart(KhungVeBieuDoSanLuongGiaoHang, {
             type: 'bar',
             data: {
                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
@@ -235,7 +228,7 @@
             plugins: [{
                 id: 'customDatalabelsColors',
                 afterDatasetsDraw(chart) {
-                    const { ctx } = chart;
+                    const { KhungVeBieuDoSanLuongGiaoHang } = chart;
                     const metaCotGiaoHang = chart.getDatasetMeta(0); 
 
                     metaCotGiaoHang.data.forEach((element, index) => {
@@ -257,24 +250,24 @@
                         const x = element.x;
                         let y = element.y - 36; 
 
-                        ctx.save();
-                        ctx.font = 'bold 10px Roboto, sans-serif';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
+                        KhungVeBieuDoSanLuongGiaoHang.save();
+                        KhungVeBieuDoSanLuongGiaoHang.font = 'bold 10px Roboto, sans-serif';
+                        KhungVeBieuDoSanLuongGiaoHang.textAlign = 'center';
+                        KhungVeBieuDoSanLuongGiaoHang.textBaseline = 'middle';
 
                         // Dòng 1: Tổng tải (Vàng)
-                        ctx.fillStyle = '#d4ac0d';
-                        ctx.fillText(tTong, x, y);
+                        KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#d4ac0d';
+                        KhungVeBieuDoSanLuongGiaoHang.fillText(tTong, x, y);
 
                         // Dòng 2: Giao hàng (Xanh)
-                        ctx.fillStyle = '#3498db';
-                        ctx.fillText(tGiao, x, y + 12);
+                        KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#3498db';
+                        KhungVeBieuDoSanLuongGiaoHang.fillText(tGiao, x, y + 12);
 
                         // Dòng 3: Gửi chành (Đỏ)
-                        ctx.fillStyle = '#e74c3c';
-                        ctx.fillText(tChanh, x, y + 24);
+                        KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#e74c3c';
+                        KhungVeBieuDoSanLuongGiaoHang.fillText(tChanh, x, y + 24);
 
-                        ctx.restore();
+                        KhungVeBieuDoSanLuongGiaoHang.restore();
                     });
                 }
             }]
