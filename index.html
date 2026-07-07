@@ -77,7 +77,7 @@
                 <input type="date" id="ngayHienHanh" class="o-lich-an-giao-dien">
             </div>
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                <h2 class="tieu-de-bieu-do">Sản lượng giao hàng qua các tháng</h2>
+                <h2 class="tieu-de-bieu-do" id="tieuDeBieuDo">Sản lượng giao hàng năm</h2>
                 <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...</div>
                 <div class="vung-bieu-do">
                     <canvas id="bieuDoSanLuongGiaoHang"></canvas>
@@ -166,6 +166,8 @@
             // 2. Hiển thị chữ mặc định lên 2 dòng (bỏ số 0 vô nghĩa ở đầu ví dụ: 07/07 thành 7/7)
             txtNgayThang.innerText = `${homNay.getDate()}/${homNay.getMonth() + 1}`;
             txtNam.innerText = namGoc;
+            // Tự động chạy tải dữ liệu theo năm hiện hành ngay khi mở app
+            taiDuLieuBieuDoSanLuongGiaoHangTuServer(namGoc);
             // 3. Lắng nghe khi bạn bấm chọn lại ngày khác trên lịch
             oChonNgay.addEventListener('change', (e) => {
                 if (!e.target.value) return;
@@ -177,6 +179,8 @@
                 txtNgayThang.innerText = `${d}/${m}`;
                 txtNam.innerText = y;
                 console.log("Ngày hệ thống nhận:", e.target.value);
+                // Gọi lại hàm tải dữ liệu với NĂM MỚI vừa chọn
+                taiDuLieuBieuDoSanLuongGiaoHangTuServer(y);
             });
         }
 
@@ -316,6 +320,11 @@
         // HÀM TẢI DỮ LIỆU TỪ SERVER FIRE
         async function taiDuLieuBieuDoSanLuongGiaoHangTuServer() {
             try {
+                // 1. Tự động đổi tên tiêu đề biểu đồ theo năm được chọn
+                const tieuDe = document.getElementById('tieuDeBieuDo'); if (tieuDe) tieuDe.innerText = `Sản lượng giao hàng năm ${namLoc}`;
+                // 2. Hiện lại khung Loading trong lúc đợi server phản hồi dữ liệu mới
+                const oLoading = document.getElementById('loading'); if (oLoading) {oLoading.innerHTML = `<i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...`;oLoading.style.display = 'flex';}
+
                 const thamChieuTuyenDuong = collection(db, "TUYENDUONG"); // Kết nối tới bảng dữ liệu tên là TUYENDUONG trên Cloud Firestore
                 
                 let mangGiaoHang = Array(12).fill(0);
@@ -326,14 +335,14 @@
 
                 for (let thang = 1; thang <= 12; thang++) {
                     // Gom lệnh tính tổng Giao hàng
-                    const qGiaoHang = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));  // Lập câu lệnh truy vấn lọc theo tháng và loại hình "Giao hàng"
+                    const qGiaoHang = query(thamChieuTuyenDuong, where("nam", "==", namLoc), where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));  // Lập câu lệnh truy vấn lọc theo năm, tháng và loại hình "Giao hàng"
                     cacYeuCauTinhToanSanLuongGiaoHang.push(
                         getAggregateFromServer(qGiaoHang, { tongTai: sum('tTai') }).then(res => {   // Sử dụng hàm tính tổng (sum) trực tiếp từ Server để giảm tải dung lượng mạng
                             mangGiaoHang[thang - 1] = res.data().tongTai || 0;
                         })
                     );
                     // Gom lệnh tính tổng Gửi chành
-                    const qGuiChanh = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Gửi chành"));
+                    const qGuiChanh = query(thamChieuTuyenDuong, where("nam", "==", namLoc), where("thang", "==", thang), where("htGiaoNhan", "==", "Gửi chành"));
                     cacYeuCauTinhToanSanLuongGiaoHang.push(
                         getAggregateFromServer(qGuiChanh, { tongTai: sum('tTai') }).then(res => {
                             mangGuiChanh[thang - 1] = res.data().tongTai || 0;
