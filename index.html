@@ -158,18 +158,6 @@
                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
                 datasets: [
                     { 
-                        label: 'Gửi chành', 
-                        data: Array(12).fill(0), 
-                        backgroundColor: '#e74c3c', 
-                        borderRadius: 6,            
-                        borderSkipped: 'bottom',    
-                        barPercentage: 0.4,         // Tăng từ 0.25 lên 0.4 để cột Đỏ lồng bên trong cũng to lên tương ứng
-                        categoryPercentage: 0.8,     // Đồng bộ với cột xanh        
-                        grouped: false, 
-                        order: 2,
-                        datalabels: { display: false } 
-                    },
-                    { 
                         label: 'Giao hàng', 
                         data: Array(12).fill(0), 
                         backgroundColor: '#3498db', 
@@ -179,6 +167,18 @@
                         categoryPercentage: 0.8,     // Thêm thuộc tính này để tối ưu khoảng cách nhóm         
                         grouped: false, 
                         order: 3,
+                        datalabels: { display: false } 
+                    },
+                    { 
+                        label: 'Gửi chành', 
+                        data: Array(12).fill(0), 
+                        backgroundColor: '#e74c3c', 
+                        borderRadius: 6,            
+                        borderSkipped: 'bottom',    
+                        barPercentage: 0.4,         // Tăng từ 0.25 lên 0.4 để cột Đỏ lồng bên trong cũng to lên tương ứng
+                        categoryPercentage: 0.8,     // Đồng bộ với cột xanh        
+                        grouped: false, 
+                        order: 2,
                         datalabels: { display: false } 
                     },
                     { 
