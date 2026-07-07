@@ -178,9 +178,9 @@
                 // Cập nhật lại 2 dòng chữ hiển thị mới theo đúng ý bạn
                 txtNgayThang.innerText = `${d}/${m}`;
                 txtNam.innerText = y;
-                console.log("Ngày hệ thống nhận:", e.target.value);
                 // Gọi lại hàm tải dữ liệu với NĂM MỚI vừa chọn
                 taiDuLieuBieuDoSanLuongGiaoHangTuServer(y);
+                console.log("Ngày hệ thống nhận:", e.target.value);
             });
         }
 
