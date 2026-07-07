@@ -43,9 +43,8 @@
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
         /* KHUNG CHỌN NGÀY HIỆN HÀNH */
-        .khung-chon-ngay {display: flex; justify-content: center; align-items: center; margin-bottom: 15px; gap: 8px;}
-        .o-chon-ngay {padding: 6px 14px; font-size: 14px; font-weight: 500; color: #475569; border: 1px solid #cbd5e1; border-radius: 20px; background-color: #f8fafc; outline: none; cursor: pointer; transition: all 0.2s ease; text-align: center;}
-        .o-chon-ngay:focus, .o-chon-ngay:hover {border-color: #007acc; background-color: #fff; box-shadow: 0 2px 8px rgba(0, 122, 204, 0.1);}
+        .vung-tiện-ich-home {position: absolute; top: 15px; right: 70px; /* Cách nút Reset một khoảng để không bị chồng lên nhau */ z-index: 1000; display: flex; align-items: center; gap: 6px; background: #ffffff; padding: 5px 12px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #edf2f4;}
+        .o-chon-ngay-home {border: none; outline: none; background: transparent; font-size: 13px; font-weight: 700; color: #007acc; cursor: pointer; font-family: 'Roboto', sans-serif; padding: 0;}
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
         .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
@@ -65,9 +64,12 @@
     <div class="KHUNG-CAC-TAB">
         
         <div id="home" class="trang-content active">
+            <div class="vung-tiện-ich-home">
+                <i class="fa-regular fa-calendar-days" style="color: #007acc; font-size: 14px;"></i>
+                <input type="date" id="ngayHienHanh" class="o-chon-ngay-home">
+            </div>
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
                 <h2 class="tieu-de-bieu-do">Sản lượng giao hàng qua các tháng</h2>
-                <div class="khung-chon-ngay"> <i class="fa-regular fa-calendar-days" style="color: #007acc;"></i> <input type="date" id="ngayHienHanh" class="o-chon-ngay"> </div>
                 <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...</div>
                 <div class="vung-bieu-do">
                     <canvas id="bieuDoSanLuongGiaoHang"></canvas>
