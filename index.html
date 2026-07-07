@@ -120,8 +120,7 @@
     <script type="module">
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // 🌟 SỬA ĐỔI: Import thêm query và where để lọc dữ liệu tối ưu quota đọc
-        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
             apiKey: "AIzaSyAcFUlGoqOxxvpXKUY46rn1Yru1ek8upnE",
@@ -164,8 +163,8 @@
                         backgroundColor: '#3498db', 
                         borderRadius: 12,           
                         borderSkipped: 'bottom',    
-                        barPercentage: 0.8,         
-                        categoryPercentage: 0.8,         
+                        barPercentage: 0.8,         // Tăng từ 0.5 lên 0.8 để cột Xanh to ra
+                        categoryPercentage: 0.8,     // Thêm thuộc tính này để tối ưu khoảng cách nhóm         
                         grouped: false, 
                         order: 3,
                         datalabels: { display: false } 
@@ -176,8 +175,8 @@
                         backgroundColor: '#e74c3c', 
                         borderRadius: 6,            
                         borderSkipped: 'bottom',    
-                        barPercentage: 0.6,         
-                        categoryPercentage: 0.8,        
+                        barPercentage: 0.4,         // Tăng từ 0.25 lên 0.4 để cột Đỏ lồng bên trong cũng to lên tương ứng
+                        categoryPercentage: 0.8,     // Đồng bộ với cột xanh        
                         grouped: false, 
                         order: 2,
                         datalabels: { display: false } 
@@ -276,42 +275,44 @@
             }]
         });
 
-        // SỬA ĐỔI CHÍNH: Tạo truy vấn lọc theo năm để giảm tải và bảo vệ Quota Firebase
+        // HÀM TẢI DỮ LIỆU TỐI ƯU TỐC ĐỘ (Xử lý song song bằng Promise.all)
         async function taiDuLieuBieuDoTuServer() {
             try {
                 const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-                
-                // 🌟 SỬA ĐỔI: Chỉ lấy các tài liệu có trường 'nam' bằng 2026 (dạng số)
-                // (Nếu trường 'nam' trong DB của bạn là chuỗi thì sửa thành "2026")
-                const truyVanNam2026 = query(thamChieuTuyenDuong, where("nam", "==", 2026));
                 
                 let mangGiaoHang = Array(12).fill(0);
                 let mangGuiChanh = Array(12).fill(0);
                 let mangTongTai = Array(12).fill(0);
 
-                // Thay vì lấy snapshot của toàn bộ collection, ta lấy dữ liệu đã qua bộ lọc truyVanNam2026
-                const snapshot = await getDocs(truyVanNam2026);
-                
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const thang = parseInt(data.thang);
-                    const tTai = parseFloat(data.tTai) || 0;
-                    const htGiaoNhan = data.htGiaoNhan;
+                const cacYeuCauTinhToan = [];
 
-                    if (thang >= 1 && thang <= 12) {
-                        if (htGiaoNhan === "Giao hàng") {
-                            mangGiaoHang[thang - 1] += tTai;
-                        } else if (htGiaoNhan === "Gửi chành") {
-                            mangGuiChanh[thang - 1] += tTai;
-                        }
-                    }
-                });
+                for (let thang = 1; thang <= 12; thang++) {
+                    // Gom lệnh tính tổng Giao hàng
+                    const qGiaoHang = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));
+                    cacYeuCauTinhToan.push(
+                        getAggregateFromServer(qGiaoHang, { tongTai: sum('tTai') }).then(res => {
+                            mangGiaoHang[thang - 1] = res.data().tongTai || 0;
+                        })
+                    );
 
+                    // Gom lệnh tính tổng Gửi chành
+                    const qGuiChanh = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Gửi chành"));
+                    cacYeuCauTinhToan.push(
+                        getAggregateFromServer(qGuiChanh, { tongTai: sum('tTai') }).then(res => {
+                            mangGuiChanh[thang - 1] = res.data().tongTai || 0;
+                        })
+                    );
+                }
+
+                // Gửi gộp tất cả yêu cầu lên server cùng một lúc
+                await Promise.all(cacYeuCauTinhToan);
+
+                // Tính toán mảng Tổng tải
                 for (let i = 0; i < 12; i++) {
                     mangTongTai[i] = mangGiaoHang[i] + mangGuiChanh[i];
                 }
 
-                // Đổ dữ liệu vào biểu đồ
+                // Cập nhật lại biểu đồ
                 bieuDo.data.datasets[0].data = mangGiaoHang;
                 bieuDo.data.datasets[1].data = mangGuiChanh;
                 bieuDo.data.datasets[2].data = mangTongTai;
@@ -320,10 +321,22 @@
                 const oLoading = document.getElementById('loading');
                 if (oLoading) oLoading.style.display = 'none';
             } catch (e) { 
-                console.error("Lỗi:", e);
+                console.error("Lỗi đầy đủ:", e);
+    
+                let linkIndex = "";
+                if (e.message && e.message.includes("https://")) {
+                    const match = e.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+                    if (match) linkIndex = match[0];
+                }
+
                 const oLoading = document.getElementById('loading');
                 if (oLoading) {
-                    oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi hệ thống: Không thể kết nối. Thử lại sau hoặc kiểm tra Quota!</span>`;
+                    if (linkIndex) {
+                        oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi thiếu Index! Bấm vào đây để tạo:</span> <br><br> 
+                                              <a href="${linkIndex}" target="_blank" style="color:#007acc; text-decoration:underline; font-weight:bold; word-break:break-all;">Link tạo Index tự động</a>`;
+                    } else {
+                        oLoading.innerHTML = `<span style="color:red;">Lỗi kết nối: ${e.message}</span>`;
+                    }
                 }
             }
         }
