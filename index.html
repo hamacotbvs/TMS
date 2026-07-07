@@ -158,18 +158,6 @@
                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
                 datasets: [
                     { 
-                        label: 'Giao hàng', 
-                        data: Array(12).fill(0), 
-                        backgroundColor: '#3498db', 
-                        borderRadius: 12,           
-                        borderSkipped: 'bottom',    
-                        barPercentage: 0.8,         // Tăng từ 0.5 lên 0.8 để cột Xanh to ra
-                        categoryPercentage: 0.8,     // Thêm thuộc tính này để tối ưu khoảng cách nhóm         
-                        grouped: false, 
-                        order: 3,
-                        datalabels: { display: false } 
-                    },
-                    { 
                         label: 'Gửi chành', 
                         data: Array(12).fill(0), 
                         backgroundColor: '#e74c3c', 
@@ -182,7 +170,19 @@
                         datalabels: { display: false } 
                     },
                     { 
-                        label: 'Tổng tTai', 
+                        label: 'Giao hàng', 
+                        data: Array(12).fill(0), 
+                        backgroundColor: '#3498db', 
+                        borderRadius: 12,           
+                        borderSkipped: 'bottom',    
+                        barPercentage: 0.8,         // Tăng từ 0.5 lên 0.8 để cột Xanh to ra
+                        categoryPercentage: 0.8,     // Thêm thuộc tính này để tối ưu khoảng cách nhóm         
+                        grouped: false, 
+                        order: 3,
+                        datalabels: { display: false } 
+                    },
+                    { 
+                        label: 'Tổng', 
                         data: Array(12).fill(0), 
                         type: 'line', 
                         borderColor: '#f1c40f',     
