@@ -41,7 +41,7 @@
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
                 <h2 class="tieu-de-bieu-do">Biểu đồ Tải trọng & Sản lượng năm 2026</h2>
-                <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Server đang tính tổng từng tháng...</div>
+                <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...</div>
                 <div class="vung-bieu-do">
                     <canvas id="bieuDoTaiTrongThang"></canvas>
                 </div>
@@ -81,7 +81,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getAggregateFromServer, sum } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
             apiKey: "AIzaSyAcFUlGoqOxxvpXKUY46rn1Yru1ek8upnE",
@@ -95,7 +95,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Đăng ký plugin hiển thị nhãn số liệu
         Chart.register(ChartDataLabels);
 
         const ctx = document.getElementById('bieuDoTaiTrongThang').getContext('2d');
@@ -138,7 +137,7 @@
                         pointHoverRadius: 0,        
                         fill: false, 
                         order: 1,
-                        datalabels: { display: false } // Tắt nhãn mặc định để xử lý qua plugin vẽ thủ công bên dưới
+                        datalabels: { display: false }
                     }
                 ]
             },
@@ -166,7 +165,7 @@
                     y: {
                         beginAtZero: true,
                         grid: { color: '#f0f2f5' }, 
-                        grace: '35%', // Đẩy trần đồ thị cao lên để chừa khoảng không cho các số xếp chồng
+                        grace: '35%', 
                         ticks: {
                             color: '#94a3b8',
                             font: { size: 12 },
@@ -177,16 +176,15 @@
                     }
                 }
             },
-            // Giao diện vẽ số liệu tập trung trên đầu cột cao nhất kèm màu chữ đồng bộ biệt lập
             plugins: [{
                 id: 'customDatalabelsColors',
                 afterDatasetsDraw(chart) {
                     const { ctx } = chart;
-                    const metaCotGiaoHang = chart.getDatasetMeta(0); // Lấy vị trí cột Giao hàng làm gốc tọa độ đỉnh
+                    const metaCotGiaoHang = chart.getDatasetMeta(0); 
 
                     metaCotGiaoHang.data.forEach((element, index) => {
                         const vTongTai = chart.data.datasets[2].data[index] || 0;
-                        if (vTongTai === 0) return; // Tháng nào không có tải trọng thì bỏ qua
+                        if (vTongTai === 0) return; 
 
                         const vGiaoHang = chart.data.datasets[0].data[index] || 0;
                         const vGuiChanh = chart.data.datasets[1].data[index] || 0;
@@ -196,14 +194,14 @@
                         const tChanh = (vGuiChanh / 1000).toFixed(1);
 
                         const x = element.x;
-                        let y = element.y - 36; // Khoảng cách an toàn phía trên đỉnh cột
+                        let y = element.y - 36; 
 
                         ctx.save();
                         ctx.font = 'bold 10px Roboto, sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
 
-                        // Dòng 1: Tổng tải (Vàng đậm)
+                        // Dòng 1: Tổng tải (Vàng)
                         ctx.fillStyle = '#d4ac0d';
                         ctx.fillText(tTong, x, y);
 
@@ -221,7 +219,7 @@
             }]
         });
 
-        // HÀM TẢI DỮ LIỆU TỐI ƯU TỐC ĐỘ (Xử lý song song bằng Promise.all)
+        // SỬA ĐỔI CHÍNH: Tải toàn bộ và xử lý nội bộ nhằm bảo vệ Quota Firebase
         async function taiDuLieuBieuDoTuServer() {
             try {
                 const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
@@ -230,35 +228,29 @@
                 let mangGuiChanh = Array(12).fill(0);
                 let mangTongTai = Array(12).fill(0);
 
-                const cacYeuCauTinhToan = [];
+                // Chỉ gọi 1 request duy nhất lấy tài nguyên thô
+                const snapshot = await getDocs(thamChieuTuyenDuong);
+                
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const thang = parseInt(data.thang);
+                    const tTai = parseFloat(data.tTai) || 0;
+                    const htGiaoNhan = data.htGiaoNhan;
 
-                for (let thang = 1; thang <= 12; thang++) {
-                    // Gom lệnh tính tổng Giao hàng
-                    const qGiaoHang = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Giao hàng"));
-                    cacYeuCauTinhToan.push(
-                        getAggregateFromServer(qGiaoHang, { tongTai: sum('tTai') }).then(res => {
-                            mangGiaoHang[thang - 1] = res.data().tongTai || 0;
-                        })
-                    );
+                    if (thang >= 1 && thang <= 12) {
+                        if (htGiaoNhan === "Giao hàng") {
+                            mangGiaoHang[thang - 1] += tTai;
+                        } else if (htGiaoNhan === "Gửi chành") {
+                            mangGuiChanh[thang - 1] += tTai;
+                        }
+                    }
+                });
 
-                    // Gom lệnh tính tổng Gửi chành
-                    const qGuiChanh = query(thamChieuTuyenDuong, where("thang", "==", thang), where("htGiaoNhan", "==", "Gửi chành"));
-                    cacYeuCauTinhToan.push(
-                        getAggregateFromServer(qGuiChanh, { tongTai: sum('tTai') }).then(res => {
-                            mangGuiChanh[thang - 1] = res.data().tongTai || 0;
-                        })
-                    );
-                }
-
-                // Gửi gộp tất cả yêu cầu lên server cùng một lúc
-                await Promise.all(cacYeuCauTinhToan);
-
-                // Tính toán mảng Tổng tải
                 for (let i = 0; i < 12; i++) {
                     mangTongTai[i] = mangGiaoHang[i] + mangGuiChanh[i];
                 }
 
-                // Cập nhật lại biểu đồ
+                // Đổ dữ liệu vào biểu đồ
                 bieuDo.data.datasets[0].data = mangGiaoHang;
                 bieuDo.data.datasets[1].data = mangGuiChanh;
                 bieuDo.data.datasets[2].data = mangTongTai;
@@ -267,22 +259,10 @@
                 const oLoading = document.getElementById('loading');
                 if (oLoading) oLoading.style.display = 'none';
             } catch (e) { 
-                console.error("Lỗi đầy đủ:", e);
-    
-                let linkIndex = "";
-                if (e.message && e.message.includes("https://")) {
-                    const match = e.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
-                    if (match) linkIndex = match[0];
-                }
-
+                console.error("Lỗi:", e);
                 const oLoading = document.getElementById('loading');
                 if (oLoading) {
-                    if (linkIndex) {
-                        oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi thiếu Index! Bấm vào đây để tạo:</span> <br><br> 
-                                              <a href="${linkIndex}" target="_blank" style="color:#007acc; text-decoration:underline; font-weight:bold; word-break:break-all;">Link tạo Index tự động</a>`;
-                    } else {
-                        oLoading.innerHTML = `<span style="color:red;">Lỗi kết nối: ${e.message}</span>`;
-                    }
+                    oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi hệ thống: Quota Firebase đang bị khóa tạm thời. Thử lại sau ít phút hoặc nâng cấp gói!</span>`;
                 }
             }
         }
