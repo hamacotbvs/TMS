@@ -43,8 +43,8 @@
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #e6f2ff; color: #007acc;}
         /* KHUNG CHỌN NGÀY HIỆN HÀNH */
-        .vung-tiện-ich-home {position: absolute; top: 15px; right: 70px; /* Cách nút Reset một khoảng để không bị chồng lên nhau */ z-index: 1000; display: flex; align-items: center; gap: 6px; background: #ffffff; padding: 5px 12px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #edf2f4;}
-        .o-chon-ngay-home {border: none; outline: none; background: transparent; font-size: 13px; font-weight: 700; color: #007acc; cursor: pointer; font-family: 'Roboto', sans-serif; padding: 0;}
+        .vung-tiện-ich-home {position: absolute; top: 15px; right: 15px; z-index: 1000; display: flex; align-items: center; gap: 4px; background: #ffffff; padding: 3px 8px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #edf2f4;}
+        .o-chon-ngay-home {border: none; outline: none; background: transparent; font-size: 11px; font-weight: 700; color: #007acc; cursor: pointer; font-family: 'Roboto', sans-serif; padding: 0; width: 85px}
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
         .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
@@ -65,7 +65,7 @@
         
         <div id="home" class="trang-content active">
             <div class="vung-tiện-ich-home">
-                <i class="fa-regular fa-calendar-days" style="color: #007acc; font-size: 14px;"></i>
+                <i class="fa-regular fa-calendar-days" style="color: #007acc; font-size: 11px;"></i>
                 <input type="date" id="ngayHienHanh" class="o-chon-ngay-home">
             </div>
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
