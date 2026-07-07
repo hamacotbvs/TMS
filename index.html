@@ -245,9 +245,14 @@
                         const vGiaoHang = chart.data.datasets[0].data[index] || 0;
                         const vGuiChanh = chart.data.datasets[1].data[index] || 0;
 
-                        const tTong  = (vTongTai / 1000).toFixed(1);
-                        const tGiao  = (vGiaoHang / 1000).toFixed(1);
-                        const tChanh = (vGuiChanh / 1000).toFixed(1);
+                        // Đổi chia 1000 sang giá trị số gốc trước
+                        const nTong  = vTongTai / 1000;
+                        const nGiao  = vGiaoHang / 1000;
+                        const nChanh = vGuiChanh / 1000;
+                        // Logic check: Nếu >= 1 thì làm tròn (Math.round), ngược lại (< 1) thì lấy 1 chữ số thập phân
+                        const tTong  = nTong >= 1 ? Math.round(nTong) : nTong.toFixed(1);
+                        const tGiao  = nGiao >= 1 ? Math.round(nGiao) : nGiao.toFixed(1);
+                        const tChanh = nChanh >= 1 ? Math.round(nChanh) : nChanh.toFixed(1);
 
                         const x = element.x;
                         let y = element.y - 36; 
