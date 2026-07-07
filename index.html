@@ -62,7 +62,7 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                <h2 class="tieu-de-bieu-do">Sản lượng giao hàng</h2>
+                <h2 class="tieu-de-bieu-do">Sản lượng giao hàng.</h2>
                 <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...</div>
                 <div class="vung-bieu-do">
                     <canvas id="bieuDoSanLuongGiaoHang"></canvas>
@@ -144,8 +144,8 @@
         // BIỂU ĐỒ CỘT LỒNG VÀ ĐƯỜNG
         Chart.register(ChartDataLabels); // Kích hoạt plugin giúp vẽ các nhãn dữ liệu (chữ, số) trực tiếp lên biểu đồ
 
-        const KhungVeBieuDoSanLuongGiaoHang = document.getElementById('bieuDoSanLuongGiaoHang').getContext('2d');
-        const bieuDo = new Chart(KhungVeBieuDoSanLuongGiaoHang, {
+        const ctx = document.getElementById('bieuDoSanLuongGiaoHang').getContext('2d');
+        const bieuDo = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
@@ -228,7 +228,7 @@
             plugins: [{
                 id: 'customDatalabelsColors',
                 afterDatasetsDraw(chart) {
-                    const { KhungVeBieuDoSanLuongGiaoHang } = chart;
+                    const { ctx } = chart;
                     const metaCotGiaoHang = chart.getDatasetMeta(0); 
 
                     metaCotGiaoHang.data.forEach((element, index) => {
@@ -250,24 +250,24 @@
                         const x = element.x;
                         let y = element.y - 36; 
 
-                        KhungVeBieuDoSanLuongGiaoHang.save();
-                        KhungVeBieuDoSanLuongGiaoHang.font = 'bold 10px Roboto, sans-serif';
-                        KhungVeBieuDoSanLuongGiaoHang.textAlign = 'center';
-                        KhungVeBieuDoSanLuongGiaoHang.textBaseline = 'middle';
+                        ctx.save();
+                        ctx.font = 'bold 10px Roboto, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
 
                         // Dòng 1: Tổng tải (Vàng)
-                        KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#d4ac0d';
-                        KhungVeBieuDoSanLuongGiaoHang.fillText(tTong, x, y);
+                        ctx.fillStyle = '#d4ac0d';
+                        ctx.fillText(tTong, x, y);
 
                         // Dòng 2: Giao hàng (Xanh)
-                        KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#3498db';
-                        KhungVeBieuDoSanLuongGiaoHang.fillText(tGiao, x, y + 12);
+                        ctx.fillStyle = '#3498db';
+                        ctx.fillText(tGiao, x, y + 12);
 
                         // Dòng 3: Gửi chành (Đỏ)
-                        KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#e74c3c';
-                        KhungVeBieuDoSanLuongGiaoHang.fillText(tChanh, x, y + 24);
+                        ctx.fillStyle = '#e74c3c';
+                        ctx.fillText(tChanh, x, y + 24);
 
-                        KhungVeBieuDoSanLuongGiaoHang.restore();
+                        ctx.restore();
                     });
                 }
             }]
