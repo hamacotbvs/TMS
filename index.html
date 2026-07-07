@@ -62,7 +62,7 @@
         
         <div id="home" class="trang-content active">
             <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                <h2 class="tieu-de-bieu-do">Sản lượng giao hàng</h2>
+                <h2 class="tieu-de-bieu-do">Sản lượng giao hàng.</h2>
                 <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...</div>
                 <div class="vung-bieu-do">
                     <canvas id="bieuDoSanLuongGiaoHang"></canvas>
@@ -145,7 +145,7 @@
         Chart.register(ChartDataLabels); // Kích hoạt plugin giúp vẽ các nhãn dữ liệu (chữ, số) trực tiếp lên biểu đồ
 
         const KhungVeBieuDoSanLuongGiaoHang = document.getElementById('bieuDoSanLuongGiaoHang').getContext('2d');
-        const bieuDo = new Chart(KhungVeBieuDoSanLuongGiaoHang, {
+        const bieuDoSanLuongGiaoHang = new Chart(KhungVeBieuDoSanLuongGiaoHang, {
             type: 'bar',
             data: {
                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
@@ -311,10 +311,10 @@
                 }
 
                 // Cập nhật lại biểu đồ
-                bieuDo.data.datasets[0].data = mangGiaoHang;
-                bieuDo.data.datasets[1].data = mangGuiChanh;
-                bieuDo.data.datasets[2].data = mangTongTai;
-                bieuDo.update();
+                bieuDoSanLuongGiaoHang.data.datasets[0].data = mangGiaoHang;
+                bieuDoSanLuongGiaoHang.data.datasets[1].data = mangGuiChanh;
+                bieuDoSanLuongGiaoHang.data.datasets[2].data = mangTongTai;
+                bieuDoSanLuongGiaoHang.update();
 
                 const oLoading = document.getElementById('loading');
                 if (oLoading) oLoading.style.display = 'none';
