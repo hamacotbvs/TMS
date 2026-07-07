@@ -228,7 +228,7 @@
             plugins: [{
                 id: 'customDatalabelsColors',
                 afterDatasetsDraw(chart) {
-                    const { KhungVeBieuDoSanLuongGiaoHang } = chart;
+                    const { ctx: KhungVeBieuDoSanLuongGiaoHang } = chart;
                     const metaCotGiaoHang = chart.getDatasetMeta(0); 
 
                     metaCotGiaoHang.data.forEach((element, index) => {
