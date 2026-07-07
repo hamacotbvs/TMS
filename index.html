@@ -434,9 +434,10 @@
                     metaCotGiaoHangDT.data.forEach((element, index) => {
                         const vTongDT = chart.data.datasets[2].data[index] || 0;
                         if (vTongDT === 0) return; 
-                        const tTongDT = (vTongDT / 1000000) >= 1 ? Math.round(vTongDT / 1000000) : (vTongDT / 1000000).toFixed(1);
-                        const tGiaoHangDT = (chart.data.datasets[0].data[index] / 1000000) >= 1 ? Math.round(chart.data.datasets[0].data[index] / 1000000) : (chart.data.datasets[0].data[index] / 1000000).toFixed(1);
-                        const tGuiChanhDT = (chart.data.datasets[1].data[index] / 1000000) >= 1 ? Math.round(chart.data.datasets[1].data[index] / 1000000) : (chart.data.datasets[1].data[index] / 1000000).toFixed(1);
+                        // Chia cho 1 triệu và làm tròn thành số nguyên ngay lập tức, sau đó định dạng dấu chấm
+                        const tTongDT = Math.round(vTongDT / 1000000).toLocaleString('vi-VN');
+                        const tGiaoHangDT = Math.round((chart.data.datasets[0].data[index] || 0) / 1000000).toLocaleString('vi-VN');
+                        const tGuiChanhDT = Math.round((chart.data.datasets[1].data[index] || 0) / 1000000).toLocaleString('vi-VN');
                         const x = element.x;
                         let y = element.y - 36; // Vị trí xuất phát của dòng đầu tiên (cách đỉnh cột 36px)
                         // Tiến hành viết chữ số tấn thủ công lên màn hình
