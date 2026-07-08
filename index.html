@@ -691,16 +691,16 @@
                 let mangNhoDataDT = Array(12).fill(0);
                 let mangNhoColorDT = Array(12).fill('#e74c3c'); // Mặc định đỏ
                 for (let i = 0; i < 12; i++) {
-                    let giaoDT = mangGiaoHangDTGH[i];
-                    let chanhDT = mangGuiChanhDTGH[i];
-                    if (giaoDT >= chanhDT) {
+                    let giao = mangGiaoHangDTGH[i];
+                    let chanh = mangGuiChanhDTGH[i];
+                    if (giao >= chanh) {
                         // Nếu Giao hàng lớn hơn hoặc bằng Gửi chành
-                        mangToDataDT[i] = giaoDT; mangToColorDT[i] = '#3498db'; // Cột to màu xanh (Giao hàng)
-                        mangNhoDataDT[i] = chanhDT; mangNhoColorDT[i] = '#e74c3c'; // Cột nhỏ màu đỏ (Gửi chành) nằm trong
+                        mangToDataDT[i] = giao; mangToColorDT[i] = '#3498db'; // Cột to màu xanh (Giao hàng)
+                        mangNhoDataDT[i] = chanh; mangNhoColorDT[i] = '#e74c3c'; // Cột nhỏ màu đỏ (Gửi chành) nằm trong
                     } else {
                         // Ngược lại nếu Gửi chành lớn hơn Giao hàng (Ví dụ như tháng 2 của bạn)
-                        mangToDataDT[i] = chanhDT; mangToColorDT[i] = '#e74c3c'; // Cột to đổi sang màu đỏ (Gửi chành) nằm dưới
-                        mangNhoDataDT[i] = giaoDT; mangNhoColorDT[i] = '#3498db'; } } // Cột nhỏ đổi sang màu xanh (Giao hàng) lọt lòng bên trong
+                        mangToDataDT[i] = chanh; mangToColorDT[i] = '#e74c3c'; // Cột to đổi sang màu đỏ (Gửi chành) nằm dưới
+                        mangNhoDataDT[i] = giao; mangNhoColorDT[i] = '#3498db'; } } // Cột nhỏ đổi sang màu xanh (Giao hàng) lọt lòng bên trong
                 // Lưu trữ tạm mảng gốc vào biến để plugin vẽ chữ số Tấn đọc chính xác số liệu
                 bieuDoDoanhThuGiaoHang.giaoHangDTGoc = mangGiaoHangDTGH;
                 bieuDoDoanhThuGiaoHang.guiChanhDTGoc = mangGuiChanhDTGH;
