@@ -34,12 +34,46 @@
             .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; width: 90%; text-align: center; justify-content: center;}
             .loading-box i { animation: spin 1s linear infinite; color: #3498db; }
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            /* VÙNG BIỂU ĐỒ ĐÔI NGANG */
+            /* VÙNG BIỂU ĐỒ ĐÔI NGANG TRÊN DESKTOP*/
             .vung-bieu-do-doi-ngang {display: flex; flex-direction: column; gap: 15px; width: 100%; padding-bottom: 80px}
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: 1; width: 100%;}
             /* Khi màn hình bự hơn (từ 768px trở lên như Máy tính, iPad...), tự động dàn ngang */
             @media (min-width: 850px) {
             .vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
+            /* VÙNG BIỂU ĐỒ ĐÔI DỌC TRÊN ĐIỆN THOẠI */
+            @media (max-width: 767px) and (orientation: portrait) {
+                /* 1. Khống chế trang không cho cuộn tràn lan */
+                .trang-content.active {
+                    overflow-y: hidden !important; /* Khóa cuộn dọc để cố định giao diện */
+                    height: calc(100vh - 60px) !important; /* Trừ đi chiều cao menu dưới */
+                }
+                /* 2. Cấu hình vùng chứa 2 biểu đồ */
+                .vung-bieu-do-doi-ngang {
+                    display: flex !important;
+                    flex-direction: column !important; /* Xếp trên dưới */
+                    justify-content: space-between !important; /* Chia đều khoảng cách */
+                    height: 100% !important;
+                    gap: 10px !important;
+                    padding-bottom: 20px !important; /* Khoảng cách an toàn với menu dưới */
+                }
+                /* 3. Chia đều chiều cao cho từng biểu đồ */
+                .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
+                    flex: 1 !important; /* Tự động chia đôi không gian đều nhau */
+                    min-height: auto !important;
+                    /* Ép chiều cao tối đa khoảng 36% chiều cao màn hình để không bị lấn chiếm */
+                    height: 36vh !important; 
+                    padding: 8px !important; /* Thu nhỏ padding ruột để tăng diện tích vẽ bđ */
+                }
+                /* 4. Thu nhỏ tiêu đề biểu đồ một chút cho đỡ chiếm diện tích dọc */
+                .vung-bieu-do-doi-ngang .tieu-de-bieu-do {
+                    font-size: 14px !important;
+                    margin-bottom: 5px !important;
+                }
+                /* 5. Ép canvas của biểu đồ co giãn theo khung bọc */
+                .vung-bieu-do-doi-ngang .vung-bieu-do {
+                    height: calc(100% - 25px) !important;
+                }
+            }
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
@@ -67,7 +101,7 @@
         .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
         .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
         .MENU-item.add-btn i {font-size: 16px;} }
-        /* ĐẶC BIỆT: CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
+        /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
         @media (max-height: 500px) and (orientation: landscape) {
         /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
         nav.MENU-DUOI {
@@ -83,28 +117,25 @@
             border-radius: 0 !important; /* Bỏ bo góc nếu có để áp sát viền màn hình */
             padding: 10px 0 !important;
             z-index: 9999 !important;
+        }
+        /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
+        nav.MENU-DUOI .MENU-item {
+            flex-direction: column !important;
+            gap: 2px !important;
+            font-size: 10px !important;
+        }
+        /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
+        .vung-bieu-do-doi {
+            margin-right: 75px !important; 
+            flex-direction: column !important;
+            gap: 20px !important;
+        }
+        /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
+        .vung-bieu-do-doi .KHUNG-CON-TRONG-TAB {
+            min-height: auto !important;
+            height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */
+        }
     }
-
-    /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
-    nav.MENU-DUOI .MENU-item {
-        flex-direction: column !important;
-        gap: 2px !important;
-        font-size: 10px !important;
-    }
-
-    /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
-    .vung-bieu-do-doi {
-        margin-right: 75px !important; 
-        flex-direction: column !important;
-        gap: 20px !important;
-    }
-
-    /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
-    .vung-bieu-do-doi .KHUNG-CON-TRONG-TAB {
-        min-height: auto !important;
-        height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */
-    }
-}
     </style>
 
 </head>
