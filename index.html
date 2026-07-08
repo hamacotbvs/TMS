@@ -186,7 +186,7 @@
             <div class="vung-bieu-do-doi-ngang">
                 <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
                     <h2 class="tieu-de-bieu-do" id="tieuDeBieuDoSanLuongGiaoHang">Sản lượng giao hàng năm</h2>
-                    <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...</div>
+                    <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu từ server...</div>
                     <div class="vung-bieu-do">
                         <canvas id="bieuDoSanLuongGiaoHang"></canvas>
                     </div>
@@ -581,7 +581,7 @@
                 const tieuDeSLGH = document.getElementById('tieuDeBieuDoSanLuongGiaoHang'); if (tieuDeSLGH) tieuDeSLGH.innerText = `Sản lượng giao hàng năm ${namLoc}`; // Tiêu đề Sản lượng giao hàng
                 const tieuDeDTGH = document.getElementById('tieuDeBieuDoDoanhThuGiaoHang'); if (tieuDeDTGH) tieuDeDTGH.innerText = `Doanh thu giao hàng năm ${namLoc}`; // Tiêu đề Doanh thu giao hàng
                 // 2. Hiện lại khung Loading trong lúc đợi server phản hồi dữ liệu mới
-                const oLoading = document.getElementById('loading'); if (oLoading) {oLoading.innerHTML = `<i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu an toàn...`;oLoading.style.display = 'flex';}
+                const oLoading = document.getElementById('loading'); if (oLoading) {oLoading.innerHTML = `<i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu từ server...`;oLoading.style.display = 'flex';}
                 const thamChieuTuyenDuong = collection(db, "TUYENDUONG"); // Kết nối tới bảng dữ liệu tên là TUYENDUONG trên Cloud Firestore
                 // Mảng sản lượng giao hàng
                 let mangGiaoHangSLGH = Array(12).fill(0);
