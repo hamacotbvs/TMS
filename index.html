@@ -177,7 +177,7 @@
                 <input type="date" id="ngayHienHanh" class="o-lich-an-giao-dien">
             </div>
             <div class="nut-treo-loc-nganh">
-                <select id="boLocNganh" onchange="locDuLieuTheoNganh(this.value)">
+                <select id="boLocNganh">
                     <option value="All">All</option>
                     <option value="TBVS">TBVS</option>
                     <option value="Sơn">Sơn</option>
@@ -281,9 +281,18 @@
                 if (iconSvg) {iconSvg.style.transform = 'rotate(360deg)'; iconSvg.style.transition = 'transform 0.4s ease';} 
                 setTimeout(() => { window.location.reload(); }, 350); });}
 
-        // BIẾN LƯU CHỌN NGÀNH
+        // KHUNG CHỌN NGÀNH
         let nganhHienTai = 'All';   // Biến toàn cục lưu trữ ngành đang chọn để lọc (Mặc định ban đầu là All)
-
+        const oChonNganh = document.getElementById('boLocNganh');
+        if (oChonNganh) {
+            oChonNganh.addEventListener('change', async (e) => {
+                nganhHienTai = e.target.value; // Lấy chữ 'TBVS' hoặc 'Sơn' khi chọn
+                // Lấy năm đang hiển thị trên màn hình
+                const txtNam = document.getElementById('hienNam');
+                const namHienHanh = txtNam ? parseInt(txtNam.innerText) : new Date().getFullYear();
+                console.log(`Bắt đầu lọc theo ngành mới: ${nganhHienTai} cho năm: ${namHienHanh}`); // kiểm tra code đúng chưa, nếu chưa thông báo lỗi trên màn hình để biết lỗi gì
+                await taiDuLieuBieuDoSanLuongGiaoHangTuServer(namHienHanh); }); }   // Gọi server tải lại theo ngành chọn
+        
         // KHUNG CHỌN NGÀY HIỆN HÀNH
         const oChonNgay = document.getElementById('ngayHienHanh');
         const txtNgayThang = document.getElementById('hienNgayThang');
@@ -564,25 +573,6 @@
                 }
             }]
         });
-
-        // HÀM NHẬN LỆNH KHI BẤM NÚT LỌC
-        // Hàm được kích hoạt khi chọn All, TBVS, Sơn... từ nút treo nhỏ
-        async function locDuLieuTheoNganh(giatri) {
-            nganhHienTai = giatri; // Cập nhật ngành cần lọc (Ví dụ: 'TBVS' hoặc 'Sơn')
-            // Xóa sạch dữ liệu cũ hiển thị trên biểu đồ về 0 trước khi nạp ngành mới
-            if (bieuDoSanLuongGiaoHang) {
-                bieuDoSanLuongGiaoHang.data.datasets.forEach(dataset => dataset.data = Array(12).fill(0));
-                bieuDoSanLuongGiaoHang.update('none');}
-            if (bieuDoDoanhThuGiaoHang) {
-                bieuDoDoanhThuGiaoHang.data.datasets.forEach(dataset => dataset.data = Array(12).fill(0));
-                bieuDoDoanhThuGiaoHang.update('none');}
-            // Lấy năm hiện tại đang hiển thị trên giao diện từ chữ hiển thị
-            const txtNam = document.getElementById('hienNam');
-            const namHienHanh = txtNam ? parseInt(txtNam.innerText) : new Date().getFullYear();
-            console.log(`Bắt đầu lọc theo ngành mới: ${nganhHienTai} cho năm: ${namHienHanh}`);
-            await taiDuLieuBieuDoSanLuongGiaoHangTuServer(namHienHanh); } // Kích hoạt tải và vẽ lại dữ liệu mới từ Server
-        // 🔴 THÊM ĐÚNG DÒNG NÀY VÀO ĐÂY: Đưa hàm ra ngoài toàn cục để HTML onchange gọi được
-        window.locDuLieuTheoNganh = locDuLieuTheoNganh;
 
         // HÀM TẢI DỮ LIỆU TỪ SERVER FIRE
         async function taiDuLieuBieuDoSanLuongGiaoHangTuServer(namLoc) {
