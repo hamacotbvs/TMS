@@ -40,6 +40,13 @@
             /* Khi màn hình bự hơn (từ 768px trở lên như Máy tính, iPad...), tự động dàn ngang */
             @media (min-width: 850px) {
             .vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
+            /* ĐẶC BIỆT: KHI ĐIỆN THOẠI XOAY NGANG */
+            @media (max-height: 500px) and (orientation: landscape) {
+            /* 1. Cho 2 biểu đồ xếp dọc nhau (để mỗi cái chiếm hết chiều ngang màn hình cho dễ nhìn) */
+            .vung-bieu-do-doi-ngang {flex-direction: column !important;gap: 20px !important;padding-bottom: 0 !important;}
+            /* 2. Ép khung biểu đồ tự tính toán chiều cao vừa khít */
+            .vung-bieu-do-doi .KHUNG-CON-TRONG-TAB {min-height: auto !important; height: calc(100vh - 120px) !important; width: 100% !important;} /* 100vh là toàn bộ chiều cao màn hình. Trừ đi 120px (bao gồm chiều cao menu dưới + tiêu đề + khoảng cách an toàn) */
+            }
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
