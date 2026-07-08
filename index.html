@@ -825,9 +825,9 @@
                 }
             });
         }
-       // NHẬN DATA - BẢN SỬA LỖI ĐỂ LẤY ĐƯỢC DỮ LIỆU CHUẨN 100%
+       // NHẬN DATA - ĐÃ SỬA CHUẨN LOGIC MÀU VÀ LỒNG CỘT
 function taiDuLieuBieuDoSLGHVungTuServer(dataMoiTuServer) {
-    if (!bieuDoSLGHVung || !dataMoiTuServer || dataMoiTuServer.length === 0) return;
+    if (!bieuDoSLGHVung) return;
 
     // 1. Lọc dữ liệu: CHỈ LẤY "Giao hàng"
     let duLieuLoc = dataMoiTuServer.filter(item => item.htGiaoNhan === 'Giao hàng');
@@ -850,84 +850,81 @@ function taiDuLieuBieuDoSLGHVungTuServer(dataMoiTuServer) {
     };
     const mauMacDinh = ['#34495e', '#16a085', '#d35400', '#7f8c8d'];
 
-    // 3. Tạo mảng 12 tháng để chứa dữ liệu phân tích theo từng tháng
-    let duLieuTheoThang = Array(12).fill(0).map(() => []);
+    // 3. Tính toán sản lượng thô của từng vùng theo từng tháng trước
+    let sanLuongTho = {};
+    danhSachVung.forEach(vung => {
+        sanLuongTho[vung] = Array(12).fill(0);
+    });
 
-    for (let thang = 1; thang <= 12; thang++) {
-        danhSachVung.forEach(vung => {
-            // Lọc dữ liệu đúng tháng và đúng vùng
-            let items = duLieuLoc.filter(item => {
-                // 🌟 ÉP KIỂU NUMBER ĐỂ TRÁNH LỖI SO SÁNH GIỮA CHUỖI VÀ SỐ ("1" vs 1)
-                let m = 0;
-                if (item.thang) {
-                    m = Number(item.thang);
-                } else if (item.ngayThang) {
-                    m = new Date(item.ngayThang).getMonth() + 1;
-                } else if (item.Ngay) { // Dự phòng trường tên cột là 'Ngay'
-                    m = new Date(item.Ngay).getMonth() + 1;
-                }
-                
-                return Number(m) === thang && item.vungTieuThu === vung; 
-            });
+    duLieuLoc.forEach(item => {
+        let m = item.thang || (item.ngayThang ? new Date(item.ngayThang).getMonth() + 1 : 0);
+        if (m >= 1 && m <= 12 && danhSachVung.includes(item.vungTieuThu)) {
+            sanLuongTho[item.vungTieuThu][m - 1] += Number(item.sanLuong || 0);
+        }
+    });
 
-            let tongSanLuong = items.reduce((sum, item) => sum + Number(item.sanLuong || item.SanLuong || 0), 0);
-            
-            duLieuTheoThang[thang - 1].push({
-                vung: vung,
-                giaTri: tongSanLuong 
-            });  
-        });
+    // 4. Khởi tạo mảng chứa kích thước (độ bự) cho từng vùng qua 12 tháng
+    let doRongCotTheoThang = {};
+    danhSachVung.forEach(vung => {
+        doRongCotTheoThang[vung] = Array(12).fill(0.85); // Mặc định rộng tối đa
+    });
 
-        // 🌟 Sắp xếp các vùng trong tháng này theo thứ tự từ LỚN ĐẾN NHỎ.
-        duLieuTheoThang[thang - 1].sort((a, b) => b.giaTri - a.giaTri);
-    }
-
-    // 4. Tiến hành bóc tách ma trận tháng ngược lại thành các tầng Datasets cho Chart.js
-    let datasetsMoi = [];
+    // 5. Duyệt từng tháng để xếp hạng độ cao, tính toán độ rộng (barPercentage) lồng nhau
     let soLuongVung = danhSachVung.length;
-    
     let doRongCoBan = 0.85;
     let buocGiam = soLuongVung > 1 ? 0.4 / (soLuongVung - 1) : 0;
 
-    for (let tang = 0; tang < soLuongVung; tang++) {
-        let dataTang = [];
-        let backgroundColors = [];
-        
-        for (let thang = 0; thang < 12; thang++) {
-            let thongTinVung = duLieuTheoThang[thang][tang];
-            if (thongTinVung) {
-                dataTang.push(thongTinVung.giaTri);
-                backgroundColors.push(mauCacVung[thongTinVung.vung] || mauMacDinh[tang % mauMacDinh.length]);
-            } else {
-                dataTang.push(0);
-                backgroundColors.push('rgba(0,0,0,0)'); 
-            } 
-        }
+    for (let m = 0; m < 12; m++) {
+        // Tạo mảng cặp dữ liệu [Vùng, Giá trị sản lượng] của tháng đó để sort
+        let danhSachSort = danhSachVung.map(vung => ({
+            vung: vung,
+            giaTri: sanLuongTho[vung][m]
+        }));
 
-        datasetsMoi.push({
-            label: `Tầng ${tang + 1}`,
-            data: dataTang,
-            backgroundColor: backgroundColors,
-            borderRadius: 4,
-            borderSkipped: 'bottom',
-            barPercentage: doRongCoBan - (tang * buocGiam), 
-            categoryPercentage: 0.8,
-            grouped: false, 
-            datalabels: { display: false } 
-        }); 
+        // Sắp xếp từ LỚN ĐẾN NHỎ
+        danhSachSort.sort((a, b) => b.giaTri - a.giaTri);
+
+        // Thằng to nhất (Tầng 0) giữ doRongCoBan, các thằng nhỏ dần (Tầng tăng dần) sẽ bị bóp nhỏ lại
+        danhSachSort.forEach((item, tang) => {
+            doRongCotTheoThang[item.vung][m] = doRongCoBan - (tang * buocGiam);
+        });
     }
 
-    // 5. Ép hiển thị Chú thích (Legend) động theo tên thực tế của các Vùng tiêu thụ
+    // 6. Đóng gói thành mảng Datasets gửi cho Chart.js
+    // Để cột nhỏ nằm TRÊN, cột to nằm DƯỚI một cách tuyệt đối, ta dùng thuộc tính `order`
+    // Thằng nào có giá trị sản lượng tổng cả năm nhỏ hơn sẽ được ưu tiên order nhỏ để vẽ đè lên trước
+    let datasetsMoi = danhSachVung.map((vung, idx) => {
+        let tongCaNam = sanLuongTho[vung].reduce((a, b) => a + b, 0);
+        
+        return {
+            label: vung,
+            data: sanLuongTho[vung],
+            backgroundColor: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
+            borderRadius: 4,
+            borderSkipped: 'bottom',
+            
+            // Cấu hình mảng độ rộng động cho từng tháng cụ thể
+            barPercentage: doRongCotTheoThang[vung], 
+            categoryPercentage: 0.8,
+            grouped: false,
+            
+            // Thuật toán gán thứ tự vẽ: Số lớn vẽ trước (nằm dưới), số nhỏ vẽ sau (đè lên)
+            order: 1000 - Math.round(tongCaNam), 
+            datalabels: { display: false }
+        };
+    });
+
+    // Tạo Legend chuẩn theo vùng và giữ nguyên màu đồng bộ
     bieuDoSLGHVung.options.plugins.legend.labels.generateLabels = function(chart) {
         return danhSachVung.map((vung, idx) => ({
             text: vung,
             fillStyle: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
             strokeStyle: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
-            pointStyle: 'rectRounded' 
-        })); 
+            pointStyle: 'rectRounded'
+        }));
     };
 
-    // 6. Cập nhật dữ liệu mới lên khung canvas
+    // Đổ vào biểu đồ và làm mới
     bieuDoSLGHVung.data.datasets = datasetsMoi;
     bieuDoSLGHVung.update();
 }
