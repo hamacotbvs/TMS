@@ -825,79 +825,112 @@
                 }
             });
         }
-        // NHẬN DATA
-        function taiDuLieuBieuDoSLGHVungTuServer(dataMoiTuServer) {
-            if (!bieuDoSLGHVung) return;
-            // Lọc dữ liệu: CHỈ LẤY "Giao hàng"
-            let duLieuLoc = dataMoiTuServer.filter(item => item.htGiaoNhan === 'Giao hàng');
-            // Gom danh sách tất cả các Vùng tiêu thụ duy nhất xuất hiện trong data
-            let danhSachVung = [];
-            duLieuLoc.forEach(item => {
-                if (item.vungTieuThu && !danhSachVung.includes(item.vungTieuThu)) {
-                    danhSachVung.push(item.vungTieuThu);} });
-            // Bảng cấu hình màu sắc cố định cho các Vùng tiêu thụ (Bạn tự điều chỉnh tên vùng cho khớp database)
-            const mauCacVung = {
-                'Cần Thơ': '#3498db',   // Xanh dương
-                'An Giang': '#e74c3c',  // Đỏ
-                'Kiên Giang': '#2ecc71', // Xanh lá
-                'Vĩnh Long': '#f1c40f',  // Vàng
-                'Hậu Giang': '#9b59b6' };  // Tím
-            const mauMacDinh = ['#34495e', '#16a085', '#d35400', '#7f8c8d'];
-            // Tạo mảng 12 tháng để chứa dữ liệu phân tích theo từng tháng
-            let duLieuTheoThang = Array(12).fill(0).map(() => []);
-            for (let thang = 1; thang <= 12; thang++) {
-                danhSachVung.forEach(vung => {
-                    // Lọc dữ liệu đúng tháng và đúng vùng
-                    let items = duLieuLoc.filter(item => {
-                        let m = item.thang || (item.ngayThang ? new Date(item.ngayThang).getMonth() + 1 : 0);
-                        return m === thang && item.vungTieuThu === vung; });
-                    let tongSanLuong = items.reduce((sum, item) => sum + Number(item.sanLuong || 0), 0);
-                    duLieuTheoThang[thang - 1].push({
-                        vung: vung,
-                        giaTri: tongSanLuong });  });
-                // 🌟 THUẬT TOÁN ĐẢO CỘT LỒNG NHAU:
-                // Sắp xếp các vùng trong tháng này theo thứ tự từ LỚN ĐẾN NHỎ.
-                // Thằng lớn nhất xếp trước (vẽ trước -> làm nền ở dưới), thằng nhỏ xếp sau (vẽ sau -> đè lọt lòng lên trên)
-                duLieuTheoThang[thang - 1].sort((a, b) => b.giaTri - a.giaTri);
-            }
-            // Tiến hành bóc tách ma trận tháng ngược lại thành các tầng Datasets cho Chart.js
-            let datasetsMoi = [];
-            let soLuongVung = danhSachVung.length;
-            // Tính toán độ bự giảm dần (Càng lên tầng cao/cột nhỏ thì barPercentage càng bé để lọt lòng)
-            let doRongCoBan = 0.85;
-            let buocGiam = soLuongVung > 1 ? 0.4 / (soLuongVung - 1) : 0;
-            for (let tang = 0; tang < soLuongVung; tang++) {
-                let dataTang = [];
-                let backgroundColors = [];
-                for (let thang = 0; thang < 12; thang++) {
-                    let thongTinVung = duLieuTheoThang[thang][tang];
-                    if (thongTinVung) {
-                        dataTang.push(thongTinVung.giaTri);
-                        backgroundColors.push(mauCacVung[thongTinVung.vung] || mauMacDinh[tang % mauMacDinh.length]);
-                    } else {
-                        dataTang.push(0);
-                        backgroundColors.push('rgba(0,0,0,0)'); } }
-                datasetsMoi.push({
-                    label: `Tầng ${tang + 1}`, // Nhãn quản lý nội bộ của Chart.js
-                    data: dataTang,
-                    backgroundColor: backgroundColors,
-                    borderRadius: 4,
-                    borderSkipped: 'bottom',
-                    barPercentage: doRongCoBan - (tang * buocGiam), // Ép nhỏ dần độ rộng
-                    categoryPercentage: 0.8,
-                    grouped: false, // Bắt buộc false để các cột đè chồng lên nhau thay vì đứng cạnh nhau
-                    datalabels: { display: false } }); }
-            // Ép hiển thị Chú thích (Legend) động theo tên thực tế của các Vùng tiêu thụ
-            bieuDoSLGHVung.options.plugins.legend.labels.generateLabels = function(chart) {
-                return danhSachVung.map((vung, idx) => ({
-                    text: vung,
-                    fillStyle: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
-                    strokeStyle: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
-                    pointStyle: 'rectRounded' })); };
-            // Cập nhật dữ liệu mới lên khung canvas của bạn
-            bieuDoSLGHVung.data.datasets = datasetsMoi;
-            bieuDoSLGHVung.update();
+       // NHẬN DATA - BẢN SỬA LỖI ĐỂ LẤY ĐƯỢC DỮ LIỆU CHUẨN 100%
+function taiDuLieuBieuDoSLGHVungTuServer(dataMoiTuServer) {
+    if (!bieuDoSLGHVung || !dataMoiTuServer || dataMoiTuServer.length === 0) return;
+
+    // 1. Lọc dữ liệu: CHỈ LẤY "Giao hàng"
+    let duLieuLoc = dataMoiTuServer.filter(item => item.htGiaoNhan === 'Giao hàng');
+
+    // 2. Gom danh sách tất cả các Vùng tiêu thụ duy nhất
+    let danhSachVung = [];
+    duLieuLoc.forEach(item => {
+        if (item.vungTieuThu && !danhSachVung.includes(item.vungTieuThu)) {
+            danhSachVung.push(item.vungTieuThu);
         }
+    });
+
+    // Bảng cấu hình màu sắc cố định theo Vùng
+    const mauCacVung = {
+        'Cần Thơ': '#3498db',   // Xanh dương
+        'An Giang': '#e74c3c',  // Đỏ
+        'Kiên Giang': '#2ecc71', // Xanh lá
+        'Vĩnh Long': '#f1c40f',  // Vàng
+        'Hậu Giang': '#9b59b6'   // Tím
+    };
+    const mauMacDinh = ['#34495e', '#16a085', '#d35400', '#7f8c8d'];
+
+    // 3. Tạo mảng 12 tháng để chứa dữ liệu phân tích theo từng tháng
+    let duLieuTheoThang = Array(12).fill(0).map(() => []);
+
+    for (let thang = 1; thang <= 12; thang++) {
+        danhSachVung.forEach(vung => {
+            // Lọc dữ liệu đúng tháng và đúng vùng
+            let items = duLieuLoc.filter(item => {
+                // 🌟 ÉP KIỂU NUMBER ĐỂ TRÁNH LỖI SO SÁNH GIỮA CHUỖI VÀ SỐ ("1" vs 1)
+                let m = 0;
+                if (item.thang) {
+                    m = Number(item.thang);
+                } else if (item.ngayThang) {
+                    m = new Date(item.ngayThang).getMonth() + 1;
+                } else if (item.Ngay) { // Dự phòng trường tên cột là 'Ngay'
+                    m = new Date(item.Ngay).getMonth() + 1;
+                }
+                
+                return Number(m) === thang && item.vungTieuThu === vung; 
+            });
+
+            let tongSanLuong = items.reduce((sum, item) => sum + Number(item.sanLuong || item.SanLuong || 0), 0);
+            
+            duLieuTheoThang[thang - 1].push({
+                vung: vung,
+                giaTri: tongSanLuong 
+            });  
+        });
+
+        // 🌟 Sắp xếp các vùng trong tháng này theo thứ tự từ LỚN ĐẾN NHỎ.
+        duLieuTheoThang[thang - 1].sort((a, b) => b.giaTri - a.giaTri);
+    }
+
+    // 4. Tiến hành bóc tách ma trận tháng ngược lại thành các tầng Datasets cho Chart.js
+    let datasetsMoi = [];
+    let soLuongVung = danhSachVung.length;
+    
+    let doRongCoBan = 0.85;
+    let buocGiam = soLuongVung > 1 ? 0.4 / (soLuongVung - 1) : 0;
+
+    for (let tang = 0; tang < soLuongVung; tang++) {
+        let dataTang = [];
+        let backgroundColors = [];
+        
+        for (let thang = 0; thang < 12; thang++) {
+            let thongTinVung = duLieuTheoThang[thang][tang];
+            if (thongTinVung) {
+                dataTang.push(thongTinVung.giaTri);
+                backgroundColors.push(mauCacVung[thongTinVung.vung] || mauMacDinh[tang % mauMacDinh.length]);
+            } else {
+                dataTang.push(0);
+                backgroundColors.push('rgba(0,0,0,0)'); 
+            } 
+        }
+
+        datasetsMoi.push({
+            label: `Tầng ${tang + 1}`,
+            data: dataTang,
+            backgroundColor: backgroundColors,
+            borderRadius: 4,
+            borderSkipped: 'bottom',
+            barPercentage: doRongCoBan - (tang * buocGiam), 
+            categoryPercentage: 0.8,
+            grouped: false, 
+            datalabels: { display: false } 
+        }); 
+    }
+
+    // 5. Ép hiển thị Chú thích (Legend) động theo tên thực tế của các Vùng tiêu thụ
+    bieuDoSLGHVung.options.plugins.legend.labels.generateLabels = function(chart) {
+        return danhSachVung.map((vung, idx) => ({
+            text: vung,
+            fillStyle: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
+            strokeStyle: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
+            pointStyle: 'rectRounded' 
+        })); 
+    };
+
+    // 6. Cập nhật dữ liệu mới lên khung canvas
+    bieuDoSLGHVung.data.datasets = datasetsMoi;
+    bieuDoSLGHVung.update();
+}
     </script>
 </body>
 </html>
