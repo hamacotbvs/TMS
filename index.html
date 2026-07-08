@@ -40,11 +40,6 @@
             /* Khi màn hình bự hơn (từ 768px trở lên như Máy tính, iPad...), tự động dàn ngang */
             @media (min-width: 850px) {
             .vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
-            /* ĐẶC BIỆT: KHI ĐIỆN THOẠI XOAY NGANG (Chiều cao màn hình thấp dưới 500px) */
-            @media (max-height: 500px) and (orientation: landscape) {
-            .vung-bieu-do-doi-ngang {flex-direction: column !important; /* Trở lại xếp dọc để không bị bóp nghẹt chiều ngang */ gap: 25px !important; padding-bottom: 350px !important; /* Tạo khoảng trống cực lớn ở đáy}
-            /* Giới hạn chiều cao khu vực biểu đồ vừa vặn tầm mắt khi xoay ngang */
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {min-height: auto !important; height: 280px !important; /* Khống chế cứng chiều cao vừa khít màn hình ngang */ width: 100% !important; }}
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 20px; left: 5%; right: 5%; height: 70px; background-color: #007acc; /* Màu xanh chủ đạo */ border-radius: 35px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
