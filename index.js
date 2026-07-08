@@ -251,7 +251,7 @@ function parseRoutesToMap(buffer) {
       saiLechKm:        saiLechKm,
       theoDoi:          theoDoi,
       thang:            thang,
-      nam:              nam // 🌟 ĐÃ BỔ SUNG: Cột năm lấy theo Ngày xuất kho phục vụ AppSheet filter
+      nam:              nam, // 🌟 ĐÃ BỔ SUNG: Cột năm lấy theo Ngày xuất kho phục vụ AppSheet filter
       nganh:            nganh
     }; 
   } 
