@@ -569,6 +569,13 @@
         // Hàm được kích hoạt khi chọn All, TBVS, Sơn... từ nút treo nhỏ
         async function locDuLieuTheoNganh(giatri) {
             nganhHienTai = giatri; // Cập nhật ngành cần lọc (Ví dụ: 'TBVS' hoặc 'Sơn')
+            // Xóa sạch dữ liệu cũ hiển thị trên biểu đồ về 0 trước khi nạp ngành mới
+            if (bieuDoSanLuongGiaoHang) {
+                bieuDoSanLuongGiaoHang.data.datasets.forEach(dataset => dataset.data = Array(12).fill(0));
+                bieuDoSanLuongGiaoHang.update('none');}
+            if (bieuDoDoanhThuGiaoHang) {
+                bieuDoDoanhThuGiaoHang.data.datasets.forEach(dataset => dataset.data = Array(12).fill(0));
+                bieuDoDoanhThuGiaoHang.update('none');}
             // Lấy năm hiện tại đang hiển thị trên giao diện từ chữ hiển thị
             const txtNam = document.getElementById('hienNam');
             const namHienHanh = txtNam ? parseInt(txtNam.innerText) : new Date().getFullYear();
