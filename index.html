@@ -581,6 +581,8 @@
             const namHienHanh = txtNam ? parseInt(txtNam.innerText) : new Date().getFullYear();
             console.log(`Bắt đầu lọc theo ngành mới: ${nganhHienTai} cho năm: ${namHienHanh}`);
             await taiDuLieuBieuDoSanLuongGiaoHangTuServer(namHienHanh); } // Kích hoạt tải và vẽ lại dữ liệu mới từ Server
+        // 🔴 THÊM ĐÚNG DÒNG NÀY VÀO ĐÂY: Đưa hàm ra ngoài toàn cục để HTML onchange gọi được
+        window.locDuLieuTheoNganh = locDuLieuTheoNganh;
 
         // HÀM TẢI DỮ LIỆU TỪ SERVER FIRE
         async function taiDuLieuBieuDoSanLuongGiaoHangTuServer(namLoc) {
