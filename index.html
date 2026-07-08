@@ -559,9 +559,8 @@
                         if (vTongTai === 0) return; 
                         // Chia cho 1 triệu và làm tròn thành số nguyên ngay lập tức, sau đó định dạng dấu chấm
                         const tTongTai = Math.round(vTongTai / 1000000).toLocaleString('vi-VN');
-                        
-                        const tGiao = Math.round((bieuDoDoanhThuGiaoHang.giaoHangGoc[index] || 0) / 1000000).toLocaleString('vi-VN');
-                        const tChanh = Math.round((bieuDoDoanhThuGiaoHang.guiChanhGoc[index] || 0) / 1000000).toLocaleString('vi-VN');
+                        const tGiao = Math.round((bieuDoDoanhThuGiaoHang.giaoHangDTGoc[index] || 0) / 1000000).toLocaleString('vi-VN');
+                        const tChanh = Math.round((bieuDoDoanhThuGiaoHang.guiChanhDTGoc[index] || 0) / 1000000).toLocaleString('vi-VN');
 
                         const x = element.x;
                         let y = element.y - 36; // Vị trí xuất phát của dòng đầu tiên (cách đỉnh cột 36px)
@@ -687,23 +686,19 @@
                 let mangNhoDataDT = Array(12).fill(0);
                 let mangNhoColorDT = Array(12).fill('#e74c3c'); // Mặc định đỏ
                 for (let i = 0; i < 12; i++) {
-                    let giao = mangGiaoHangDTGH[i];
-                    let chanh = mangGuiChanhDTGH[i];
-                    if (giao >= chanh) {
+                    let giaoDT = mangGiaoHangDTGH[i];
+                    let chanhDT = mangGuiChanhDTGH[i];
+                    if (giaoDT >= chanhDT) {
                         // Nếu Giao hàng lớn hơn hoặc bằng Gửi chành
-                        mangToDataDT[i] = giao;
-                        mangToColorDT[i] = '#3498db'; // Cột to màu xanh (Giao hàng)
-                        mangNhoDataDT[i] = chanh;
-                        mangNhoColorDT[i] = '#e74c3c'; // Cột nhỏ màu đỏ (Gửi chành) nằm trong
+                        mangToDataDT[i] = giaoDT; mangToColorDT[i] = '#3498db'; // Cột to màu xanh (Giao hàng)
+                        mangNhoDataDT[i] = chanhDT; mangNhoColorDT[i] = '#e74c3c'; // Cột nhỏ màu đỏ (Gửi chành) nằm trong
                     } else {
                         // Ngược lại nếu Gửi chành lớn hơn Giao hàng (Ví dụ như tháng 2 của bạn)
-                        mangToDataDT[i] = chanh;
-                        mangToColorDT[i] = '#e74c3c'; // Cột to đổi sang màu đỏ (Gửi chành) nằm dưới
-                        mangNhoDataDT[i] = giao;
-                        mangNhoColorDT[i] = '#3498db'; } } // Cột nhỏ đổi sang màu xanh (Giao hàng) lọt lòng bên trong
+                        mangToDataDT[i] = chanhDT; mangToColorDT[i] = '#e74c3c'; // Cột to đổi sang màu đỏ (Gửi chành) nằm dưới
+                        mangNhoDataDT[i] = giaoDT; mangNhoColorDT[i] = '#3498db'; } } // Cột nhỏ đổi sang màu xanh (Giao hàng) lọt lòng bên trong
                 // Lưu trữ tạm mảng gốc vào biến để plugin vẽ chữ số Tấn đọc chính xác số liệu
-                bieuDoDoanhThuGiaoHang.giaoHangGoc = mangGiaoHangDTGH;
-                bieuDoDoanhThuGiaoHang.guiChanhGoc = mangGuiChanhDTGH;
+                bieuDoDoanhThuGiaoHang.giaoHangDTGoc = mangGiaoHangDTGH;
+                bieuDoDoanhThuGiaoHang.guiChanhDTGoc = mangGuiChanhDTGH;
                 // Nạp các mảng động vừa tính toán vào biểu đồ
                 bieuDoDoanhThuGiaoHang.data.datasets[0].data = mangToDataDT;
                 bieuDoDoanhThuGiaoHang.data.datasets[0].backgroundColor = mangToColorDT;
