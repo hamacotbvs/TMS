@@ -15,6 +15,7 @@ const ID_SANPHAM = {
   "61": "1HSZMW142a1SeIUhaF8gTCFPGVipwDUPV",
   "69": "1CutRhZzBvh24zUsGPvkXWXQT3_ufUPmW"
 };
+const ID_YCGH = "152fW_bkRwUki4Gpz5qQ3_kaHruOnfbAb"; // THÊM TRA CỨU TRÉO YCGH
 
 if (!admin.apps.length) {
   admin.initializeApp({ credential: admin.credential.cert(serviceAccount), projectId: serviceAccount.project_id }); 
@@ -153,8 +154,34 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
   return dataMap; 
 }
 
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (ĐÃ BỔ SUNG CỘT NĂM)
-function parseRoutesToMap(buffer) {
+// HÀM ĐỌC FILE YCGH  // THÊM TRA CỨU TRÉO YCGH
+function parseYcghToMap(buffer) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  const ycghMap = {};
+  // Duyệt qua từng dòng dữ liệu để lấy thông tin (Chạy từ i = 1)
+  for (let i = 1; i < jsonData.length; i++) {
+    const row = jsonData[i]; 
+    if (!row || row.length === 0) continue;
+    // Cột B (Index 1) là Mã Phiếu
+    const maPhieu = row[1] ? row[1].toString().trim() : ""; 
+    if (!maPhieu) continue; 
+    // Lưu thông tin dạng Object
+    ycghMap[maPhieu] = {
+      congNo:   row[10]  ? row[10].toString().trim()  : "",
+      hanMuc:  row[11]  ? row[11].toString().trim()  : "",
+      timeNo:  row[12] ? row[12].toString().trim() : "",
+      nvbh: row[17] ? row[17].toString().trim() : "",
+      vungTieuThu: row[18] ? row[18].toString().trim() : "",
+      vanDe: row[23] ? row[23].toString().trim() : ""
+    }; 
+  } 
+  return ycghMap;
+}
+
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (TRA CỨU TRÉO YCGH)
+function parseRoutesToMap(buffer, ycghMap = {}) {               // THÊM TRA CỨU TRÉO YCGH
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
@@ -212,6 +239,8 @@ function parseRoutesToMap(buffer) {
     } else if (khoXuatVal === "61" || khoXuatVal === "69") {
       nganh = "TBVS";
     }
+    // 🌟 VỊ TRÍ MỚI 1: DÒ VÙNG TIÊU THỤ TỪ FILE YCGH BẰNG MÃ PHIẾU   // THÊM TRA CỨU TRÉO YCGH
+    const vungTieuThu = ycghMap[maPhieu]?.vungTieuThu || ""; // Nếu tìm thấy mã phiếu thì lấy vùng tiêu thụ, không có thì để trống ""
 
     routeMap[maPhieu] = {
       phuongXa:         getTxtByIdx(row, 0),   
@@ -251,8 +280,9 @@ function parseRoutesToMap(buffer) {
       saiLechKm:        saiLechKm,
       theoDoi:          theoDoi,
       thang:            thang,
-      nam:              nam, // 🌟 ĐÃ BỔ SUNG: Cột năm lấy theo Ngày xuất kho phục vụ AppSheet filter
-      nganh:            nganh
+      nam:              nam,
+      nganh:            nganh,
+      vungTieuThu:      vungTieuThu     // THÊM TRA CỨU TRÉO YCGH
     }; 
   } 
   return routeMap; 
@@ -303,9 +333,15 @@ async function mainSync() {
   console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường...');
   
   try {
+    // 🌟 VỊ TRÍ 1: TẢI VÀ XỬ LÝ FILE YCGH TRƯỚC ĐỂ LÀM BẢN ĐỒ TRA CỨU        // THÊM TRA CỨU TRÉO YCGH
+    console.log(`📦 Đang tải file YCGH từ Drive (ID: ${ID_YCGH})...`);
+    const ycghBuffer = await downloadFileBuffer(drive, ID_YCGH);
+    const ycghMapData = parseYcghToMap(ycghBuffer);
+    console.log(`   -> Cấu trúc dữ liệu tra cứu YCGH đã sẵn sàng.`);
+
     console.log(`📦 Đang tải file Tuyến Đường từ Drive (ID: ${ID_TUYENDUONG})...`);
     const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
-    const routeDataMap = parseRoutesToMap(routeBuffer);
+    const routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);          // THÊM TRA CỨU TRÉO YCGH
     const totalRecords = Object.keys(routeDataMap).length;
     
     if (totalRecords > 0) {
