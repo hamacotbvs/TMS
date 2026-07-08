@@ -205,6 +205,14 @@ function parseRoutesToMap(buffer) {
       if (parts[0] && parts[0].length === 4) nam = parseInt(parts[0], 10); // Chuyển thành số
     }
 
+    // 🏭 XỬ LÝ PHÂN LOẠI NGÀNH HÀNG THEO KHO XUẤT
+    let nganh = "";
+    if (khoXuatVal === "41") {
+      nganh = "Sơn";
+    } else if (khoXuatVal === "61" || khoXuatVal === "69") {
+      nganh = "TBVS";
+    }
+
     routeMap[maPhieu] = {
       phuongXa:         getTxtByIdx(row, 0),   
       khoXuat:          khoXuatVal,            
@@ -244,6 +252,7 @@ function parseRoutesToMap(buffer) {
       theoDoi:          theoDoi,
       thang:            thang,
       nam:              nam // 🌟 ĐÃ BỔ SUNG: Cột năm lấy theo Ngày xuất kho phục vụ AppSheet filter
+      nganh:            nganh
     }; 
   } 
   return routeMap; 
