@@ -844,6 +844,17 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, elements, chart) => {
+                        if (elements.length > 0) {
+                            const elementIndex = elements[0].index;
+                            const datasetIndex = elements[0].datasetIndex;
+                            // Lấy ra object dữ liệu của ô vừa được click
+                            const dataPoint = chart.data.datasets[datasetIndex].data[elementIndex];
+                            if (dataPoint && dataPoint.v > 0) {
+                                const thangDaClick = dataPoint.x; // Chuỗi "1", "2", ... "12"
+                                const vungDaClick = dataPoint.y;  // Tên vùng, ví dụ: "Cần Thơ"
+                                // Gọi hàm tải chi tiết từ Firestore
+                                taiChiTietDoiTuongTừFirestore(vungDaClick, Number(thangDaClick)); } } },
                     plugins: {
                         legend: { display: false }, // Ẩn chú thích vì biểu đồ nhiệt nhìn trực quan qua màu sắc
                         tooltip: {enabled: false},  // Khỏi cho hiện bảng "Thông tin sản lượng" khi ghê chuột
