@@ -254,7 +254,6 @@
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getAggregateFromServer, sum } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        Chart.register(ChartDataLabels);
         
         const firebaseConfig = { 
             apiKey: "AIzaSyA4N3-5OhkDXZV8Yw-TEymODHuv_-QwPGU",
@@ -868,7 +867,7 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                         }
                     }
                 }
-            plugins: [ChartDataLabels]
+
             });
         }
 
