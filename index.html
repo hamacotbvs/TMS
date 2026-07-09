@@ -880,6 +880,96 @@
                             ticks: { color: '#94a3b8' } } } }
             });
         }
+        // HÀM TÍNH KHÁCH HÀNG THEO THÁNG KHI CLICK VÀO Ô BIỂU ĐỒ NHIỆT
+        function docModalChiTiet() {
+            document.getElementById('modalChiTietVung').style.display = 'none';
+        }
+
+        // Hàm chính xử lý truy vấn dữ liệu từ collection TUYENDUONG
+        async function taiChiTietDoiTuongTừFirestore(vung, thang) {
+            const tieuDeModal = document.getElementById('tieuDeModal');
+            const bodyBangChiTiet = document.getElementById('bodyBangChiTiet');
+            
+            // Hiển thị trạng thái đang tải dữ liệu
+            tieuDeModal.innerText = `Chi tiết ${vung} - Tháng ${thang}`;
+            bodyBangChiTiet.innerHTML = `<tr><td colspan="2" style="text-align: center; padding: 20px; color: #64748b;">Đang tải dữ liệu tTai...</td></tr>`;
+            document.getElementById('modalChiTietVung').style.display = 'flex';
+
+            try {
+                // Đồng bộ chuẩn với điều kiện lọc biểu đồ nhiệt của bạn
+                // Lưu ý: Đổi tên trường biến "namLoc" cho đúng với biến lưu Năm hiện tại trên giao diện của bạn
+                const giaTriLocVung = (vung === "Rỗng") ? "" : vung; 
+
+                const q = query(
+                    collection(db, "TUYENDUONG"),
+                    where("nam", "==", Number(namLoc)), // Đảm bảo đúng biến năm của bạn
+                    where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]),
+                    where("thang", "==", thang),
+                    where("thanhPho", "==", giaTriLocVung),
+                    where("htGiaoNhan", "==", "Giao hàng")
+                );
+
+                const querySnapshot = await getDocs(q);
+                
+                // Object dùng để gom nhóm tích lũy: { "Cá tra 1": 15000, "Hàm lượng 2": 3200 }
+                let mapGomNhom = {};
+                let tongCongTatCa = 0;
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const doiTuong = data.doiTuong || "Không xác định";
+                    // Ép giá trị tTai về kiểu số thực (mặc định lấy theo Kg)
+                    const taiTrong = Number(data.tTai) || 0; 
+
+                    if (!mapGomNhom[doiTuong]) {
+                        mapGomNhom[doiTuong] = 0;
+                    }
+                    mapGomNhom[doiTuong] += taiTrong;
+                    tongCongTatCa += taiTrong;
+                });
+
+                // Kiểm tra xem có dữ liệu phát sinh thực tế không
+                if (Object.keys(mapGomNhom).length === 0) {
+                    bodyBangChiTiet.innerHTML = `<tr><td colspan="2" style="text-align: center; padding: 20px; color: #94a3b8;">Không tìm thấy dữ liệu chi tiết.</td></tr>`;
+                    return;
+                }
+
+                // Chuyển kết quả gom nhóm thành mảng và sắp xếp giảm dần theo trọng tải
+                const danhSachSapXep = Object.keys(mapGomNhom).map(key => ({
+                    doiTuong: key,
+                    tongTai: mapGomNhom[key]
+                })).sort((a, b) => b.tongTai - a.tongTai);
+
+                // Đổ toàn bộ dữ liệu đã cộng dồn vào bảng HTML
+                let chuoiHtmlBang = "";
+                danhSachSapXep.forEach((item) => {
+                    chuoiHtmlBang += `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 10px; border: 1px solid #cbd5e1; color: #334155;">${item.doiTuong}</td>
+                            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: 600; color: #0f172a;">
+                                ${item.tongTai.toLocaleString('vi-VN')} Kg
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                // Thêm dòng tổng cộng dưới cùng
+                chuoiHtmlBang += `
+                    <tr style="background-color: #f8fafc; font-weight: bold;">
+                        <td style="padding: 10px; border: 1px solid #cbd5e1; color: #1e293b;">Tổng cộng</td>
+                        <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; color: #1e293b; font-size: 15px;">
+                            ${tongCongTatCa.toLocaleString('vi-VN')} Kg
+                        </td>
+                    </tr>
+                `;
+
+                bodyBangChiTiet.innerHTML = chuoiHtmlBang;
+
+            } catch (error) {
+                console.error("Lỗi khi lấy chi tiết đối tượng:", error);
+                bodyBangChiTiet.innerHTML = `<tr><td colspan="2" style="text-align: center; padding: 20px; color: #ef4444;">Xảy ra lỗi khi tải dữ liệu!</td></tr>`;
+            }
+        }
     </script>
 </body>
 </html>
