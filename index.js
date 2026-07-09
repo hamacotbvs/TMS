@@ -288,6 +288,71 @@ function parseRoutesToMap(buffer, ycghMap = {}) {               // THÊM TRA C�
   return routeMap; 
 }
 
+// 📊 HÀM VIẾT THÊM: GOM NHÓM DỮ LIỆU ĐỂ TẠO BẢNG KHACHHANGVUNG
+function generateKhachHangVungReport(routeDataMap) {
+  const groupMap = {};
+
+  // Duyệt qua từng mã phiếu trong Object dữ liệu Tuyến Đường đã có
+  Object.values(routeDataMap).forEach(item => {
+    const vung = item.vungTieuThu || "Chưa xác định";
+    const doiTuong = item.doiTuong;
+    const thang = item.thang; 
+
+    // Chỉ xử lý nếu có tên đối tượng và tháng hợp lệ
+    if (!doiTuong || !thang || thang < 1 || thang > 12) return;
+
+    // Tạo khóa gộp duy nhất theo Vùng tiêu thụ và Đối tượng
+    const key = `${vung}_${doiTuong}`;
+
+    if (!groupMap[key]) {
+      groupMap[key] = {
+        vungTieuThu: vung,
+        doiTuong: doiTuong,
+        trongLuongMonths: {},
+        doanhThuMonths: {}
+      };
+      for (let m = 1; m <= 12; m++) {
+        groupMap[key].trongLuongMonths[m] = 0;
+        groupMap[key].doanhThuMonths[m] = 0;
+      }
+    }
+
+    // 🌟 Đã sửa: Lấy trực tiếp tổng trọng tải thực tế tTai và Doanh thu thanhTien
+    const tl = item.tTai || 0;
+    const dt = item.thanhTien || 0;
+
+    groupMap[key].trongLuongMonths[thang] += tl;
+    groupMap[key].doanhThuMonths[thang] += dt;
+  });
+
+  // Chuyển đổi dữ liệu cấu trúc phẳng (2 dòng: Trọng lượng & Doanh thu) giống hình mẫu
+  const finalRecords = [];
+
+  Object.values(groupMap).forEach(group => {
+    const tlRecord = {
+      baoCao: "Trọng lượng",
+      vungTieuThu: group.vungTieuThu,
+      doiTuong: group.doiTuong
+    };
+
+    const dtRecord = {
+      baoCao: "Doanh thu",
+      vungTieuThu: group.vungTieuThu,
+      doiTuong: group.doiTuong
+    };
+
+    // Điền số liệu vào các cột từ 1 đến 12
+    for (let m = 1; m <= 12; m++) {
+      tlRecord[m.toString()] = Number(group.trongLuongMonths[m].toFixed(2));
+      dtRecord[m.toString()] = Number(group.doanhThuMonths[m].toFixed(2));
+    }
+
+    finalRecords.push(tlRecord, dtRecord);
+  });
+
+  return finalRecords;
+}
+
 // 3. TIẾN TRÌNH ĐỒNG BỘ CHÍNH
 async function mainSync() {
   const drive = getDriveClient();
@@ -360,7 +425,33 @@ async function mainSync() {
       if (count % 400 !== 0) {
         await batch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${totalRecords} chứng từ lên Firestore!`); 
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG ${totalRecords} chứng từ lên Firestore!`); 
+      
+      // --- PHẦN B: XỬ LÝ VÀ ĐẨY DỮ LIỆU LÊN KHACHHANGVUNG (VIẾT THÊM) ---
+      console.log(`📊 Đang khởi tạo bảng tổng hợp KHACHHANGVUNG...`);
+      const reportRows = generateKhachHangVungReport(routeDataMap);
+      
+      let reportBatch = db.batch();
+      let reportCount = 0;
+
+      for (const record of reportRows) {
+        // Tạo ID duy nhất cho mỗi dòng dữ liệu trên Fire để tránh bị ghi đè trùng lặp
+        const docId = `${record.baoCao}_${record.vungTieuThu}_${record.doiTuong}`.replace(/[\/.\s#$\[\]]/g, "_");
+        const docRef = db.collection('KHACHHANGVUNG').doc(docId);
+        
+        reportBatch.set(docRef, record, { merge: true });
+        reportCount++;
+
+        if (reportCount % 400 === 0) {
+          await reportBatch.commit();
+          reportBatch = db.batch();
+        }
+      }
+      if (reportCount % 400 !== 0) {
+        await reportBatch.commit();
+      }
+      console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy thành công ${reportRows.length} dòng báo cáo lên 'KHACHHANGVUNG'!`);
+
     } else {
       console.log('⚠️ Không tìm thấy bản ghi hợp lệ nào thuộc các kho 41, 61, 69 trong file Tuyến đường.'); 
     } 
