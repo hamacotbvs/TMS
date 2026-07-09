@@ -11,8 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
     
     <style> /* CSS */
@@ -202,13 +202,12 @@
             </div>
             <div class="vung-bieu-do-doi-ngang">
                 <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                    <h2 class="tieu-de-bieu-do">Sản lượng giao hàng năm nhiệt</h2>
+                    <h2 class="tieu-de-bieu-do">Sản lượng giao hàng năm</h2>
                     <div class="vung-bieu-do">
                         <canvas id="bieuDoNhietVung"></canvas>
                     </div>
                 </div>
             </div>
-
         </div>
 
         <div id="bao-cao" class="trang-content">
@@ -262,7 +261,8 @@
             projectId: "hamaco-tms-ac51b",
             storageBucket: "hamaco-tms-ac51b.firebasestorage.app",
             messagingSenderId: "593078964705",
-            appId: "1:593078964705:web:44302d0eb998c2c27542a0", };
+            appId: "1:593078964705:web:44302d0eb998c2c27542a0",
+        };
 
         // KHỞI TẠO FIREBASE
         const app = initializeApp(firebaseConfig);
@@ -302,9 +302,9 @@
                 const txtNam = document.getElementById('hienNam');
                 const namHienHanh = txtNam ? parseInt(txtNam.innerText) : new Date().getFullYear();
                 console.log(`Bắt đầu lọc theo ngành mới: ${nganhHienTai} cho năm: ${namHienHanh}`); // kiểm tra code đúng chưa, nếu chưa thông báo lỗi trên màn hình để biết lỗi gì
-                await taiDuLieuBieuDoSanLuongGiaoHangTuServer(namHienHanh); // Gọi server tải lại theo ngành chọn
-                await taiDuLieuBieuDoNhietTuServer(namHienHanh);  }); }   // Gọi server tải lại theo ngành chọn - BIỂU ĐỒ NHIỆT
-        
+                await taiDuLieuBieuDoSanLuongGiaoHangTuServer(namHienHanh);   // Gọi server tải lại theo ngành chọn
+                await taiDuLieuBieuDoNhietTuServer(namHienHanh);     }); }      // Gọi server tải lại theo ngành chọn - BIỂU ĐỒ NHIỆT
+
         // KHUNG CHỌN NGÀY HIỆN HÀNH
         const oChonNgay = document.getElementById('ngayHienHanh');
         const txtNgayThang = document.getElementById('hienNgayThang');
@@ -335,7 +335,9 @@
                 // Gọi lại hàm tải dữ liệu với NĂM MỚI vừa chọn - BIỂU ĐỒ SẢN LƯỢNG GIAO HÀNG
                 taiDuLieuBieuDoSanLuongGiaoHangTuServer(y);     // giống như nút START tự động để kích hoạt tất cả các lệnh chạy khi năm thay đổi namLoc
                 taiDuLieuBieuDoNhietTuServer(y);                // BIỂU ĐỒ NHIỆT
-                console.log("Ngày hệ thống nhận:", e.target.value); }); }
+                console.log("Ngày hệ thống nhận:", e.target.value);
+            });
+        }
 
         // BIỂU ĐỒ CỘT LỒNG VÀ ĐƯỜNG
         Chart.register(ChartDataLabels); // Kích hoạt plugin giúp vẽ các nhãn dữ liệu (chữ, số) trực tiếp lên biểu đồ
@@ -347,7 +349,8 @@
             data: {
                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
                 datasets: [
-                    {   label: 'Cột to',                                                                                                            //*** Sửa cột to dưới / cột nhỏ trên
+                    { 
+                        label: 'Cột to',                                                                                                            //*** Sửa cột to dưới / cột nhỏ trên
                         data: Array(12).fill(0), // Tạo sẵn 12 mảng dữ liệu ban đầu bằng 0 để chờ đổ dữ liệu từ server vào sau
                         backgroundColor: [], // Sẽ cấp phát mảng màu động ở hàm nạp dữ liệu                                                         //*** Sửa cột to dưới / cột nhỏ trên
                         borderRadius: 4,           // Bo tròn nhẹ 4px ở các góc đỉnh cột
@@ -356,8 +359,10 @@
                         categoryPercentage: 0.8,     // Thêm thuộc tính này để tối ưu khoảng cách nhóm         
                         grouped: false,             // Tắt tính năng tự động chia cụm đứng cạnh nhau, ép các cột phải nằm đè, lồng vào nhau
                         order: 3,                   // Thứ tự vẽ dưới cùng (vẽ trước) để cột khác có thể đè lên
-                        datalabels: { display: false } },
-                    {   label: 'Cột nhở',                                                                                                           //*** Sửa cột to dưới / cột nhỏ trên
+                        datalabels: { display: false } 
+                    },
+                    { 
+                        label: 'Cột nhở',                                                                                                           //*** Sửa cột to dưới / cột nhỏ trên
                         data: Array(12).fill(0), 
                         backgroundColor: [],                                                                                                        //*** Sửa cột to dưới / cột nhỏ trên
                         borderRadius: 4,            
@@ -366,8 +371,10 @@
                         categoryPercentage: 0.8,     // Đồng bộ với cột xanh        
                         grouped: false, 
                         rder: 2,
-                        datalabels: { display: false } },
-                    {   label: 'Tổng', 
+                        datalabels: { display: false } 
+                    },
+                    { 
+                        label: 'Tổng', 
                         data: Array(12).fill(0), 
                         type: 'line',           // Chuyển riêng lớp này thành biểu đồ đường
                         borderColor: '#f1c40f',     
@@ -378,7 +385,10 @@
                         pointHoverRadius: 0,        
                         fill: false,            // Không đổ màu vùng dưới đường kẻ
                         rder: 1,
-                        datalabels: { display: false } } ] },
+                        datalabels: { display: false }
+                    }
+                ]
+            },
             // Cấu hình Hiển thị và Tương tác (Options)
             options: { 
                 responsive: true,                   // Giúp biểu đồ tự động co giãn vừa vặn khi xoay ngang/dọc màn hình điện thoại
@@ -399,12 +409,14 @@
                                     { text: 'Giao hàng', fillStyle: '#3498db', strokeStyle: '#3498db', pointStyle: 'rectRounded', fontColor: '#666' },
                                     { text: 'Gửi chành', fillStyle: '#e74c3c', strokeStyle: '#e74c3c', pointStyle: 'rectRounded', fontColor: '#666' }
                                 ]; } } },
-                    tooltip: { enabled: false } },     // Không hiện dữ liệu khi click chuột vào cột
+                    tooltip: { enabled: false }      // Không hiện dữ liệu khi click chuột vào cột
+                },
                 // Định dạng trục tọa độ (Scales)
                 scales: { 
                     x: {
                         grid: { display: false },  // Ẩn các đường lưới dọc kẻ xuống
-                        ticks: { color: '#94a3b8', font: { size: 12 } } },
+                        ticks: { color: '#94a3b8', font: { size: 12 } }
+                    },
                     y: {
                         beginAtZero: true,          // Trục Y luôn bắt đầu từ số 0
                         grid: { color: '#f0f2f5' }, // Tạo đường lưới ngang màu xám nhạt
@@ -413,7 +425,12 @@
                             color: '#94a3b8',
                             font: { size: 12 },
                             callback: function(value) {
-                                return (value / 1000).toLocaleString('vi-VN') + 'T'; } } } } }, // Đổi kg thành đơn vị Tấn (T) để hiển thị ở trục dọc
+                                return (value / 1000).toLocaleString('vi-VN') + 'T';    // Đổi kg thành đơn vị Tấn (T) để hiển thị ở trục dọc
+                            }
+                        }
+                    }
+                }
+            },
             // Ghi chú dữ liệu của cột trên đầu
             plugins: [{
                 id: 'customDatalabelsColors',
@@ -435,6 +452,7 @@
                         const tTong  = nTong >= 1 ? Math.round(nTong) : nTong.toFixed(1);
                         const tGiao  = nGiao >= 1 ? Math.round(nGiao) : nGiao.toFixed(1);
                         const tChanh = nChanh >= 1 ? Math.round(nChanh) : nChanh.toFixed(1);
+
                         const x = element.x;
                         let y = element.y - 36; // Vị trí xuất phát của dòng đầu tiên (cách đỉnh cột 36px)
                         // Tiến hành viết chữ số tấn thủ công lên màn hình
@@ -451,7 +469,10 @@
                         // Dòng 3: Gửi chành (Đỏ) (nằm thấp hơn dòng 1 là 24px)
                         KhungVeBieuDoSanLuongGiaoHang.fillStyle = '#e74c3c';
                         KhungVeBieuDoSanLuongGiaoHang.fillText(tChanh, x, y + 24);
-                        KhungVeBieuDoSanLuongGiaoHang.restore(); }); } }]
+                        KhungVeBieuDoSanLuongGiaoHang.restore();
+                    });
+                }
+            }]
         });
 
         // BIỂU ĐỒ DOANH THU GIAO HÀNG
@@ -461,7 +482,8 @@
             data: {
                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
                 datasets: [
-                    {   label: 'Cột to', 
+                    { 
+                        label: 'Cột to', 
                         data: Array(12).fill(0), // Tạo sẵn 12 mảng dữ liệu ban đầu bằng 0 để chờ đổ dữ liệu từ server vào sau
                         backgroundColor: [], 
                         borderRadius: 4,           // Bo tròn nhẹ 4px ở các góc đỉnh cột
@@ -470,8 +492,10 @@
                         categoryPercentage: 0.8,     // Thêm thuộc tính này để tối ưu khoảng cách nhóm         
                         grouped: false,             // Tắt tính năng tự động chia cụm đứng cạnh nhau, ép các cột phải nằm đè, lồng vào nhau
                         order: 3,                   // Thứ tự vẽ dưới cùng (vẽ trước) để cột khác có thể đè lên
-                        datalabels: { display: false } },
-                    {   label: 'Cột nhở', 
+                        datalabels: { display: false } 
+                    },
+                    { 
+                        label: 'Cột nhở', 
                         data: Array(12).fill(0), 
                         backgroundColor: [], 
                         borderRadius: 4,            
@@ -480,8 +504,10 @@
                         categoryPercentage: 0.8,     // Đồng bộ với cột xanh        
                         grouped: false, 
                         rder: 2,
-                        datalabels: { display: false } },
-                    {   label: 'Tổng', 
+                        datalabels: { display: false } 
+                    },
+                    { 
+                        label: 'Tổng', 
                         data: Array(12).fill(0), 
                         type: 'line',           // Chuyển riêng lớp này thành biểu đồ đường
                         borderColor: '#f1c40f',     
@@ -492,7 +518,10 @@
                         pointHoverRadius: 0,        
                         fill: false,            // Không đổ màu vùng dưới đường kẻ
                         rder: 1,
-                        datalabels: { display: false } } ] },
+                        datalabels: { display: false }
+                    }
+                ]
+            },
             // Cấu hình Hiển thị và Tương tác (Options)
             options: { 
                 responsive: true,                   // Giúp biểu đồ tự động co giãn vừa vặn khi xoay ngang/dọc màn hình điện thoại
@@ -512,13 +541,18 @@
                                     { text: 'Tổng', fillStyle: '#f1c40f', strokeStyle: '#f1c40f', pointStyle: 'rectRounded', fontColor: '#666' },
                                     { text: 'Giao hàng', fillStyle: '#3498db', strokeStyle: '#3498db', pointStyle: 'rectRounded', fontColor: '#666' },
                                     { text: 'Gửi chành', fillStyle: '#e74c3c', strokeStyle: '#e74c3c', pointStyle: 'rectRounded', fontColor: '#666' }
-                                ]; } } },
-                    tooltip: { enabled: false } },     // Không hiện dữ liệu khi click chuột vào cột
+                                ];
+                            }
+                        }
+                    },
+                    tooltip: { enabled: false }      // Không hiện dữ liệu khi click chuột vào cột
+                },
                 // Định dạng trục tọa độ (Scales)
                 scales: { 
                     x: {
                         grid: { display: false },  // Ẩn các đường lưới dọc kẻ xuống
-                        ticks: { color: '#94a3b8', font: { size: 12 } } },
+                        ticks: { color: '#94a3b8', font: { size: 12 } }
+                    },
                     y: {
                         beginAtZero: true,          // Trục Y luôn bắt đầu từ số 0
                         grid: { color: '#f0f2f5' }, // Tạo đường lưới ngang màu xám nhạt
@@ -527,7 +561,12 @@
                             color: '#94a3b8',
                             font: { size: 12 },
                             callback: function(value) {
-                                return (value / 1000000).toLocaleString('vi-VN') + 'Tr'; } } } } }, // Định dạng hiển thị thành Triệu (Tr)
+                                return (value / 1000000).toLocaleString('vi-VN') + 'Tr'; // Định dạng hiển thị thành Triệu (Tr)
+                            }
+                        }
+                    }
+                }
+            },
             // Ghi chú dữ liệu của cột trên đầu
             plugins: [{
                 id: 'customDatalabelsDoanhThuGiaoHang',
@@ -541,6 +580,7 @@
                         const tTongTai = Math.round(vTongTai / 1000000).toLocaleString('vi-VN');
                         const tGiao = Math.round((bieuDoDoanhThuGiaoHang.giaoHangDTGoc[index] || 0) / 1000000).toLocaleString('vi-VN');
                         const tChanh = Math.round((bieuDoDoanhThuGiaoHang.guiChanhDTGoc[index] || 0) / 1000000).toLocaleString('vi-VN');
+
                         const x = element.x;
                         let y = element.y - 36; // Vị trí xuất phát của dòng đầu tiên (cách đỉnh cột 36px)
                         // Tiến hành viết chữ số tấn thủ công lên màn hình
@@ -557,7 +597,10 @@
                         // Dòng 3: Gửi chành (Đỏ) (nằm thấp hơn dòng 1 là 24px)
                         KhungVeBieuDoDoanhThuGiaoHang.fillStyle = '#e74c3c';
                         KhungVeBieuDoDoanhThuGiaoHang.fillText(tChanh, x, y + 24);
-                        KhungVeBieuDoDoanhThuGiaoHang.restore(); }); }}]
+                        KhungVeBieuDoDoanhThuGiaoHang.restore();
+                    });
+                }
+            }]
         });
 
         // HÀM TẢI DỮ LIỆU TỪ SERVER FIRE
@@ -584,16 +627,19 @@
                         where("nam", "==", namLoc),
                         where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]),
                         where("thang", "==", thang),
-                        where("htGiaoNhan", "==", "Giao hàng") ];
+                        where("htGiaoNhan", "==", "Giao hàng")
+                    ];
                     let dieuKienGuiChanh = [
                         where("nam", "==", namLoc),
                         where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]),
                         where("thang", "==", thang),
-                        where("htGiaoNhan", "==", "Gửi chành") ];
+                        where("htGiaoNhan", "==", "Gửi chành")
+                    ];
                     // --- 🔴 ĐOẠN LỌC NGÀNH SIÊU GỌN MỚI THÊM VÀO ---
                     if (nganhHienTai !== "All") {
                         dieuKienGiaoHang.push(where("nganh", "==", nganhHienTai));
-                        dieuKienGuiChanh.push(where("nganh", "==", nganhHienTai)); }
+                        dieuKienGuiChanh.push(where("nganh", "==", nganhHienTai));
+                    }
                     // Tiến hành tạo câu lệnh query hoàn chỉnh gửi lên Firebase
                     const qGiaoHang = query(thamChieuTuyenDuong, ...dieuKienGiaoHang);
                     const qGuiChanh = query(thamChieuTuyenDuong, ...dieuKienGuiChanh);
@@ -601,18 +647,25 @@
                     cacYeuCauTinhToanSanLuongGiaoHang.push(
                         getAggregateFromServer(qGiaoHang, { tongTai: sum('tTai'), tongTien: sum('thanhTien') }).then(res => {   // Sử dụng hàm tính tổng (sum) cả tTai và thanhTien trực tiếp từ Server để giảm tải dung lượng mạng
                             mangGiaoHangSLGH[thang - 1] = res.data().tongTai || 0;
-                            mangGiaoHangDTGH[thang - 1] = res.data().tongTien || 0; }) );
+                            mangGiaoHangDTGH[thang - 1] = res.data().tongTien || 0;
+                        })
+                    );
                     // Gom lệnh tính tổng Gửi chành gửi lên Server
                     cacYeuCauTinhToanSanLuongGiaoHang.push(
                         getAggregateFromServer(qGuiChanh, { tongTai: sum('tTai'), tongTien: sum('thanhTien') }).then(res => {
                             mangGuiChanhSLGH[thang - 1] = res.data().tongTai || 0;
-                            mangGuiChanhDTGH[thang - 1] = res.data().tongTien || 0; }) ); }
+                            mangGuiChanhDTGH[thang - 1] = res.data().tongTien || 0;
+                        })
+                    );
+                }
                 // Gửi gộp tất cả yêu cầu lên server cùng một lúc
                 await Promise.all(cacYeuCauTinhToanSanLuongGiaoHang);
                 // Sau khi có dữ liệu Giao hàng/Gửi chành, cộng dồn lại để ra mảng Tổng tải (Màu Vàng)
                 for (let i = 0; i < 12; i++) {
                     mangTongTaiSLGH[i] = mangGiaoHangSLGH[i] + mangGuiChanhSLGH[i];
-                    mangTongTaiDTGH[i] = mangGiaoHangDTGH[i] + mangGuiChanhDTGH[i]; }
+                    mangTongTaiDTGH[i] = mangGiaoHangDTGH[i] + mangGuiChanhDTGH[i];
+                }
+
                 // Cập nhật mảng dữ liệu mới chạy vào biểu đồ và vẽ lại - BIỂU ĐỒ SẢN LƯỢNG GIAO HÀNG
                 // --- ĐOẠN XỬ LÝ ĐỘNG: CỘT CAO NẰM DƯỚI, CỘT THẤP NẰM TRÊN ---
                 let mangToData = Array(12).fill(0);
@@ -644,6 +697,7 @@
                 bieuDoSanLuongGiaoHang.data.datasets[1].backgroundColor = mangNhoColor;
                 bieuDoSanLuongGiaoHang.data.datasets[2].data = mangTongTaiSLGH;
                 bieuDoSanLuongGiaoHang.update();        // Cập nhật hiển thị biểu đồ
+
                 // Cập nhật mảng dữ liệu mới chạy vào biểu đồ và vẽ lại - BIỂU ĐỒ DOANH THU GIAO HÀNG
                 // --- ĐOẠN XỬ LÝ ĐỘNG: CỘT CAO NẰM DƯỚI, CỘT THẤP NẰM TRÊN ---
                 let mangToDataDT = Array(12).fill(0);
@@ -671,6 +725,7 @@
                 bieuDoDoanhThuGiaoHang.data.datasets[1].backgroundColor = mangNhoColorDT;
                 bieuDoDoanhThuGiaoHang.data.datasets[2].data = mangTongTaiDTGH;
                 bieuDoDoanhThuGiaoHang.update();        // Cập nhật hiển thị biểu đồ
+
                 // Ẩn dòng chữ "Đang tải dữ liệu..." đi vì đã tải xong
                 if (oLoading) oLoading.style.display = 'none';
             // Có nhiệm vụ bắt lỗi. Nếu thiếu phân chỉ mục dữ liệu (Index) của Firebase, phần này sẽ hiển thị một đường link màu xanh hướng dẫn bạn click vào để tạo Index
@@ -679,17 +734,19 @@
                 let linkIndex = "";
                 if (e.message && e.message.includes("https://")) {
                     const match = e.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
-                    if (match) linkIndex = match[0];}
+                    if (match) linkIndex = match[0];
+                }
                 const oLoading = document.getElementById('loading');
                 if (oLoading) {
                     if (linkIndex) {
                         oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi thiếu Index! Bấm vào đây để tạo:</span> <br><br> 
                                               <a href="${linkIndex}" target="_blank" style="color:#0082C8; text-decoration:underline; font-weight:bold; word-break:break-all;">Link tạo Index tự động</a>`;
                     } else {
-                        oLoading.innerHTML = `<span style="color:red;">Lỗi kết nối: ${e.message}</span>`;}}}
+                        oLoading.innerHTML = `<span style="color:red;">Lỗi kết nối: ${e.message}</span>`;
+                    }
+                }
+            }
         }
-
-
 
     </script>
 </body>
