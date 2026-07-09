@@ -253,7 +253,7 @@
     <script type="module">
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getAggregateFromServer, sum } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getAggregateFromServer, sum, getDocs, getDocsFromCache } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         Chart.register(ChartDataLabels);
         
         const firebaseConfig = { 
@@ -696,8 +696,7 @@
             try {
                 console.log(`Bắt đầu tải dữ liệu biểu đồ nhiệt cho năm: ${namGoc}, Ngành: ${nganhHienTai}`);
                 // 1. Truy vấn bộ sưu tập TUYENDUONG từ Firestore
-                // Lọc theo năm hiện tại
-                let dbRef = query(collection(db, "TUYENDUONG"), where("nam", "==", namGoc));
+                let dbRef = query(collection(db, "TUYENDUONG"), where("nam", "==", namGoc));    // Lọc theo năm hiện tại
                 const querySnapshot = await getDocs(dbRef);
                 // 2. Tạo cấu trúc dữ liệu để nhóm theo [vungTieuThu][thang]
                 // Định nghĩa trước danh sách các vùng tiêu thụ cố định hoặc gom động từ server
