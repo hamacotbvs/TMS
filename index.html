@@ -248,6 +248,26 @@
 
     </div>
 
+    <div id="modalChiTietVung" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div style="background-color: #fff; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative;">
+            
+            <span onclick="docModalChiTiet()" style="position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; color: #94a3b8;">&times;</span>
+            
+            <h3 id="tieuDeModal" style="margin-top: 0; color: #1e293b; font-size: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Chi tiết sản lượng</h3>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; text-align: left;">
+                        <th style="padding: 10px; border: 1px solid #cbd5e1;">Danh sách đối tượng</th>
+                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">Tổng tTai (Kg)</th>
+                    </tr>
+                </thead>
+                <tbody id="bodyBangChiTiet">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
     <nav class="MENU-DUOI">
         <div class="MENU-item active" data-tab="home"> <i class="fa-solid fa-house"></i> <span>HOME</span> </div>
         <div class="MENU-item" data-tab="bao-cao"> <i class="fa-solid fa-chart-pie"></i> <span>Báo cáo</span> </div>
