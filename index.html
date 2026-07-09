@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-    <title>HAMACO-TMS</title> 
-    <link rel="icon" type="image/png" href="logo.png"> 
+    <title>HAMACO-TMS</title>
+    <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -816,9 +816,32 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                         backgroundColor(context) {
                             const item = context.raw;
                             const value = item ? item.v : 0;
-                            if (value === 0) return '#f8fafc'; // Ô trống không có sản lượng (Màu xám cực nhạt)
-                            const alpha = Math.min(0.1 + (value / (maxSanLuong || 1)) * 0.9, 1); // Đạt từ 0.1 đến 1 độ đậm
-                            return `rgba(52, 152, 219, ${alpha})`; // Sử dụng tông xanh dương giống biểu đồ Giao Hàng của bạn
+                            // 1. Nếu không có sản lượng (bằng 0), trả về màu xám cực nhạt (Ô trống)
+                            if (value === 0) return '#f8fafc'; 
+
+                            // 2. Tính tỉ lệ phần trăm sản lượng (Giá trị từ 0 đến 1)
+                            const ratio = Math.min(value / (maxSanLuong || 1), 1); 
+
+                            let r, g, b;
+                            // 3. THUẬT TOÁN ĐẢO NGƯỢC: Tính từ Thấp (ratio gần 0) lên Cao (ratio gần 1)
+                            if (ratio < 0.5) {
+                                // Giai đoạn THẤP -> TRUNG BÌNH: Từ Đỏ (231, 76, 60) tiến dần về Vàng (241, 196, 15)
+                                const p = ratio * 2; // Nhân đôi tỉ lệ trong phân đoạn đầu
+                                r = Math.round(231 + (241 - 231) * p);
+                                g = Math.round(76 + (196 - 76) * p);
+                                b = Math.round(60 + (15 - 60) * p);
+                            } else {
+                                // Giai đoạn TRUNG BÌNH -> CAO: Từ Vàng (241, 196, 15) tiến dần về Xanh dương (52, 152, 219)
+                                const p = (ratio - 0.5) * 2; // Tính tỉ lệ trong phân đoạn sau
+                                r = Math.round(241 + (52 - 241) * p);
+                                g = Math.round(196 + (152 - 196) * p);
+                                b = Math.round(15 + (219 - 15) * p);
+                            }
+
+                            // Giữ độ hiển thị màu rõ ràng cho các ô (Alpha cố định ở mức 0.85 -> 1 để dễ nhìn chữ số)
+                            const alpha = 0.9; 
+
+                            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
                         },
                         // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
                         borderRadius: 2
