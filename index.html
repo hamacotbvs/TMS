@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-    <title>HAMACO-TMS</title> 
+    <title>HAMACO-TMS</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -834,29 +834,29 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                                 // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.25 -> 1.0] thành [0.0 -> 1.0]
                                 const p = (ratio - 0.25) / (1.0 - 0.25); 
                                 
-                                // Vàng: rgb(241, 196, 15) | Xanh đậm: rgb(41, 128, 185)
+                                // Vàng chanh nhẹ: rgb(241, 220, 100) | Xanh Navy: rgb(41, 128, 185)
                                 r = Math.round(241 + (41 - 241) * p);
-                                g = Math.round(196 + (128 - 196) * p);
-                                b = Math.round(15 + (185 - 15) * p);
+                                g = Math.round(220 + (128 - 220) * p);
+                                b = Math.round(100 + (185 - 100) * p);
                             } 
                             else if (ratio >= 0.05 && ratio < 0.25) {
-                                // PHÂN ĐOẠN 2: Từ 5% (Đỏ) đến 25% (Vàng)
+                                // PHÂN ĐOẠN 2: Từ 5% (Đỏ nhạt/Cam pastel) đến 25% (Vàng chanh)
                                 // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.05 -> 0.25] thành [0.0 -> 1.0]
                                 const p = (ratio - 0.05) / (0.25 - 0.05); 
                                 
-                                // Đỏ: rgb(231, 76, 60) | Vàng: rgb(241, 196, 15)
-                                r = Math.round(231 + (241 - 231) * p);
-                                g = Math.round(76 + (196 - 76) * p);
-                                b = Math.round(60 + (15 - 60) * p);
+                                // Đỏ nhạt/Cam pastel dịu: rgb(240, 140, 130) | Vàng chanh: rgb(241, 220, 100)
+                                r = Math.round(240 + (241 - 240) * p);
+                                g = Math.round(140 + (220 - 140) * p);
+                                b = Math.round(130 + (100 - 130) * p);
                             } 
                             else {
-                                // PHÂN ĐOẠN YẾU: Dưới 5% sản lượng, khóa cứng ở tông màu Đỏ Đậm cảnh báo
-                                r = 192; // Đỏ đô đậm sẫm
-                                g = 57;
-                                b = 43;
+                                // PHÂN ĐOẠN YẾU: Dưới 5% sản lượng, khóa ở màu đỏ pastel nhạt (Soft Red) cho đỡ nhức mắt
+                                r = 245; 
+                                g = 160;
+                                b = 150;
                             }
-                            // Giữ độ hiển thị màu rõ ràng cho các ô (Alpha cố định ở mức 0.85 -> 1 để dễ nhìn chữ số)
-                            const alpha = 0.9; 
+                            // Giữ độ hiển thị màu vừa phải (Alpha 0.85 giúp màu dịu và tôn chữ số lên rõ hơn)
+                            const alpha = 0.85; 
                             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
                         },
                         // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
