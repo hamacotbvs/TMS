@@ -889,7 +889,7 @@
         async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, thangDuocClick) {
             const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
             const tieuDe = document.getElementById('tieuDeBieuDoKhachHang');
-            if (khuVucHienThi) khuVucHienThi.style.display = 'block';
+            if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
             if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của các Khách hàng tại: ${vungDuocClick} (Năm ${namLoc})`;
             try {
                 const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
