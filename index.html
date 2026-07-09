@@ -207,6 +207,12 @@
                         <canvas id="bieuDoNhietVung"></canvas>
                     </div>
                 </div>
+                <div id="khuVucBieuDoKhachHang" style="display: none; margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h3 id="tieuDeBieuDoKhachHang" style="text-align: center; color: #1e293b; margin-bottom: 20px;">Sản lượng chi tiết theo Khách hàng</h3>
+                    <div style="width: 100%; overflow-x: auto;">
+                        <canvas id="bieuDoNhietKhachHang"></canvas>
+                    </div>
+                </div>
                 <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 450px; width: 100%;">
                     <h2 class="tieu-de-bieu-do" id="tieuDeNhiet2">Sản lượng giao hàng theo vùng năm</h2>
                     <div class="vung-bieu-do" style="height: calc(100% - 40px);">
@@ -851,6 +857,142 @@
                             grid: { display: false },
                             ticks: { color: '#94a3b8' } } } }
             });
+        }
+
+        // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
+        let bieuDoNhietKhachHangInstance = null;
+        // Hàm này được gọi khi click vào 1 ô trên Biểu đồ Vùng
+        async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, thangDuocClick) {
+            const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
+            const tieuDe = document.getElementById('tieuDeBieuDoKhachHang');
+            
+            if (khuVucHienThi) khuVucHienThi.style.display = 'block';
+            if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của các Khách hàng tại: ${vungDuocClick} (Năm ${namLoc})`;
+
+            try {
+                const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
+                
+                // 1. Tạo bộ lọc tối ưu dựa trên cấu trúc bảng KHACHHANGVUNG của bạn
+                let dieuKienLoc = [
+                    where("nam", "==", Number(namLoc)),
+                    where("vungTieuThu", "==", vungDuocClick),
+                    where("htGiaoNhan", "==", "Tổng giao") // Lọc đúng dòng Tổng giao theo yêu cầu
+                ];
+
+                // Lọc theo ngành hiện tại (Sơn / TBVS / All)
+                if (typeof nganhHienTai !== "undefined" && nganhHienTai !== "All") {
+                    dieuKienLoc.push(where("nganh", "==", nganhHienTai));
+                }
+
+                const q = query(thamChieuKhachHangVung, ...dieuKienLoc);
+                const querySnapshot = await getDocs(q);
+
+                let danhSachDoiTuongY = []; // Mảng chứa trục Y (Tên khách hàng)
+                let mangDuLieuMaTran = [];  // Mảng chứa dữ liệu các ô heatmap
+
+                // 2. Duyệt qua từng tài liệu khách hàng trả về từ Server
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const tenKhachHang = data.doiTuong || "Chưa phân loại";
+                    
+                    danhSachDoiTuongY.push(tenKhachHang);
+
+                    // Thu thập dữ liệu từ TL1 đến TL12 của khách hàng này
+                    for (let thang = 1; thang <= 12; thang++) {
+                        const sanLuongThang = Number(data[`TL${thang}`]) || 0;
+                        
+                        // Đẩy vào mảng theo đúng định dạng dữ liệu của Chart.js Matrix Plugin
+                        if (sanLuongThang > 0) { // Chỉ đẩy các tháng có sản lượng để ô heatmap sáng lên
+                            mangDuLieuMaTran.push({
+                                x: thang.toString(), // Trục X: "1", "2", ... "12"
+                                y: tenKhachHang,     // Trục Y: Tên khách hàng
+                                v: sanLuongThang     // Giá trị sản lượng hiển thị trong ô
+                            });
+                        }
+                    }
+                });
+
+                if (danhSachDoiTuongY.length === 0) {
+                    alert("Không có dữ liệu khách hàng cho vùng này!");
+                    if (khuVucHienThi) khuVucHienThi.style.display = 'none';
+                    return;
+                }
+
+                // 3. KHỞI TẠO HOẶC CẬP NHẬT BIỂU ĐỒ NHIỆT KHÁCH HÀNG (Dùng chartjs-chart-matrix)
+                const ctx = document.getElementById('bieuDoNhietKhachHang').getContext('2d');
+                
+                if (bieuDoNhietKhachHangInstance) {
+                    bieuDoNhietKhachHangInstance.destroy(); // Xóa biểu đồ cũ để vẽ lại
+                }
+
+                bieuDoNhietKhachHangInstance = new Chart(ctx, {
+                    type: 'matrix',
+                    data: {
+                        datasets: [{
+                            label: 'Sản lượng khách hàng',
+                            data: mangDuLieuMaTran,
+                            backgroundColor(context) {
+                                const item = context.dataset.data[context.dataIndex];
+                                if (!item) return 'rgba(0, 0, 0, 0.02)';
+                                const value = item.v;
+                                // Tự động tính toán màu sắc đậm nhạt dựa trên sản lượng lớn nhỏ
+                                if (value > 100) return 'rgba(52, 152, 219, 1)';     // Xanh đậm (Sản lượng cao)
+                                if (value > 50) return 'rgba(52, 152, 219, 0.7)';
+                                if (value > 10) return 'rgba(231, 76, 60, 0.6)';     // Đỏ cam trung bình
+                                return 'rgba(231, 76, 60, 0.3)';                     // Đỏ nhạt (Sản lượng ít)
+                            },
+                            borderWidth: 1,
+                            borderColor: '#ffffff',
+                            width: ({chart}) => (chart.chartArea || {}).width / 12 - 1,
+                            height: ({chart}) => (chart.chartArea || {}).height / danhSachDoiTuongY.length - 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'category',
+                                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+                                grid: { display: false }
+                            },
+                            y: {
+                                type: 'category',
+                                labels: danhSachDoiTuongY, // Trục Y tự động phình to/thu nhỏ theo số lượng khách hàng thực tế
+                                grid: { display: true, color: '#f1f5f9' },
+                                ticks: { autoSkip: false }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title() { return ''; },
+                                    label(context) {
+                                        const item = context.dataset.data[context.dataIndex];
+                                        return `Khách: ${item.y} | Tháng ${item.x}: ${item.v.toLocaleString('vi-VN')} Kg`;
+                                    }
+                                }
+                            },
+                            // Vẽ số sản lượng hiển thị trực tiếp lên từng ô vuông nhỏ giống biểu đồ vùng
+                            datalabels: {
+                                display: true,
+                                color: '#1e293b',
+                                font: { weight: 'bold', size: 11 },
+                                formatter(value) { return value.v ? value.v.toLocaleString('vi-VN') : ''; }
+                            }
+                        }
+                    }
+                });
+
+                // Thiết lập chiều cao động cho thẻ canvas dựa trên số lượng khách hàng để không bị dính chữ
+                const chieuCaoTinhToan = Math.max(200, danhSachDoiTuongY.length * 40);
+                document.getElementById('bieuDoNhietKhachHang').style.height = `${chieuCaoTinhToan}px`;
+                bieuDoNhietKhachHangInstance.resize();
+
+            } catch (error) {
+                console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error);
+            }
         }
 
     </script>
