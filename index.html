@@ -818,29 +818,38 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                             const value = item ? item.v : 0;
                             // 1. Nếu không có sản lượng (bằng 0), trả về màu xám cực nhạt (Ô trống)
                             if (value === 0) return '#f8fafc'; 
-
                             // 2. Tính tỉ lệ phần trăm sản lượng (Giá trị từ 0 đến 1)
                             const ratio = Math.min(value / (maxSanLuong || 1), 1); 
-
                             let r, g, b;
-                            // 3. THUẬT TOÁN ĐẢO NGƯỢC: Tính từ Thấp (ratio gần 0) lên Cao (ratio gần 1)
-                            if (ratio < 0.5) {
-                                // Giai đoạn THẤP -> TRUNG BÌNH: Từ Đỏ (231, 76, 60) tiến dần về Vàng (241, 196, 15)
-                                const p = ratio * 2; // Nhân đôi tỉ lệ trong phân đoạn đầu
+                            // 3. THUẬT TOÁN PHÂN CHIA PHÂN ĐOẠN MÀU THEO MỐC % CỦA BẠN
+                            if (ratio >= 0.25) {
+                                // PHÂN ĐOẠN 1: Từ 25% (Vàng) đến 100% (Xanh đậm)
+                                // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.25 -> 1.0] thành [0.0 -> 1.0]
+                                const p = (ratio - 0.25) / (1.0 - 0.25); 
+                                
+                                // Vàng: rgb(241, 196, 15) | Xanh đậm: rgb(41, 128, 185)
+                                r = Math.round(241 + (41 - 241) * p);
+                                g = Math.round(196 + (128 - 196) * p);
+                                b = Math.round(15 + (185 - 15) * p);
+                            } 
+                            else if (ratio >= 0.05 && ratio < 0.25) {
+                                // PHÂN ĐOẠN 2: Từ 5% (Đỏ) đến 25% (Vàng)
+                                // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.05 -> 0.25] thành [0.0 -> 1.0]
+                                const p = (ratio - 0.05) / (0.25 - 0.05); 
+                                
+                                // Đỏ: rgb(231, 76, 60) | Vàng: rgb(241, 196, 15)
                                 r = Math.round(231 + (241 - 231) * p);
                                 g = Math.round(76 + (196 - 76) * p);
                                 b = Math.round(60 + (15 - 60) * p);
-                            } else {
-                                // Giai đoạn TRUNG BÌNH -> CAO: Từ Vàng (241, 196, 15) tiến dần về Xanh dương (52, 152, 219)
-                                const p = (ratio - 0.5) * 2; // Tính tỉ lệ trong phân đoạn sau
-                                r = Math.round(241 + (52 - 241) * p);
-                                g = Math.round(196 + (152 - 196) * p);
-                                b = Math.round(15 + (219 - 15) * p);
+                            } 
+                            else {
+                                // PHÂN ĐOẠN YẾU: Dưới 5% sản lượng, khóa cứng ở tông màu Đỏ Đậm cảnh báo
+                                r = 192; // Đỏ đô đậm sẫm
+                                g = 57;
+                                b = 43;
                             }
-
                             // Giữ độ hiển thị màu rõ ràng cho các ô (Alpha cố định ở mức 0.85 -> 1 để dễ nhìn chữ số)
                             const alpha = 0.9; 
-
                             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
                         },
                         // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
