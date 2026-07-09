@@ -833,6 +833,24 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    // 🌟 BẠN CHÈN ĐÚNG ĐOẠN ONCLICK NÀY VÀO TRONG OPTIONS:
+                        onClick: (event, elements, chartInstance) => {
+                            // Kiểm tra xem người dùng có click trúng ô vuông nào không
+                            if (elements && elements.length > 0) {
+                                const firstElement = elements[0];
+                                const datasetIndex = firstElement.datasetIndex;
+                                const elementIndex = firstElement.index;
+                                // Lấy instance chuẩn của biểu đồ để tránh lỗi undefined
+                                const currentChart = chartInstance || firstElement.element.$context.chart;
+                                // Trích xuất dữ liệu của ô vừa click
+                                const dataPoint = currentChart.data.datasets[datasetIndex].data[elementIndex];
+                                // Nếu ô đó có dữ liệu (sản lượng > 0)
+                                if (dataPoint && dataPoint.v > 0) {
+                                    const thangDaClick = dataPoint.x; // Trả về chuỗi "1", "2", ... "12"
+                                    const vungDaClick = dataPoint.y;  // Trả về tên vùng, ví dụ: "Cần Thơ"
+                                    console.log(`🎯 Bạn vừa click: Vùng ${vungDaClick} - Tháng ${thangDaClick}`);
+                                    // Kích hoạt hàm gọi dữ liệu từ bảng KHACHHANGVUNG lên để vẽ tiếp biểu đồ số 2
+                                    taiBieuDoNhietKhachHangTheoVung(vungDaClick, Number(thangDaClick)); } } },
                     plugins: {
                         legend: { display: false }, // Ẩn chú thích vì biểu đồ nhiệt nhìn trực quan qua màu sắc
                         tooltip: {enabled: false},  // Khỏi cho hiện bảng "Thông tin sản lượng" khi ghê chuột
@@ -954,32 +972,7 @@
                                 ticks: { autoSkip: false }
                             }
                         },
-                        // 🌟 BẠN CHÈN ĐÚNG ĐOẠN ONCLICK NÀY VÀO TRONG OPTIONS:
-                        onClick: (event, elements, chartInstance) => {
-                            // Kiểm tra xem người dùng có click trúng ô vuông nào không
-                            if (elements && elements.length > 0) {
-                                const firstElement = elements[0];
-                                const datasetIndex = firstElement.datasetIndex;
-                                const elementIndex = firstElement.index;
-
-                                // Lấy instance chuẩn của biểu đồ để tránh lỗi undefined
-                                const currentChart = chartInstance || firstElement.element.$context.chart;
-                                
-                                // Trích xuất dữ liệu của ô vừa click
-                                const dataPoint = currentChart.data.datasets[datasetIndex].data[elementIndex];
-                                
-                                // Nếu ô đó có dữ liệu (sản lượng > 0)
-                                if (dataPoint && dataPoint.v > 0) {
-                                    const thangDaClick = dataPoint.x; // Trả về chuỗi "1", "2", ... "12"
-                                    const vungDaClick = dataPoint.y;  // Trả về tên vùng, ví dụ: "Cần Thơ"
-                                    
-                                    console.log(`🎯 Bạn vừa click: Vùng ${vungDaClick} - Tháng ${thangDaClick}`);
-
-                                    // Kích hoạt hàm gọi dữ liệu từ bảng KHACHHANGVUNG lên để vẽ tiếp biểu đồ số 2
-                                    taiBieuDoNhietKhachHangTheoVung(vungDaClick, Number(thangDaClick));
-                                }
-                            }
-                        },
+                        
                         plugins: {
                             legend: { display: false },
                             tooltip: {
