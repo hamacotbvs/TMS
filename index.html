@@ -1011,6 +1011,16 @@
                 console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error);
             }
         }
+        // Lắng nghe sự kiện click trên toàn bộ lớp nền mờ của Modal
+        document.getElementById('khuVucBieuDoKhachHang').addEventListener('click', function(event) {
+            // Biến đại diện cho chính lớp nền mờ (thẻ div ngoài cùng)
+            const lopNenMo = this; 
+            
+            // Nếu điểm người dùng click vào CHÍNH LÀ lớp nền mờ (chứ không phải hộp trắng bên trong)
+            if (event.target === lopNenMo) {
+                lopNenMo.style.display = 'none'; // Ẩn toàn bộ modal đi
+            }
+        });
 
     </script>
 </body>
