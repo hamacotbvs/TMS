@@ -848,7 +848,12 @@
                                 // Nếu ô click vào có sản lượng thực tế > 0
                                 if (dataPoint && dataPoint.v > 0) {
                                     const thangDaClick = dataPoint.x; 
-                                    const vungDaClick = dataPoint.y;  
+                                    let vungDaClick = dataPoint.y;
+                                    if (typeof vungDaClick === 'number') {
+                                        vungDaClick = danhSachVungY[vungDaClick];
+                                    }
+                                    // Kiểm tra lại trên Console để debug nếu cần
+                                    console.log("Vùng được click thực tế:", vungDaClick, "Tháng:", thangDaClick);
                                     // Gọi hàm hiển thị biểu đồ chi tiết khách hàng
                                     taiBieuDoNhietKhachHangTheoVung(vungDaClick, Number(thangDaClick));
                                 } else {
@@ -1011,7 +1016,8 @@
                 console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error);
             }
         }
-        // Lắng nghe sự kiện click trên toàn bộ lớp nền mờ của Modal
+
+        // ĐÓNG BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG VÙNG KHI CLCK RA NGOÀI BIỂU ĐỒ KHÁCH HÀNG VÙNG
         document.getElementById('khuVucBieuDoKhachHang').addEventListener('click', function(event) {
             // Biến đại diện cho chính lớp nền mờ (thẻ div ngoài cùng)
             const lopNenMo = this; 
