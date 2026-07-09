@@ -713,110 +713,80 @@
 
         // HÀM TẢI DỮ LIỆU BIỂU ĐỒ NHIỆT (TÍNH TOÁN 100% TRÊN SERVER)
         let bieuDoNhietVungTieuThu = null
-async function taiDuLieuBieuDoNhietTuServer(namLoc) {
-    try {
-        // Cập nhật tiêu đề động theo năm chọn
-        const tieuDeNhiet = document.getElementById('tieuDeBieuDoNhiet');
-        if (tieuDeNhiet) tieuDeNhiet.innerText = `Sản lượng tiêu thụ theo vùng năm ${namLoc} (Tấn)`;
-        // 🌟 KHAI BÁO CỐ ĐỊNH DANH SÁCH TRỤC Y (Bạn tùy ý đổi tên hoặc thêm bớt Tỉnh thành ở đây)
-        const mangCacVungCoDinh = [
-            "Cần Thơ", 
-            "Kiên Giang", 
-            "An Giang", 
-            "Đồng Tháp",
-            "Long An",
-            "Hậu Giang", 
-            "Sóc Trăng",
-            "Tiền Giang",
-            "Trà Vinh",
-            "Cà Mau",  
-            "Bến Tre",
-            "",
-            "Phú Quốc",
-            "Vĩnh Long",
-            "Bạc Liêu",
-            ]
-
-        const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-        const cacYeuCauTinhToanNhiet = [];
-        let dataMatrix = [];
-        let maxSanLuong = 0;
-
-        // Tạo một cấu trúc lưu trữ tạm thời để gom dữ liệu bất đồng bộ
-        let ketQuaTam = {};
-        mangCacVungCoDinh.forEach(vung => {
-            ketQuaTam[vung] = Array(13).fill(0);
-        });
-
-        // 2. CHẠY VÒNG LẶP QUÉT QUA TỪNG VÙNG VÀ TỪNG THÁNG (Gửi lệnh gộp lên Server)
-        mangCacVungCoDinh.forEach((vung) => {
-            for (let thang = 1; thang <= 12; thang++) {
-
-                // Cấu hình bộ lọc đồng bộ chuẩn với Firestore thực tế của bạn
-                let dieuKienLoc = [
-                    where("nam", "==", Number(namLoc)),
-                    where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]),
-                    where("thang", "==", thang),
-                    where("vungTieuThu", "==", vung), // Thêm bộ lọc Vùng
-                    where("htGiaoNhan", "==", "Giao hàng")
-                ];
-
-                // Bộ lọc ngành siêu gọn động Sơn / TBVS / All
-                if (nganhHienTai !== "All") {
-                    dieuKienLoc.push(where("nganh", "==", nganhHienTai));
-                }
-
-                // Tạo câu lệnh truy vấn hoàn chỉnh gửi lên Firebase
-                const qLocNhiet = query(thamChieuTuyenDuong, ...dieuKienLoc);
-
-                // Gửi lệnh tính tổng gộp (tTai) trực tiếp lên Server Firebase
-                cacYeuCauTinhToanNhiet.push(
-                    getAggregateFromServer(qLocNhiet, { tongSlanLuong: sum('tTai') }).then(res => {
-                        const kgDauVao = res.data().tongSlanLuong || 0;
-                        const sanLuongTan = kgDauVao / 1000; // Quy đổi từ Kg sang Tấn
-                        
-                        ketQuaTam[vung][thang] = sanLuongTan;
-                    })
-                );
-            }
-        });
-
-        // Đợi Server xử lý đồng loạt xong toàn bộ các ô ma trận
-        await Promise.all(cacYeuCauTinhToanNhiet);
-
-        // Định dạng cấu trúc dữ liệu phẳng cho Plugin Matrix và tìm đỉnh sản lượng cao nhất
-        mangCacVungCoDinh.forEach((vung) => {
-            for (let t = 1; t <= 12; t++) {
-                const giaTriTan = ketQuaTam[vung][t];
-                if (giaTriTan > maxSanLuong) maxSanLuong = giaTriTan;
-
-                dataMatrix.push({
-                    x: String(t), // Trục X cột tháng
-                    y: vung,      // Trục Y tên Vùng cố định
-                    v: giaTriTan  // Sản lượng số Tấn thực tế
-                });
-            }
-        });
-
-        // Vẽ hoặc cập nhật biểu đồ nhiệt lên màn hình
-        veBieuDoNhiet(dataMatrix, mangCacVungCoDinh, maxSanLuong);
-
-    } catch (e) { 
-        console.error("Lỗi đồng bộ biểu đồ nhiệt từ Server:", e);
-        // Đoạn bẫy link tạo Index tự động nếu Firebase yêu cầu
-        let linkIndex = "";
-        if (e.message && e.message.includes("https://")) {
-            const match = e.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
-            if (match) linkIndex = match[0];
+        async function taiDuLieuBieuDoNhietTuServer(namLoc) {
+            try {
+                // Cập nhật tiêu đề động theo năm chọn
+                const tieuDeNhiet = document.getElementById('tieuDeBieuDoNhiet');
+                if (tieuDeNhiet) tieuDeNhiet.innerText = `Sản lượng tiêu thụ theo vùng năm ${namLoc} (Tấn)`;
+                // 🌟 KHAI BÁO CỐ ĐỊNH DANH SÁCH TRỤC Y (Bạn tùy ý đổi tên hoặc thêm bớt Tỉnh thành ở đây)
+                const mangCacVungCoDinh = [
+                    "Cần Thơ", 
+                    "Kiên Giang", 
+                    "An Giang", 
+                    "Đồng Tháp",
+                    "Long An",
+                    "Hậu Giang", 
+                    "Sóc Trăng",
+                    "Tiền Giang",
+                    "Trà Vinh",
+                    "Cà Mau",  
+                    "Bến Tre",
+                    "",
+                    "Phú Quốc",
+                    "Vĩnh Long",
+                    "Bạc Liêu",]
+                const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
+                const cacYeuCauTinhToanNhiet = [];
+                let dataMatrix = [];
+                let maxSanLuong = 0;
+                // Tạo một cấu trúc lưu trữ tạm thời để gom dữ liệu bất đồng bộ
+                let ketQuaTam = {};
+                mangCacVungCoDinh.forEach(vung => {
+                    ketQuaTam[vung] = Array(13).fill(0); });
+                // 2. CHẠY VÒNG LẶP QUÉT QUA TỪNG VÙNG VÀ TỪNG THÁNG (Gửi lệnh gộp lên Server)
+                mangCacVungCoDinh.forEach((vung) => {
+                    for (let thang = 1; thang <= 12; thang++) {
+                        // Cấu hình bộ lọc đồng bộ chuẩn với Firestore thực tế của bạn
+                        let dieuKienLoc = [
+                            where("nam", "==", Number(namLoc)),
+                            where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]),
+                            where("thang", "==", thang),
+                            where("vungTieuThu", "==", vung), // Thêm bộ lọc Vùng
+                            where("htGiaoNhan", "==", "Giao hàng")];
+                        if (nganhHienTai !== "All") {dieuKienLoc.push(where("nganh", "==", nganhHienTai));} // Bộ lọc ngành siêu gọn động Sơn / TBVS / All
+                        const qLocNhiet = query(thamChieuTuyenDuong, ...dieuKienLoc);   // Tạo câu lệnh truy vấn hoàn chỉnh gửi lên Firebase
+                        // Gửi lệnh tính tổng gộp (tTai) trực tiếp lên Server Firebase
+                        cacYeuCauTinhToanNhiet.push(
+                            getAggregateFromServer(qLocNhiet, { tongSlanLuong: sum('tTai') }).then(res => {
+                                const kgDauVao = res.data().tongSlanLuong || 0;
+                                const sanLuongTan = kgDauVao / 1000; // Quy đổi từ Kg sang Tấn
+                                ketQuaTam[vung][thang] = sanLuongTan; }) ); } });
+                // Đợi Server xử lý đồng loạt xong toàn bộ các ô ma trận
+                await Promise.all(cacYeuCauTinhToanNhiet);
+                // Định dạng cấu trúc dữ liệu phẳng cho Plugin Matrix và tìm đỉnh sản lượng cao nhất
+                mangCacVungCoDinh.forEach((vung) => {
+                    for (let t = 1; t <= 12; t++) {
+                        const giaTriTan = ketQuaTam[vung][t];
+                        if (giaTriTan > maxSanLuong) maxSanLuong = giaTriTan;
+                        dataMatrix.push({
+                            x: String(t), // Trục X cột tháng
+                            y: vung,      // Trục Y tên Vùng cố định
+                            v: giaTriTan }); }  });     // Sản lượng số Tấn thực tế
+                // Vẽ hoặc cập nhật biểu đồ nhiệt lên màn hình
+                veBieuDoNhiet(dataMatrix, mangCacVungCoDinh, maxSanLuong);
+            } catch (e) { 
+                console.error("Lỗi đồng bộ biểu đồ nhiệt từ Server:", e);
+                // Đoạn bẫy link tạo Index tự động nếu Firebase yêu cầu
+                let linkIndex = "";
+                if (e.message && e.message.includes("https://")) {
+                    const match = e.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+                    if (match) linkIndex = match[0];}
+                const oLoading = document.getElementById('loading');
+                if (oLoading && linkIndex) {
+                    oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi thiếu Index biểu đồ nhiệt! Click vào để sửa:</span> <br><br> 
+                                        <a href="${linkIndex}" target="_blank" style="color:#0082C8; text-decoration:underline; font-weight:bold;">Link tạo Index tự động</a>`;
+                    oLoading.style.display = 'flex';} }
         }
-        const oLoading = document.getElementById('loading');
-        if (oLoading && linkIndex) {
-            oLoading.innerHTML = `<span style="color:red; font-weight:bold;">Lỗi thiếu Index biểu đồ nhiệt! Click vào để sửa:</span> <br><br> 
-                                  <a href="${linkIndex}" target="_blank" style="color:#0082C8; text-decoration:underline; font-weight:bold;">Link tạo Index tự động</a>`;
-            oLoading.style.display = 'flex';
-        }
-    }
-}
 
         // KHỞI TẠO CẤU HÌNH BIỂU ĐỒ (Hàm chịu trách nhiệm dựng hình ô vuông, căn chỉnh tọa độ trục và đổ màu gradient xanh dương đồng bộ)
         function veBieuDoNhiet(dataMatrix, danhSachVungY, maxSanLuong) {
@@ -825,8 +795,7 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
             const ctx = canvasElement.getContext('2d');
             // Nếu biểu đồ đã tồn tại trước đó, xóa đi để vẽ lại dữ liệu mới tránh bị đè chèn
             if (bieuDoNhietVungTieuThu) {
-                bieuDoNhietVungTieuThu.destroy();
-            }
+                bieuDoNhietVungTieuThu.destroy(); }
             bieuDoNhietVungTieuThu = new Chart(ctx, {
                 type: 'matrix',
                 data: {
@@ -850,36 +819,28 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                                 // PHÂN ĐOẠN 1: Từ 25% (Vàng) đến 100% (Xanh đậm)
                                 // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.25 -> 1.0] thành [0.0 -> 1.0]
                                 const p = (ratio - 0.25) / (1.0 - 0.25); 
-                                
                                 // Vàng chanh nhẹ: rgb(241, 220, 100) | Xanh Navy: rgb(41, 128, 185)
                                 r = Math.round(241 + (41 - 241) * p);
                                 g = Math.round(220 + (128 - 220) * p);
-                                b = Math.round(100 + (185 - 100) * p);
-                            } 
+                                b = Math.round(100 + (185 - 100) * p); } 
                             else if (ratio >= 0.05 && ratio < 0.25) {
                                 // PHÂN ĐOẠN 2: Từ 5% (Đỏ nhạt/Cam pastel) đến 25% (Vàng chanh)
                                 // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.05 -> 0.25] thành [0.0 -> 1.0]
                                 const p = (ratio - 0.05) / (0.25 - 0.05); 
-                                
                                 // Đỏ nhạt/Cam pastel dịu: rgb(240, 140, 130) | Vàng chanh: rgb(241, 220, 100)
                                 r = Math.round(240 + (241 - 240) * p);
                                 g = Math.round(140 + (220 - 140) * p);
-                                b = Math.round(130 + (100 - 130) * p);
-                            } 
+                                b = Math.round(130 + (100 - 130) * p); } 
                             else {
                                 // PHÂN ĐOẠN YẾU: Dưới 5% sản lượng, khóa ở màu đỏ pastel nhạt (Soft Red) cho đỡ nhức mắt
                                 r = 245; 
                                 g = 160;
-                                b = 150;
-                            }
+                                b = 150;}
                             // Giữ độ hiển thị màu vừa phải (Alpha 0.85 giúp màu dịu và tôn chữ số lên rõ hơn)
                             const alpha = 0.85; 
-                            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-                        },
+                            return `rgba(${r}, ${g}, ${b}, ${alpha})`; },
                         // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
-                        borderRadius: 2
-                    }]
-                },
+                        borderRadius: 2 }] },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -894,26 +855,20 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                             padding: 2,     // Tùy chọn: Thêm padding để số không chạm viền ô
                             formatter: (value) => {
                                 const sanLuong = value ? value.v : 0;
-                                return sanLuong > 0 ? Math.round(sanLuong) : ''; } }    // Chỉ hiện số nguyên nếu > 0 Tấn
-                    },
+                                return sanLuong > 0 ? Math.round(sanLuong) : ''; } } },   // Chỉ hiện số nguyên nếu > 0 Tấn
                     scales: {
-                        x: {
-                            type: 'category',
+                        x: {type: 'category',
                             labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
                             offset: true,       // Bắt buộc bật để căn giữa các ô vuông khớp với cột tháng
                             grid: { display: false },
                             ticks: { color: '#94a3b8' } },
-                        y: {
-                            type: 'category',
+                        y: {type: 'category',
                             labels: danhSachVungY, // Nạp danh sách các vùng tự động lấy từ Firebase
                             offset: true,   // Bắt buộc bật để căn đều hàng cố định
                             grid: { display: false },
-                            ticks: { color: '#94a3b8' } } }
-                }
-
+                            ticks: { color: '#94a3b8' } } } }
             });
         }
-
     </script>
 </body>
 </html>
