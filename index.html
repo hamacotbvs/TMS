@@ -868,16 +868,7 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false }, // Ẩn chú thích vì biểu đồ nhiệt nhìn trực quan qua màu sắc
-                        tooltip: {enabled: false,  // Khỏi cho hiện bảng "Thông tin sản lượng" khi ghê chuột
-                            callbacks: {
-                                title: () => 'Thông tin sản lượng',
-                                label: (context) => {
-                                    const p = context.raw;
-                                    if (!p) return '';
-                                    return ` Vùng: ${p.y} | Tháng ${p.x}: ${p.v.toLocaleString('vi-VN', {maximumFractionDigits: 1})} Tấn`;
-                                }
-                            }
-                        },
+                        tooltip: {enabled: false},  // Khỏi cho hiện bảng "Thông tin sản lượng" khi ghê chuột
                         // Cấu hình hiển thị số trực tiếp lên các ô vuông nhiệt
                         datalabels: {
                             display: true,
