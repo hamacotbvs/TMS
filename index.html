@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script> // bổ sung biểu đồ nhiệt
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     
     <style> /* CSS */
@@ -200,9 +201,15 @@
             </div>
             <div class="vung-bieu-do-doi-ngang">
                 <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                    <h2 class="tieu-de-bieu-do" id="tieuDeBieuDoSLGHVung">Sản lượng giao hàng theo vùng năm</h2>
+                    <h2 class="tieu-de-bieu-do" id="tieuDeBieuDoSanLuongTheoVung">Sản lượng giao hàng năm</h2>
                     <div class="vung-bieu-do">
-                        <canvas id="bieuDoSLGHVung"></canvas>
+                        <canvas id="bieuDoSanLuongTheoVung"></canvas>
+                    </div>
+                </div>
+                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
+                    <h2 class="tieu-de-bieu-do" id="tieuDeBieuDoDoanhThuTheoVung">Doanh thu giao hàng năm</h2>
+                    <div class="vung-bieu-do">
+                        <canvas id="bieuDoDoanhThuTheoVung"></canvas>
                     </div>
                 </div>
             </div>
@@ -743,119 +750,235 @@
             }
         }
 
-        // KHỞI TẠO BIỂU ĐỒ SLGH THEO VÙNG
-        var bieuDoSLGHVung;
-        function khoiTaoBieuDoSLGHVung() {
-            const khungVeBieuDoSLGHVung = document.getElementById('bieuDoSLGHVung').getContext('2d');
-            bieuDoSLGHVung = new Chart(khungVeBieuDoSLGHVung, {
-                type: 'bar',
-                data: {
-                    labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], // 12 Tháng
-                    datasets: [] }, // Sẽ được tự động sinh dựa trên các vùng tiêu thụ thực tế
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                boxWidth: 14, 
-                                boxHeight: 14, 
-                                pointStyleWidth: 14, 
-                                pointStyleHeight: 14,
-                                font: { 
-                                    size: 13, 
-                                    weight: '500', 
-                                    lineHeight: 1.5 // Căn giữa chữ và khối màu hoàn hảo trên PC
-                                },
-                                padding: 15
+        // --- 1. BIỂU ĐỒ NHIỆT SẢN LƯỢNG VÙNG ---
+        const KhungVeSanLuongVung = document.getElementById('bieuDoSanLuongTheoVung').getContext('2d');
+        const bieuDoSanLuongTheoVung = new Chart(KhungVeSanLuongVung, {
+            type: 'matrix',
+            data: {
+                datasets: [{
+                    label: 'Mật độ sản lượng giao hàng',
+                    data: [], // Nhận mảng dạng lưới [{x: '1', y: 'Cần Thơ', v: 15000}] từ hàm dữ liệu
+                    backgroundColor(context) {
+                        const item = context.dataset.data[context.dataIndex];
+                        const value = item ? item.v : 0;
+                        if (value === 0) return '#f8fafc'; // Không có sản lượng -> Ô xám trắng cực nhạt
+                        
+                        // Thuật toán tính màu: Tự động lấy đỉnh cao nhất của tháng đó để chuyển sắc độ xanh dương (0.15 -> 0.95)
+                        const maxThangNay = context.chart.maxTheoThang ? context.chart.maxTheoThang[item.x] : 50000;
+                        const alpha = Math.min(value / (maxThangNay || 1), 1) * 0.8 + 0.15;
+                        return `rgba(52, 152, 219, ${alpha})`; // Tông màu xanh nước biển chủ đạo (Sắc độ tăng theo sản lượng)
+                    },
+                    width(context) {
+                        const area = context.chart.chartArea;
+                        return area ? (area.right - area.left) / 12 - 1 : 0;
+                    },
+                    height(context) {
+                        const area = context.chart.chartArea;
+                        const totalLabels = context.chart.scales.y.labels.length || 15;
+                        return area ? (area.bottom - area.top) / totalLabels - 1 : 0;
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            title: () => 'Sản lượng tiêu thụ',
+                            label: function(context) {
+                                const d = context.item.raw;
+                                return ` Tháng ${d.x} - ${d.y}: ${(d.v / 1000).toLocaleString('vi-VN', {maximumFractionDigits: 1})} Tấn`;
                             }
                         }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'category',
+                        labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { weight: 'bold', size: 12 } }
                     },
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { 
-                            beginAtZero: true,
-                            ticks: { callback: function(value) { return value + 'T'; } } // Đuôi Tấn (T)
-                        }
+                    y: {
+                        type: 'category',
+                        labels: [], // Sẽ cập nhật động danh sách tỉnh tự động từ bé đến lớn (Thằng lớn nằm dưới cùng)
+                        grid: { display: false },
+                        ticks: { color: '#475569', font: { family: 'Roboto', size: 11 } }
                     }
                 }
-            });
-        }
-        // NHẬN DATA
-        function taiDuLieuBieuDoSLGHVungTuServer(dataMoiTuServer) {
-            if (!bieuDoSLGHVung) return;
-            // Lọc dữ liệu: CHỈ LẤY "Giao hàng"
-            let duLieuLoc = dataMoiTuServer.filter(item => item.htGiaoNhan === 'Giao hàng');
-            // Gom danh sách tất cả các Vùng tiêu thụ duy nhất xuất hiện trong data
-            let danhSachVung = [];
-            duLieuLoc.forEach(item => {
-                if (item.vungTieuThu && !danhSachVung.includes(item.vungTieuThu)) {
-                    danhSachVung.push(item.vungTieuThu);} });
-            // Bảng cấu hình màu sắc cố định cho các Vùng tiêu thụ (Bạn tự điều chỉnh tên vùng cho khớp database)
-            const mauCacVung = {
-                'Cần Thơ': '#3498db',   // Xanh dương
-                'An Giang': '#e74c3c',  // Đỏ
-                'Kiên Giang': '#2ecc71', // Xanh lá
-                'Vĩnh Long': '#f1c40f',  // Vàng
-                'Hậu Giang': '#9b59b6' };  // Tím
-            const mauMacDinh = ['#34495e', '#16a085', '#d35400', '#7f8c8d'];
-            // Tạo mảng 12 tháng để chứa dữ liệu phân tích theo từng tháng
-            let duLieuTheoThang = Array(12).fill(0).map(() => []);
-            for (let thang = 1; thang <= 12; thang++) {
-                danhSachVung.forEach(vung => {
-                    // Lọc dữ liệu đúng tháng và đúng vùng
-                    let items = duLieuLoc.filter(item => {
-                        let m = item.thang || (item.ngayThang ? new Date(item.ngayThang).getMonth() + 1 : 0);
-                        return m === thang && item.vungTieuThu === vung; });
-                    let tongSanLuong = items.reduce((sum, item) => sum + Number(item.sanLuong || 0), 0);
-                    duLieuTheoThang[thang - 1].push({
-                        vung: vung,
-                        giaTri: tongSanLuong });  });
-                // 🌟 THUẬT TOÁN ĐẢO CỘT LỒNG NHAU:
-                // Sắp xếp các vùng trong tháng này theo thứ tự từ LỚN ĐẾN NHỎ.
-                // Thằng lớn nhất xếp trước (vẽ trước -> làm nền ở dưới), thằng nhỏ xếp sau (vẽ sau -> đè lọt lòng lên trên)
-                duLieuTheoThang[thang - 1].sort((a, b) => b.giaTri - a.giaTri);
             }
-            // Tiến hành bóc tách ma trận tháng ngược lại thành các tầng Datasets cho Chart.js
-            let datasetsMoi = [];
-            let soLuongVung = danhSachVung.length;
-            // Tính toán độ bự giảm dần (Càng lên tầng cao/cột nhỏ thì barPercentage càng bé để lọt lòng)
-            let doRongCoBan = 0.85;
-            let buocGiam = soLuongVung > 1 ? 0.4 / (soLuongVung - 1) : 0;
-            for (let tang = 0; tang < soLuongVung; tang++) {
-                let dataTang = [];
-                let backgroundColors = [];
-                for (let thang = 0; thang < 12; thang++) {
-                    let thongTinVung = duLieuTheoThang[thang][tang];
-                    if (thongTinVung) {
-                        dataTang.push(thongTinVung.giaTri);
-                        backgroundColors.push(mauCacVung[thongTinVung.vung] || mauMacDinh[tang % mauMacDinh.length]);
-                    } else {
-                        dataTang.push(0);
-                        backgroundColors.push('rgba(0,0,0,0)'); } }
-                datasetsMoi.push({
-                    label: `Tầng ${tang + 1}`, // Nhãn quản lý nội bộ của Chart.js
-                    data: dataTang,
-                    backgroundColor: backgroundColors,
-                    borderRadius: 4,
-                    borderSkipped: 'bottom',
-                    barPercentage: doRongCoBan - (tang * buocGiam), // Ép nhỏ dần độ rộng
-                    categoryPercentage: 0.8,
-                    grouped: false, // Bắt buộc false để các cột đè chồng lên nhau thay vì đứng cạnh nhau
-                    datalabels: { display: false } }); }
-            // Ép hiển thị Chú thích (Legend) động theo tên thực tế của các Vùng tiêu thụ
-            bieuDoSLGHVung.options.plugins.legend.labels.generateLabels = function(chart) {
-                return danhSachVung.map((vung, idx) => ({
-                    text: vung,
-                    fillStyle: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
-                    strokeStyle: mauCacVung[vung] || mauMacDinh[idx % mauMacDinh.length],
-                    pointStyle: 'rectRounded' })); };
-            // Cập nhật dữ liệu mới lên khung canvas của bạn
-            bieuDoSLGHVung.data.datasets = datasetsMoi;
-            bieuDoSLGHVung.update();
+        });
+
+
+        // --- 2. BIỂU ĐỒ NHIỆT DOANH THU VÙNG ---
+        const KhungVeDoanhThuVung = document.getElementById('bieuDoDoanhThuTheoVung').getContext('2d');
+        const bieuDoDoanhThuTheoVung = new Chart(KhungVeDoanhThuVung, {
+            type: 'matrix',
+            data: {
+                datasets: [{
+                    label: 'Mật độ doanh thu',
+                    data: [], 
+                    backgroundColor(context) {
+                        const item = context.dataset.data[context.dataIndex];
+                        const value = item ? item.v : 0;
+                        if (value === 0) return '#f8fafc';
+                        
+                        const maxThangNay = context.chart.maxTheoThang ? context.chart.maxTheoThang[item.x] : 100000000;
+                        const alpha = Math.min(value / (maxThangNay || 1), 1) * 0.8 + 0.15;
+                        return `rgba(46, 204, 113, ${alpha})`; // Tông màu xanh lá chủ đạo (Sắc độ tăng theo doanh thu)
+                    },
+                    width(context) {
+                        const area = context.chart.chartArea;
+                        return area ? (area.right - area.left) / 12 - 1 : 0;
+                    },
+                    height(context) {
+                        const area = context.chart.chartArea;
+                        const totalLabels = context.chart.scales.y.labels.length || 15;
+                        return area ? (area.bottom - area.top) / totalLabels - 1 : 0;
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            title: () => 'Doanh thu tiêu thụ',
+                            label: function(context) {
+                                const d = context.item.raw;
+                                return ` Tháng ${d.x} - ${d.y}: ${(d.v / 1000000).toLocaleString('vi-VN', {maximumFractionDigits: 0})} Triệu`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'category',
+                        labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { weight: 'bold', size: 12 } }
+                    },
+                    y: {
+                        type: 'category',
+                        labels: [], 
+                        grid: { display: false },
+                        ticks: { color: '#475569', font: { family: 'Roboto', size: 11 } }
+                    }
+                }
+            }
+        });
+        // XỬ LÝ DỮ LIỆU BIỂU ĐỒ
+        async function taiDuLieuBieuDoSanLuongGiaoHangTuServer(namLoc) {
+            try {
+                // Khởi tạo các object chứa dữ liệu thô gom theo cấu trúc: { 'Tên Tỉnh': [Tháng 1, Tháng 2,...] }
+                let thongKeSLGoc = {};
+                let thongKeDTGoc = {};
+                
+                let tongCaNamSL = {}; // Để xếp hạng sản lượng trục Y
+                let tongCaNamDT = {}; // Để xếp hạng doanh thu trục Y
+
+                // 1. TRUY VẤN DỮ LIỆU TỪ FIREBASE
+                const queryTuyenDuong = query(collection(db, "TUYENDUONG"), where("htGiaoNhan", "==", "Giao hàng"));
+                const snapshot = await getDocs(queryTuyenDuong);
+                
+                snapshot.forEach((doc) => {
+                    const item = doc.data();
+                    const ngayChungTu = item.ngay ? new Date(item.ngay) : null; 
+                    if (!ngayChungTu || ngayChungTu.getFullYear() !== namLoc) return;
+                    if (nganhHienTai !== 'All' && item.nganh !== nganhHienTai) return;
+                    if (item.duyet !== 'Đã xuất kho' && item.duyet !== 'Đã giao hàng') return;
+
+                    const tinh = item.vungTieuThu || "Khác";
+                    const tTai = parseFloat(item.tTai) || 0;
+                    const thanhTien = parseFloat(item.thanhTien) || 0;
+                    const thangData = ngayChungTu.getMonth(); // 0 -> 11
+
+                    // Khởi tạo mảng đệm 12 tháng nếu gặp tỉnh mới lần đầu
+                    if (!thongKeSLGoc[tinh]) {
+                        thongKeSLGoc[tinh] = Array(12).fill(0);
+                        thongKeDTGoc[tinh] = Array(12).fill(0);
+                        tongCaNamSL[tinh] = 0;
+                        tongCaNamDT[tinh] = 0;
+                    }
+
+                    // Cộng dồn tích lũy dữ liệu
+                    thongKeSLGoc[tinh][thangData] += tTai;
+                    thongKeDTGoc[tinh][thangData] += thanhTien;
+                    
+                    tongCaNamSL[tinh] += tTai;
+                    tongCaNamDT[tinh] += thanhTien;
+                });
+
+                // 2. THUẬT TOÁN SẮP XẾP TRỤC Y (VÙNG CAO NHẤT NẰM DƯỚI CÙNG)
+                // Vì Chart.js render trục tung Y từ đáy lên đỉnh, nên mảng labels phải xếp từ BÉ đến LỚN.
+                let danhSachTinhXepHangSL = Object.keys(tongCaNamSL).sort((a, b) => tongCaNamSL[a] - tongCaNamSL[b]);
+                let danhSachTinhXepHangDT = Object.keys(tongCaNamDT).sort((a, b) => tongCaNamDT[a] - tongCaNamDT[b]);
+
+                // 3. CHUYỂN ĐỔI SANG MẢNG MA TRẬN Ô LƯỚI (MATRIX DATASET)
+                let matrixSL = [];
+                let matrixDT = [];
+                
+                let maxSLMoiThang = {};
+                let maxDTMoiThang = {};
+
+                // Tạo lưới tọa độ Sản Lượng
+                danhSachTinhXepHangSL.forEach(tinh => {
+                    for (let thang = 0; thang < 12; thang++) {
+                        const giaTri = thongKeSLGoc[tinh][thang];
+                        const tenThangStr = (thang + 1).toString();
+                        
+                        if (!maxSLMoiThang[tenThangStr] || giaTri > maxSLMoiThang[tenThangStr]) {
+                            maxSLMoiThang[tenThangStr] = giaTri;
+                        }
+                        
+                        matrixSL.push({ x: tenThangStr, y: tinh, v: giaTri });
+                    }
+                });
+
+                // Tạo lưới tọa độ Doanh Thu
+                danhSachTinhXepHangDT.forEach(tinh => {
+                    for (let thang = 0; thang < 12; thang++) {
+                        const giaTri = thongKeDTGoc[tinh][thang];
+                        const tenThangStr = (thang + 1).toString();
+                        
+                        if (!maxDTMoiThang[tenThangStr] || giaTri > maxDTMoiThang[tenThangStr]) {
+                            maxDTMoiThang[tenThangStr] = giaTri;
+                        }
+                        
+                        matrixDT.push({ x: tenThangStr, y: tinh, v: giaTri });
+                    }
+                });
+
+                // 4. ĐẨY DỮ LIỆU VÀ CẬP NHẬT TRỰC TIẾP LÊN BIỂU ĐỒ
+                // Cập nhật trục Y
+                bieuDoSanLuongTheoVung.options.scales.y.labels = danhSachTinhXepHangSL;
+                bieuDoDoanhThuTheoVung.options.scales.y.labels = danhSachTinhXepHangDT;
+
+                // Truyền mốc max tính màu động cho plugin
+                bieuDoSanLuongTheoVung.maxTheoThang = maxSLMoiThang;
+                bieuDoDoanhThuTheoVung.maxTheoThang = maxDTMoiThang;
+
+                // Gán mảng dữ liệu lưới ô vuông
+                bieuDoSanLuongTheoVung.data.datasets[0].data = matrixSL;
+                bieuDoDoanhThuTheoVung.data.datasets[0].data = matrixDT;
+
+                // Ghi nhận năm hiển thị trên giao diện (nếu có element)
+                if (document.getElementById('txtNamSanLuongVung')) document.getElementById('txtNamSanLuongVung').innerText = `năm ${namLoc}`;
+                if (document.getElementById('txtNamDoanhThuVung')) document.getElementById('txtNamDoanhThuVung').innerText = `năm ${namLoc}`;
+
+                // Render lại biểu đồ nhiệt
+                bieuDoSanLuongTheoVung.update();
+                bieuDoDoanhThuTheoVung.update();
+
+            } catch (loi) {
+                console.error("Lỗi đồng bộ cấu trúc biểu đồ nhiệt: ", loi);
+            }
         }
     </script>
 </body>
