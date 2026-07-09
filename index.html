@@ -759,10 +759,10 @@
                         height: ({chart}) => chart.chartArea ? (chart.chartArea.height / danhSachVungY.length) - 2 : 0,
                         // Hàm đổ màu động: Ô nào sản lượng càng cao thì màu xanh càng đậm
                         backgroundColor(context) {
-                            const value = context.dataset.data[context.dataIndex]?.v || 0;
+                            const item = context.raw;
+                            const value = item ? item.v : 0;
                             if (value === 0) return '#f8fafc'; // Ô trống không có sản lượng (Màu xám cực nhạt)
-                            
-                            const alpha = Math.min(0.1 + (value / maxSanLuong) * 0.9, 1); // Đạt từ 0.1 đến 1 độ đậm
+                            const alpha = Math.min(0.1 + (value / (maxSanLuong || 1)) * 0.9, 1); // Đạt từ 0.1 đến 1 độ đậm
                             return `rgba(52, 152, 219, ${alpha})`; // Sử dụng tông xanh dương giống biểu đồ Giao Hàng của bạn
                         },
                         // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
