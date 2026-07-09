@@ -882,8 +882,9 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                         // Cấu hình hiển thị số trực tiếp lên các ô vuông nhiệt
                         datalabels: {
                             display: true,
-                            color: '#2c3e50',
-                            font: { size: 10, weight: '500' },
+                            color: '#1a202c',
+                            font: { size: 14, weight: '800' },
+                            padding: 2,     // Tùy chọn: Thêm padding để số không chạm viền ô
                             formatter: (value) => {
                                 const sanLuong = value ? value.v : 0;
                                 return sanLuong > 0 ? Math.round(sanLuong) : ''; // Chỉ hiện số nguyên nếu > 0 Tấn
