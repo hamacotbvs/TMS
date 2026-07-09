@@ -717,7 +717,8 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
             "Phú Quốc",
             "Vĩnh Long",
             "Bạc Liêu",
-            "",]
+            "-Rỗng-",   // Viết Script định nghĩa rỗng
+            ]
 
         const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
         const cacYeuCauTinhToanNhiet = [];
@@ -733,13 +734,14 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
         // 2. CHẠY VÒNG LẶP QUÉT QUA TỪNG VÙNG VÀ TỪNG THÁNG (Gửi lệnh gộp lên Server)
         mangCacVungCoDinh.forEach((vung) => {
             for (let thang = 1; thang <= 12; thang++) {
-
+                // 🌟 ĐOẠN THÊM MỚI: Nếu tên vùng là "Rỗng" thì giá trị thực tế truyền lên Firebase để lọc phải là ""
+                const giaTriLocVung = (vung === "Rỗng") ? "" : vung;
                 // Cấu hình bộ lọc đồng bộ chuẩn với Firestore thực tế của bạn
                 let dieuKienLoc = [
                     where("nam", "==", Number(namLoc)),
                     where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]),
                     where("thang", "==", thang),
-                    where("vungTieuThu", "==", vung), // Thêm bộ lọc Vùng
+                    where("vungTieuThu", "==", giaTriLocVung), // dùng giaTriLocVung thay vung gì có định nghĩa thêm ""
                     where("htGiaoNhan", "==", "Giao hàng")
                 ];
 
