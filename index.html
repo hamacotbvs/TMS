@@ -756,7 +756,7 @@
                         data: dataMatrix,
                         // Định hình kích thước ô vuông nhiệt
                         width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 2 : 0,
-                        height: ({chart}) => chart.chartArea ? (chart.chartArea.height / danhSachVungY.length) - 2 : 0,
+                        height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachVungY.length || 1)) - 2 : 0,
                         // Hàm đổ màu động: Ô nào sản lượng càng cao thì màu xanh càng đậm
                         backgroundColor(context) {
                             const item = context.raw;
@@ -799,12 +799,14 @@
                         x: {
                             type: 'category',
                             labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+                            offset: true,
                             grid: { display: false },
                             ticks: { color: '#94a3b8' }
                         },
                         y: {
                             type: 'category',
                             labels: danhSachVungY, // Nạp danh sách các vùng tự động lấy từ Firebase
+                            offset: true,
                             grid: { display: false },
                             ticks: { color: '#94a3b8' }
                         }
