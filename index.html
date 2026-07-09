@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-    <title>HAMACO-TMS</title> 
+    <title>HAMACO-TMS</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -714,10 +714,10 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
             "Trà Vinh",
             "Cà Mau",  
             "Bến Tre",
+            "",
             "Phú Quốc",
             "Vĩnh Long",
             "Bạc Liêu",
-            "-Rỗng-",   // Viết Script định nghĩa rỗng
             ]
 
         const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
@@ -734,14 +734,13 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
         // 2. CHẠY VÒNG LẶP QUÉT QUA TỪNG VÙNG VÀ TỪNG THÁNG (Gửi lệnh gộp lên Server)
         mangCacVungCoDinh.forEach((vung) => {
             for (let thang = 1; thang <= 12; thang++) {
-                // 🌟 ĐOẠN THÊM MỚI: Nếu tên vùng là "Rỗng" thì giá trị thực tế truyền lên Firebase để lọc phải là ""
-                const giaTriLocVung = (vung === "Rỗng") ? "" : vung;
+
                 // Cấu hình bộ lọc đồng bộ chuẩn với Firestore thực tế của bạn
                 let dieuKienLoc = [
                     where("nam", "==", Number(namLoc)),
                     where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]),
                     where("thang", "==", thang),
-                    where("vungTieuThu", "==", giaTriLocVung), // dùng giaTriLocVung thay vung gì có định nghĩa thêm ""
+                    where("vungTieuThu", "==", vung), // Thêm bộ lọc Vùng
                     where("htGiaoNhan", "==", "Giao hàng")
                 ];
 
