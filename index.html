@@ -789,7 +789,10 @@
                             display: true,
                             color: '#2c3e50',
                             font: { size: 10, weight: '500' },
-                            formatter: (value) => value.v > 0 ? Math.round(value.v) : '' // Chỉ hiện số nếu > 0
+                            formatter: (value, ctx) => {
+                                const item = ctx.dataset.data[ctx.dataIndex];
+                                const sanLuong = item ? item.v : 0;
+                                return sanLuong > 0 ? Math.round(sanLuong) : ''; // Chỉ hiện số nếu > 0
                         }
                     },
                     scales: {
