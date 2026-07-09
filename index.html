@@ -12,6 +12,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     
     <style> /* CSS */
@@ -259,6 +260,7 @@
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getAggregateFromServer, sum } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { MatrixController, MatrixElement } from 'chartjs-chart-matrix'; Chart.register(MatrixController, MatrixElement);
         
         const firebaseConfig = { 
             apiKey: "AIzaSyA4N3-5OhkDXZV8Yw-TEymODHuv_-QwPGU",
@@ -818,96 +820,108 @@
 
         // XỬ LÝ DỮ LIỆU BIỂU ĐỒ
         async function taiDuLieuBieuDoSanLuongGiaoHangTuServer(namLoc) {
-            try {
-                let thongKeSLGoc = {};
-                let thongKeDTGoc = {};
-                let tongCaNamSL = {}; 
-                let tongCaNamDT = {}; 
+    try {
+        let thongKeSLGoc = {};
+        let thongKeDTGoc = {};
+        let tongCaNamSL = {}; 
+        let tongCaNamDT = {}; 
 
-                // 1. TRUY VẤN DỮ LIỆU TỪ FIREBASE
-                const queryTuyenDuong = query(collection(db, "TUYENDUONG"), where("htGiaoNhan", "==", "Giao hàng"));
-                const snapshot = await getDocs(queryTuyenDuong);
-                
-                snapshot.forEach((doc) => {
-                    const item = doc.data();
-                    const ngayChungTu = item.ngay ? new Date(item.ngay) : null; 
-                    if (!ngayChungTu || ngayChungTu.getFullYear() !== namLoc) return;
-                    if (typeof nganhHienTai !== 'undefined' && nganhHienTai !== 'All' && item.nganh !== nganhHienTai) return;
-                    if (item.duyet !== 'Đã xuất kho' && item.duyet !== 'Đã giao hàng') return;
+        // 1. TRUY VẤN DỮ LIỆU TỪ FIREBASE
+        const queryTuyenDuong = query(collection(db, "TUYENDUONG"), where("htGiaoNhan", "==", "Giao hàng"));
+        const snapshot = await getDocs(queryTuyenDuong);
+        
+        snapshot.forEach((doc) => {
+            const item = doc.data();
+            
+            // Lọc năm: Kiểm tra kỹ trường năm trong DB của bạn (nếu là chuỗi thì ép về số)
+            const namData = item.nam ? parseInt(item.nam) : (item.ngay ? new Date(item.ngay).getFullYear() : null);
+            if (namData !== parseInt(namLoc)) return;
+            
+            if (typeof nganhHienTai !== 'undefined' && nganhHienTai !== 'All' && item.nganh !== nganhHienTai) return;
+            if (item.duyet !== 'Đã xuất kho' && item.duyet !== 'Đã giao hàng') return;
 
-                    const tinh = item.vungTieuThu || "Khác";
-                    const tTai = parseFloat(item.tTai) || 0;
-                    const thanhTien = parseFloat(item.thanhTien) || 0;
-                    const thangData = ngayChungTu.getMonth(); // 0 -> 11
+            const tinh = item.vungTieuThu || "Khác";
+            const tTai = parseFloat(item.tTai) || 0;
+            const thanhTien = parseFloat(item.thanhTien) || 0;
+            
+            // TẬN DỤNG CỘT THANG CÓ SẴN (Ép kiểu về Number và đưa về index hệ 0-11 để chạy vòng lặp mảng)
+            const thangNum = parseInt(item.thang); 
+            if (isNaN(thangNum) || thangNum < 1 || thangNum > 12) return; // Bỏ qua nếu dữ liệu lỗi
+            const thangIndex = thangNum - 1; // Khớp với mảng Array(12)
 
-                    if (!thongKeSLGoc[tinh]) {
-                        thongKeSLGoc[tinh] = Array(12).fill(0);
-                        thongKeDTGoc[tinh] = Array(12).fill(0);
-                        tongCaNamSL[tinh] = 0;
-                        tongCaNamDT[tinh] = 0;
-                    }
-
-                    thongKeSLGoc[tinh][thangData] += tTai;
-                    thongKeDTGoc[tinh][thangData] += thanhTien;
-                    
-                    tongCaNamSL[tinh] += tTai;
-                    tongCaNamDT[tinh] += thanhTien;
-                });
-
-                // 2. THUẬT TOÁN SẮP XẾP TRỤC Y
-                let danhSachTinhXepHangSL = Object.keys(tongCaNamSL).sort((a, b) => tongCaNamSL[a] - tongCaNamSL[b]);
-                let danhSachTinhXepHangDT = Object.keys(tongCaNamDT).sort((a, b) => tongCaNamDT[a] - tongCaNamDT[b]);
-
-                // 3. CHUYỂN ĐỔI SANG MẢNG MA TRẬN Ô LƯỚI
-                let matrixSL = [];
-                let matrixDT = [];
-                let maxSLMoiThang = {};
-                let maxDTMoiThang = {};
-
-                danhSachTinhXepHangSL.forEach(tinh => {
-                    for (let thang = 0; thang < 12; thang++) {
-                        const giaTri = thongKeSLGoc[tinh][thang];
-                        const tenThangStr = (thang + 1).toString();
-                        
-                        if (!maxSLMoiThang[tenThangStr] || giaTri > maxSLMoiThang[tenThangStr]) {
-                            maxSLMoiThang[tenThangStr] = giaTri;
-                        }
-                        matrixSL.push({ x: tenThangStr, y: tinh, v: giaTri });
-                    }
-                });
-
-                danhSachTinhXepHangDT.forEach(tinh => {
-                    for (let thang = 0; thang < 12; thang++) {
-                        const giaTri = thongKeDTGoc[tinh][thang];
-                        const tenThangStr = (thang + 1).toString();
-                        
-                        if (!maxDTMoiThang[tenThangStr] || giaTri > maxDTMoiThang[tenThangStr]) {
-                            maxDTMoiThang[tenThangStr] = giaTri;
-                        }
-                        matrixDT.push({ x: tenThangStr, y: tinh, v: giaTri });
-                    }
-                });
-
-                // 4. ĐẨY DỮ LIỆU VÀ CẬP NHẬT TRỰC TIẾP LÊN BIỂU ĐỒ
-                bieuDoSanLuongTheoVung.options.scales.y.labels = danhSachTinhXepHangSL;
-                bieuDoDoanhThuTheoVung.options.scales.y.labels = danhSachTinhXepHangDT;
-
-                bieuDoSanLuongTheoVung.maxTheoThang = maxSLMoiThang;
-                bieuDoDoanhThuTheoVung.maxTheoThang = maxDTMoiThang;
-
-                bieuDoSanLuongTheoVung.data.datasets[0].data = matrixSL;
-                bieuDoDoanhThuTheoVung.data.datasets[0].data = matrixDT;
-
-                if (document.getElementById('txtNamSanLuongVung')) document.getElementById('txtNamSanLuongVung').innerText = `năm ${namLoc}`;
-                if (document.getElementById('txtNamDoanhThuVung')) document.getElementById('txtNamDoanhThuVung').innerText = `năm ${namLoc}`;
-
-                bieuDoSanLuongTheoVung.update();
-                bieuDoDoanhThuTheoVung.update();
-
-            } catch (loi) {
-                console.error("Lỗi đồng bộ cấu trúc biểu đồ nhiệt: ", loi);
+            // Khởi tạo nếu gặp tỉnh mới
+            if (!thongKeSLGoc[tinh]) {
+                thongKeSLGoc[tinh] = Array(12).fill(0);
+                thongKeDTGoc[tinh] = Array(12).fill(0);
+                tongCaNamSL[tinh] = 0;
+                tongCaNamDT[tinh] = 0;
             }
-        }
+
+            // Tích lũy số liệu
+            thongKeSLGoc[tinh][thangIndex] += tTai;
+            thongKeDTGoc[tinh][thangIndex] += thanhTien;
+            
+            tongCaNamSL[tinh] += tTai;
+            tongCaNamDT[tinh] += thanhTien;
+        });
+
+        // 2. THUẬT TOÁN SẮP XẾP TRỤC Y
+        let danhSachTinhXepHangSL = Object.keys(tongCaNamSL).sort((a, b) => tongCaNamSL[a] - tongCaNamSL[b]);
+        let danhSachTinhXepHangDT = Object.keys(tongCaNamDT).sort((a, b) => tongCaNamDT[a] - tongCaNamDT[b]);
+
+        // 3. CHUYỂN ĐỔI SANG MẢNG MA TRẬN Ô LƯỚI (MATRIX DATASET)
+        let matrixSL = [];
+        let matrixDT = [];
+        let maxSLMoiThang = {};
+        let maxDTMoiThang = {};
+
+        // Đổ lưới Sản Lượng
+        danhSachTinhXepHangSL.forEach(tinh => {
+            for (let thangIdx = 0; thangIdx < 12; thangIdx++) {
+                const giaTri = thongKeSLGoc[tinh][thangIdx];
+                const tenThangStr = (thangIdx + 1).toString(); // Chuyển thành "1", "2"... để khớp trục X
+                
+                if (!maxSLMoiThang[tenThangStr] || giaTri > maxSLMoiThang[tenThangStr]) {
+                    maxSLMoiThang[tenThangStr] = giaTri;
+                }
+                matrixSL.push({ x: tenThangStr, y: tinh, v: giaTri });
+            }
+        });
+
+        // Đổ lưới Doanh Thu
+        danhSachTinhXepHangDT.forEach(tinh => {
+            for (let thangIdx = 0; thangIdx < 12; thangIdx++) {
+                const giaTri = thongKeDTGoc[tinh][thangIdx];
+                const tenThangStr = (thangIdx + 1).toString(); // Chuyển thành "1", "2"... để khớp trục X
+                
+                if (!maxDTMoiThang[tenThangStr] || giaTri > maxDTMoiThang[tenThangStr]) {
+                    maxDTMoiThang[tenThangStr] = giaTri;
+                }
+                matrixDT.push({ x: tenThangStr, y: tinh, v: giaTri });
+            }
+        });
+
+        // 4. ĐẨY DỮ LIỆU VÀ CẬP NHẬT TRỰC TIẾP LÊN BIỂU ĐỒ
+        bieuDoSanLuongTheoVung.options.scales.y.labels = danhSachTinhXepHangSL;
+        bieuDoDoanhThuTheoVung.options.scales.y.labels = danhSachTinhXepHangDT;
+
+        bieuDoSanLuongTheoVung.maxTheoThang = maxSLMoiThang;
+        bieuDoDoanhThuTheoVung.maxTheoThang = maxDTMoiThang;
+
+        bieuDoSanLuongTheoVung.data.datasets[0].data = matrixSL;
+        bieuDoDoanhThuTheoVung.data.datasets[0].data = matrixDT;
+
+        if (document.getElementById('txtNamSanLuongVung')) document.getElementById('txtNamSanLuongVung').innerText = `năm ${namLoc}`;
+        if (document.getElementById('txtNamDoanhThuVung')) document.getElementById('txtNamDoanhThuVung').innerText = `năm ${namLoc}`;
+
+        // Vẽ lại biểu đồ
+        bieuDoSanLuongTheoVung.update();
+        bieuDoDoanhThuTheoVung.update();
+
+    } catch (loi) {
+        console.error("Lỗi đồng bộ cấu trúc biểu đồ nhiệt: ", loi);
+    }
+}
     </script>
 </body>
 </html>
