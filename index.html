@@ -11,8 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
     
     <style> /* CSS */
@@ -202,7 +202,7 @@
             </div>
             <div class="vung-bieu-do-doi-ngang">
                 <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                    <h2 class="tieu-de-bieu-do">Sản lượng giao hàng năm</h2>
+                    <h2 class="tieu-de-bieu-do" id="tieuDeNhiet">Sản lượng giao hàng theo vùng năm</h2>
                     <div class="vung-bieu-do">
                         <canvas id="bieuDoNhietVung"></canvas>
                     </div>
@@ -692,7 +692,10 @@
         // HÀM TẢI DỮ LIỆU BIỂU ĐỒ NHIỆT (TÍNH TOÁN 100% TRÊN SERVER)
 async function taiDuLieuBieuDoNhietTuServer(namLoc) {
     try {
-        // 1. 🌟 KHAI BÁO CỐ ĐỊNH DANH SÁCH TRỤC Y (Bạn tự đổi tên các Tỉnh theo ý muốn)
+        // Cập nhật tiêu đề động theo năm chọn
+        const tieuDeNhiet = document.getElementById('tieuDeBieuDoNhiet');
+        if (tieuDeNhiet) tieuDeNhiet.innerText = `Sản lượng tiêu thụ theo vùng năm ${namLoc} (Tấn)`;
+        // 🌟 KHAI BÁO CỐ ĐỊNH DANH SÁCH TRỤC Y (Bạn tùy ý đổi tên hoặc thêm bớt Tỉnh thành ở đây)
         const mangCacVungCoDinh = [
             "An Giang", 
             "Kiên Giang", 
@@ -700,7 +703,14 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
             "Cà Mau", 
             "Hậu Giang", 
             "Sóc Trăng", 
-            "Vĩnh Long"
+            "Vĩnh Long",
+            "Bạc Liêu",
+            "Bến Tre",
+            "Đồng Tháp",
+            "Long An",
+            "Phú Quốc",
+            "Tiền Giang",
+            "Trà Vinh",
         ].sort(); // Sắp xếp theo thứ tự chữ cái ABC cho đẹp trục Y
 
         const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
@@ -718,7 +728,7 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
         mangCacVungCoDinh.forEach((vung) => {
             for (let thang = 1; thang <= 12; thang++) {
 
-                // Thiết lập bộ lọc điều kiện y hệt biểu đồ sản lượng năm của bạn
+                // Cấu hình bộ lọc đồng bộ chuẩn với Firestore thực tế của bạn
                 let dieuKienLoc = [
                     where("nam", "==", Number(namLoc)),
                     where("duyet", "in", ["Đã xuất kho", "Đã giao hàng"]),
@@ -727,19 +737,19 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                     where("htGiaoNhan", "==", "Giao hàng")
                 ];
 
-                // Bộ lọc ngành siêu gọn động
+                // Bộ lọc ngành siêu gọn động Sơn / TBVS / All
                 if (nganhHienTai !== "All") {
                     dieuKienLoc.push(where("nganh", "==", nganhHienTai));
                 }
 
                 // Tạo câu lệnh truy vấn hoàn chỉnh gửi lên Firebase
-                const qLọcNhiet = query(thamChieuTuyenDuong, ...dieuKienLoc);
+                const qLocNhiet = query(thamChieuTuyenDuong, ...dieuKienLoc);
 
-                // Gửi lệnh tính tổng sản lượng (tTai) trực tiếp từ Server
+                // Gửi lệnh tính tổng gộp (tTai) trực tiếp lên Server Firebase
                 cacYeuCauTinhToanNhiet.push(
-                    getAggregateFromServer(qLọcNhiet, { tongSlanLuong: sum('tTai') }).then(res => {
+                    getAggregateFromServer(qLocNhiet, { tongSlanLuong: sum('tTai') }).then(res => {
                         const kgDauVao = res.data().tongSlanLuong || 0;
-                        const sanLuongTan = kgDauVao / 1000; // Quy đổi ra Tấn để vẽ lên biểu đồ nhiệt
+                        const sanLuongTan = kgDauVao / 1000; // Quy đổi từ Kg sang Tấn
                         
                         ketQuaTam[vung][thang] = sanLuongTan;
                     })
@@ -747,10 +757,10 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
             }
         });
 
-        // 3. ĐỢI SERVER XỬ LÝ XONG TOÀN BỘ MA TRẬN
+        // Đợi Server xử lý đồng loạt xong toàn bộ các ô ma trận
         await Promise.all(cacYeuCauTinhToanNhiet);
 
-        // 4. CHUYỂN ĐỔI DỮ LIỆU SANG CẤU TRÚC PHẲNG (MATRIX DATASET) VÀ TÌM ĐỈNH ĐẬM MÀU
+        // Định dạng cấu trúc dữ liệu phẳng cho Plugin Matrix và tìm đỉnh sản lượng cao nhất
         mangCacVungCoDinh.forEach((vung) => {
             for (let t = 1; t <= 12; t++) {
                 const giaTriTan = ketQuaTam[vung][t];
@@ -764,7 +774,7 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
             }
         });
 
-        // 5. GỌI HÀM VẼ BIỂU ĐỒ NHIỆT MÀN HÌNH
+        // Vẽ hoặc cập nhật biểu đồ nhiệt lên màn hình
         veBieuDoNhiet(dataMatrix, mangCacVungCoDinh, maxSanLuong);
 
     } catch (e) { 
@@ -784,9 +794,11 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
     }
 }
 
-        // KHỞI TẠO CẤU HÌNH BIỂU ĐỒ
+        // KHỞI TẠO CẤU HÌNH BIỂU ĐỒ (Hàm chịu trách nhiệm dựng hình ô vuông, căn chỉnh tọa độ trục và đổ màu gradient xanh dương đồng bộ)
         function veBieuDoNhiet(dataMatrix, danhSachVungY, maxSanLuong) {
-            const ctx = document.getElementById('bieuDoNhietVung').getContext('2d');
+            const canvasElement = document.getElementById('bieuDoNhietVung');
+            if (!canvasElement) return;
+            const ctx = canvasElement.getContext('2d');
             // Nếu biểu đồ đã tồn tại trước đó, xóa đi để vẽ lại dữ liệu mới tránh bị đè chèn
             if (bieuDoNhietVungTieuThu) {
                 bieuDoNhietVungTieuThu.destroy();
@@ -800,7 +812,7 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                         // Định hình kích thước ô vuông nhiệt
                         width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 2 : 0,
                         height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachVungY.length || 1)) - 2 : 0,
-                        // Hàm đổ màu động: Ô nào sản lượng càng cao thì màu xanh càng đậm
+                        // Hàm đổ màu động: Ô nào sản lượng càng cao thì màu xanh càng đậm theo tỉ lệ sản lượng / maxSanLuong
                         backgroundColor(context) {
                             const item = context.raw;
                             const value = item ? item.v : 0;
@@ -823,7 +835,8 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                                 title: () => 'Thông tin sản lượng',
                                 label: (context) => {
                                     const p = context.raw;
-                                    return ` Vùng: ${p.y} | Tháng ${p.x}: ${p.v.toLocaleString('vi-VN')} Tấn`;
+                                    if (!p) return '';
+                                    return ` Vùng: ${p.y} | Tháng ${p.x}: ${p.v.toLocaleString('vi-VN', {maximumFractionDigits: 1})} Tấn`;
                                 }
                             }
                         },
@@ -832,24 +845,23 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                             display: true,
                             color: '#2c3e50',
                             font: { size: 10, weight: '500' },
-                            formatter: (value, ctx) => {
-                                const item = ctx.dataset.data[ctx.dataIndex];
-                                const sanLuong = item ? item.v : 0;
-                                return sanLuong > 0 ? Math.round(sanLuong) : ''; // Chỉ hiện số nếu > 0
-                        }
+                            formatter: (value) => {
+                                const sanLuong = value ? value.v : 0;
+                                return sanLuong > 0 ? Math.round(sanLuong) : ''; // Chỉ hiện số nguyên nếu > 0 Tấn
+                        } }
                     },
                     scales: {
                         x: {
                             type: 'category',
                             labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
-                            offset: true,
+                            offset: true,       // Bắt buộc bật để căn giữa các ô vuông khớp với cột tháng
                             grid: { display: false },
                             ticks: { color: '#94a3b8' }
                         },
                         y: {
                             type: 'category',
                             labels: danhSachVungY, // Nạp danh sách các vùng tự động lấy từ Firebase
-                            offset: true,
+                            offset: true,   // Bắt buộc bật để căn đều hàng cố định
                             grid: { display: false },
                             ticks: { color: '#94a3b8' }
                         }
