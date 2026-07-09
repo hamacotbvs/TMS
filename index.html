@@ -869,7 +869,7 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
                     plugins: {
                         legend: { display: false }, // Ẩn chú thích vì biểu đồ nhiệt nhìn trực quan qua màu sắc
                         tooltip: {
-                            enabled: true,
+                            enabled: false,  // Khỏi cho hiện bảng "Thông tin sản lượng" khi ghê chuột
                             callbacks: {
                                 title: () => 'Thông tin sản lượng',
                                 label: (context) => {
