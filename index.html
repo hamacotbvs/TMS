@@ -697,21 +697,21 @@ async function taiDuLieuBieuDoNhietTuServer(namLoc) {
         if (tieuDeNhiet) tieuDeNhiet.innerText = `Sản lượng tiêu thụ theo vùng năm ${namLoc} (Tấn)`;
         // 🌟 KHAI BÁO CỐ ĐỊNH DANH SÁCH TRỤC Y (Bạn tùy ý đổi tên hoặc thêm bớt Tỉnh thành ở đây)
         const mangCacVungCoDinh = [
-            "An Giang", 
-            "Kiên Giang", 
             "Cần Thơ", 
-            "Cà Mau", 
-            "Hậu Giang", 
-            "Sóc Trăng", 
-            "Vĩnh Long",
-            "Bạc Liêu",
-            "Bến Tre",
+            "Kiên Giang", 
+            "An Giang", 
             "Đồng Tháp",
             "Long An",
-            "Phú Quốc",
+            "Hậu Giang", 
+            "Sóc Trăng",
             "Tiền Giang",
             "Trà Vinh",
-        ].sort(); // Sắp xếp theo thứ tự chữ cái ABC cho đẹp trục Y
+            "Cà Mau",  
+            "Bến Tre",
+            "Phú Quốc",
+            "Vĩnh Long",
+            "Bạc Liêu",
+            "",         ].reverse() // Đảo ngược mảng để khi vẽ lên trục Y, "An Giang" sẽ được đẩy lên trên cùng
 
         const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
         const cacYeuCauTinhToanNhiet = [];
