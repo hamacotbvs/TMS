@@ -896,47 +896,30 @@
 
         // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
         let bieuDoNhietKhachHangInstance = null;
-
         async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
-            // Tự động lấy năm đang chạy toàn cục hoặc mặc định 2026
-            const namThucTe = typeof namHienHanh !== 'undefined' ? namHienHanh : 2026;
+            const namThucTe = typeof namHienHanh !== 'undefined' ? namHienHanh : 2026;  // Tự động lấy năm đang chạy toàn cục hoặc mặc định 2026
             // 1. Kiểm tra nếu tên vùng chưa chuyển đổi thành công (vẫn là số hoặc rỗng) thì chặn lại ngay
             if (vungDuocClick === undefined || vungDuocClick === null || typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {
-                console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick);
-                return; 
-            }
-
+                console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick); return; }
             // Lấy đúng Selector ID (Chữ K viết hoa theo HTML thực tế)
             const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
             const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
-            
             if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
             if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của Khách hàng khu vực ${vungDuocClick} ${namThucTe}`;
-            
             try {
                 // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
                 const canvasElement = document.getElementById('bieuDoNhietKhachHang');
-                if (!canvasElement) {
-                    console.error("Không tìm thấy thẻ canvas 'bieuDoNhietKhachHang' trong HTML. Hãy kiểm tra lại bước 1.");
-                    return;
-                }
+                if (!canvasElement) {console.error("Không tìm thấy thẻ canvas 'bieuDoNhietKhachHang' trong HTML. Hãy kiểm tra lại bước 1."); return;}
                 const ctx = canvasElement.getContext('2d');
-
                 const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
-                
                 let dieuKienLoc = [
                     where("nam", "==", Number(namThucTe)),
                     where("vungTieuThu", "==", vungDuocClick.trim()), 
-                    where("htGiaoNhan", "==", "Tổng giao") 
-                ];
-                
+                    where("htGiaoNhan","!=", "Gửi chành") ];
                 if (typeof nganhHienTai !== "undefined" && nganhHienTai !== "All") {
-                    dieuKienLoc.push(where("nganh", "==", nganhHienTai));
-                }
-                
+                    dieuKienLoc.push(where("nganh", "==", nganhHienTai));}
                 const q = query(thamChieuKhachHangVung, ...dieuKienLoc);
                 const querySnapshot = await getDocs(q);
-                
                 let setKhachHang = new Set(); // Dùng Set để lọc trùng tên khách hàng làm nhãn trục Y
                 let mangDuLieuMaTran = [];  
                 let maxSanLuongKhach = 0; // 🌟 Tạo biến tìm sản lượng lớn nhất để làm mốc nội suy màu sắc
