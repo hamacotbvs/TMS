@@ -939,6 +939,7 @@
                 
                 let setKhachHang = new Set(); // Dùng Set để lọc trùng tên khách hàng làm nhãn trục Y
                 let mangDuLieuMaTran = [];  
+                let maxSanLuongKhach = 0; // 🌟 Tạo biến tìm sản lượng lớn nhất để làm mốc nội suy màu sắc
                 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
@@ -948,12 +949,16 @@
                     for (let thang = 1; thang <= 12; thang++) {
                         const sanLuongThang = Number(data[`TL${thang}`]) || 0;
                         
-                            mangDuLieuMaTran.push({
-                                x: thang.toString(), 
-                                y: tenKhachHang,     
-                                v: sanLuongThang     
-                            });
+                        // Theo dõi giá trị lớn nhất phục vụ cho việc đổ màu nhiệt
+                        if (sanLuongThang > maxSanLuongKhach) {
+                            maxSanLuongKhach = sanLuongThang;
+                        }
                         
+                        mangDuLieuMaTran.push({
+                            x: thang.toString(), 
+                            y: tenKhachHang,     
+                            v: sanLuongThang     
+                        });
                     }
                 });
 
@@ -973,7 +978,7 @@
 
                 // Thiết lập chiều cao động cho thẻ canvas trước khi render để chữ không bị dính vào nhau
                 // 🌟 CẤU HÌNH THÔNG SỐ CỐ ĐỊNH CHO MỖI DÒNG (KHÁCH HÀNG)
-                const chieuCaoMoiDong = 18; // Số pixel cố định cho 1 dòng (bạn có thể chỉnh từ 25-30 tùy ý)
+                const chieuCaoMoiDong = 28; // Đã chỉnh lên 28px để khoảng cách dòng khít vừa đẹp như vùng lớn
                 const phanDemCuaTrucX = 60;  // Khoảng trống pixel dành riêng cho trục X (tháng 1 -> 12) ở dưới đáy
                 // Tính toán tổng chiều cao canvas dựa trên số lượng khách thực tế
                 const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
@@ -987,19 +992,49 @@
                         datasets: [{
                             label: 'Sản lượng khách hàng',
                             data: mangDuLieuMaTran,
+                            
+                            // 🌟 ĐỒNG BỘ THUẬT TOÁN ĐỔ MÀU GRADIENT TỰ ĐỘNG TỪ BIỂU ĐỒ VÙNG
                             backgroundColor(context) {
-                                const item = context.dataset.data[context.dataIndex];
-                                // Nếu không có dữ liệu hoặc sản lượng bằng 0 -> Trả về màu xám mờ chuẩn nhạt
-                                if (!item || !item.v || item.v === 0) {return '#f8fafc'; } // Màu xám nhạt nhẹ nhàng giống biểu đồ tổng (hoặc 'rgba(0, 0, 0, 0.02)')
-                                const value = item.v;
-                                if (value > 100) return 'rgba(52, 152, 219, 1)';     
-                                if (value > 50) return 'rgba(52, 152, 219, 0.7)';
-                                if (value > 10) return 'rgba(231, 76, 60, 0.6)';     
-                                return 'rgba(231, 76, 60, 0.3)'; },
-                            borderWidth: 1, // 🌟 2. ĐẢM BẢO ĐƯỜNG VIỀN TRẮNG ĐỂ TÁCH BIỆT CÁC Ô XÁM MỜ
-                            borderColor: '#ffffff', // Giữ viền trắng để tạo lưới ô vuông đều đặn
-                            width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 1 : 0,
-                            height: ({chart}) => chart.chartArea ? (chart.chartArea.height / danhSachDoiTuongY.length) - 1 : 0
+                                const item = context.raw;
+                                const value = item ? item.v : 0;
+                                
+                                // 1. Nếu không có sản lượng (bằng 0), trả về màu xám cực nhạt (Ô trống)
+                                if (value === 0) return '#f8fafc'; 
+                                
+                                // 2. Tính tỉ lệ phần trăm sản lượng (Giá trị từ 0 đến 1) dựa trên maxSanLuongKhach của vùng này
+                                const ratio = Math.min(value / (maxSanLuongKhach || 1), 1); 
+                                let r, g, b;
+                                
+                                // 3. THUẬT TOÁN PHÂN CHIA PHÂN ĐOẠN MÀU THEO MỐC %
+                                if (ratio >= 0.25) {
+                                    // PHÂN ĐOẠN 1: Từ 25% (Vàng) đến 100% (Xanh đậm)
+                                    const p = (ratio - 0.25) / (1.0 - 0.25); 
+                                    r = Math.round(241 + (41 - 241) * p);
+                                    g = Math.round(220 + (128 - 220) * p);
+                                    b = Math.round(100 + (185 - 100) * p); 
+                                } else if (ratio >= 0.05 && ratio < 0.25) {
+                                    // PHÂN ĐOẠN 2: Từ 5% (Đỏ nhạt/Cam pastel) đến 25% (Vàng chanh)
+                                    const p = (ratio - 0.05) / (0.25 - 0.05); 
+                                    r = Math.round(240 + (241 - 240) * p);
+                                    g = Math.round(140 + (220 - 140) * p);
+                                    b = Math.round(130 + (100 - 130) * p); 
+                                } else {
+                                    // PHÂN ĐOẠN YẾU: Dưới 5% sản lượng, khóa ở màu đỏ pastel nhạt
+                                    r = 245; 
+                                    g = 160;
+                                    b = 150;
+                                }
+                                
+                                const alpha = 0.85; 
+                                return `rgba(${r}, ${g}, ${b}, ${alpha})`; 
+                            },
+                            
+                            // 🌟 ĐỒNG BỘ BO GÓC NHẸ VÀ KÍCH THƯỚC Ô
+                            borderRadius: 2,
+                            borderWidth: 1, 
+                            borderColor: '#ffffff', // Giữ viền trắng phân cách giữa các ô
+                            width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 2 : 0,
+                            height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachDoiTuongY.length || 1)) - 2 : 0
                         }]
                     },
                     options: {
@@ -1010,32 +1045,29 @@
                                 type: 'category',
                                 labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
                                 offset: true,
-                                grid: { display: false }
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' } // Màu font chữ thanh lịch giống biểu đồ vùng
                             },
                             y: {
                                 type: 'category',
                                 labels: danhSachDoiTuongY, 
                                 offset: true,
-                                grid: { display: true, color: '#f1f5f9' },
-                                ticks: { autoSkip: false, color: '#1e293b', font: { size: 10 } }
+                                grid: { display: false }, // Tắt grid dính để ô ma trận tự tách biệt
+                                ticks: { color: '#94a3b8', autoSkip: false, font: { size: 10 } }
                             }
                         },
                         plugins: {
                             legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    title() { return ''; },
-                                    label(context) {
-                                        const item = context.dataset.data[context.dataIndex];
-                                        return `Khách: ${item.y} | Tháng ${item.x}: ${item.v.toLocaleString('vi-VN')} Kg`;
-                                    }
-                                }
-                            },
+                            tooltip: { enabled: false }, // 🌟 Đã tắt bảng đen hover nhức mắt, xem trực tiếp số trên ô
                             datalabels: {
                                 display: true,
-                                color: '#1e293b',
-                                font: { weight: 'bold', size: 11 },
-                                formatter(value) { return value && value.v ? Math.round(value.v).toLocaleString('vi-VN') : ''; }
+                                color: '#2c3e50', // Đồng bộ màu font số sắc nét giống vùng
+                                font: { size: 10, weight: '600' },
+                                padding: 2,
+                                formatter: (value) => {
+                                    const sanLuong = value ? value.v : 0;
+                                    return sanLuong > 0 ? Math.round(sanLuong).toLocaleString('vi-VN') : ''; 
+                                }
                             }
                         }
                     }
