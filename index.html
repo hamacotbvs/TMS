@@ -959,6 +959,51 @@
                     bieuDoNhietKhachHangInstance.destroy();
                 }
 
+                // 1. Tạo một Object để tính tổng sản lượng 12 tháng của từng khách hàng
+                let tongSanLuongCuaKhach = {}; 
+                let mangDuLieuMaTran = [];  
+                let maxSanLuongKhach = 0; 
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const tenKhachHang = data.doiTuong || "Chưa phân loại";
+                    
+                    // Khởi tạo tổng sản lượng cho khách hàng này nếu chưa có
+                    if (!tongSanLuongCuaKhach[tenKhachHang]) {
+                        tongSanLuongCuaKhach[tenKhachHang] = 0;
+                    }
+                    
+                    for (let thang = 1; thang <= 12; thang++) {
+                        const sanLuongThang = Number(data[`TL${thang}`]) || 0;
+                        
+                        // Cộng dồn vào tổng 12 tháng của khách hàng này
+                        tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
+
+                        if (sanLuongThang > maxSanLuongKhach) {
+                            maxSanLuongKhach = sanLuongThang;
+                        }
+                        
+                        mangDuLieuMaTran.push({
+                            x: thang.toString(), 
+                            y: tenKhachHang,     
+                            v: sanLuongThang     
+                        });
+                    }
+                });
+
+                // 2. SẮP XẾP KHÁCH HÀNG: Tổng lớn nhất nằm DƯỚI CÙNG
+                // Chuyển Object thành mảng các [tên, tổng số], sau đó sort tăng dần
+                const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
+                    .sort((a, b) => a[1] - b[1]) // Tổng nhỏ xếp trước (ở trên), Tổng lớn xếp sau (ở dưới đáy)
+                    .map(item => item[0]);       // Chỉ lấy lại tên khách hàng làm nhãn trục Y
+
+                if (danhSachDoiTuongY.length === 0) {
+                    console.warn(`Không tìm thấy document nào khớp với vùng: ${vungDuocClick}, năm: ${namThucTe}`);
+                    alert(`Không có dữ liệu khách hàng cho vùng: ${vungDuocClick}`);
+                    if (khuVucHienThi) khuVucHienThi.style.display = 'none';
+                    return;
+                }
+
                 // Thiết lập chiều cao động cho thẻ canvas trước khi render để chữ không bị dính vào nhau
                 // 🌟 CẤU HÌNH THÔNG SỐ CỐ ĐỊNH CHO MỖI DÒNG (KHÁCH HÀNG)
                 const chieuCaoMoiDong = 18; // Đã chỉnh lên 28px để khoảng cách dòng khít vừa đẹp như vùng lớn
