@@ -903,7 +903,7 @@
             const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
             
             if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-            if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của các Khách hàng tại: ${vungDuocClick} (Năm ${namHienHanh})`;
+            if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của các Khách hàng tại: ${vungDuocClick} (Năm ${namThucTe})`;
             
             try {
                 // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
@@ -917,7 +917,7 @@
                 const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
                 
                 let dieuKienLoc = [
-                    where("nam", "==", Number(namHienHanh)),
+                    where("nam", "==", Number(namThucTe)),
                     where("vungTieuThu", "==", vungDuocClick.trim()), 
                     where("htGiaoNhan", "==", "Tổng giao") 
                 ];
@@ -952,7 +952,7 @@
                 const danhSachDoiTuongY = Array.from(setKhachHang);
 
                 if (danhSachDoiTuongY.length === 0) {
-                    console.warn(`Không tìm thấy document nào khớp với vùng: ${vungDuocClick}, năm: ${namHienHanh}`);
+                    console.warn(`Không tìm thấy document nào khớp với vùng: ${vungDuocClick}, năm: ${namThucTe}`);
                     alert(`Không có dữ liệu khách hàng cho vùng: ${vungDuocClick}`);
                     if (khuVucHienThi) khuVucHienThi.style.display = 'none';
                     return;
