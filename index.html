@@ -989,15 +989,15 @@
                             data: mangDuLieuMaTran,
                             backgroundColor(context) {
                                 const item = context.dataset.data[context.dataIndex];
-                                if (!item) return 'rgba(0, 0, 0, 0.02)';
+                                // Nếu không có dữ liệu hoặc sản lượng bằng 0 -> Trả về màu xám mờ chuẩn nhạt
+                                if (!item || !item.v || item.v === 0) {return '#f8fafc'; } // Màu xám nhạt nhẹ nhàng giống biểu đồ tổng (hoặc 'rgba(0, 0, 0, 0.02)')
                                 const value = item.v;
                                 if (value > 100) return 'rgba(52, 152, 219, 1)';     
                                 if (value > 50) return 'rgba(52, 152, 219, 0.7)';
                                 if (value > 10) return 'rgba(231, 76, 60, 0.6)';     
-                                return 'rgba(231, 76, 60, 0.3)';                     
-                            },
-                            borderWidth: 1,
-                            borderColor: '#ffffff',
+                                return 'rgba(231, 76, 60, 0.3)'; },
+                            borderWidth: 1, // 🌟 2. ĐẢM BẢO ĐƯỜNG VIỀN TRẮNG ĐỂ TÁCH BIỆT CÁC Ô XÁM MỜ
+                            borderColor: '#ffffff', // Giữ viền trắng để tạo lưới ô vuông đều đặn
                             width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 1 : 0,
                             height: ({chart}) => chart.chartArea ? (chart.chartArea.height / danhSachDoiTuongY.length) - 1 : 0
                         }]
