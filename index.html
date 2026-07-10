@@ -889,7 +889,7 @@
         // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
         let bieuDoNhietKhachHangInstance = null;
 
-        async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick) {
+        async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namLoc) {
             // Tự động lấy năm đang chạy toàn cục hoặc mặc định 2026
             const namThucTe = typeof namLoc !== 'undefined' ? namLoc : 2026;
             // 1. Kiểm tra nếu tên vùng chưa chuyển đổi thành công (vẫn là số hoặc rỗng) thì chặn lại ngay
