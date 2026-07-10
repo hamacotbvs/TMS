@@ -216,7 +216,7 @@
                     </div>
                 </div>
                 <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 450px; width: 100%;">
-                    <h2 class="tieu-de-bieu-do" id="tieuDeNhiet2">Doanh thu giao hàng theo vùng năm</h2>
+                    <h2 class="tieu-de-bieu-do" id="tieuDeNhietDT">Doanh thu giao hàng theo vùng năm</h2>
                     <div class="vung-bieu-do" style="height: calc(100% - 40px);">
                         <canvas id="bieuDoNhietVungDT"></canvas>
                     </div>
@@ -712,11 +712,14 @@
 // DỮ LIỆU BIỂU ĐỒ NHIỆT SL
         // HÀM TẢI DỮ LIỆU BIỂU ĐỒ NHIỆT (TÍNH TOÁN 100% TRÊN SERVER)
         let bieuDoNhietVungTieuThu = null
+        let bieuDoNhietVungDoanhThu = null;
         async function taiDuLieuBieuDoNhietTuServer(namLoc) {
             try {
                 // Cập nhật tiêu đề động theo năm chọn
                 const tieuDeNhiet = document.getElementById('tieuDeBieuDoNhiet');
                 if (tieuDeNhiet) tieuDeNhiet.innerText = `Sản lượng tiêu thụ theo vùng năm ${namLoc} (Tấn)`;
+                const tieuDeNhietDT = document.getElementById('tieuDeNhietDT');
+                if (tieuDeNhietDT) tieuDeNhietDT.innerText = `Doanh thu giao hàng theo vùng năm ${namLoc} (Triệu đồng)`;
                 // 🌟 KHAI BÁO CỐ ĐỊNH DANH SÁCH TRỤC Y (Bạn tùy ý đổi tên hoặc thêm bớt Tỉnh thành ở đây)
                 const mangCacVungCoDinh = [
                     "Cần Thơ", 
@@ -736,12 +739,16 @@
                     "Bạc Liêu",]
                 const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
                 const cacYeuCauTinhToanNhiet = [];
-                let dataMatrix = [];
+                let dataMatrixSL = [];
+                let dataMatrixDT = []; // <-- THÊM MỚI
                 let maxSanLuong = 0;
+                let maxDoanhThu = 0;  // <-- THÊM MỚI
                 // Tạo một cấu trúc lưu trữ tạm thời để gom dữ liệu bất đồng bộ
-                let ketQuaTam = {};
+                let ketQuaTamSL = {}; // <-- Đổi tên từ ketQuaTam
+                let ketQuaTamDT = {}; // <-- THÊM MỚI
                 mangCacVungCoDinh.forEach(vung => {
-                    ketQuaTam[vung] = Array(13).fill(0); });
+                    ketQuaTamSL[vung] = Array(13).fill(0); 
+                    ketQuaTamDT[vung] = Array(13).fill(0); });
                 // 2. CHẠY VÒNG LẶP QUÉT QUA TỪNG VÙNG VÀ TỪNG THÁNG (Gửi lệnh gộp lên Server)
                 mangCacVungCoDinh.forEach((vung) => {
                     for (let thang = 1; thang <= 12; thang++) {
@@ -756,23 +763,32 @@
                         const qLocNhiet = query(thamChieuTuyenDuong, ...dieuKienLoc);   // Tạo câu lệnh truy vấn hoàn chỉnh gửi lên Firebase
                         // Gửi lệnh tính tổng gộp (tTai) trực tiếp lên Server Firebase
                         cacYeuCauTinhToanNhiet.push(
-                            getAggregateFromServer(qLocNhiet, { tongSlanLuong: sum('tTai') }).then(res => {
-                                const kgDauVao = res.data().tongSlanLuong || 0;
-                                const sanLuongTan = kgDauVao / 1000; // Quy đổi từ Kg sang Tấn
-                                ketQuaTam[vung][thang] = sanLuongTan; }) ); } });
+                            getAggregateFromServer(qLocNhiet, { 
+                                tongSlanLuong: sum('tTai'),
+                                tongDoanhThu: sum('thanhTien')
+                            }).then(res => {
+                                const dataRes = res.data();
+                                const kgDauVao = dataRes.tongSlanLuong || 0;
+                                ketQuaTamSL[vung][thang] = kgDauVao / 1000; 
+                                const dongDauVao = dataRes.tongDoanhThu || 0;
+                                ketQuaTamDT[vung][thang] = dongDauVao / 1000000; }) ); } });
                 // Đợi Server xử lý đồng loạt xong toàn bộ các ô ma trận
                 await Promise.all(cacYeuCauTinhToanNhiet);
                 // Định dạng cấu trúc dữ liệu phẳng cho Plugin Matrix và tìm đỉnh sản lượng cao nhất
                 mangCacVungCoDinh.forEach((vung) => {
                     for (let t = 1; t <= 12; t++) {
-                        const giaTriTan = ketQuaTam[vung][t];
+                        // Cho sản lượng
+                        const giaTriTan = ketQuaTamSL[vung][t];
                         if (giaTriTan > maxSanLuong) maxSanLuong = giaTriTan;
-                        dataMatrix.push({
-                            x: String(t), // Trục X cột tháng
-                            y: vung,      // Trục Y tên Vùng cố định
-                            v: giaTriTan }); }  });     // Sản lượng số Tấn thực tế
+                        dataMatrixSL.push({ x: String(t), y: vung, v: giaTriTan }); 
+
+                        // THÊM: Cho doanh thu
+                        const giaTriTrieu = ketQuaTamDT[vung][t];
+                        if (giaTriTrieu > maxDoanhThu) maxDoanhThu = giaTriTrieu;
+                        dataMatrixDT.push({ x: String(t), y: vung, v: giaTriTrieu }); }  });
                 // Vẽ hoặc cập nhật biểu đồ nhiệt lên màn hình
-                veBieuDoNhiet(dataMatrix, mangCacVungCoDinh, maxSanLuong);
+                veBieuDoNhietSlanLuong(dataMatrixSL, mangCacVungCoDinh, maxSanLuong);
+                veBieuDoNhietDoanhThu(dataMatrixDT, mangCacVungCoDinh, maxDoanhThu); // <-- THÊM MỚI
             } catch (e) { 
                 console.error("Lỗi đồng bộ biểu đồ nhiệt từ Server:", e);
                 // Đoạn bẫy link tạo Index tự động nếu Firebase yêu cầu
@@ -787,8 +803,8 @@
                     oLoading.style.display = 'flex';} }
         }
 // BIỂU ĐỒ NHIỆT SL
-        // KHỞI TẠO CẤU HÌNH BIỂU ĐỒ (Hàm chịu trách nhiệm dựng hình ô vuông, căn chỉnh tọa độ trục và đổ màu gradient xanh dương đồng bộ)
-        function veBieuDoNhiet(dataMatrix, danhSachVungY, maxSanLuong) {
+        // KHỞI TẠO CẤU HÌNH BIỂU ĐỒ SL (Hàm chịu trách nhiệm dựng hình ô vuông, căn chỉnh tọa độ trục và đổ màu gradient xanh dương đồng bộ)
+        function veBieuDoNhietSlanLuong(dataMatrix, danhSachVungY, maxSanLuong) {
             const canvasElement = document.getElementById('bieuDoNhietVung');
             if (!canvasElement) return;
             const ctx = canvasElement.getContext('2d');
@@ -891,6 +907,84 @@
                             ticks: { color: '#94a3b8' } } } }
             });
         }
+// BIỂU ĐỒ NHIỆT DT
+        // VẼ BIỂU ĐỒ NHIỆT DOANH THU
+        function veBieuDoNhietDoanhThu(dataMatrix, danhSachVungY, maxDoanhThu) {
+            const canvasElement = document.getElementById('bieuDoNhietVungDT');
+            if (!canvasElement) return;
+            const ctx = canvasElement.getContext('2d');
+            if (bieuDoNhietVungDoanhThu) { bieuDoNhietVungDoanhThu.destroy(); }
+            
+            bieuDoNhietVungDoanhThu = new Chart(ctx, {
+                type: 'matrix',
+                data: {
+                    datasets: [{
+                        label: 'Doanh thu theo vùng (Triệu Đan)',
+                        data: dataMatrix,
+                        width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 2 : 0,
+                        height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachVungY.length || 1)) - 2 : 0,
+                        backgroundColor(context) {
+                            const item = context.raw;
+                            const value = item ? item.v : 0;
+                            if (value === 0) return '#f8fafc'; 
+                            
+                            // Đổ màu theo tỷ lệ doanh thu của ô đó so với đỉnh doanh thu maxDoanhThu
+                            const ratio = Math.min(value / (maxDoanhThu || 1), 1); 
+                            let r, g, b;
+                            if (ratio >= 0.25) {
+                                const p = (ratio - 0.25) / (1.0 - 0.25); 
+                                r = Math.round(241 + (41 - 241) * p); g = Math.round(220 + (128 - 220) * p); b = Math.round(100 + (185 - 100) * p); 
+                            } else if (ratio >= 0.05 && ratio < 0.25) {
+                                const p = (ratio - 0.05) / (0.25 - 0.05); 
+                                r = Math.round(240 + (241 - 240) * p); g = Math.round(140 + (220 - 140) * p); b = Math.round(130 + (100 - 130) * p); 
+                            } else {
+                                r = 245; g = 160; b = 150;
+                            }
+                            return `rgba(${r}, ${g}, ${b}, 0.85)`; 
+                        },
+                        borderRadius: 2
+                    }] 
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements, chartInstance) => {
+                        const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
+                        if (elements && elements.length > 0) {
+                            const firstElement = elements[0];
+                            const currentChart = chartInstance || firstElement.element.$context.chart;
+                            const dataPoint = currentChart.data.datasets[firstElement.datasetIndex].data[firstElement.index];
+                            if (dataPoint && dataPoint.v > 0) {
+                                taiBieuDoNhietKhachHangTheoVung(dataPoint.y); // Đồng bộ bấm bên Doanh thu vẫn gọi được bảng khách hàng
+                            } else {
+                                if (khuVucHienThi) khuVucHienThi.style.display = 'none';
+                            }
+                        } else {
+                            if (khuVucHienThi) khuVucHienThi.style.display = 'none';
+                        } 
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false },
+                        datalabels: {
+                            display: true,
+                            color: '#2c3e50',
+                            font: { size: 10, weight: '600' },
+                            padding: 2,
+                            formatter: (value) => {
+                                const doanhThu = value ? value.v : 0;
+                                // Làm tròn số doanh thu và định dạng dấu chấm ngăn cách hàng nghìn
+                                return doanhThu > 0 ? Math.round(doanhThu).toLocaleString('vi-VN') : ''; 
+                            } 
+                        } 
+                    },
+                    scales: {
+                        x: { type: 'category', labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], offset: true, grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { type: 'category', labels: danhSachVungY, offset: true, grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
 // BIỂU ĐỒ NHIỆT CON KHÁCH HÀNG
         // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
         let bieuDoNhietKhachHangInstance = null;
@@ -905,9 +999,8 @@
             if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
             if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của Khách hàng khu vực ${vungDuocClick} ${namThucTe} (kg)`;
             try {
-                // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
                 const canvasElement = document.getElementById('bieuDoNhietKhachHang');
-                if (!canvasElement) {console.error("Không tìm thấy thẻ canvas 'bieuDoNhietKhachHang' trong HTML. Hãy kiểm tra lại bước 1."); return;}
+                if (!canvasElement) {console.error("Không tìm thấy thẻ canvas 'bieuDoNhietKhachHang' trong HTML. Hãy kiểm tra lại bước 1."); return;}   // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
                 const ctx = canvasElement.getContext('2d');
                 const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
                 let dieuKienLoc = [
