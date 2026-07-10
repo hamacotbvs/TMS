@@ -996,7 +996,8 @@
                                 if (value > 50) return 'rgba(52, 152, 219, 0.7)';
                                 if (value > 10) return 'rgba(231, 76, 60, 0.6)';     
                                 return 'rgba(231, 76, 60, 0.3)'; },
-                            
+                            borderWidth: 1, // 🌟 2. ĐẢM BẢO ĐƯỜNG VIỀN TRẮNG ĐỂ TÁCH BIỆT CÁC Ô XÁM MỜ
+                            borderColor: '#ffffff', // Giữ viền trắng để tạo lưới ô vuông đều đặn
                             width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 1 : 0,
                             height: ({chart}) => chart.chartArea ? (chart.chartArea.height / danhSachDoiTuongY.length) - 1 : 0
                         }]
