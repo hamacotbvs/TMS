@@ -972,7 +972,7 @@
                 }
 
                 // Thiết lập chiều cao động cho thẻ canvas trước khi render để chữ không bị dính vào nhau
-                const chieuCaoTinhToan = Math.max(200, danhSachDoiTuongY.length * 40);
+                const chieuCaoTinhToan = Math.max(200, danhSachDoiTuongY.length * 25);
                 canvasElement.style.height = `${chieuCaoTinhToan}px`;
 
                 bieuDoNhietKhachHangInstance = new Chart(ctx, {
@@ -1011,7 +1011,7 @@
                                 labels: danhSachDoiTuongY, 
                                 offset: true,
                                 grid: { display: true, color: '#f1f5f9' },
-                                ticks: { autoSkip: false, color: '#1e293b' }
+                                ticks: { autoSkip: false, color: '#1e293b', font: { size: 10 } }
                             }
                         },
                         plugins: {
