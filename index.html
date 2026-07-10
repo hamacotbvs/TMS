@@ -848,13 +848,13 @@
                                 // Nếu ô click vào có sản lượng thực tế > 0
                                 if (dataPoint && dataPoint.v > 0) {
                                     const thangDaClick = Number(dataPoint.x); 
-                                    let vungDaClick = dataPoint.y;
-                                    if (typeof vungDaClick === 'number' || !isNaN(vungDaClick)) {
-                                    vungDaClick = danhSachVungY[Number(vungDaClick)];
+                                    let vungDuocClick = dataPoint.y;
+                                    if (typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {
+                                    vungDuocClick = danhSachVungY[Number(vungDuocClick)];
                                     }
                                     // Kiểm tra lại trên Console để debug nếu cần
                                     // Log thử ra console F12 để kiểm tra xem đã lấy đúng chữ chưa
-                                    console.log("Đang gọi dữ liệu tỉnh:", vungDaClick, "Tháng:", thangDaClick);
+                                    console.log("Đang gọi dữ liệu tỉnh:", vungDuocClick, "Tháng:", thangDaClick);
                                     // Gọi hàm hiển thị biểu đồ chi tiết khách hàng
                                     taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namLoc);
                                 } else {
