@@ -848,15 +848,12 @@
                                 // Nếu ô click vào có sản lượng thực tế > 0
                                 if (dataPoint && dataPoint.v > 0) {
                                     const thangDaClick = Number(dataPoint.x); 
-                                    let vungDuocClick = dataPoint.y;
-                                    if (typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {
-                                    vungDuocClick = danhSachVungY[Number(vungDuocClick)];
-                                    }
+                                    const vungDuocClick = dataPoint.y;
                                     // Kiểm tra lại trên Console để debug nếu cần
                                     // Log thử ra console F12 để kiểm tra xem đã lấy đúng chữ chưa
                                     console.log("Đang gọi dữ liệu tỉnh:", vungDuocClick, "Tháng:", thangDaClick);
                                     // Gọi hàm hiển thị biểu đồ chi tiết khách hàng
-                                    taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namLoc);
+                                    taiBieuDoNhietKhachHangTheoVung(vungDuocClick);
                                 } else {
                                     // Nếu bấm vào ô trắng (Sản lượng = 0), ẩn biểu đồ khách hàng đi
                                     if (khuVucHienThi) khuVucHienThi.style.display = 'none';}
