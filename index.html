@@ -853,7 +853,7 @@
                                     // Log thử ra console F12 để kiểm tra xem đã lấy đúng chữ chưa
                                     console.log("Đang gọi dữ liệu tỉnh:", vungDuocClick, "Tháng:", thangDaClick);
                                     // Gọi hàm hiển thị biểu đồ chi tiết khách hàng
-                                    taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namLoc);
+                                    taiBieuDoNhietKhachHangTheoVung(vungDuocClick);
                                 } else {
                                     // Nếu bấm vào ô trắng (Sản lượng = 0), ẩn biểu đồ khách hàng đi
                                     if (khuVucHienThi) khuVucHienThi.style.display = 'none';}
@@ -889,7 +889,9 @@
         // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
         let bieuDoNhietKhachHangInstance = null;
 
-        async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namLoc) {
+        async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick) {
+            // Tự động lấy năm đang chạy toàn cục hoặc mặc định 2026
+            const namThucTe = typeof namLoc !== 'undefined' ? namLoc : 2026;
             // 1. Kiểm tra nếu tên vùng chưa chuyển đổi thành công (vẫn là số hoặc rỗng) thì chặn lại ngay
             if (vungDuocClick === undefined || vungDuocClick === null || typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {
                 console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick);
@@ -915,7 +917,7 @@
                 const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
                 
                 let dieuKienLoc = [
-                    where("nam", "==", Number(namLoc)),
+                    where("nam", "==", Number(namThucTe)),
                     where("vungTieuThu", "==", vungDuocClick.trim()), 
                     where("htGiaoNhan", "==", "Tổng giao") 
                 ];
