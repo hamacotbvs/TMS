@@ -917,7 +917,7 @@
                 const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
                 
                 let dieuKienLoc = [
-                    where("nam", "==", Number(namThucTe)),
+                    where("nam", "==", Number(namLoc)),
                     where("vungTieuThu", "==", vungDuocClick.trim()), 
                     where("htGiaoNhan", "==", "Tổng giao") 
                 ];
