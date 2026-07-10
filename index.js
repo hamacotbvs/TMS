@@ -319,52 +319,34 @@ function generateKhachHangVungReport(routeDataMap) {
   Object.values(routeDataMap).forEach(item => {
     // 🔍 1. BỘ LỌC CHỨNG TỪ: Chỉ lấy "Đã giao hàng" hoặc "Đã xuất kho"
     const trangThaiDuyet = item.duyet ? item.duyet.toString().trim() : "";
-    if (trangThaiDuyet !== "Đã giao hàng" && trangThaiDuyet !== "Đã xuất kho") {
-      return; 
-    }
-
-    // 🔍 2. BỘ LỌC HÌNH THỨC GIAO: Nếu là "Giao hàng" thì bỏ qua hoàn toàn
-    const htGoc = item.htGiaoNhan ? item.htGiaoNhan.toString().trim() : "";
-    if (htGoc.includes("Giao hàng")) {
-      return; // 🌟 Thỏa mãn điều kiện "lần 1 là Giao hàng thì bỏ qua"
-    }
-
-    // Sau khi lọc, hệ thống đảm bảo chỉ còn hình thức "Gửi chành"
-    if (!htGoc.includes("Gửi chành")) {
-      return; // Nếu không có cả Gửi chành thì cũng bỏ qua
-    }
-
+    if (trangThaiDuyet !== "Đã giao hàng" && trangThaiDuyet !== "Đã xuất kho") {return; }
     const doiTuong = item.doiTuong;
     const vung = item.vungTieuThu || "Chưa xác định";
     const thang = item.thang;
     const nam = item.nam || "Chưa xác định";
-
     if (!doiTuong || !thang || thang < 1 || thang > 12) return;
-
+    // ⚡ XỬ LÝ ĐỌC HÌNH THỨC GỐC TỪ FILE EXCEL
+    const htGoc = item.htGiaoNhan ? item.htGiaoNhan.toString().trim() : "";
+    const isGuiChanh = htGoc.includes("Gửi chành");
     // ⚡ XỬ LÝ PHÂN LOẠI NGÀNH HÀNG CỤ THỂ
     const nganhCuThe = item.nganh || "Khác";
-
     const tl = item.tTai || 0;
     const dt = item.thanhTien || 0;
-
-    // 👉 THỰC HIỆN TÍNH TOÁN 4 TỔ HỢP GỘP (CHỈ DÀNH CHO DỮ LIỆU GỬI CHÀNH)
-
-    // Tổ hợp 1: Hình thức cụ thể "Gửi chành" + Ngành cụ thể (Sơn/TBVS)
-    addToGroup(doiTuong, vung, "Gửi chành", nganhCuThe, nam, thang, tl, dt);
-
-    // Tổ hợp 2: LẦN 2 TỔNG GỢP -> Nhân đôi gom vào "Tổng giao" + Ngành cụ thể (Sơn/TBVS)
+    // ➡️ TIẾN TRÌNH GOM NHÓM DỮ LIỆU ĐA CHIỀU:
+    // --- TRƯỜNG HỢP A: Nếu là Gửi chành -> Gom vào nhóm "Gửi chành" ---
+    if (isGuiChanh) {
+      // 1. Gửi chành + Ngành cụ thể (Sơn/TBVS)
+      addToGroup(doiTuong, vung, "Gửi chành", nganhCuThe, nam, thang, tl, dt);
+      // 2. Gửi chành + Ngành tổng gộp "All"
+      addToGroup(doiTuong, vung, "Gửi chành", "All", nam, thang, tl, dt);}
+    // --- TRƯỜNG HỢP B: BẤT KỂ LÀ GÌ (Giao hàng hay Gửi chành) -> Đều đổ vào "Tổng giao" ---
+    // 3. Tổng giao + Ngành cụ thể (Sơn/TBVS)
     addToGroup(doiTuong, vung, "Tổng giao", nganhCuThe, nam, thang, tl, dt);
-
-    // Tổ hợp 3: Hình thức cụ thể "Gửi chành" + Ngành tổng gộp "All"
-    addToGroup(doiTuong, vung, "Gửi chành", "All", nam, thang, tl, dt);
-
-    // Tổ hợp 4: LẦN 2 TỔNG GỢP -> Nhân đôi gom vào "Tổng giao" + Ngành tổng gộp "All"
+    // 4. Tổng giao + Ngành tổng gộp "All"
     addToGroup(doiTuong, vung, "Tổng giao", "All", nam, thang, tl, dt);
   });
-
   // Chuyển đổi thành mảng chứa các bản ghi phẳng rộng để chuẩn bị đẩy lên Firestore
   const finalRecords = [];
-
   Object.values(groupMap).forEach(group => {
     const record = {
       doiTuong: group.doiTuong,
@@ -373,16 +355,13 @@ function generateKhachHangVungReport(routeDataMap) {
       nganh: group.nganh,
       nam: group.nam
     };
-
     // Đổ dữ liệu vòng lặp tạo ra các cột số từ TL1 -> TL12 và DT1 -> DT12
     for (let m = 1; m <= 12; m++) {
       record[`TL${m}`] = Number(group.trongLuongMonths[m].toFixed(2));
       record[`DT${m}`] = Number(group.doanhThuMonths[m].toFixed(2));
     }
-
     finalRecords.push(record);
   });
-
   return finalRecords;
 }
 
