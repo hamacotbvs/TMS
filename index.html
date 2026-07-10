@@ -792,9 +792,7 @@
             const canvasElement = document.getElementById('bieuDoNhietVung');
             if (!canvasElement) return;
             const ctx = canvasElement.getContext('2d');
-            // Nếu biểu đồ đã tồn tại trước đó, xóa đi để vẽ lại dữ liệu mới tránh bị đè chèn
-            if (bieuDoNhietVungTieuThu) {
-                bieuDoNhietVungTieuThu.destroy(); }
+            if (bieuDoNhietVungTieuThu) {bieuDoNhietVungTieuThu.destroy(); }    // Nếu biểu đồ đã tồn tại trước đó, xóa đi để vẽ lại dữ liệu mới tránh bị đè chèn
             bieuDoNhietVungTieuThu = new Chart(ctx, {
                 type: 'matrix',
                 data: {
@@ -905,7 +903,7 @@
             const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
             const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
             if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-            if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của Khách hàng khu vực ${vungDuocClick} ${namThucTe}`;
+            if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của Khách hàng khu vực ${vungDuocClick} ${namThucTe} (kg)`;
             try {
                 // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
                 const canvasElement = document.getElementById('bieuDoNhietKhachHang');
