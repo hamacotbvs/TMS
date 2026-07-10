@@ -947,13 +947,13 @@
                     
                     for (let thang = 1; thang <= 12; thang++) {
                         const sanLuongThang = Number(data[`TL${thang}`]) || 0;
-                        if (sanLuongThang > 0) { 
+                        
                             mangDuLieuMaTran.push({
                                 x: thang.toString(), 
                                 y: tenKhachHang,     
                                 v: sanLuongThang     
                             });
-                        }
+                        
                     }
                 });
 
