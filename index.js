@@ -169,12 +169,12 @@ function parseYcghToMap(buffer) {
     if (!maPhieu) continue; 
     // Lưu thông tin dạng Object
     ycghMap[maPhieu] = {
-      congNo:   row[10]  ? row[10].toString().trim()  : "",
-      hanMuc:  row[11]  ? row[11].toString().trim()  : "",
-      timeNo:  row[12] ? row[12].toString().trim() : "",
-      nvbh: row[17] ? row[17].toString().trim() : "",
-      vungTieuThu: row[18] ? row[18].toString().trim() : "",
-      vanDe: row[23] ? row[23].toString().trim() : ""
+      congNo:   row[9]  ? row[9].toString().trim()  : "",
+      hanMuc:  row[10]  ? row[10].toString().trim()  : "",
+      timeNo:  row[11] ? row[11].toString().trim() : "",
+      nvbh: row[16] ? row[16].toString().trim() : "",
+      vungTieuThu: row[17] ? row[17].toString().trim() : "",
+      vanDe: row[22] ? row[22].toString().trim() : ""
     }; 
   } 
   return ycghMap;
