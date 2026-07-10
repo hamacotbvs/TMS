@@ -915,8 +915,8 @@
                 let dieuKienLoc = [
                     where("nam", "==", Number(namThucTe)),
                     where("vungTieuThu", "==", vungDuocClick.trim()), 
-                    where("htGiaoNhan","==", "Gửi chành") ];
-                if (typeof nganhHienTai !== "undefined" && nganhHienTai !== "All") {
+                    where("htGiaoNhan","==", "Tổng giao") ];
+                if (typeof nganhHienTai !== "undefined") {
                     dieuKienLoc.push(where("nganh", "==", nganhHienTai));}
                 const q = query(thamChieuKhachHangVung, ...dieuKienLoc);
                 const querySnapshot = await getDocs(q);
