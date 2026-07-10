@@ -889,9 +889,9 @@
         // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
         let bieuDoNhietKhachHangInstance = null;
 
-        async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namLoc) {
+        async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
             // Tự động lấy năm đang chạy toàn cục hoặc mặc định 2026
-            const namThucTe = typeof namLoc !== 'undefined' ? namLoc : 2026;
+            const namThucTe = typeof namHienHanh !== 'undefined' ? namHienHanh : 2026;
             // 1. Kiểm tra nếu tên vùng chưa chuyển đổi thành công (vẫn là số hoặc rỗng) thì chặn lại ngay
             if (vungDuocClick === undefined || vungDuocClick === null || typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {
                 console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick);
@@ -903,7 +903,7 @@
             const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
             
             if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-            if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của các Khách hàng tại: ${vungDuocClick} (Năm ${namLoc})`;
+            if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của các Khách hàng tại: ${vungDuocClick} (Năm ${namHienHanh})`;
             
             try {
                 // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
@@ -917,7 +917,7 @@
                 const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
                 
                 let dieuKienLoc = [
-                    where("nam", "==", Number(namLoc)),
+                    where("nam", "==", Number(namHienHanh)),
                     where("vungTieuThu", "==", vungDuocClick.trim()), 
                     where("htGiaoNhan", "==", "Tổng giao") 
                 ];
@@ -952,7 +952,7 @@
                 const danhSachDoiTuongY = Array.from(setKhachHang);
 
                 if (danhSachDoiTuongY.length === 0) {
-                    console.warn(`Không tìm thấy document nào khớp với vùng: ${vungDuocClick}, năm: ${namLoc}`);
+                    console.warn(`Không tìm thấy document nào khớp với vùng: ${vungDuocClick}, năm: ${namHienHanh}`);
                     alert(`Không có dữ liệu khách hàng cho vùng: ${vungDuocClick}`);
                     if (khuVucHienThi) khuVucHienThi.style.display = 'none';
                     return;
