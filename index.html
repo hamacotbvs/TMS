@@ -915,7 +915,7 @@
                 let dieuKienLoc = [
                     where("nam", "==", Number(namThucTe)),
                     where("vungTieuThu", "==", vungDuocClick.trim()), 
-                    where("htGiaoNhan","!=", "Gửi chành") ];
+                    where("htGiaoNhan","==", "Gửi chành") ];
                 if (typeof nganhHienTai !== "undefined" && nganhHienTai !== "All") {
                     dieuKienLoc.push(where("nganh", "==", nganhHienTai));}
                 const q = query(thamChieuKhachHangVung, ...dieuKienLoc);
