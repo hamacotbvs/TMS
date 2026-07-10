@@ -969,8 +969,8 @@
 
                 // Sắp xếp mảng nhãn: Khách hàng tổng bé nằm trên, Khách hàng tổng LỚN NHẤT nằm DƯỚI CÙNG
                 const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
-                    .sort((a, b) => a[1] - b[1]) 
-                    .map(item => item[0]);       
+                    .sort((a, b) => b[1] - a[1])    // Lớn xếp trước (ở đáy), Nhỏ xếp sau (ở đỉnh)
+                    .map(item => item[0]);       // Chỉ lấy lại tên khách hàng làm nhãn trục Y
 
                 // --- 🌟 KẾT THÚC LOGIC XỬ LÝ DỮ LIỆU ---
 
