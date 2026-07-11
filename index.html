@@ -1065,19 +1065,29 @@
                             data: mangDuLieuMaTran,
                             backgroundColor(context) {
                                 const item = context.raw;
-                                if (!item || item.v === 0) return '#f8fafc';
-                                
-                                // Nếu là ô Sản lượng -> đổ màu theo tỷ lệ sản lượng
                                 if (item.loai === 'SL') {
                                     const ratio = Math.min(item.v / (maxSanLuongKhach || 1), 1);
-                                    // Giữ nguyên công thức tính r, g, b tone cũ của bạn ở đây...
+                                    let r, g, b;
+                                    if (ratio >= 0.25) {
+                                        const p = (ratio - 0.25) / 0.75; 
+                                        r = Math.round(241 + (41 - 241) * p); 
+                                        g = Math.round(220 + (128 - 220) * p); 
+                                        b = Math.round(100 + (185 - 100) * p); 
+                                    } else if (ratio >= 0.05) {
+                                        const p = (ratio - 0.05) / 0.20; 
+                                        r = Math.round(240 + (241 - 240) * p); 
+                                        g = Math.round(140 + (220 - 140) * p); 
+                                        b = Math.round(130 + (100 - 130) * p); 
+                                    } else { 
+                                        r = 245; g = 160; b = 150; 
+                                    }
                                     return `rgba(${r}, ${g}, ${b}, 0.85)`;
                                 } 
                                 // Nếu là ô Doanh thu -> đổ màu theo tỷ lệ doanh thu
                                 else {
                                     const ratio = Math.min(item.v / (maxDoanhThuKhach || 1), 1);
                                     // Có thể đổi sang tone màu khác hoặc giữ nguyên tùy ý
-                                    return `rgba(239, 68, 68, ${ratio * 0.8})`; // Ví dụ tone đỏ nhạt đến đậm cho tiền
+                                    return `rgba(139, 0, 0, ${Math.max(ratio * 0.75, 0.18)})`; // Ví dụ tone đỏ nhạt đến đậm cho tiền
                                 } },
                             borderRadius: 2,
                             borderWidth: 1, 
