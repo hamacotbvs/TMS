@@ -1028,14 +1028,14 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
             
             if (!tongSanLuongCuaKhach[tenKhachHang]) { tongSanLuongCuaKhach[tenKhachHang] = 0; }
             
-            // VÒNG LẶP 1: Gom toàn bộ 12 tháng Sản lượng trước
+            // VÒNG LẶP 1: Gom toàn bộ 12 tháng Sản lượng trước (gán x theo định dạng nhãn mới)
             for (let thang = 1; thang <= 12; thang++) {
                 const sanLuongThang = Number(data[`TL${thang}`]) || 0;
                 tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
                 if (sanLuongThang > maxSanLuongKhach) { maxSanLuongKhach = sanLuongThang; }
                 
                 mangDuLieuMaTran.push({
-                    x: `T${thang} (SL)`,
+                    x: thang === 1 ? ['1', 'Sản lượng'] : `${thang}`, // Tháng 1 đính kèm chữ Sản lượng ở dưới
                     y: tenKhachHang,
                     v: sanLuongThang,
                     loai: 'SL'
@@ -1048,7 +1048,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                 if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
                 
                 mangDuLieuMaTran.push({
-                    x: `T${thang} (DT)`,
+                    x: thang === 1 ? ['1 ', 'Doanh thu'] : `${thang} `, // Dùng dấu cách để phân biệt key với bên sản lượng
                     y: tenKhachHang,
                     v: doanhThuThang,
                     loai: 'DT'
@@ -1068,31 +1068,25 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
         if (bieuDoNhietKhachHangInstance) { bieuDoNhietKhachHangInstance.destroy(); }
         
         const chieuCaoMoiDong = 34; 
-        const phanDemCuaTrucX = 65;  
+        const phanDemCuaTrucX = 70;  // Tăng nhẹ khoảng đệm trục X cho nhãn 2 dòng
         const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
         canvasElement.style.height = `${chieuCaoTinhToan}px`;
         
-        const nhanTracX_Moi = [
-            ...Array.from({length: 12}, (_, i) => `T${i+1} (SL)`),
-            ...Array.from({length: 12}, (_, i) => `T${i+1} (DT)`)
+        // Mảng nhãn trục X tinh gọn: 1 đến 12 (Sản lượng) rồi đến 1 đến 12 (Doanh thu)
+        const nhanTracX_TinhGon = [
+            ['1', 'Sản lượng'], '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+            ['1 ', 'Doanh thu'], '2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 ', '10 ', '11 ', '12 '
         ];
         
-        // Hàm tính toán dải màu nhiệt từ Đỏ -> Vàng -> Xanh dựa trên tỷ lệ ratio gốc
         function layMauNhietTheoRatio(ratio) {
             let r, g, b;
             if (ratio >= 0.25) {
                 const p = (ratio - 0.25) / 0.75; 
-                r = Math.round(241 + (41 - 241) * p); 
-                g = Math.round(220 + (128 - 220) * p); 
-                b = Math.round(100 + (185 - 100) * p); 
+                r = Math.round(241 + (41 - 241) * p); g = Math.round(220 + (128 - 220) * p); b = Math.round(100 + (185 - 100) * p); 
             } else if (ratio >= 0.05) {
                 const p = (ratio - 0.05) / 0.20; 
-                r = Math.round(240 + (241 - 240) * p); 
-                g = Math.round(140 + (220 - 140) * p); 
-                b = Math.round(130 + (100 - 130) * p); 
-            } else { 
-                r = 245; g = 160; b = 150; 
-            }
+                r = Math.round(240 + (241 - 240) * p); g = Math.round(140 + (220 - 140) * p); b = Math.round(130 + (100 - 130) * p); 
+            } else { r = 245; g = 160; b = 150; }
             return `rgba(${r}, ${g}, ${b}, 0.85)`;
         }
         
@@ -1106,7 +1100,6 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                         const item = context.raw;
                         if (!item || item.v === 0) return '#f8fafc';
                         
-                        // 🌟 Cả Sản lượng và Doanh thu đều áp dụng chung công thức màu nhiệt động
                         if (item.loai === 'SL') {
                             const ratio = Math.min(item.v / (maxSanLuongKhach || 1), 1);
                             return layMauNhietTheoRatio(ratio);
@@ -1128,10 +1121,16 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                 scales: {
                     x: {
                         type: 'category', 
-                        labels: nhanTracX_Moi, 
+                        labels: nhanTracX_TinhGon, 
                         offset: true, 
                         grid: { display: false }, 
-                        ticks: { color: '#64748b', font: { size: 9, weight: '600' }, autoSkip: false } 
+                        ticks: { 
+                            color: '#475569', 
+                            font: { size: 10, weight: '700' }, // Chữ số tháng đậm nét đứng thẳng
+                            maxRotation: 0,                   // Ép nhãn nằm thẳng đứng chữ, không bị nghiêng chéo
+                            minRotation: 0,
+                            autoSkip: false 
+                        } 
                     },
                     y: { 
                         type: 'category', 
@@ -1150,7 +1149,6 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                         anchor: 'center',
                         textAlign: 'center',
                         padding: 0,
-                        // 🌟 Giữ chữ màu đen trên nền nhiệt cho dễ đọc rõ số liệu
                         color: '#000000',
                         font: { size: 9.5, weight: '700' }, 
                         formatter: (value) => {
