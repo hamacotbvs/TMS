@@ -997,7 +997,7 @@
             const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
             const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
             if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-            if (tieuDe) tieuDe.innerText = `Sản lượng & Doanh thu 12 tháng của Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
+            if (tieuDe) tieuDe.innerText = `Sản lượng (kg) & Doanh thu (tr.đ) 12 tháng của Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
             try {
                 const canvasElement = document.getElementById('bieuDoNhietKhachHang');
                 if (!canvasElement) {console.error("Không tìm thấy thẻ canvas 'bieuDoNhietKhachHang' trong HTML. Hãy kiểm tra lại bước 1."); return;}   // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
@@ -1088,8 +1088,8 @@
                                 padding: 1,
                                 formatter: (value) => {
                                     if (!value || value.v === 0) return '';
-                                    const dong1 = `${Math.round(value.v)}T`; // Số tấn sản lượng
-                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')}M`; // Số triệu doanh thu (M = Million)
+                                    const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; // Số tấn sản lượng
+                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')}`; // Số triệu doanh thu (M = Million)
                                     return [dong1, dong2]; } } } }
                 });
                 bieuDoNhietKhachHangInstance.resize();
