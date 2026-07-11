@@ -991,16 +991,32 @@ let bieuDoNhietKhachHangInstance = null;
 const boNhoDemVung = new Map();     // BỘ NHỚ ĐỆM (CACHE) THỦ CÔNG - Lưu trữ theo phiên làm việc để tiết kiệm lượt đọc
 let dangTaiDuLieuVung = false;      // Khóa chống spam click khi dữ liệu đang tải
 async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
+    if (dangTaiDuLieuVung) return;
     const namThucTe = typeof namHienHanh !== 'undefined' ? namHienHanh : 2026;
     if (vungDuocClick === undefined || vungDuocClick === null || typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick); return;}
     const vungChuanHoa = vungDuocClick.trim();
     const nganhThucTe = typeof nganhHienTai !== "undefined" ? nganhHienTai : "All";      // 2. Xác định ngành hiện tại (Lấy từ biến toàn cục của bạn, nếu chưa định nghĩa thì để mặc định)
     const khoaCache = `${namThucTe}_${vungChuanHoa}_${nganhThucTe}`;    // 🌟 ĐỊNH DANH KHÓA CACHE TUYỆT ĐỐI: Kết hợp Năm + Vùng + Ngành
-    if (dangTaiDuLieuVung) return;
+    
     const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
     const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
     if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-    if (tieuDe) tieuDe.innerText = `Chi tiết Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
+    // 1. Đổi tiêu đề báo trạng thái đang tải liền
+    if (tieuDe) tieuDe.innerText = `⏳ Đang tải dữ liệu khách hàng khu vực ${vungChuanHoa}...`;
+    // 2. Hủy biểu đồ Chart.js cũ để giải phóng bộ nhớ
+    if (bieuDoNhietKhachHangInstance) { 
+        bieuDoNhietKhachHangInstance.destroy(); 
+        bieuDoNhietKhachHangInstance = null;
+    }
+    // 3. Xóa sạch khung hình cũ về trắng tinh
+    const canvasElement = document.getElementById('bieuDoNhietKhachHang');
+    if (canvasElement) {
+        const ctx = canvasElement.getContext('2d');
+        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height); 
+        canvasElement.style.height = '0px'; // Thu nhỏ tạm để không bị giữ dáng biểu đồ cũ
+    } else {
+        console.error("Không tìm thấy thẻ canvas..."); return;
+    }
     try {
         const canvasElement = document.getElementById('bieuDoNhietKhachHang');
         if (!canvasElement) { console.error("Không tìm thấy thẻ canvas..."); return; }
@@ -1026,6 +1042,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
             // Ghi dữ liệu vừa tải vào Cache theo khóa định danh
             boNhoDemVung.set(khoaCache, mangDuLieuGoc);
             dangTaiDuLieuVung = false;}
+        if (tieuDe) tieuDe.innerText = `Chi tiết Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
         let tongDoanhThuCuaKhach = {}; 
         let mangDuLieuMaTran = [];  
         let maxSanLuongKhach = 0; 
