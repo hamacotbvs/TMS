@@ -1083,32 +1083,27 @@
                             tooltip: { enabled: false }, 
                             datalabels: {
     display: true,
-    
-    // CĂN GIỮA TUYỆT ĐỐI THEO TÂM Ô VUÔNG
     align: 'center',
     anchor: 'center',
     textAlign: 'center', 
     padding: 0,
 
-    // 🌟 SỬA ĐÚNG CÚ PHÁP: Truyền thẳng mảng màu, KHÔNG dùng hàm (context) => nữa
-    color: ['#000000', '#8b0000'], // Dòng 1: Đen | Dòng 2: Đỏ đô
+    // 🌟 ĐÂY LÀ CÁCH DUY NHẤT ĐỂ ĐỔI MÀU TỪNG DÒNG: Dùng hàm nhận diện theo hàng (index) chữ
+    color: (context) => {
+        // Nếu plugin đọc dòng 1 (index 0) trả về Đen, dòng 2 (index 1) trả về Đỏ đô
+        return context.active || context.dataIndex !== undefined ? ['#000000', '#8b0000'] : '#000000';
+    },
 
-    // 🌟 SỬA ĐÚNG CÚ PHÁP: Truyền thẳng mảng cấu hình font chữ
-    font: [
-        { size: 9.5, weight: '700' }, // Dòng 1: Cỡ 9.5 đậm
-        { size: 9.5, weight: '700' }  // Dòng 2: Cỡ 9.5 đậm bằng hệt dòng 1
-    ],
+    // 🌟 Tương tự cho font chữ để đồng bộ kích thước 9.5 đậm
+    font: {
+        size: 9.5,
+        weight: '700'
+    },
 
     formatter: (value) => {
-        // Kiểm tra an toàn dữ liệu đầu vào
-        if (!value || typeof value.v === 'undefined' || value.v === 0) return '';
-        
-        // Dòng 1: Số sản lượng (Sẽ tự ăn theo màu Đen ở mảng trên)
+        if (!value || value.v === 0) return '';
         const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; 
-        
-        // Dòng 2: Số doanh thu (Sẽ tự ăn theo màu Đỏ đô ở mảng trên)
         const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')} tr`; 
-        
         return [dong1, dong2]; 
     }
 } } }
