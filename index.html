@@ -1151,7 +1151,14 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                         ticks: { 
                             color: '#475569', 
                             autoSkip: false, 
-                            font: { size: 11, weight: '500' }, // Trả font về chuẩn 1 dòng để không bị lỗi đè chữ
+                            font: function(context) {
+                                let label = context.tick ? context.tick.label : '';
+                                // Nếu tên quá dài thì tự động hạ size xuống 9, tên ngắn thì để 12
+                                if (typeof label === 'string' && label.length > 2) {
+                                    return { size: 6, weight: 'normal' };
+                                }
+                                return { size: 10, weight: 'bold' };
+                            }
                             
                             callback: function(value, index) {
                                 let originalLabel = this.getLabelForValue(value);
@@ -1171,7 +1178,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                                 let phanBiCat = originalLabel.replace(label, '').trim();
                                 phanBiCat = phanBiCat.replace(/[\s\-\&\·\,\+\/]+$/g, '').trim(); // Dọn dấu thừa ở cuối
                                 // Trả về trên cùng 1 dòng: TÊN CHÍNH viết hoa + (phần phụ viết thường)
-                                return phanBiCat.toLowerCase() + label.toUpperCase();
+                                return '(' + phanBiCat.toLowerCase() + ') ' + label.toUpperCase();
                             }
                         }
                     } 
