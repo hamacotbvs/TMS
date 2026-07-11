@@ -1026,17 +1026,18 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
             // Ghi dữ liệu vừa tải vào Cache theo khóa định danh
             boNhoDemVung.set(khoaCache, mangDuLieuGoc);
             dangTaiDuLieuVung = false;}
-        let tongSanLuongCuaKhach = {}; 
+        let tongDoanhThuCuaKhach = {}; 
         let mangDuLieuMaTran = [];  
         let maxSanLuongKhach = 0; 
         let maxDoanhThuKhach = 0; 
         
         mangDuLieuGoc.forEach((data) => {
             const tenKhachHang = data.doiTuong || "Chưa phân loại";
-            if (!tongSanLuongCuaKhach[tenKhachHang]) { tongSanLuongCuaKhach[tenKhachHang] = 0; }
+            if (!tongDoanhThuCuaKhach[tenKhachHang]) { tongDoanhThuCuaKhach[tenKhachHang] = 0; }
             // 🌟 ĐÃ ĐẢO: VÒNG LẶP 1 - Gom toàn bộ 12 tháng Doanh thu chạy TRƯỚC
             for (let thang = 1; thang <= 12; thang++) {
                 const doanhThuThang = (Number(data[`DT${thang}`]) || 0) / 1000000;
+                tongDoanhThuCuaKhach[tenKhachHang] += doanhThuThang;
                 if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
                 mangDuLieuMaTran.push({
                     x: `${thang} `, // Dấu cách để nhận diện đây thuộc nhóm Doanh thu
@@ -1046,14 +1047,13 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
             // 🌟 ĐÃ ĐẢO: VÒNG LẶP 2 - Gom toàn bộ 12 tháng Sản lượng chạy SAU
             for (let thang = 1; thang <= 12; thang++) {
                 const sanLuongThang = Number(data[`TL${thang}`]) || 0;
-                tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
                 if (sanLuongThang > maxSanLuongKhach) { maxSanLuongKhach = sanLuongThang; }
                 mangDuLieuMaTran.push({
                     x: `${thang}`, // Chuỗi không dấu cách thuộc nhóm Sản lượng
                     y: tenKhachHang,
                     v: sanLuongThang,
                     loai: 'SL'}); } });
-        const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
+        const danhSachDoiTuongY = Object.entries(tongDoanhThuCuaKhach)
             .sort((a, b) => b[1] - a[1])
             .map(item => item[0]);
         if (danhSachDoiTuongY.length === 0) {
