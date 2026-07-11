@@ -716,8 +716,8 @@
         async function taiDuLieuBieuDoNhietTuServer(namLoc) {
             try {
                 // Cập nhật tiêu đề động theo năm chọn
-                const tieuDeNhiet = document.getElementById('tieuDeBieuDoNhiet');
-                if (tieuDeNhiet) tieuDeNhiet.innerText = `Sản lượng tiêu thụ theo vùng năm ${namLoc} (Tấn)`;
+                const tieuDeNhiet = document.getElementById('tieuDeNhiet');
+                if (tieuDeNhiet) tieuDeNhiet.innerText = `Sản lượng giao hàng theo vùng năm ${namLoc} (Tấn)`;
                 const tieuDeNhietDT = document.getElementById('tieuDeNhietDT');
                 if (tieuDeNhietDT) tieuDeNhietDT.innerText = `Doanh thu giao hàng theo vùng năm ${namLoc} (Triệu đồng)`;
                 // 🌟 KHAI BÁO CỐ ĐỊNH DANH SÁCH TRỤC Y (Bạn tùy ý đổi tên hoặc thêm bớt Tỉnh thành ở đây)
