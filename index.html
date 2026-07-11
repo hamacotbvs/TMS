@@ -1075,19 +1075,12 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            x: {type: 'category',
-                                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
-                                offset: true,
-                                grid: { display: false },
-                                ticks: { color: '#94a3b8' } },
-                            y: {type: 'category',
-                                labels: danhSachDoiTuongY, 
-                                offset: true,
-                                grid: { display: false }, 
-                                ticks: { color: '#94a3b8', autoSkip: false, font: { size: 10 } }} },
+                            x: { type: 'category', labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], offset: true, grid: { display: false }, ticks: { color: '#94a3b8' } },
+                            y: { type: 'category', labels: danhSachDoiTuongY, offset: true, grid: { display: false }, ticks: { color: '#94a3b8', autoSkip: false, font: { size: 10 } }} 
+                        },
                         plugins: {
                             legend: { display: false },
-                            tooltip: { enabled: true }, 
+                            tooltip: { enabled: false }, 
                             datalabels: {
                                 display: true,
                                 color: '#2c3e50', 
