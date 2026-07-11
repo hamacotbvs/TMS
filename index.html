@@ -1151,14 +1151,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                         ticks: { 
                             color: '#475569', 
                             autoSkip: false, 
-                            font: function(context) {
-                                let label = context.tick ? context.tick.label : '';
-                                // Nếu tên quá dài thì tự động hạ size xuống 9, tên ngắn thì để 12
-                                if (typeof label === 'string' && label.length > 2) {
-                                    return { size: 7, weight: '500' };
-                                }
-                                return { size: 12, weight: '500' };
-                            },
+                            font: { size: 11, weight: '500' },
                             
                             callback: function(value, index) {
                                 let originalLabel = this.getLabelForValue(value);
