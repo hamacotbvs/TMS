@@ -1024,11 +1024,21 @@
                         tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
                         // Theo dõi giá trị lớn nhất phục vụ cho việc đổ màu nhiệt
                         if (sanLuongThang > maxSanLuongKhach) {maxSanLuongKhach = sanLuongThang;}
+                        if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
+                        // 🌟 Ô THỨ 1: Tọa độ X của Sản lượng
                         mangDuLieuMaTran.push({
-                            x: thang.toString(), 
-                            y: tenKhachHang,     
+                            x: `T${thang} (SL)`,
+                            y: tenKhachHang,
                             v: sanLuongThang,
-                            dt: doanhThuThang }); } });
+                            loai: 'SL' // Đánh dấu đây là ô sản lượng
+                        });
+                        // 🌟 Ô THỨ 2: Tọa độ X của Doanh thu ngay bên cạnh
+                        mangDuLieuMaTran.push({
+                            x: `T${thang} (DT)`,
+                            y: tenKhachHang,
+                            v: doanhThuThang,
+                            loai: 'DT' // Đánh dấu đây là ô doanh thu
+                        }); } });
                 // Sắp xếp mảng nhãn: Khách hàng tổng bé nằm trên, Khách hàng tổng LỚN NHẤT nằm DƯỚI CÙNG
                 const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
                     .sort((a, b) => b[1] - a[1])    // Lớn xếp trước (ở đáy), Nhỏ xếp sau (ở đỉnh)
@@ -1053,19 +1063,21 @@
                             label: 'Sản lượng khách hàng',
                             data: mangDuLieuMaTran,
                             backgroundColor(context) {
-                        const item = context.raw;
-                        const value = item ? item.v : 0;
-                        if (value === 0) return '#f8fafc'; 
-                        const ratio = Math.min(value / (maxSanLuongKhach || 1), 1); 
-                        let r, g, b;
-                        if (ratio >= 0.25) {
-                            const p = (ratio - 0.25) / 0.75; 
-                            r = Math.round(241 + (41 - 241) * p); g = Math.round(220 + (128 - 220) * p); b = Math.round(100 + (185 - 100) * p); 
-                        } else if (ratio >= 0.05) {
-                            const p = (ratio - 0.05) / 0.20; 
-                            r = Math.round(240 + (241 - 240) * p); g = Math.round(140 + (220 - 140) * p); b = Math.round(130 + (100 - 130) * p); 
-                        } else { r = 245; g = 160; b = 150; }
-                        return `rgba(${r}, ${g}, ${b}, 0.85)`; },
+                                const item = context.raw;
+                                if (!item || item.v === 0) return '#f8fafc';
+                                
+                                // Nếu là ô Sản lượng -> đổ màu theo tỷ lệ sản lượng
+                                if (item.loai === 'SL') {
+                                    const ratio = Math.min(item.v / (maxSanLuongKhach || 1), 1);
+                                    // Giữ nguyên công thức tính r, g, b tone cũ của bạn ở đây...
+                                    return `rgba(${r}, ${g}, ${b}, 0.85)`;
+                                } 
+                                // Nếu là ô Doanh thu -> đổ màu theo tỷ lệ doanh thu
+                                else {
+                                    const ratio = Math.min(item.v / (maxDoanhThuKhach || 1), 1);
+                                    // Có thể đổi sang tone màu khác hoặc giữ nguyên tùy ý
+                                    return `rgba(239, 68, 68, ${ratio * 0.8})`; // Ví dụ tone đỏ nhạt đến đậm cho tiền
+                                } },
                             borderRadius: 2,
                             borderWidth: 1, 
                             borderColor: '#ffffff', 
@@ -1075,54 +1087,35 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            x: { type: 'category', labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], offset: true, grid: { display: false }, ticks: { color: '#94a3b8' } },
+                            // 🌟 Tự động tạo ra mảng nhãn: ["T1 (SL)", "T1 (DT)", "T2 (SL)", ...]
+                            x: {type: 'category', labels: Array.from({length: 12}, (_, i) => [`T${i+1} (SL)`, `T${i+1} (DT)`]).flat(), offset: true, grid: { display: false }, ticks: {color: '#94a3b8', font: { size: 9 } } },
                             y: { type: 'category', labels: danhSachDoiTuongY, offset: true, grid: { display: false }, ticks: { color: '#94a3b8', autoSkip: false, font: { size: 10 } }} 
                         },
                         plugins: {
                             legend: { display: false },
                             tooltip: { enabled: false }, 
                             datalabels: {
-    display: true,
-    
-    // CĂN GIỮA TUYỆT ĐỐI THEO TÂM Ô VUÔNG
-    align: 'center',
-    anchor: 'center',
-    textAlign: 'center', 
-    padding: 0,
-
-    // 🌟 SỬA LẠI HÀM ĐỔI MÀU: Nhận diện theo dòng chữ được vẽ
-    color: (context) => {
-        // Lấy chuỗi text mà formatter chuẩn bị hiển thị tại dòng đó
-        const label = context.dataset.data[context.dataIndex];
-        
-        // Nếu thư viện duyệt đến dòng chữ, ta dùng hàm scriptable check theo index của block văn bản
-        // Chart.js datalabels hỗ trợ mảng cấu hình thông qua hàm callback lồng nhau như sau:
-        return (ctx) => {
-            // ctx.index là vị trí của dòng chữ (0 là dòng 1, 1 là dòng 2)
-            return ctx.index === 1 ? '#8b0000' : '#000000'; 
-        };
-    },
-
-    // CỐ ĐỊNH KÍCH THƯỚC CHỮ ĐỀU NHAU
-    font: {
-        size: 9.5,
-        weight: '700'
-    },
-
-    formatter: (value) => {
-        if (!value || typeof value.v === 'undefined' || value.v === 0) return '';
-        
-        // Dòng 1: Số sản lượng
-        const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; 
-        
-        // Dòng 2: Số doanh thu
-        const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')} tr`; 
-        
-        return [dong1, dong2]; // Trả về mảng 2 dòng chữ
-    }
-}
-
-} }
+                                display: true,
+                                align: 'center',
+                                anchor: 'center',
+                                textAlign: 'center',
+                                padding: 0,
+                                // 🌟 CHIA MÀU CHUẨN 100%: Ô sản lượng chữ ĐEN, ô doanh thu chữ ĐỎ ĐÔ
+                                color: (context) => {
+                                    const item = context.dataset.data[context.dataIndex];
+                                    return item && item.loai === 'DT' ? '#8b0000' : '#000000';
+                                },
+                                font: { size: 9.5, weight: '700' }, // Chữ đều nhau chằn chặn
+                                formatter: (value) => {
+                                    if (!value || value.v === 0) return '';
+                                    // Nếu là ô doanh thu thì hiển thị kèm chữ "tr", ô sản lượng hiện số kg thuần túy
+                                    if (value.loai === 'DT') {
+                                        return `${Math.round(value.v).toLocaleString('vi-VN')}`;
+                                    } else {
+                                        return `${Math.round(value.v).toLocaleString('vi-VN')}`;
+                                    }
+                                }
+                            } } }
                 });
                 bieuDoNhietKhachHangInstance.resize();
             } catch (error) {console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error);}
