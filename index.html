@@ -1155,15 +1155,14 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                             // 🌟 BỘ LỌC LOẠI BỎ TIỀN TỐ PHÁP LÝ - CHỈ GIỮ LẠI TÊN RIÊNG
                             callback: function(value, index) {
                                 let label = this.getLabelForValue(value);
-                                // 1. 🌟 BỔ SUNG: Cắt thêm "Nhà phân phối", "Gạch ốp lát", các biến thể "Thương mại..." ở đầu
-                                label = label.replace(/^(CÔNG TY TRÁCH NHIỆM HỮU HẠN VẬT LIỆU XÂY DỰNG|CÔNG TY TNHH MTV|CÔNG TY TNHH|CONG TY TNHH MTV|CONG TY TNHH|CÔNG TY CP|CONG TY CP|CÔNG TY CỔ PHẦN|CONG TY CO PHAN|CTY TNHH|CTY CP|DOANH NGHIỆP TƯ NHÂN|DOANH NGHIEP TU NHAN|DNTN|HỘ KINH DOANH|HO KINH DOANH|Hộ Kinh Doanh|CN|CHI NHÁNH|CHI NHANH)\s+/gi, '');
+                                // Biểu thức này quét sạch: CÔNG TY TNHH MTV, CTY TNHH, DOANH NGHIEP, HO KINH DOANH, DNTN, ...
+                                label = label.replace(/^(CÔNG TY TNHH MTV|CÔNG TY TNHH|CONG TY TNHH MTV|CONG TY TNHH|CÔNG TY CP|CONG TY CP|CÔNG TY CỔ PHẦN|CONG TY CO PHAN|CTY TNHH|CTY CP|DOANH NGHIỆP TƯ NHÂN|DOANH NGHIEP TU NHAN|DNTN|HỘ KINH DOANH|HO KINH DOANH|Hộ Kinh Doanh|CN|CHI NHÁNH|CHI NHANH)\s+/gi, '');
                                 
-                                // 2. Cắt tiếp các từ viết tắt ngành nghề còn sót lại
-                                label = label.replace(/^(vẬT LIỆU XÂY DỰNG VÀ THIẾT BỊ|XÂY DỰNG TRANG TRÍ NỘI THẤT|DOANH NGHIỆP TN VLXD|Thương Mại Dịch Vụ Đầu Tư|VÀ TRANG TRÍ NỘI THẤT|VÀ MÔI TRƯỜNG ĐÔ THỊ|DOANH NGHIỆP TN|SẢN XUẤT THƯƠNG MẠI XÂY DỰNG VẬN TẢI|VÀ TRANG TRÍ NỘI THẤT|NHÀ PHÂN PHỐI VẬT LIỆU XÂY DỰNG|SẢN XUẤT THƯƠNG MẠI XÂY DỰNG VẬN TẢI|GẠCH ỐP LÁT VẬT LIỆU XÂY DỰNG|VẬT LIỆU XÂY DỰNG|MỘT THÀNH VIÊN|CỬA HÀNG VẬT LIỆU XÂY DỰNG|CÔNG TY TRÁCH NHIỆM HỮU HẠN TƯ VẤN XÂY DỰNG|THƯƠNG MẠI DỊCH VỤ XÂY DỰNG|THƯƠNG MẠI DỊCH VỤ|THƯƠNG MẠI - DỊCH VỤ|CỬA HÀNG BÁN BUÔN TỔNG HỢP|TM DV|VÀ TRANG TRÍ NỘI THẤT|VẬT LIỆU XÂY DỰNG VÀ TRANG TRÍ NỘI THẤT|TƯ VẤN XÂY DỰNG|DỊCH VỤ XÂY DỰNG|DỊCH VỤ|TM XD|THƯƠNG MẠI|XÂY DỰNG|TRANG TRÍ NỘI THẤT|VLXD VÀ TTNT|VLXD|DV SX|DỊCH VỤ XÂY DỰNG)\s+/gi, '');
-                                
+                                // 2. Loại bỏ tiếp các cụm từ đệm ở giữa hoặc đầu nếu còn sót (như MTV, MỘT THÀNH VIÊN, THƯƠNG MẠI DỊCH VỤ, TM DV, ...)
+                                label = label.replace(/^(MTV|MỘT THÀNH VIÊN|MOT THANH VIEN|THƯƠNG MẠI DỊCH VỤ|THUONG MAI DICH VU|TM DV|TMDV|SẢN XUẤT|SAN XUAT|XÂY DỰNG|XAY DUNG|THƯƠNG MẠI|THUONG MAI)\s+/gi, '');
                                 // 3. Xóa ký tự đặc biệt thừa ở đầu (khoảng trắng, dấu gạch, dấu và)
                                 label = label.replace(/^[\s\-\&\·\,]+/g, '').trim();
-                                
+        
                                 // 4. Xử lý mở ngoặc giải thích tên riêng cuối chuỗi
                                 if (label.includes('(')) {
                                     label = label.split('(')[0].trim();
