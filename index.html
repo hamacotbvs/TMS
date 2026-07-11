@@ -1172,13 +1172,6 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
     if (label.includes('(')) {
         label = label.split('(')[0].trim();
     }
-
-    // Giới hạn độ dài hiển thị để không vỡ khung biểu đồ
-    const doDaiToiDa = 25;
-    if (label.length > doDaiToiDa) {
-        return label.substring(0, doDaiToiDa) + '...';
-    }
-
     return label || this.getLabelForValue(value);
 }
                         }
