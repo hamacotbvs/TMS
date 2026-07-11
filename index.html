@@ -1090,26 +1090,23 @@
     textAlign: 'center', 
     padding: 0,
 
-    // 🌟 ĐỔI MÀU CHỮ: Dòng 1 màu Đen, Dòng 2 màu Đỏ đô
-    color: (context) => {
-        return ['#000000', '#8b0000']; // Dòng 1: Đen | Dòng 2: Đỏ đô
-    },
+    // 🌟 SỬA ĐÚNG CÚ PHÁP: Truyền thẳng mảng màu, KHÔNG dùng hàm (context) => nữa
+    color: ['#000000', '#8b0000'], // Dòng 1: Đen | Dòng 2: Đỏ đô
 
-    // 🌟 CỐ ĐỊNH KÍCH THƯỚC CHỮ ĐỀU NHAU (Bỏ chữ to chữ nhỏ, dùng chung size 10 hoặc 9.5)
-    font: (context) => {
-        return [
-            { size: 9.5, weight: '700' }, // Dòng 1 (Sản lượng): Cỡ 9.5 đậm
-            { size: 9.5, weight: '700' }  // Dòng 2 (Doanh thu): Cỡ 9.5 đậm chằn chặn bằng dòng 1
-        ];
-    },
+    // 🌟 SỬA ĐÚNG CÚ PHÁP: Truyền thẳng mảng cấu hình font chữ
+    font: [
+        { size: 9.5, weight: '700' }, // Dòng 1: Cỡ 9.5 đậm
+        { size: 9.5, weight: '700' }  // Dòng 2: Cỡ 9.5 đậm bằng hệt dòng 1
+    ],
 
     formatter: (value) => {
-        if (!value || value.v === 0) return '';
+        // Kiểm tra an toàn dữ liệu đầu vào
+        if (!value || typeof value.v === 'undefined' || value.v === 0) return '';
         
-        // Dòng 1: Số sản lượng (Màu đen)
+        // Dòng 1: Số sản lượng (Sẽ tự ăn theo màu Đen ở mảng trên)
         const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; 
         
-        // Dòng 2: Số doanh thu (Màu đỏ đô)
+        // Dòng 2: Số doanh thu (Sẽ tự ăn theo màu Đỏ đô ở mảng trên)
         const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')} tr`; 
         
         return [dong1, dong2]; 
