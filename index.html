@@ -1153,25 +1153,27 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                             autoSkip: false, 
                             font: { size: 10, weight: '500' },
                             // 🌟 BỘ LỌC LOẠI BỎ TIỀN TỐ PHÁP LÝ - CHỈ GIỮ LẠI TÊN RIÊNG
-                            callback: function(value, index) {
+callback: function(value, index) {
     let label = this.getLabelForValue(value);
     
-    // --- BƯỚC 1: QUÉT SẠCH CÁC CỤM TỪ PHÁP LÝ & NGÀNH NGHỀ PHỨC TẠP ĐẦU CHUỖI ---
+    // --- BƯỚC 1: XÓA CÁC CỤM TỪ PHÁP LÝ ĐẦU CHUỖI ---
     label = label.replace(/^(CÔNG TY TNHH MTV|CÔNG TY TNHH|CONG TY TNHH MTV|CONG TY TNHH|CÔNG TY CP|CONG TY CP|CÔNG TY CỔ PHẦN|CONG TY CO PHAN|CTY TNHH|CTY CP|DOANH NGHIỆP TƯ NHÂN|DOANH NGHIEP TU NHAN|DNTN|HỘ KINH DOANH|HO KINH DOANH|Hộ Kinh Doanh|CHI NHÁNH|CHI NHANH|CN)\s+/gi, '');
 
-    // --- BƯỚC 2: QUÉT SẠCH TIỀN TỐ NGÀNH NGHỀ PHÁT SINH (QUÉT TỪ DÀI ĐẾN NGẮN) ---
-    // Đã bổ sung: Tổng hợp và đầu tư, Đầu tư thương mại dịch vụ, Showroom nội thất, Trang trí nội thất, Vật liệu xây dựng, Xây dựng vận tải, Tư vấn xây dựng...
-    label = label.replace(/^(TỔNG HỢP VÀ ĐẦU TƯ XÂY DỰNG|ĐẦU TƯ THƯƠNG MẠI DỊCH VỤ|TƯ VẤN XÂY DỰNG VÀ THƯƠNG MẠI|XÂY DỰNG VẬN TẢI NGUYÊN|TRANG TRÍ NỘI THẤT THÀNH TÍN|XÂY DỰNG VẬN TẢI|VẬT LIỆU XÂY DỰNG|SHOWROOM NỘI THẤT|TRANG TRÍ NỘI THẤT|DỊCH VỤ XÂY DỰNG|GIẢI PHÁP XÂY DỰNG|THƯƠNG MẠI DỊCH VỤ|THUONG MAI DICH VU|THƯƠNG MẠI CỦA|VÀ THƯƠNG MẠI|VÀ DỊCH VỤ|THƯƠNG MẠI|THUONG MAI|XÂY DỰNG|XAY DUNG|CỬA HÀNG|VẬT TƯ)\s+/gi, '');
+    // --- BƯỚC 2: QUÉT CÁC CỤM TỪ NGHỀ NGHIỆP GHÉP PHỨC TẠP (ƯU TIÊN CỤM DÀI TRƯỚC) ---
+    // Sửa lỗi sót: "Sản Xuất Thương Mại Cửa...", "Sản Xuất Và Thương Mại...", "Tổng Hợp Và Đầu Tư..."
+    label = label.replace(/^(TỔNG HỢP VÀ ĐẦU TƯ XÂY DỰNG|SẢN XUẤT VÀ THƯƠNG MẠI|SẢN XUẤT THƯƠNG MẠI|ĐẦU TƯ THƯƠNG MẠI DỊCH VỤ|TƯ VẤN XÂY DỰNG VÀ THƯƠNG MẠI|XÂY DỰNG VẬN TẢI NGUYÊN|TRANG TRÍ NỘI THẤT THÀNH TÍN|XÂY DỰNG VẬN TẢI|THƯƠNG MẠI VÀ DỊCH VỤ|THƯƠNG MẠI DỊCH VỤ|THUONG MAI DICH VU|VẬT LIỆU XÂY DỰNG|SHOWROOM NỘI THẤT|TRANG TRÍ NỘI THẤT|DỊCH VỤ XÂY DỰNG|GIẢI PHÁP XÂY DỰNG|THƯƠNG MẠI CỦA|VÀ THƯƠNG MẠI|VÀ DỊCH VỤ|XÂY DỰNG HÀO|XÂY DỰNG|XAY DUNG|SẢN XUẤT|CỬA HÀNG|VẬT TƯ)\s+/gi, '');
 
-    // --- BƯỚC 3: QUÉT SẠCH CÁC TỪ VIẾT TẮT, TỪ ĐỆM HOẶC CHỮ RIÊNG LẺ SÓT LẠI ---
-    // Đã bổ sung: MTV-VLXD, TM DV & XD, XD - TM, TM DV, TMDV, GAS, CƠ...
-    label = label.replace(/^(MTV-VLXD|TM DV \& XD|TM DV \&|XD \- TM VÀ DV|XD \- TM|TM DV|TMDV|MTV|MỘT THÀNH VIÊN|GAS|CƠ)\s+/gi, '');
+    // --- BƯỚC 3: QUÉT TIẾP CÁC TỪ VIẾT TẮT HOẶC CHỮ ĐỆM ĐƠN LẺ ---
+    // Giải quyết nốt: "TM DV & XD...", "XD - TM...", "THƯƠNG MẠI ANDY"
+    label = label.replace(/^(MTV-VLXD|TM DV \& XD|TM DV \&|XD \- TM VÀ DV|XD \- TM|TM DV|TMDV|MTV|MỘT THÀNH VIÊN|THƯƠNG MẠI|THUONG MAI|GAS|CƠ)\s+/gi, '');
 
-    // --- BƯỚC 4: DỌN DẸP KÝ TỰ THỪA & DẤU NGOẶC ---
-    label = label.replace(/^[\s\-\&\·\,\+]+/g, '').trim(); // Xóa sạch các dấu dư ở đầu dòng như & , - sau khi cắt chữ
+    // --- BƯỚC 4: DỌN DẸP KÝ TỰ ĐẶC BIỆT Ở ĐẦU VÀ DẤU NGOẶC ---
+    label = label.replace(/^[\s\-\&\·\,\+]+/g, '').trim(); 
     if (label.includes('(')) {
         label = label.split('(')[0].trim();
     }
+    
+    // Đã loại bỏ hoàn toàn phần khống chế giới hạn 25 ký tự
     return label || this.getLabelForValue(value);
 }
                         }
