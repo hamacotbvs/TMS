@@ -1014,6 +1014,7 @@
                 let tongSanLuongCuaKhach = {}; 
                 let mangDuLieuMaTran = [];  
                 let maxSanLuongKhach = 0; 
+                let maxDoanhThuKhach = 0;
                 querySnapshot.forEach((doc) => {const data = doc.data(); const tenKhachHang = data.doiTuong || "Chưa phân loại";
                     // Khởi tạo tổng sản lượng cho khách hàng này nếu chưa có
                     if (!tongSanLuongCuaKhach[tenKhachHang]) {tongSanLuongCuaKhach[tenKhachHang] = 0;}
@@ -1051,7 +1052,7 @@
                 // Hủy biểu đồ cũ nếu có để tránh lỗi đè lặp bộ nhớ
                 if (bieuDoNhietKhachHangInstance) {bieuDoNhietKhachHangInstance.destroy();}
                 // Thiết lập chiều cao động cho thẻ canvas trước khi render để chữ không bị dính vào nhau
-                const chieuCaoMoiDong = 28; 
+                const chieuCaoMoiDong = 18; 
                 const phanDemCuaTrucX = 60;  
                 const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
                 // Gán chiều cao thực tế vào thẻ canvas
@@ -1081,7 +1082,7 @@
                             borderRadius: 2,
                             borderWidth: 1, 
                             borderColor: '#ffffff', 
-                            width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 2 : 0,
+                            width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 24) - 2 : 0,
                             height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachDoiTuongY.length || 1)) - 2 : 0 }] },
                     options: {
                         responsive: true,
@@ -1107,13 +1108,7 @@
                                 },
                                 font: { size: 9.5, weight: '700' }, // Chữ đều nhau chằn chặn
                                 formatter: (value) => {
-                                    if (!value || value.v === 0) return '';
-                                    // Nếu là ô doanh thu thì hiển thị kèm chữ "tr", ô sản lượng hiện số kg thuần túy
-                                    if (value.loai === 'DT') {
-                                        return `${Math.round(value.v).toLocaleString('vi-VN')}`;
-                                    } else {
-                                        return `${Math.round(value.v).toLocaleString('vi-VN')}`;
-                                    }
+                                    if (!value || value.v === 0) return ''; return `${Math.round(value.v).toLocaleString('vi-VN')}`;
                                 }
                             } } }
                 });
