@@ -997,7 +997,7 @@
             const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
             const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
             if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-            if (tieuDe) tieuDe.innerText = `Sản lượng 12 tháng của Khách hàng khu vực ${vungDuocClick} ${namThucTe} (kg)`;
+            if (tieuDe) tieuDe.innerText = `Sản lượng & Doanh thu 12 tháng của Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
             try {
                 const canvasElement = document.getElementById('bieuDoNhietKhachHang');
                 if (!canvasElement) {console.error("Không tìm thấy thẻ canvas 'bieuDoNhietKhachHang' trong HTML. Hãy kiểm tra lại bước 1."); return;}   // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
@@ -1019,7 +1019,7 @@
                     if (!tongSanLuongCuaKhach[tenKhachHang]) {tongSanLuongCuaKhach[tenKhachHang] = 0;}
                     for (let thang = 1; thang <= 12; thang++) {
                         const sanLuongThang = Number(data[`TL${thang}`]) || 0;
-                        const doanhThuThang = Number(data[`DT${thang}`]) || 0;
+                        const doanhThuThang = (Number(data[`DT${thang}`]) || 0) / 1000000; // Đổi sang Triệu đồng
                         // Cộng dồn vào tổng 12 tháng để tính toán sắp xếp vị trí trục Y
                         tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
                         // Theo dõi giá trị lớn nhất phục vụ cho việc đổ màu nhiệt
@@ -1053,26 +1053,19 @@
                             label: 'Sản lượng khách hàng',
                             data: mangDuLieuMaTran,
                             backgroundColor(context) {
-                                const item = context.raw;
-                                const value = item ? item.v : 0;
-                                if (value === 0) return '#f8fafc'; 
-                                const ratio = Math.min(value / (maxSanLuongKhach || 1), 1); 
-                                let r, g, b;
-                                if (ratio >= 0.25) {
-                                    const p = (ratio - 0.25) / (1.0 - 0.25); 
-                                    r = Math.round(241 + (41 - 241) * p);
-                                    g = Math.round(220 + (128 - 220) * p);
-                                    b = Math.round(100 + (185 - 100) * p); 
-                                } else if (ratio >= 0.05 && ratio < 0.25) {
-                                    const p = (ratio - 0.05) / (0.25 - 0.05); 
-                                    r = Math.round(240 + (241 - 240) * p);
-                                    g = Math.round(140 + (220 - 140) * p);
-                                    b = Math.round(130 + (100 - 130) * p); 
-                                } else {
-                                    r = 245; 
-                                    g = 160;
-                                    b = 150;}
-                                const alpha = 0.85; return `rgba(${r}, ${g}, ${b}, ${alpha})`; },
+                        const item = context.raw;
+                        const value = item ? item.v : 0;
+                        if (value === 0) return '#f8fafc'; 
+                        const ratio = Math.min(value / (maxSanLuongKhach || 1), 1); 
+                        let r, g, b;
+                        if (ratio >= 0.25) {
+                            const p = (ratio - 0.25) / 0.75; 
+                            r = Math.round(241 + (41 - 241) * p); g = Math.round(220 + (128 - 220) * p); b = Math.round(100 + (185 - 100) * p); 
+                        } else if (ratio >= 0.05) {
+                            const p = (ratio - 0.05) / 0.20; 
+                            r = Math.round(240 + (241 - 240) * p); g = Math.round(140 + (220 - 140) * p); b = Math.round(130 + (100 - 130) * p); 
+                        } else { r = 245; g = 160; b = 150; }
+                        return `rgba(${r}, ${g}, ${b}, 0.85)`; },
                             borderRadius: 2,
                             borderWidth: 1, 
                             borderColor: '#ffffff', 
