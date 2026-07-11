@@ -1159,7 +1159,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                                 label = label.replace(/^(CÔNG TY TNHH MTV|CÔNG TY TNHH|CONG TY TNHH MTV|CONG TY TNHH|CÔNG TY CP|CONG TY CP|CÔNG TY CỔ PHẦN|CONG TY CO PHAN|CTY TNHH|CTY CP|DOANH NGHIỆP TƯ NHÂN|DOANH NGHIEP TU NHAN|DNTN|HỘ KINH DOANH|HO KINH DOANH|Hộ Kinh Doanh|CN|CHI NHÁNH|CHI NHANH)\s+/gi, '');
                                 
                                 // 2. Cắt tiếp các từ viết tắt ngành nghề còn sót lại
-                                label = label.replace(/^(NPP|TMDV|TM|DV|VLXD - TTNT|VLXD|TTNT|NỘI THẤT|TRANG TRÍ NỘI THẤT|MTV|MỘT THÀNH VIÊN|VÀ SẢN XUẤT|NHÀ PHÂN PHỐI VẬT LIỆU XÂY DỰNG|THƯƠNG MẠI|GẠCH ỐP LÁT VẬT LIỆU XÂY DỰNG|VẬT LIỆU XÂY DỰNG|THƯƠNG MẠI - DỊCH VỤ|CỬA HÀNG|VẬT LIỆU XÂY DỰNG VÀ TRANG TRÍ NỘI THẤT|TƯ VẤN XÂY DỰNG|SẢN XUẤT THƯƠNG MẠI XÂY DỰNG VẬN TẢI|VÀ TTNT)\s+/gi, '');
+                                label = label.replace(/^(SẢN XUẤT THƯƠNG MẠI XÂY DỰNG VẬN TẢI|VÀ TTNT)\s+/gi, '');
                                 
                                 // 3. Xóa ký tự đặc biệt thừa ở đầu (khoảng trắng, dấu gạch, dấu và)
                                 label = label.replace(/^[\s\-\&\·\,]+/g, '').trim();
