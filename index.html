@@ -1148,7 +1148,21 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                         labels: danhSachDoiTuongY, 
                         offset: true, 
                         grid: { display: false }, 
-                        ticks: { color: '#475569', autoSkip: false, font: { size: 10, weight: '500' } }
+                        ticks: { 
+                            color: '#475569', 
+                            autoSkip: false, 
+                            font: { size: 10, weight: '500' },
+                            // 🌟 BỘ LỌC LOẠI BỎ TIỀN TỐ PHÁP LÝ - CHỈ GIỮ LẠI TÊN RIÊNG
+                            callback: function(value, index) {
+                                let label = this.getLabelForValue(value);
+                                // 1. Chuyển đổi tạm thời sang chữ hoa không dấu hoặc có dấu để đồng bộ xóa cho sạch
+                                // Biểu thức này quét sạch: CÔNG TY TNHH MTV, CTY TNHH, DOANH NGHIEP, HO KINH DOANH, DNTN, ...
+                                label = label.replace(/^(CÔNG TY TNHH MTV|CÔNG TY TNHH|CONG TY TNHH MTV|CONG TY TNHH|CÔNG TY CP|CONG TY CP|CÔNG TY CỔ PHẦN|CONG TY CO PHAN|CTY TNHH|CTY CP|DOANH NGHIỆP TƯ NHÂN|DOANH NGHIEP TU NHAN|DNTN|HỘ KINH DOANH|HO KINH DOANH|Hộ Kinh Doanh|CN|CHI NHÁNH|CHI NHANH)\s+/gi, '');
+                                // 2. Loại bỏ tiếp các cụm từ đệm ở giữa hoặc đầu nếu còn sót (như MTV, MỘT THÀNH VIÊN, THƯƠNG MẠI DỊCH VỤ, TM DV, ...)
+                                label = label.replace(/^(MTV|MỘT THÀNH VIÊN|MOT THANH VIEN|THƯƠNG MẠI DỊCH VỤ|THUONG MAI DICH VU|TM DV|TMDV|SẢN XUẤT|SAN XUAT|XÂY DỰNG|XAY DUNG|THƯƠNG MẠI|THUONG MAI)\s+/gi, '');
+                                return label.trim(); // Trả về tên riêng đã được gọt giũa sạch sẽ
+                            }
+                        }
                     } 
                 },
                 plugins: {
