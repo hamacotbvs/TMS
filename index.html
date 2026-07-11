@@ -998,7 +998,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
     const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
     const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
     if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-    if (tieuDe) tieuDe.innerText = `Sản lượng (kg) & Doanh thu (tr.đ) 12 tháng của Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
+    if (tieuDe) tieuDe.innerText = `Doanh thu (tr.đ) & Sản lượng (kg) 12 tháng của Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
     
     try {
         const canvasElement = document.getElementById('bieuDoNhietKhachHang');
@@ -1027,32 +1027,32 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
             
             if (!tongSanLuongCuaKhach[tenKhachHang]) { tongSanLuongCuaKhach[tenKhachHang] = 0; }
             
-            // VÒNG LẶP 1: Gom toàn bộ 12 tháng Sản lượng trước
+            // 🌟 ĐÃ ĐẢO: VÒNG LẶP 1 - Gom toàn bộ 12 tháng Doanh thu chạy TRƯỚC
+            for (let thang = 1; thang <= 12; thang++) {
+                const doanhThuThang = (Number(data[`DT${thang}`]) || 0) / 1000000;
+                if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
+                
+                mangDuLieuMaTran.push({
+                    x: `${thang} `, // Dấu cách để nhận diện đây thuộc nhóm Doanh thu
+                    y: tenKhachHang,
+                    v: doanhThuThang,
+                    loai: 'DT'
+                }); 
+            }
+
+            // 🌟 ĐÃ ĐẢO: VÒNG LẶP 2 - Gom toàn bộ 12 tháng Sản lượng chạy SAU
             for (let thang = 1; thang <= 12; thang++) {
                 const sanLuongThang = Number(data[`TL${thang}`]) || 0;
                 tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
                 if (sanLuongThang > maxSanLuongKhach) { maxSanLuongKhach = sanLuongThang; }
                 
                 mangDuLieuMaTran.push({
-                    x: `${thang}`, // Chuỗi thuần túy giúp map đúng tọa độ ô Tháng 1
+                    x: `${thang}`, // Chuỗi không dấu cách thuộc nhóm Sản lượng
                     y: tenKhachHang,
                     v: sanLuongThang,
                     loai: 'SL'
                 });
             }
-            
-            // VÒNG LẶP 2: Gom toàn bộ 12 tháng Doanh thu chạy ngay phía sau
-            for (let thang = 1; thang <= 12; thang++) {
-                const doanhThuThang = (Number(data[`DT${thang}`]) || 0) / 1000000;
-                if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
-                
-                mangDuLieuMaTran.push({
-                    x: `${thang} `, // Có dấu cách để tách biệt với khối sản lượng
-                    y: tenKhachHang,
-                    v: doanhThuThang,
-                    loai: 'DT'
-                }); 
-            } 
         });
         
         const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
@@ -1070,12 +1070,12 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
         const phanDemCuaTrucX = 70;  
         const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
         canvasElement.style.height = `${chieuCaoTinhToan}px`;
-        canvasElement.style.width = '100%'; // 🌟 Ép dãn hết 100% chiều rộng vùng chứa trong modal
+        canvasElement.style.width = '100%'; 
         
-        // Mảng nhãn chuẩn chỉ dùng String thuần túy
+        // 🌟 ĐÃ ĐẢO: Mảng nhãn trục X chuẩn đưa nhóm '1 ' -> '12 ' (Doanh thu) lên trước
         const nhanTracX_Chuan = [
-            '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
-            '1 ', '2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 ', '10 ', '11 ', '12 '
+            '1 ', '2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 ', '10 ', '11 ', '12 ',
+            '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'
         ];
         
         function layMauNhietTheoRatio(ratio) {
@@ -1130,16 +1130,16 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                             maxRotation: 0,
                             minRotation: 0,
                             autoSkip: false,
-                            // 🌟 DÙNG CALLBACK: Đẩy chữ Sản lượng và Doanh thu xuống dòng 2 mà không làm mất data
+                            // 🌟 ĐÃ CẬP NHẬT CALLBACK: Gán đúng nhãn phụ ở chân cột Tháng 1 đầu tiên của mỗi nhóm
                             callback: function(val, index) {
                                 const label = this.getLabelForValue(val);
-                                if (label === '1') {
-                                    return ['1', 'Sản lượng'];
-                                }
                                 if (label === '1 ') {
                                     return ['1', 'Doanh thu'];
                                 }
-                                return label.trim(); // Các tháng khác cắt khoảng trống để hiển thị số thuần túy
+                                if (label === '1') {
+                                    return ['1', 'Sản lượng'];
+                                }
+                                return label.trim(); 
                             }
                         } 
                     },
