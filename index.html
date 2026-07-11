@@ -986,7 +986,6 @@
             });
         }
 // BIỂU ĐỒ NHIỆT CON KHÁCH HÀNG
-// BIỂU ĐỒ NHIỆT CON KHÁCH HÀNG
 // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
 let bieuDoNhietKhachHangInstance = null;
 async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
@@ -1028,14 +1027,14 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
             
             if (!tongSanLuongCuaKhach[tenKhachHang]) { tongSanLuongCuaKhach[tenKhachHang] = 0; }
             
-            // VÒNG LẶP 1: Gom toàn bộ 12 tháng Sản lượng trước (gán x theo định dạng nhãn mới)
+            // VÒNG LẶP 1: Gom toàn bộ 12 tháng Sản lượng trước
             for (let thang = 1; thang <= 12; thang++) {
                 const sanLuongThang = Number(data[`TL${thang}`]) || 0;
                 tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
                 if (sanLuongThang > maxSanLuongKhach) { maxSanLuongKhach = sanLuongThang; }
                 
                 mangDuLieuMaTran.push({
-                    x: thang === 1 ? ['1', 'Sản lượng'] : `${thang}`, // Tháng 1 đính kèm chữ Sản lượng ở dưới
+                    x: `${thang}`, // Chuỗi thuần túy giúp map đúng tọa độ ô Tháng 1
                     y: tenKhachHang,
                     v: sanLuongThang,
                     loai: 'SL'
@@ -1048,7 +1047,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                 if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
                 
                 mangDuLieuMaTran.push({
-                    x: thang === 1 ? ['1 ', 'Doanh thu'] : `${thang} `, // Dùng dấu cách để phân biệt key với bên sản lượng
+                    x: `${thang} `, // Có dấu cách để tách biệt với khối sản lượng
                     y: tenKhachHang,
                     v: doanhThuThang,
                     loai: 'DT'
@@ -1068,14 +1067,14 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
         if (bieuDoNhietKhachHangInstance) { bieuDoNhietKhachHangInstance.destroy(); }
         
         const chieuCaoMoiDong = 34; 
-        const phanDemCuaTrucX = 70;  // Tăng nhẹ khoảng đệm trục X cho nhãn 2 dòng
+        const phanDemCuaTrucX = 70;  
         const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
         canvasElement.style.height = `${chieuCaoTinhToan}px`;
         
-        // Mảng nhãn trục X tinh gọn: 1 đến 12 (Sản lượng) rồi đến 1 đến 12 (Doanh thu)
-        const nhanTracX_TinhGon = [
-            ['1', 'Sản lượng'], '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
-            ['1 ', 'Doanh thu'], '2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 ', '10 ', '11 ', '12 '
+        // Mảng nhãn chuẩn chỉ dùng String thuần túy
+        const nhanTracX_Chuan = [
+            '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+            '1 ', '2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 ', '10 ', '11 ', '12 '
         ];
         
         function layMauNhietTheoRatio(ratio) {
@@ -1121,15 +1120,26 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                 scales: {
                     x: {
                         type: 'category', 
-                        labels: nhanTracX_TinhGon, 
+                        labels: nhanTracX_Chuan, 
                         offset: true, 
                         grid: { display: false }, 
                         ticks: { 
                             color: '#475569', 
-                            font: { size: 10, weight: '700' }, // Chữ số tháng đậm nét đứng thẳng
-                            maxRotation: 0,                   // Ép nhãn nằm thẳng đứng chữ, không bị nghiêng chéo
+                            font: { size: 10, weight: '700' },
+                            maxRotation: 0,
                             minRotation: 0,
-                            autoSkip: false 
+                            autoSkip: false,
+                            // 🌟 DÙNG CALLBACK: Đẩy chữ Sản lượng và Doanh thu xuống dòng 2 mà không làm mất data
+                            callback: function(val, index) {
+                                const label = this.getLabelForValue(val);
+                                if (label === '1') {
+                                    return ['1', 'Sản lượng'];
+                                }
+                                if (label === '1 ') {
+                                    return ['1', 'Doanh thu'];
+                                }
+                                return label.trim(); // Các tháng khác cắt khoảng trống để hiển thị số thuần túy
+                            }
                         } 
                     },
                     y: { 
