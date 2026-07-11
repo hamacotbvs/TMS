@@ -225,7 +225,7 @@
             <div id="khuVucBieuDoKhachHang" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
                 <div style="background: #fff; width: 90%; max-width: 1000px; max-height: 90vh; border-radius: 8px; padding: 25px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow-y: auto;">
                     <button onclick="document.getElementById('khuVucBieuDoKhachHang').style.display = 'none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
-                    <h3 id="tieuDeBieuDoKhachHang" style="text-align: center; color: #1e293b; margin-bottom: 20px; font-weight: bold;">Chi tiết Sản lượng (Tấn) & Doanh thu (Trđ) theo Khách hàng</h3>
+                    <h3 id="tieuDeBieuDoKhachHang" style="text-align: center; color: #1e293b; margin-bottom: 20px; font-weight: bold;">Chi tiết Sản lượng (kg) & Doanh thu (tr.đ) theo Khách hàng</h3>
                     <div style="width: 100%; overflow-x: auto;">
                         <canvas id="bieuDoNhietKhachHang"></canvas>
                     </div>
@@ -1089,7 +1089,7 @@
                                 formatter: (value) => {
                                     if (!value || value.v === 0) return '';
                                     const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; // Số tấn sản lượng
-                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')}`; // Số triệu doanh thu (M = Million)
+                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN') +'tr.đ'}`; // Số triệu doanh thu (M = Million)
                                     return [dong1, dong2]; } } } }
                 });
                 bieuDoNhietKhachHangInstance.resize();
