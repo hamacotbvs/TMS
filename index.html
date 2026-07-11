@@ -1066,7 +1066,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
         
         if (bieuDoNhietKhachHangInstance) { bieuDoNhietKhachHangInstance.destroy(); }
         
-        const chieuCaoMoiDong = 34; 
+        const chieuCaoMoiDong = 18; 
         const phanDemCuaTrucX = 70;  
         const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
         canvasElement.style.height = `${chieuCaoTinhToan}px`;
@@ -1134,10 +1134,10 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                             callback: function(val, index) {
                                 const label = this.getLabelForValue(val);
                                 if (label === '1 ') {
-                                    return ['1', 'Doanh thu'];
+                                    return ['1', 'Doanh thu (tr.đ)'];
                                 }
                                 if (label === '1') {
-                                    return ['1', 'Sản lượng'];
+                                    return ['1', 'Sản lượng (kg)'];
                                 }
                                 return label.trim(); 
                             }
