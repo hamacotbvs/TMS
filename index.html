@@ -1090,12 +1090,17 @@
     textAlign: 'center', 
     padding: 0,
 
-    // 🌟 ĐÂY LÀ CÁCH CHIA MÀU THEO DÒNG CHUẨN:
-    // Thư viện sẽ chạy hàm này cho từng phần tử trong mảng chữ mà hàm formatter trả về
+    // 🌟 SỬA LẠI HÀM ĐỔI MÀU: Nhận diện theo dòng chữ được vẽ
     color: (context) => {
-        // Kiểm tra nếu đang vẽ dòng thứ 2 (chứa chữ 'tr' hoặc dữ liệu doanh thu)
-        // Chart.js datalabels truyền context vào, ta có thể dùng mẹo hoặc cấu hình mảng màu thông qua scriptable
-        return ['#000000', '#8b0000']; 
+        // Lấy chuỗi text mà formatter chuẩn bị hiển thị tại dòng đó
+        const label = context.dataset.data[context.dataIndex];
+        
+        // Nếu thư viện duyệt đến dòng chữ, ta dùng hàm scriptable check theo index của block văn bản
+        // Chart.js datalabels hỗ trợ mảng cấu hình thông qua hàm callback lồng nhau như sau:
+        return (ctx) => {
+            // ctx.index là vị trí của dòng chữ (0 là dòng 1, 1 là dòng 2)
+            return ctx.index === 1 ? '#8b0000' : '#000000'; 
+        };
     },
 
     // CỐ ĐỊNH KÍCH THƯỚC CHỮ ĐỀU NHAU
@@ -1107,15 +1112,15 @@
     formatter: (value) => {
         if (!value || typeof value.v === 'undefined' || value.v === 0) return '';
         
-        // Dòng 1: Số sản lượng (Màu đen)
+        // Dòng 1: Số sản lượng
         const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; 
         
-        // Dòng 2: Số doanh thu (Màu đỏ đô)
+        // Dòng 2: Số doanh thu
         const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')} tr`; 
         
-        return [dong1, dong2]; 
+        return [dong1, dong2]; // Trả về mảng 2 dòng chữ
     }
-} 
+}
 
 } }
                 });
