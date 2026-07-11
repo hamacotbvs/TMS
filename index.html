@@ -1083,16 +1083,38 @@
                             tooltip: { enabled: false }, 
                             datalabels: {
                                 display: true,
-                                color: '#2c3e50', 
-                                font: { size: 10, weight: '600' },
-                                align: 'center',  // Canh giữa theo chiều dọc/ngang của chữ
-                                anchor: 'center', // Neo cố định vào tâm ô vuông
+                                // 🌟 1. CĂN GIỮA TUYỆT ĐỐI: Bổ sung textAlign để xử lý mảng xuống dòng
+                                align: 'center',
+                                anchor: 'center',
+                                textAlign: 'center', // <-- Bắt buộc phải có dòng này để chữ không bị lệch trái/phải khi ngắt dòng
                                 padding: 0,
+
+                                // 🌟 2. PHÂN BIỆT MÀU SẮC: Dòng 1 màu tối trực quan, Dòng 2 đổi màu khác (ví dụ: đỏ/xanh) để dễ tách biệt
+                                color: (context) => {
+                                    // Trả về mảng màu tương ứng với từng dòng text
+                                    return ['#1e293b', '#c2410c']; // Dòng 1: Đen xám đậm | Dòng 2: Màu cam đỏ (hoặc tùy chọn #0369a1 xanh dương)
+                                },
+
+                                // 🌟 3. PHÂN BIỆT CỠ CHỮ: Dòng sản lượng to rõ, dòng doanh thu nhỏ hơn chút
+                                font: (context) => {
+                                    return [
+                                        { size: 10, weight: '700' }, // Cấu hình cho Dòng 1 (Sản lượng) - Chữ dày đậm
+                                        { size: 9, weight: '500' }   // Cấu hình cho Dòng 2 (Doanh thu) - Chữ thanh mảnh hơn
+                                    ];
+                                },
+
                                 formatter: (value) => {
                                     if (!value || value.v === 0) return '';
-                                    const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; // Số tấn sản lượng
-                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN') +'(tr)'}`; // Số triệu doanh thu (M = Million)
-                                    return [dong1, dong2]; } } } }
+                                    
+                                    // Dòng 1: Chỉ để số thuần túy (nhìn cho thoáng ô vuông vì tiêu đề đã có chữ kg rồi)
+                                    const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; 
+                                    
+                                    // Dòng 2: Rút gọn chữ "(tr)" thành "tr" viết liền hoặc thêm dấu đằng trước tùy bạn, viết nhỏ lại
+                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')} tr`; 
+                                    
+                                    return [dong1, dong2]; 
+                                }
+                            } } }
                 });
                 bieuDoNhietKhachHangInstance.resize();
             } catch (error) {console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error);}
