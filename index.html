@@ -986,6 +986,7 @@
             });
         }
 // BIỂU ĐỒ NHIỆT CON KHÁCH HÀNG
+// BIỂU ĐỒ NHIỆT CON KHÁCH HÀNG
 // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
 let bieuDoNhietKhachHangInstance = null;
 async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
@@ -1071,11 +1072,29 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
         const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
         canvasElement.style.height = `${chieuCaoTinhToan}px`;
         
-        // Tạo mảng nhãn trục X: Hết T1-T12 (SL) rồi mới đến T1-T12 (DT)
         const nhanTracX_Moi = [
             ...Array.from({length: 12}, (_, i) => `T${i+1} (SL)`),
             ...Array.from({length: 12}, (_, i) => `T${i+1} (DT)`)
         ];
+        
+        // Hàm tính toán dải màu nhiệt từ Đỏ -> Vàng -> Xanh dựa trên tỷ lệ ratio gốc
+        function layMauNhietTheoRatio(ratio) {
+            let r, g, b;
+            if (ratio >= 0.25) {
+                const p = (ratio - 0.25) / 0.75; 
+                r = Math.round(241 + (41 - 241) * p); 
+                g = Math.round(220 + (128 - 220) * p); 
+                b = Math.round(100 + (185 - 100) * p); 
+            } else if (ratio >= 0.05) {
+                const p = (ratio - 0.05) / 0.20; 
+                r = Math.round(240 + (241 - 240) * p); 
+                g = Math.round(140 + (220 - 140) * p); 
+                b = Math.round(130 + (100 - 130) * p); 
+            } else { 
+                r = 245; g = 160; b = 150; 
+            }
+            return `rgba(${r}, ${g}, ${b}, 0.85)`;
+        }
         
         bieuDoNhietKhachHangInstance = new Chart(ctx, {
             type: 'matrix',
@@ -1087,20 +1106,13 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                         const item = context.raw;
                         if (!item || item.v === 0) return '#f8fafc';
                         
+                        // 🌟 Cả Sản lượng và Doanh thu đều áp dụng chung công thức màu nhiệt động
                         if (item.loai === 'SL') {
                             const ratio = Math.min(item.v / (maxSanLuongKhach || 1), 1);
-                            let r, g, b;
-                            if (ratio >= 0.25) {
-                                const p = (ratio - 0.25) / 0.75; 
-                                r = Math.round(241 + (41 - 241) * p); g = Math.round(220 + (128 - 220) * p); b = Math.round(100 + (185 - 100) * p); 
-                            } else if (ratio >= 0.05) {
-                                const p = (ratio - 0.05) / 0.20; 
-                                r = Math.round(240 + (241 - 240) * p); g = Math.round(140 + (220 - 140) * p); b = Math.round(130 + (100 - 130) * p); 
-                            } else { r = 245; g = 160; b = 150; }
-                            return `rgba(${r}, ${g}, ${b}, 0.85)`;
+                            return layMauNhietTheoRatio(ratio);
                         } else {
                             const ratio = Math.min(item.v / (maxDoanhThuKhach || 1), 1);
-                            return `rgba(139, 0, 0, ${Math.max(ratio * 0.75, 0.18)})`;
+                            return layMauNhietTheoRatio(ratio);
                         } 
                     },
                     borderRadius: 2,
@@ -1116,7 +1128,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                 scales: {
                     x: {
                         type: 'category', 
-                        labels: nhanTracX_Moi, // Định dạng trục X mới đã gom cụm
+                        labels: nhanTracX_Moi, 
                         offset: true, 
                         grid: { display: false }, 
                         ticks: { color: '#64748b', font: { size: 9, weight: '600' }, autoSkip: false } 
@@ -1138,10 +1150,8 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                         anchor: 'center',
                         textAlign: 'center',
                         padding: 0,
-                        color: (context) => {
-                            const item = context.dataset.data[context.dataIndex];
-                            return item && item.loai === 'DT' ? '#8b0000' : '#000000';
-                        },
+                        // 🌟 Giữ chữ màu đen trên nền nhiệt cho dễ đọc rõ số liệu
+                        color: '#000000',
                         font: { size: 9.5, weight: '700' }, 
                         formatter: (value) => {
                             if (!value || value.v === 0) return '';
