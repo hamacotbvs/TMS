@@ -986,145 +986,174 @@
             });
         }
 // BIỂU ĐỒ NHIỆT CON KHÁCH HÀNG
-        // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
-        let bieuDoNhietKhachHangInstance = null;
-        async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
-            const namThucTe = typeof namHienHanh !== 'undefined' ? namHienHanh : 2026;  // Tự động lấy năm đang chạy toàn cục hoặc mặc định 2026
-            // 1. Kiểm tra nếu tên vùng chưa chuyển đổi thành công (vẫn là số hoặc rỗng) thì chặn lại ngay
-            if (vungDuocClick === undefined || vungDuocClick === null || typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {
-                console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick); return; }
-            // Lấy đúng Selector ID (Chữ K viết hoa theo HTML thực tế)
-            const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
-            const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
-            if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-            if (tieuDe) tieuDe.innerText = `Sản lượng (kg) & Doanh thu (tr.đ) 12 tháng của Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
-            try {
-                const canvasElement = document.getElementById('bieuDoNhietKhachHang');
-                if (!canvasElement) {console.error("Không tìm thấy thẻ canvas 'bieuDoNhietKhachHang' trong HTML. Hãy kiểm tra lại bước 1."); return;}   // Kiểm tra xem thẻ canvas đã tồn tại trong DOM chưa
-                const ctx = canvasElement.getContext('2d');
-                const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
-                let dieuKienLoc = [
-                    where("nam", "==", Number(namThucTe)),
-                    where("vungTieuThu", "==", vungDuocClick.trim()), 
-                    where("htGiaoNhan", "==", "Tổng giao") ];   // Đổi thành hình thức bạn muốn lọc ở đây (ví dụ: "Chỉ giao")
-                if (typeof nganhHienTai !== "undefined") {dieuKienLoc.push(where("nganh", "==", nganhHienTai)); }
-                const q = query(thamChieuKhachHangVung, ...dieuKienLoc);
-                const querySnapshot = await getDocs(q);
-                // --- 🌟 BẮT ĐẦU LOGIC XỬ LÝ DỮ LIỆU & SẮP XẾP VỊ TRÍ ---
-                let tongSanLuongCuaKhach = {}; 
-                let mangDuLieuMaTran = [];  
-                let maxSanLuongKhach = 0; 
-                let maxDoanhThuKhach = 0;
-                querySnapshot.forEach((doc) => {const data = doc.data(); const tenKhachHang = data.doiTuong || "Chưa phân loại";
-                    // Khởi tạo tổng sản lượng cho khách hàng này nếu chưa có
-                    if (!tongSanLuongCuaKhach[tenKhachHang]) {tongSanLuongCuaKhach[tenKhachHang] = 0;}
-                    for (let thang = 1; thang <= 12; thang++) {
-                        const sanLuongThang = Number(data[`TL${thang}`]) || 0;
-                        const doanhThuThang = (Number(data[`DT${thang}`]) || 0) / 1000000; // Đổi sang Triệu đồng
-                        // Cộng dồn vào tổng 12 tháng để tính toán sắp xếp vị trí trục Y
-                        tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
-                        // Theo dõi giá trị lớn nhất phục vụ cho việc đổ màu nhiệt
-                        if (sanLuongThang > maxSanLuongKhach) {maxSanLuongKhach = sanLuongThang;}
-                        if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
-                        // 🌟 Ô THỨ 1: Tọa độ X của Sản lượng
-                        mangDuLieuMaTran.push({
-                            x: `T${thang} (SL)`,
-                            y: tenKhachHang,
-                            v: sanLuongThang,
-                            loai: 'SL' // Đánh dấu đây là ô sản lượng
-                        });
-                        // 🌟 Ô THỨ 2: Tọa độ X của Doanh thu ngay bên cạnh
-                        mangDuLieuMaTran.push({
-                            x: `T${thang} (DT)`,
-                            y: tenKhachHang,
-                            v: doanhThuThang,
-                            loai: 'DT' // Đánh dấu đây là ô doanh thu
-                        }); } });
-                // Sắp xếp mảng nhãn: Khách hàng tổng bé nằm trên, Khách hàng tổng LỚN NHẤT nằm DƯỚI CÙNG
-                const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
-                    .sort((a, b) => b[1] - a[1])    // Lớn xếp trước (ở đáy), Nhỏ xếp sau (ở đỉnh)
-                    .map(item => item[0]);       // Chỉ lấy lại tên khách hàng làm nhãn trục Y
-                // --- 🌟 KẾT THÚC LOGIC XỬ LÝ DỮ LIỆU ---
-                if (danhSachDoiTuongY.length === 0) {
-                    console.warn(`Không tìm thấy document nào khớp với vùng: ${vungDuocClick}, năm: ${namThucTe}`);
-                    alert(`Không có dữ liệu khách hàng cho vùng: ${vungDuocClick}`);
-                    if (khuVucHienThi) khuVucHienThi.style.display = 'none'; return;}
-                // Hủy biểu đồ cũ nếu có để tránh lỗi đè lặp bộ nhớ
-                if (bieuDoNhietKhachHangInstance) {bieuDoNhietKhachHangInstance.destroy();}
-                // Thiết lập chiều cao động cho thẻ canvas trước khi render để chữ không bị dính vào nhau
-                const chieuCaoMoiDong = 18; 
-                const phanDemCuaTrucX = 60;  
-                const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
-                // Gán chiều cao thực tế vào thẻ canvas
-                canvasElement.style.height = `${chieuCaoTinhToan}px`;
-                bieuDoNhietKhachHangInstance = new Chart(ctx, {
-                    type: 'matrix',
-                    data: {
-                        datasets: [{
-                            label: 'Sản lượng khách hàng',
-                            data: mangDuLieuMaTran,
-                            backgroundColor(context) {
-                                const item = context.raw;
-                                if (item.loai === 'SL') {
-                                    const ratio = Math.min(item.v / (maxSanLuongKhach || 1), 1);
-                                    let r, g, b;
-                                    if (ratio >= 0.25) {
-                                        const p = (ratio - 0.25) / 0.75; 
-                                        r = Math.round(241 + (41 - 241) * p); 
-                                        g = Math.round(220 + (128 - 220) * p); 
-                                        b = Math.round(100 + (185 - 100) * p); 
-                                    } else if (ratio >= 0.05) {
-                                        const p = (ratio - 0.05) / 0.20; 
-                                        r = Math.round(240 + (241 - 240) * p); 
-                                        g = Math.round(140 + (220 - 140) * p); 
-                                        b = Math.round(130 + (100 - 130) * p); 
-                                    } else { 
-                                        r = 245; g = 160; b = 150; 
-                                    }
-                                    return `rgba(${r}, ${g}, ${b}, 0.85)`;
-                                } 
-                                // Nếu là ô Doanh thu -> đổ màu theo tỷ lệ doanh thu
-                                else {
-                                    const ratio = Math.min(item.v / (maxDoanhThuKhach || 1), 1);
-                                    // Có thể đổi sang tone màu khác hoặc giữ nguyên tùy ý
-                                    return `rgba(139, 0, 0, ${Math.max(ratio * 0.75, 0.18)})`; // Ví dụ tone đỏ nhạt đến đậm cho tiền
-                                } },
-                            borderRadius: 2,
-                            borderWidth: 1, 
-                            borderColor: '#ffffff', 
-                            width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 24) - 2 : 0,
-                            height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachDoiTuongY.length || 1)) - 2 : 0 }] },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            // 🌟 Tự động tạo ra mảng nhãn: ["T1 (SL)", "T1 (DT)", "T2 (SL)", ...]
-                            x: {type: 'category', labels: Array.from({length: 12}, (_, i) => [`T${i+1} (SL)`, `T${i+1} (DT)`]).flat(), offset: true, grid: { display: false }, ticks: {color: '#94a3b8', font: { size: 9 } } },
-                            y: { type: 'category', labels: danhSachDoiTuongY, offset: true, grid: { display: false }, ticks: { color: '#94a3b8', autoSkip: false, font: { size: 10 } }} 
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { enabled: false }, 
-                            datalabels: {
-                                display: true,
-                                align: 'center',
-                                anchor: 'center',
-                                textAlign: 'center',
-                                padding: 0,
-                                // 🌟 CHIA MÀU CHUẨN 100%: Ô sản lượng chữ ĐEN, ô doanh thu chữ ĐỎ ĐÔ
-                                color: (context) => {
-                                    const item = context.dataset.data[context.dataIndex];
-                                    return item && item.loai === 'DT' ? '#8b0000' : '#000000';
-                                },
-                                font: { size: 9.5, weight: '700' }, // Chữ đều nhau chằn chặn
-                                formatter: (value) => {
-                                    if (!value || value.v === 0) return ''; return `${Math.round(value.v).toLocaleString('vi-VN')}`;
-                                }
-                            } } }
+// TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
+let bieuDoNhietKhachHangInstance = null;
+async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
+    const namThucTe = typeof namHienHanh !== 'undefined' ? namHienHanh : 2026;
+    
+    if (vungDuocClick === undefined || vungDuocClick === null || typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {
+        console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick); return; 
+    }
+    
+    const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
+    const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
+    if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
+    if (tieuDe) tieuDe.innerText = `Sản lượng (kg) & Doanh thu (tr.đ) 12 tháng của Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
+    
+    try {
+        const canvasElement = document.getElementById('bieuDoNhietKhachHang');
+        if (!canvasElement) { console.error("Không tìm thấy thẻ canvas..."); return; }
+        const ctx = canvasElement.getContext('2d');
+        const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
+        
+        let dieuKienLoc = [
+            where("nam", "==", Number(namThucTe)),
+            where("vungTieuThu", "==", vungDuocClick.trim()), 
+            where("htGiaoNhan", "==", "Tổng giao") 
+        ];
+        if (typeof nganhHienTai !== "undefined") { dieuKienLoc.push(where("nganh", "==", nganhHienTai)); }
+        
+        const q = query(thamChieuKhachHangVung, ...dieuKienLoc);
+        const querySnapshot = await getDocs(q);
+        
+        let tongSanLuongCuaKhach = {}; 
+        let mangDuLieuMaTran = [];  
+        let maxSanLuongKhach = 0; 
+        let maxDoanhThuKhach = 0; 
+        
+        querySnapshot.forEach((doc) => {
+            const data = doc.data(); 
+            const tenKhachHang = data.doiTuong || "Chưa phân loại";
+            
+            if (!tongSanLuongCuaKhach[tenKhachHang]) { tongSanLuongCuaKhach[tenKhachHang] = 0; }
+            
+            // VÒNG LẶP 1: Gom toàn bộ 12 tháng Sản lượng trước
+            for (let thang = 1; thang <= 12; thang++) {
+                const sanLuongThang = Number(data[`TL${thang}`]) || 0;
+                tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
+                if (sanLuongThang > maxSanLuongKhach) { maxSanLuongKhach = sanLuongThang; }
+                
+                mangDuLieuMaTran.push({
+                    x: `T${thang} (SL)`,
+                    y: tenKhachHang,
+                    v: sanLuongThang,
+                    loai: 'SL'
                 });
-                bieuDoNhietKhachHangInstance.resize();
-            } catch (error) {console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error);}
+            }
+            
+            // VÒNG LẶP 2: Gom toàn bộ 12 tháng Doanh thu chạy ngay phía sau
+            for (let thang = 1; thang <= 12; thang++) {
+                const doanhThuThang = (Number(data[`DT${thang}`]) || 0) / 1000000;
+                if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
+                
+                mangDuLieuMaTran.push({
+                    x: `T${thang} (DT)`,
+                    y: tenKhachHang,
+                    v: doanhThuThang,
+                    loai: 'DT'
+                }); 
+            } 
+        });
+        
+        const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
+            .sort((a, b) => b[1] - a[1])
+            .map(item => item[0]);
+            
+        if (danhSachDoiTuongY.length === 0) {
+            alert(`Không có dữ liệu khách hàng cho vùng: ${vungDuocClick}`);
+            if (khuVucHienThi) khuVucHienThi.style.display = 'none'; return;
         }
+        
+        if (bieuDoNhietKhachHangInstance) { bieuDoNhietKhachHangInstance.destroy(); }
+        
+        const chieuCaoMoiDong = 34; 
+        const phanDemCuaTrucX = 65;  
+        const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
+        canvasElement.style.height = `${chieuCaoTinhToan}px`;
+        
+        // Tạo mảng nhãn trục X: Hết T1-T12 (SL) rồi mới đến T1-T12 (DT)
+        const nhanTracX_Moi = [
+            ...Array.from({length: 12}, (_, i) => `T${i+1} (SL)`),
+            ...Array.from({length: 12}, (_, i) => `T${i+1} (DT)`)
+        ];
+        
+        bieuDoNhietKhachHangInstance = new Chart(ctx, {
+            type: 'matrix',
+            data: {
+                datasets: [{
+                    label: 'Dữ liệu khách hàng',
+                    data: mangDuLieuMaTran,
+                    backgroundColor(context) {
+                        const item = context.raw;
+                        if (!item || item.v === 0) return '#f8fafc';
+                        
+                        if (item.loai === 'SL') {
+                            const ratio = Math.min(item.v / (maxSanLuongKhach || 1), 1);
+                            let r, g, b;
+                            if (ratio >= 0.25) {
+                                const p = (ratio - 0.25) / 0.75; 
+                                r = Math.round(241 + (41 - 241) * p); g = Math.round(220 + (128 - 220) * p); b = Math.round(100 + (185 - 100) * p); 
+                            } else if (ratio >= 0.05) {
+                                const p = (ratio - 0.05) / 0.20; 
+                                r = Math.round(240 + (241 - 240) * p); g = Math.round(140 + (220 - 140) * p); b = Math.round(130 + (100 - 130) * p); 
+                            } else { r = 245; g = 160; b = 150; }
+                            return `rgba(${r}, ${g}, ${b}, 0.85)`;
+                        } else {
+                            const ratio = Math.min(item.v / (maxDoanhThuKhach || 1), 1);
+                            return `rgba(139, 0, 0, ${Math.max(ratio * 0.75, 0.18)})`;
+                        } 
+                    },
+                    borderRadius: 2,
+                    borderWidth: 1, 
+                    borderColor: '#ffffff', 
+                    width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 24) - 1.5 : 0, 
+                    height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachDoiTuongY.length || 1)) - 1.5 : 0 
+                }] 
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'category', 
+                        labels: nhanTracX_Moi, // Định dạng trục X mới đã gom cụm
+                        offset: true, 
+                        grid: { display: false }, 
+                        ticks: { color: '#64748b', font: { size: 9, weight: '600' }, autoSkip: false } 
+                    },
+                    y: { 
+                        type: 'category', 
+                        labels: danhSachDoiTuongY, 
+                        offset: true, 
+                        grid: { display: false }, 
+                        ticks: { color: '#475569', autoSkip: false, font: { size: 10, weight: '500' } }
+                    } 
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }, 
+                    datalabels: {
+                        display: true,
+                        align: 'center',
+                        anchor: 'center',
+                        textAlign: 'center',
+                        padding: 0,
+                        color: (context) => {
+                            const item = context.dataset.data[context.dataIndex];
+                            return item && item.loai === 'DT' ? '#8b0000' : '#000000';
+                        },
+                        font: { size: 9.5, weight: '700' }, 
+                        formatter: (value) => {
+                            if (!value || value.v === 0) return '';
+                            return `${Math.round(value.v).toLocaleString('vi-VN')}`;
+                        }
+                    } 
+                } 
+            }
+        });
+        bieuDoNhietKhachHangInstance.resize();
+    } catch (error) { console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error); }
+}
 // CLICK ĐÓNG NHIẾT KHÁCH HÀNG
         // ĐÓNG BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG VÙNG KHI CLCK RA NGOÀI BIỂU ĐỒ KHÁCH HÀNG VÙNG
         document.getElementById('khuVucBieuDoKhachHang').addEventListener('click', function(event) {
