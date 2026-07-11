@@ -1082,39 +1082,40 @@
                             legend: { display: false },
                             tooltip: { enabled: false }, 
                             datalabels: {
-                                display: true,
-                                // 🌟 1. CĂN GIỮA TUYỆT ĐỐI: Bổ sung textAlign để xử lý mảng xuống dòng
-                                align: 'center',
-                                anchor: 'center',
-                                textAlign: 'center', // <-- Bắt buộc phải có dòng này để chữ không bị lệch trái/phải khi ngắt dòng
-                                padding: 0,
+    display: true,
+    
+    // 🌟 CĂN GIỮA TUYỆT ĐỐI THEO TÂM Ô VUÔNG
+    align: 'center',
+    anchor: 'center',
+    textAlign: 'center', // Bắt buộc phải có để mảng xuống dòng tự động căn đều trục dọc
+    padding: 0,
 
-                                // 🌟 2. PHÂN BIỆT MÀU SẮC: Dòng 1 màu tối trực quan, Dòng 2 đổi màu khác (ví dụ: đỏ/xanh) để dễ tách biệt
-                                color: (context) => {
-                                    // Trả về mảng màu tương ứng với từng dòng text
-                                    return ['#1e293b', '#c2410c']; // Dòng 1: Đen xám đậm | Dòng 2: Màu cam đỏ (hoặc tùy chọn #0369a1 xanh dương)
-                                },
+    // 🌟 PHÂN BIỆT MÀU SẮC THEO YÊU CẦU
+    color: (context) => {
+        // Trả về mảng màu: Dòng 1 (Sản lượng) phía trước, Dòng 2 (Doanh thu) phía sau
+        return ['#8b0000', '#000000']; // #8b0000 là màu Đỏ đô (Dark Red) | #000000 là màu Đen
+    },
 
-                                // 🌟 3. PHÂN BIỆT CỠ CHỮ: Dòng sản lượng to rõ, dòng doanh thu nhỏ hơn chút
-                                font: (context) => {
-                                    return [
-                                        { size: 10, weight: '700' }, // Cấu hình cho Dòng 1 (Sản lượng) - Chữ dày đậm
-                                        { size: 9, weight: '500' }   // Cấu hình cho Dòng 2 (Doanh thu) - Chữ thanh mảnh hơn
-                                    ];
-                                },
+    // 🌟 PHÂN BIỆT CỠ CHỮ ĐỂ NHÌN THOÁNG HƠN
+    font: (context) => {
+        return [
+            { size: 10, weight: '700' }, // Dòng 1 (Sản lượng): Chữ đậm rõ ràng
+            { size: 9, weight: '500' }   // Dòng 2 (Doanh thu): Chữ thanh mảnh hơn chút
+        ];
+    },
 
-                                formatter: (value) => {
-                                    if (!value || value.v === 0) return '';
-                                    
-                                    // Dòng 1: Chỉ để số thuần túy (nhìn cho thoáng ô vuông vì tiêu đề đã có chữ kg rồi)
-                                    const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; 
-                                    
-                                    // Dòng 2: Rút gọn chữ "(tr)" thành "tr" viết liền hoặc thêm dấu đằng trước tùy bạn, viết nhỏ lại
-                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')} tr`; 
-                                    
-                                    return [dong1, dong2]; 
-                                }
-                            } } }
+    formatter: (value) => {
+        if (!value || value.v === 0) return '';
+        
+        // Dòng 1: Số sản lượng (Định dạng dấu chấm hàng nghìn)
+        const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; 
+        
+        // Dòng 2: Số doanh thu kèm chữ "tr" viết gọn phía sau
+        const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')} tr`; 
+        
+        return [dong1, dong2]; // Trả về mảng 2 dòng
+    }
+} } }
                 });
                 bieuDoNhietKhachHangInstance.resize();
             } catch (error) {console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error);}
