@@ -1085,11 +1085,13 @@
                                 display: true,
                                 color: '#2c3e50', 
                                 font: { size: 10, weight: '600' },
-                                padding: 1,
+                                align: 'center',  // Canh giữa theo chiều dọc/ngang của chữ
+                                anchor: 'center', // Neo cố định vào tâm ô vuông
+                                padding: 0,
                                 formatter: (value) => {
                                     if (!value || value.v === 0) return '';
                                     const dong1 = `${Math.round(value.v).toLocaleString('vi-VN')}`; // Số tấn sản lượng
-                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN') +'tr.đ'}`; // Số triệu doanh thu (M = Million)
+                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN') +'(tr)'}`; // Số triệu doanh thu (M = Million)
                                     return [dong1, dong2]; } } } }
                 });
                 bieuDoNhietKhachHangInstance.resize();
