@@ -1155,12 +1155,20 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                             // 🌟 BỘ LỌC LOẠI BỎ TIỀN TỐ PHÁP LÝ - CHỈ GIỮ LẠI TÊN RIÊNG
                             callback: function(value, index) {
                                 let label = this.getLabelForValue(value);
-                                // 1. Chuyển đổi tạm thời sang chữ hoa không dấu hoặc có dấu để đồng bộ xóa cho sạch
-                                // Biểu thức này quét sạch: CÔNG TY TNHH MTV, CTY TNHH, DOANH NGHIEP, HO KINH DOANH, DNTN, ...
-                                label = label.replace(/^(CÔNG TY TNHH MTV|CÔNG TY TNHH|CONG TY TNHH MTV|CONG TY TNHH|CÔNG TY CP|CONG TY CP|CÔNG TY CỔ PHẦN|CONG TY CO PHAN|CTY TNHH|CTY CP|DOANH NGHIỆP TƯ NHÂN|DOANH NGHIEP TU NHAN|DNTN|HỘ KINH DOANH|HO KINH DOANH|Hộ Kinh Doanh|CN|CHI NHÁNH|CHI NHANH)\s+/gi, '');
-                                // 2. Loại bỏ tiếp các cụm từ đệm ở giữa hoặc đầu nếu còn sót (như MTV, MỘT THÀNH VIÊN, THƯƠNG MẠI DỊCH VỤ, TM DV, ...)
-                                label = label.replace(/^(MTV|MỘT THÀNH VIÊN|MOT THANH VIEN|THƯƠNG MẠI DỊCH VỤ|THUONG MAI DICH VU|TM DV|TMDV|SẢN XUẤT|SAN XUAT|XÂY DỰNG|XAY DUNG|THƯƠNG MẠI|THUONG MAI)\s+/gi, '');
-                                return label.trim(); // Trả về tên riêng đã được gọt giũa sạch sẽ
+                                // 1. Cắt cụm từ ngành nghề dài phức tạp ở đầu
+                                label = label.replace(/^(Công Ty Trách Nhiệm Hữu Hạn Một Thành Viên|Công Ty TNHH MTV|Công Ty TNHH|Công Ty CP|Công Ty Cổ Phần|Doanh Nghiệp Tư Nhân|Doanh Nghiệp TN|DNTN|Hộ Kinh Doanh|Cửa Hàng Vật Liệu Xây Dựng|Cửa Hàng Trang Trí Nội Thất|Vật Liệu Xây Dựng Và Trang Trí Nội Thất|Thiết Kế Xây Dựng Và Thương Mại|Tư Vấn & Xây Dựng Thương Mại Dịch Vụ|Thương Mại Công Danh Thế Giới Nội Thất|Thương Mại Thực Phẩm|Thương Mại Quảng Cáo|Thương Mại Dịch Vụ Vùng|Thương Mại Dịch Vụ|Thương Mại Và Dịch Vụ|Thương Mại - Dịch Vụ|Cửa Hàng|Chi Nhánh|Xây Dựng|Sản Xuất)\s+/gi, '');
+                                
+                                // 2. Cắt tiếp các từ viết tắt ngành nghề còn sót lại
+                                label = label.replace(/^(TMDV|TM|DV|VLXD - TTNT|VLXD|TTNT|NỘI THẤT|TRANG TRÍ NỘI THẤT|MTV|MỘT THÀNH VIÊN|VÀ SẢN XUẤT)\s+/gi, '');
+                                
+                                // 3. Xóa ký tự đặc biệt thừa ở đầu (khoảng trắng, dấu gạch, dấu và)
+                                label = label.replace(/^[\s\-\&\·\,]+/g, '').trim();
+                                
+                                // 4. Xử lý mở ngoặc giải thích tên riêng cuối chuỗi
+                                if (label.includes('(')) {
+                                    label = label.split('(')[0].trim();
+                                }
+                                return label || this.getLabelForValue(value);
                             }
                         }
                     } 
