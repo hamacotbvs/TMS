@@ -1073,6 +1073,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
         const phanDemCuaTrucX = 70;  
         const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
         canvasElement.style.height = `${chieuCaoTinhToan}px`;
+        canvasElement.style.width = '100%'; // 🌟 Ép dãn hết 100% chiều rộng vùng chứa trong modal
         
         // Mảng nhãn chuẩn chỉ dùng String thuần túy
         const nhanTracX_Chuan = [
