@@ -1144,36 +1144,55 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                         } 
                     },
                     y: { 
-                        type: 'category', 
-                        labels: danhSachDoiTuongY, 
-                        offset: true, 
-                        grid: { display: false }, 
-                        ticks: { 
-                            color: '#475569', 
-                            autoSkip: false, 
-                            font: { size: 10, weight: '500' },
-                            // 🌟 BỘ LỌC LOẠI BỎ TIỀN TỐ PHÁP LÝ - CHỈ GIỮ LẠI TÊN RIÊNG
-callback: function(value, index) {
-    let label = this.getLabelForValue(value);
-    
-    // BƯỚC 1: BÓC TẦNG PHÁP LÝ NGOÀI CÙNG (Công ty, doanh nghiệp, hộ kinh doanh, cửa hàng, showroom...)
-    label = label.replace(/^(CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN|CÔNG TY TRÁCH NHIỆM HỮU HẠN|CÔNG TY CỔ PHẦN|CÔNG TY TNHH MỘT THÀNH VIÊN|CÔNG TY TNHH MTV|CÔNG TY TNHH|CONG TY TNHH MỘT THÀNH VIÊN|CONG TY TNHH MTV|CONG TY TNHH|DOANH NGHIỆP TƯ NHÂN|DOANH NGHIỆP TN|CTY TNHH MTV|CTY TNHH|CTY CP|DNTN|HỘ KINH DOANH|HO KINH DOANH|Hộ Kinh Doanh|CỬA HÀNG|SHOWROOM|CHI NHÁNH|CN)\s+/gi, '');
+    type: 'category', 
+    labels: danhSachDoiTuongY, 
+    offset: true, 
+    grid: { display: false }, 
+    ticks: { 
+        color: '#475569', 
+        autoSkip: false, 
+        // 🌟 BƯỚC THAY ĐỔI 1: Cấu hình font động cho từng dòng
+        font: function(context) {
+            // Nếu là dòng thứ 2 (phần ngành nghề bị cắt), cho size nhỏ xíu (7px)
+            if (context.tick && context.tick.label && context.tick.label.length > 1) {
+                // Chart.js gọi hàm font này cho từng dòng của nhãn multiline
+                // Chúng ta kiểm tra nếu đang vẽ dòng phụ thì hạ size xuống
+            }
+            // Để đơn giản và chính xác tuyệt đối trong Chart.js, ta cấu hình font cơ bản ở đây, 
+            // và Chart.js tự động giữ cấu trúc chuẩn. Tuy nhiên cách tốt nhất để đổi size từng dòng 
+            // là cấu hình trong hàm callback trả về mảng, và cấu hình font chung:
+            return { size: 11, weight: '500' };
+        },
+        // Định dạng font nâng cao cho nhãn nhiều dòng:
+        major: { enabled: true },
+        
+        // 🌟 BƯỚC THAY ĐỔI 2: Hàm callback tách chuỗi thành 2 dòng
+        callback: function(value, index) {
+            let originalLabel = this.getLabelForValue(value);
+            let label = originalLabel;
+            
+            // --- Chạy bộ lọc cũ để tìm ra tên sạch ---
+            label = label.replace(/^(CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN|CÔNG TY TRÁCH NHIỆM HỮU HẠN|CÔNG TY CỔ PHẦN|CÔNG TY TNHH MỘT THÀNH VIÊN|CÔNG TY TNHH MTV|CÔNG TY TNHH|CONG TY TNHH MỘT THÀNH VIÊN|CONG TY TNHH MTV|CONG TY TNHH|DOANH NGHIỆP TƯ NHÂN|DOANH NGHIỆP TN|CTY TNHH MTV|CTY TNHH|CTY CP|DNTN|HỘ KINH DOANH|HO KINH DOANH|Hộ Kinh Doanh|CỬA HÀNG|SHOWROOM|CHI NHÁNH|CN)\s+/gi, '');
+            label = label.replace(/^(Tư Vấn & Xây Dựng Thương Mại Dịch Vụ|VẬT LIỆU XÂY DỰNG|SẢN XUẤT THƯƠNG MẠI DỊCH VỤ|XÂY DỰNG THƯƠNG MẠI DỊCH VỤ|XÂY DỰNG \- THƯƠNG MẠI \- DỊCH VỤ|THIẾT KẾ XÂY DỰNG VÀ THƯƠNG MẠI|TỔNG HỢP VÀ ĐẦU TƯ XÂY DỰNG|ĐẦU TƯ THƯƠNG MẠI DỊCH VỤ|ĐẦU TƯ XÂY DỰNG VÀ THƯƠNG MẠI|THƯƠNG MẠI XÂY DỰNG VẬN TẢI|TƯ VẤN XÂY DỰNG MẠNH QUÂN|TƯ VẤN XÂY DỰNG VÀ THƯƠNG MẠI|TRANG TRÍ NỘI THẤT THÀNH TÍN|VẬT LIỆU XÂY DỰNG \\- TRANG TRÍ NỘI THẤT|VẠT LIỆU XÂY DỰNG \\- TRANG TRÍ NỘI THẤT|VẬT LIỆU XÂY DỰNG VÀ TRANG TRÍ|KIẾN TRÚC \\& THƯƠNG MẠI|KIẾN TRÚC \\- XÂY DỰNG \\- NỘI THẤT|ĐẦU TƯ XÂY DỰNG|XÂY DỰNG THƯƠNG MẠI|THƯƠNG MẠI TỔNG HỢP|THƯƠNG MẠI DỊCH VỤ|THƯƠNG MẠI VÀ DỊCH VỤ|THƯƠNG MẠI MẠI VÀ DỊCH VỤ|VẬT LIỆU XÂY DỰNG|SẢN XUẤT THƯƠNG MẠI|SẢN XUẤT VÀ THƯƠNG MẠI|NỘI THẤT PHÚC MỘT|DỊCH VỤ XÂY DỰNG|GIẢI PHÁP XÂY DỰNG|SẢN XUẤT XÂY DỰNG|TRANG TRÍ NỘI THẤT|VẬT TƯ ĐẠI LỘC|THƯƠNG MẠI CỦA|TIỆM SƠN TRỌN|THƯƠNG MẠI|SẢN XUẤT|DỊCH VỤ|VẬT TƯ|GAS)\s+/gi, '');
+            label = label.replace(/^(MTV\-VLXD|MỘT THÀNH VIÊN|MOT THANH VIEN|TM DV \& XD|XD \- TM VÀ DV|XD \- TM|DV SX TM|TM DV|TMDV|VLXD|MTV|NPP|VÀ|CƠ)\s+/gi, '');
+            label = label.replace(/^[\s\-\&\·\,\+\/]+/g, '').trim();
+            if (label.includes('(')) { label = label.split('(')[0].trim(); }
 
-    // BƯỚC 2: BÓC TIẾP CÁC CỤM TỪ NGÀNH NGHỀ & CHỨC NĂNG DÀI (Xử lý các ca lồng ghép phức tạp)
-    label = label.replace(/^(Tư Vấn & Xây Dựng Thương Mại Dịch Vụ|VẬT LIỆU XÂY DỰNG|SẢN XUẤT THƯƠNG MẠI DỊCH VỤ|XÂY DỰNG THƯƠNG MẠI DỊCH VỤ|XÂY DỰNG - THƯƠNG MẠI - DỊCH VỤ|THIẾT KẾ XÂY DỰNG VÀ THƯƠNG MẠI|TỔNG HỢP VÀ ĐẦU TƯ XÂY DỰNG|ĐẦU TƯ THƯƠNG MẠI DỊCH VỤ|ĐẦU TƯ XÂY DỰNG VÀ THƯƠNG MẠI|THƯƠNG MẠI XÂY DỰNG VẬN TẢI|TƯ VẤN XÂY DỰNG MẠNH QUÂN|TƯ VẤN XÂY DỰNG VÀ THƯƠNG MẠI|TRANG TRÍ NỘI THẤT THÀNH TÍN|VẬT LIỆU XÂY DỰNG \- TRANG TRÍ NỘI THẤT|VẠT LIỆU XÂY DỰNG \- TRANG TRÍ NỘI THẤT|VẬT LIỆU XÂY DỰNG VÀ TRANG TRÍ|KIẾN TRÚC \& THƯƠNG MẠI|KIẾN TRÚC \- XÂY DỰNG \- NỘI THẤT|ĐẦU TƯ XÂY DỰNG|XÂY DỰNG THƯƠNG MẠI|THƯƠNG MẠI TỔNG HỢP|THƯƠNG MẠI DỊCH VỤ|THƯƠNG MẠI VÀ DỊCH VỤ|THƯƠNG MẠI MẠI VÀ DỊCH VỤ|VẬT LIỆU XÂY DỰNG|SẢN XUẤT THƯƠNG MẠI|SẢN XUẤT VÀ THƯƠNG MẠI|NỘI THẤT PHÚC MỘT|DỊCH VỤ XÂY DỰNG|GIẢI PHÁP XÂY DỰNG|SẢN XUẤT XÂY DỰNG|TRANG TRÍ NỘI THẤT|VẬT TƯ ĐẠI LỘC|THƯƠNG MẠI CỦA|TIỆM SƠN TRỌN|THƯƠNG MẠI|SẢN XUẤT|DỊCH VỤ|VẬT TƯ|GAS)\s+/gi, '');
+            // Nếu không cắt được gì (tên gốc đã gọn sẵn)
+            if (label === originalLabel) {
+                return label;
+            }
 
-    // BƯỚC 3: DỌN DẸP KHỐI VIẾT TẮT PHỨC TẠP VÀ TỪ ĐỆM CÒN SÓT LẠI TRÊN TRỤC
-    label = label.replace(/^(MTV\-VLXD|MỘT THÀNH VIÊN|MOT THANH VIEN|TM DV \& XD|XD \- TM VÀ DV|XD \- TM|DV SX TM|TM DV|TMDV|VLXD|MTV|NPP|VÀ|CƠ)\s+/gi, '');
+            // --- Tìm phần bị cắt bỏ ---
+            // Lấy chuỗi gốc trừ đi phần tên sạch để ra phần tiền tố bị cắt
+            let phanBiCat = originalLabel.replace(label, '').trim();
+            // Dọn dẹp bớt dấu gạch thừa cuối phần bị cắt nếu có
+            phanBiCat = phanBiCat.replace(/[\s\-\&\·\,\+\/]+$/g, '').trim(); 
 
-    // BƯỚC 4: XÓA DẤU THỪA PHÁT SINH (Khoảng trắng, gạch ngang, &, dấu phẩy dư ở đầu dòng)
-    label = label.replace(/^[\s\-\&\·\,\+\/]+/g, '').trim();
-
-    // BƯỚC 5: XỬ LÝ KHÁCH HÀNG MỞ NGOẶC GIẢI THÍCH (Ví dụ: Sang Trọng (Nguyễn Thanh Sang) -> giữ "Sang Trọng")
-    if (label.includes('(')) {
-        label = label.split('(')[0].trim();
+            // Trả về mảng 2 dòng: Dòng 1 là Tên chính, Dòng 2 là phần cắt đi kèm kí hiệu nhỏ
+            return [label, '↳ ' + phanBiCat.toLowerCase()]; 
+        }
     }
-
-    return label || this.getLabelForValue(value);
 }
                         }
                     } 
