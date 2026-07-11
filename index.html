@@ -225,7 +225,7 @@
             <div id="khuVucBieuDoKhachHang" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
                 <div style="background: #fff; width: 90%; max-width: 1000px; max-height: 90vh; border-radius: 8px; padding: 25px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow-y: auto;">
                     <button onclick="document.getElementById('khuVucBieuDoKhachHang').style.display = 'none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
-                    <h3 id="tieuDeBieuDoKhachHang" style="text-align: center; color: #1e293b; margin-bottom: 20px; font-weight: bold;">Sản lượng chi tiết theo Khách hàng</h3>
+                    <h3 id="tieuDeBieuDoKhachHang" style="text-align: center; color: #1e293b; margin-bottom: 20px; font-weight: bold;">Chi tiết Sản lượng (Tấn) & Doanh thu (Trđ) theo Khách hàng</h3>
                     <div style="width: 100%; overflow-x: auto;">
                         <canvas id="bieuDoNhietKhachHang"></canvas>
                     </div>
@@ -1019,6 +1019,7 @@
                     if (!tongSanLuongCuaKhach[tenKhachHang]) {tongSanLuongCuaKhach[tenKhachHang] = 0;}
                     for (let thang = 1; thang <= 12; thang++) {
                         const sanLuongThang = Number(data[`TL${thang}`]) || 0;
+                        const doanhThuThang = Number(data[`DT${thang}`]) || 0;
                         // Cộng dồn vào tổng 12 tháng để tính toán sắp xếp vị trí trục Y
                         tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
                         // Theo dõi giá trị lớn nhất phục vụ cho việc đổ màu nhiệt
@@ -1026,7 +1027,8 @@
                         mangDuLieuMaTran.push({
                             x: thang.toString(), 
                             y: tenKhachHang,     
-                            v: sanLuongThang }); } });
+                            v: sanLuongThang,
+                            dt: doanhThuThang }); } });
                 // Sắp xếp mảng nhãn: Khách hàng tổng bé nằm trên, Khách hàng tổng LỚN NHẤT nằm DƯỚI CÙNG
                 const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
                     .sort((a, b) => b[1] - a[1])    // Lớn xếp trước (ở đáy), Nhỏ xếp sau (ở đỉnh)
@@ -1039,7 +1041,7 @@
                 // Hủy biểu đồ cũ nếu có để tránh lỗi đè lặp bộ nhớ
                 if (bieuDoNhietKhachHangInstance) {bieuDoNhietKhachHangInstance.destroy();}
                 // Thiết lập chiều cao động cho thẻ canvas trước khi render để chữ không bị dính vào nhau
-                const chieuCaoMoiDong = 18; 
+                const chieuCaoMoiDong = 28; 
                 const phanDemCuaTrucX = 60;  
                 const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
                 // Gán chiều cao thực tế vào thẻ canvas
@@ -1097,10 +1099,12 @@
                                 display: true,
                                 color: '#2c3e50', 
                                 font: { size: 10, weight: '600' },
-                                padding: 2,
+                                padding: 1,
                                 formatter: (value) => {
-                                    const sanLuong = value ? value.v : 0;
-                                    return sanLuong > 0 ? Math.round(sanLuong).toLocaleString('vi-VN') : ''; } } } }
+                                    if (!value || value.v === 0) return '';
+                                    const dong1 = `${Math.round(value.v)}T`; // Số tấn sản lượng
+                                    const dong2 = `${Math.round(value.dt).toLocaleString('vi-VN')}M`; // Số triệu doanh thu (M = Million)
+                                    return [dong1, dong2]; } } } }
                 });
                 bieuDoNhietKhachHangInstance.resize();
             } catch (error) {console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error);}
