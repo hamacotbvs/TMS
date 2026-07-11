@@ -1155,11 +1155,11 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                             // 🌟 BỘ LỌC LOẠI BỎ TIỀN TỐ PHÁP LÝ - CHỈ GIỮ LẠI TÊN RIÊNG
                             callback: function(value, index) {
                                 let label = this.getLabelForValue(value);
-                                // 1. Cắt cụm từ ngành nghề dài phức tạp ở đầu
-                                label = label.replace(/^(Công Ty Trách Nhiệm Hữu Hạn Một Thành Viên|Công Ty TNHH MTV|Công Ty TNHH|Công Ty CP|Công Ty Cổ Phần|Doanh Nghiệp Tư Nhân|Doanh Nghiệp TN|DNTN|Hộ Kinh Doanh|Cửa Hàng Vật Liệu Xây Dựng|Cửa Hàng Trang Trí Nội Thất|Vật Liệu Xây Dựng Và Trang Trí Nội Thất|Thiết Kế Xây Dựng Và Thương Mại|Tư Vấn & Xây Dựng Thương Mại Dịch Vụ|Thương Mại Công Danh Thế Giới Nội Thất|Thương Mại Thực Phẩm|Thương Mại Quảng Cáo|Thương Mại Dịch Vụ Vùng|Thương Mại Dịch Vụ|Thương Mại Và Dịch Vụ|Thương Mại - Dịch Vụ|Cửa Hàng|Chi Nhánh|Xây Dựng|Sản Xuất)\s+/gi, '');
+                                // 1. 🌟 BỔ SUNG: Cắt thêm "Nhà phân phối", "Gạch ốp lát", các biến thể "Thương mại..." ở đầu
+                                label = label.replace(/^(Công Ty Trách Nhiệm Hữu Hạn Một Thành Viên|Công Ty TNHH MTV|Công Ty TNHH|Công Ty CP|Công Ty Cổ Phần|Doanh Nghiệp Tư Nhân|Doanh Nghiệp TN|DNTN|Hộ Kinh Doanh|Nhà Phân Phối Vật Liệu Xây Dựng|Nhà Phân Phối|Gạch Ốp Lát Vật Liệu Xây Dựng|Gạch Ốp Lát|Cửa Hàng Vật Liệu Xây Dựng|Cửa Hàng Trang Trí Nội Thất|Vật Liệu Xây Dựng Và Trang Trí Nội Thất|Thiết Kế Xây Dựng Và Thương Mại|Tư Vấn & Xây Dựng Thương Mại Dịch Vụ|Thương Mại Công Danh Thế Giới Nội Thất|Thương Mại Thực Phẩm|Thương Mại Quảng Cáo|Thương Mại Dịch Vụ Vùng|Thương Mại Dịch Vụ|Thương Mại Và Dịch Vụ|Thương Mại - Dịch Vụ|Thương Mại|Cửa Hàng|Chi Nhánh|Xây Dựng|Sản Xuất)\s+/gi, '');
                                 
                                 // 2. Cắt tiếp các từ viết tắt ngành nghề còn sót lại
-                                label = label.replace(/^(TMDV|TM|DV|VLXD - TTNT|VLXD|TTNT|NỘI THẤT|TRANG TRÍ NỘI THẤT|MTV|MỘT THÀNH VIÊN|VÀ SẢN XUẤT)\s+/gi, '');
+                                label = label.replace(/^(NPP|TMDV|TM|DV|VLXD - TTNT|VLXD|TTNT|NỘI THẤT|TRANG TRÍ NỘI THẤT|MTV|MỘT THÀNH VIÊN|VÀ SẢN XUẤT)\s+/gi, '');
                                 
                                 // 3. Xóa ký tự đặc biệt thừa ở đầu (khoảng trắng, dấu gạch, dấu và)
                                 label = label.replace(/^[\s\-\&\·\,]+/g, '').trim();
