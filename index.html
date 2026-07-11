@@ -1155,9 +1155,9 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                                 let label = context.tick ? context.tick.label : '';
                                 // Nếu tên quá dài thì tự động hạ size xuống 9, tên ngắn thì để 12
                                 if (typeof label === 'string' && label.length > 2) {
-                                    return { size: 6, weight: 'normal' };
+                                    return { size: 7, weight: '500' };
                                 }
-                                return { size: 10, weight: 'bold' };
+                                return { size: 11, weight: '500' };
                             },
                             
                             callback: function(value, index) {
