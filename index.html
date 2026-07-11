@@ -988,96 +988,87 @@
 // BIỂU ĐỒ NHIỆT CON KHÁCH HÀNG
 // TẠO BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG
 let bieuDoNhietKhachHangInstance = null;
+const boNhoDemVung = new Map();     // BỘ NHỚ ĐỆM (CACHE) THỦ CÔNG - Lưu trữ theo phiên làm việc để tiết kiệm lượt đọc
+let dangTaiDuLieuVung = false;      // Khóa chống spam click khi dữ liệu đang tải
 async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
     const namThucTe = typeof namHienHanh !== 'undefined' ? namHienHanh : 2026;
-    
-    if (vungDuocClick === undefined || vungDuocClick === null || typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {
-        console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick); return; 
-    }
-    
+    if (vungDuocClick === undefined || vungDuocClick === null || typeof vungDuocClick === 'number' || !isNaN(vungDuocClick)) {console.error("Lỗi: vungDuocClick nhận vào sai định dạng:", vungDuocClick); return;}
+    const vungChuanHoa = vungDuocClick.trim();
+    const nganhThucTe = typeof nganhHienTai !== "undefined" ? nganhHienTai : "All";      // 2. Xác định ngành hiện tại (Lấy từ biến toàn cục của bạn, nếu chưa định nghĩa thì để mặc định)
+    const khoaCache = `${namThucTe}_${vungChuanHoa}_${nganhThucTe}`;    // 🌟 ĐỊNH DANH KHÓA CACHE TUYỆT ĐỐI: Kết hợp Năm + Vùng + Ngành
+    if (dangTaiDuLieuVung) return;
     const khuVucHienThi = document.getElementById('khuVucBieuDoKhachHang');
     const tieuDe = document.getElementById('tieuDeBieuDoKhachHang'); 
     if (khuVucHienThi) khuVucHienThi.style.display = 'flex';
-    if (tieuDe) tieuDe.innerText = `Doanh thu (tr.đ) & Sản lượng (kg) 12 tháng của Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
-    
+    if (tieuDe) tieuDe.innerText = `Chi tiết Khách hàng khu vực ${vungDuocClick} năm ${namThucTe}`;
     try {
         const canvasElement = document.getElementById('bieuDoNhietKhachHang');
         if (!canvasElement) { console.error("Không tìm thấy thẻ canvas..."); return; }
         const ctx = canvasElement.getContext('2d');
+        let mangDuLieuGoc = [];
+        // 🌟 KIỂM TRA BỘ NHỚ ĐỆM TRƯỚC KHI GỌI FIRESTORE
+        if (boNhoDemVung.has(khoaCache)) {
+            console.log(`⚡ [Cache Hit] Lấy dữ liệu từ bộ nhớ đệm cho khóa: ${khoaCache}. Tốn 0 lượt đọc!`);
+            mangDuLieuGoc = boNhoDemVung.get(khoaCache);
+        } else {
+            // Nếu chưa có trong Cache -> Tiến hành gọi Firestore
+            dangTaiDuLieuVung = true; 
+            console.log(`🔍 [Firestore Read] Đang tải dữ liệu: Vùng [${vungChuanHoa}] | Năm [${namThucTe}] | Ngành [${nganhThucTe}]`);
         const thamChieuKhachHangVung = collection(db, "KHACHHANGVUNG");
-        
         let dieuKienLoc = [
             where("nam", "==", Number(namThucTe)),
-            where("vungTieuThu", "==", vungDuocClick.trim()), 
-            where("htGiaoNhan", "==", "Tổng giao") 
-        ];
+            where("vungTieuThu", "==", vungChuanHoa), 
+            where("htGiaoNhan", "==", "Tổng giao") ];
         if (typeof nganhHienTai !== "undefined") { dieuKienLoc.push(where("nganh", "==", nganhHienTai)); }
-        
         const q = query(thamChieuKhachHangVung, ...dieuKienLoc);
         const querySnapshot = await getDocs(q);
-        
+        querySnapshot.forEach((doc) => {mangDuLieuGoc.push(doc.data());});
+            // Ghi dữ liệu vừa tải vào Cache theo khóa định danh
+            boNhoDemVung.set(khoaCache, mangDuLieuGoc);
+            dangTaiDuLieuVung = false;}
         let tongSanLuongCuaKhach = {}; 
         let mangDuLieuMaTran = [];  
         let maxSanLuongKhach = 0; 
         let maxDoanhThuKhach = 0; 
         
-        querySnapshot.forEach((doc) => {
-            const data = doc.data(); 
+        mangDuLieuGoc.forEach((data) => {
             const tenKhachHang = data.doiTuong || "Chưa phân loại";
-            
             if (!tongSanLuongCuaKhach[tenKhachHang]) { tongSanLuongCuaKhach[tenKhachHang] = 0; }
-            
             // 🌟 ĐÃ ĐẢO: VÒNG LẶP 1 - Gom toàn bộ 12 tháng Doanh thu chạy TRƯỚC
             for (let thang = 1; thang <= 12; thang++) {
                 const doanhThuThang = (Number(data[`DT${thang}`]) || 0) / 1000000;
                 if (doanhThuThang > maxDoanhThuKhach) { maxDoanhThuKhach = doanhThuThang; }
-                
                 mangDuLieuMaTran.push({
                     x: `${thang} `, // Dấu cách để nhận diện đây thuộc nhóm Doanh thu
                     y: tenKhachHang,
                     v: doanhThuThang,
-                    loai: 'DT'
-                }); 
-            }
-
+                    loai: 'DT'});  }
             // 🌟 ĐÃ ĐẢO: VÒNG LẶP 2 - Gom toàn bộ 12 tháng Sản lượng chạy SAU
             for (let thang = 1; thang <= 12; thang++) {
                 const sanLuongThang = Number(data[`TL${thang}`]) || 0;
                 tongSanLuongCuaKhach[tenKhachHang] += sanLuongThang;
                 if (sanLuongThang > maxSanLuongKhach) { maxSanLuongKhach = sanLuongThang; }
-                
                 mangDuLieuMaTran.push({
                     x: `${thang}`, // Chuỗi không dấu cách thuộc nhóm Sản lượng
                     y: tenKhachHang,
                     v: sanLuongThang,
-                    loai: 'SL'
-                });
-            }
-        });
-        
+                    loai: 'SL'}); } });
         const danhSachDoiTuongY = Object.entries(tongSanLuongCuaKhach)
             .sort((a, b) => b[1] - a[1])
             .map(item => item[0]);
-            
         if (danhSachDoiTuongY.length === 0) {
             alert(`Không có dữ liệu khách hàng cho vùng: ${vungDuocClick}`);
-            if (khuVucHienThi) khuVucHienThi.style.display = 'none'; return;
-        }
-        
+            if (khuVucHienThi) khuVucHienThi.style.display = 'none'; return;}
         if (bieuDoNhietKhachHangInstance) { bieuDoNhietKhachHangInstance.destroy(); }
-        
         const chieuCaoMoiDong = 18; 
         const phanDemCuaTrucX = 70;  
         const chieuCaoTinhToan = (danhSachDoiTuongY.length * chieuCaoMoiDong) + phanDemCuaTrucX;
         canvasElement.style.height = `${chieuCaoTinhToan}px`;
         canvasElement.style.width = '100%'; 
-        
         // 🌟 ĐÃ ĐẢO: Mảng nhãn trục X chuẩn đưa nhóm '1 ' -> '12 ' (Doanh thu) lên trước
         const nhanTracX_Chuan = [
             '1 ', '2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 ', '10 ', '11 ', '12 ',
-            '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'
-        ];
-        
+            '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
         function layMauNhietTheoRatio(ratio) {
             let r, g, b;
             if (ratio >= 0.25) {
@@ -1087,9 +1078,7 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                 const p = (ratio - 0.05) / 0.20; 
                 r = Math.round(240 + (241 - 240) * p); g = Math.round(140 + (220 - 140) * p); b = Math.round(130 + (100 - 130) * p); 
             } else { r = 245; g = 160; b = 150; }
-            return `rgba(${r}, ${g}, ${b}, 0.85)`;
-        }
-        
+            return `rgba(${r}, ${g}, ${b}, 0.85)`; }
         bieuDoNhietKhachHangInstance = new Chart(ctx, {
             type: 'matrix',
             data: {
@@ -1099,60 +1088,27 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                     backgroundColor(context) {
                         const item = context.raw;
                         if (!item || item.v === 0) return '#f8fafc';
-                        
                         if (item.loai === 'SL') {
-                            const ratio = Math.min(item.v / (maxSanLuongKhach || 1), 1);
-                            return layMauNhietTheoRatio(ratio);
+                            return layMauNhietTheoRatio(Math.min(item.v / (maxSanLuongKhach || 1), 1));
                         } else {
-                            const ratio = Math.min(item.v / (maxDoanhThuKhach || 1), 1);
-                            return layMauNhietTheoRatio(ratio);
-                        } 
-                    },
-                    borderRadius: 2,
-                    borderWidth: 1, 
-                    borderColor: '#ffffff', 
+                            return layMauNhietTheoRatio(Math.min(item.v / (maxDoanhThuKhach || 1), 1)); } },
+                    borderRadius: 2, borderWidth: 1, borderColor: '#ffffff', 
                     width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 24) - 1.5 : 0, 
-                    height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachDoiTuongY.length || 1)) - 1.5 : 0 
-                }] 
-            },
+                    height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachDoiTuongY.length || 1)) - 1.5 : 0 }] },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 scales: {
-                    x: {
-                        type: 'category', 
-                        labels: nhanTracX_Chuan, 
-                        offset: true, 
-                        grid: { display: false }, 
+                    x: {type: 'category', labels: nhanTracX_Chuan, offset: true, grid: { display: false }, 
                         ticks: { 
-                            color: '#475569', 
-                            font: { size: 10, weight: '700' },
-                            maxRotation: 0,
-                            minRotation: 0,
-                            autoSkip: false,
+                            color: '#475569', font: { size: 10, weight: '700' }, maxRotation: 0, minRotation: 0, autoSkip: false,
                             // 🌟 ĐÃ CẬP NHẬT CALLBACK: Gán đúng nhãn phụ ở chân cột Tháng 1 đầu tiên của mỗi nhóm
                             callback: function(val, index) {
                                 const label = this.getLabelForValue(val);
-                                if (label === '1 ') {
-                                    return ['1', 'Doanh thu (tr.đ)'];
-                                }
-                                if (label === '1') {
-                                    return ['1', 'Sản lượng (kg)'];
-                                }
-                                return label.trim(); 
-                            }
-                        } 
-                    },
-                    y: { 
-                        type: 'category', 
-                        labels: danhSachDoiTuongY, 
-                        offset: true, 
-                        grid: { display: false }, 
-                        ticks: { 
-                            color: '#475569', 
-                            autoSkip: false, 
-                            font: { size: 11, weight: '500' },
-                            
+                                if (label === '1 ') {return ['1', 'Doanh thu (tr.đ)'];}
+                                if (label === '1') {return ['1', 'Sản lượng (kg)'];}
+                                return label.trim(); } } },
+                    y: { type: 'category', labels: danhSachDoiTuongY, offset: true, grid: { display: false }, 
+                        ticks: { color: '#475569', autoSkip: false, font: { size: 11, weight: '500' },
                             callback: function(value, index) {
                                 let originalLabel = this.getLabelForValue(value);
                                 let label = originalLabel;
@@ -1171,33 +1127,24 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
                                 let phanBiCat = originalLabel.replace(label, '').trim();
                                 phanBiCat = phanBiCat.replace(/[\s\-\&\·\,\+\/]+$/g, '').trim(); // Dọn dấu thừa ở cuối
                                 // Trả về trên cùng 1 dòng: TÊN CHÍNH viết hoa + (phần phụ viết thường)
-                                return '(' + phanBiCat.toLowerCase() + ') ' + label.toUpperCase();
-                            }
-                        }
-                    } 
-                },
+                                return '(' + phanBiCat.toLowerCase() + ') ' + label.toUpperCase(); } } }  },
                 plugins: {
                     legend: { display: false },
                     tooltip: { enabled: false }, 
-                    datalabels: {
-                        display: true,
-                        align: 'center',
-                        anchor: 'center',
-                        textAlign: 'center',
-                        padding: 0,
-                        color: '#000000',
+                    datalabels: {display: true, align: 'center', anchor: 'center', textAlign: 'center', padding: 0, color: '#000000', 
                         font: { size: 9.5, weight: '700' }, 
                         formatter: (value) => {
                             if (!value || value.v === 0) return '';
-                            return `${Math.round(value.v).toLocaleString('vi-VN')}`;
-                        }
-                    } 
-                } 
-            }
+                            return `${Math.round(value.v).toLocaleString('vi-VN')}`; } } }  }
         });
         bieuDoNhietKhachHangInstance.resize();
-    } catch (error) { console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error); }
+    } catch (error) { 
+        console.error("Lỗi dựng biểu đồ nhiệt khách hàng:", error); 
+        } finally {
+        dangTaiDuLieuVung = false;
+    }
 }
+
 // CLICK ĐÓNG NHIẾT KHÁCH HÀNG
         // ĐÓNG BIỂU ĐỒ NHIỆT CON - KHÁCH HÀNG VÙNG KHI CLCK RA NGOÀI BIỂU ĐỒ KHÁCH HÀNG VÙNG
         document.getElementById('khuVucBieuDoKhachHang').addEventListener('click', function(event) {
