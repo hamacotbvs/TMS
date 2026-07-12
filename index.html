@@ -1270,6 +1270,9 @@ window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
         selector.value = "67-33";
     } else {selector.value = "50-50";}
     window.tinhPhanBoNghiepVu(); };
+// Hàm phụ trợ làm tròn đến hàng triệu gần nhất
+function lamTronHangTrieu(soTien) {
+    return Math.round(soTien / 1000000) * 1000000;}
 // Khai báo hàm tính toán thời gian thực ra phạm vi toàn cục
 window.tinhPhanBoNghiepVu = function(nguonThayDoi) {
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
@@ -1294,6 +1297,9 @@ window.tinhPhanBoNghiepVu = function(nguonThayDoi) {
         if (kieuPhanBo === '67-33') phanTramTBVS = 0.33;
         else if (kieuPhanBo === 'dien-tich') phanTramTBVS = 0.648;
         tienTBVS = Math.round(tongTien * phanTramTBVS);}
+    if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
+        tienTBVS = lamTronHangTrieu(tienTBVS);
+        if (tienTBVS > tongTien) tienTBVS = lamTronHangTrieu(tongTien);}
     // 🌟 ĐỒNG NHẤT CÔNG THỨC: Sơn luôn bằng Tổng trừ đi TBVS
     const tienSon = tongTien - tienTBVS;
     // Hiển thị lên giao diện xem trước
@@ -1334,7 +1340,10 @@ window.luuNghiepVuVaoFirebase = async function() {
         
         tienTBVS = Math.round(tongTien * phanTramTBVS);
     }
-
+    if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
+        tienTBVS = lamTronHangTrieu(tienTBVS);
+        if (tienTBVS > tongTien) tienTBVS = lamTronHangTrieu(tongTien);
+    }
     // Tiền Sơn luôn bằng Tổng tiền trừ đi TBVS (Không sợ lệch 1 đồng do làm tròn)
     const tienSon = tongTien - tienTBVS;
 
