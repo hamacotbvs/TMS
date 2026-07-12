@@ -295,15 +295,39 @@
                     <!-- 2. Hạng mục chi phí -->
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Hạng mục chi phí:</label>
-                        <select id="nvHangMuc" onchange="tuDongChonTyLeTheoHangMuc(this.value)" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: 500;">
+                        <select id="nvHangMuc" onchange="tuDongChonTyLeTheoHangMuc(this.value); tinhPhanBoNghiepVu('thay-doi-nguyen-tac')">
                             <option value="">-- Chọn hạng mục --</option>
-                            <option value="Thuê mặt bằng">1. Thuê mặt bằng (Diện tích)</option>
-                            <option value="Thuê xe">2. Thuê xe (67% / 33%)</option>
-                            <option value="Phí kho - Sửa chữa">3. Phí kho - Sửa chữa (50% / 50%)</option>
-                            <option value="Phí kho - Điện nước PCCC">3. Phí kho - Điện nước PCCC (50% / 50%)</option>
-                            <option value="Phí kho - Chi phí hành chính">3. Phí kho - Vận hành khác (50% / 50%)</option>
-                            <option value="Lương - Giao nhận tài xế">4. Lương - Giao nhận tài xế (67% / 33%)</option>
-                            <option value="Lương - Quản lý thủ kho">4. Lương - Quản lý, bãi (50% / 50%)</option>
+                            
+                            <optgroup label="PHÍ KHO">
+                                <option value="Thuê mặt bằng">1. Thuê mặt bằng</option>
+                                <option value="Phân bổ phí sửa kho">2. Phân bổ phí sửa kho</option>
+                                <option value="Phân bổ phí PCCC">3. Phân bổ phí PCCC</option>
+                                <option value="Phân bổ phí PCCC (bảo trì)">4. Phân bổ phí PCCC (bảo trì)</option>
+                                <option value="Bảo hiểm cháy nổ">5. Bảo hiểm cháy nổ</option>
+                                <option value="Lương vị trí, phụ cấp QL, TK, BV">6. Lương vị trí, phụ cấp QL, TK, BV</option>
+                                <option value="Trích BH, CĐ: QL, TK, BV">7. Trích BH, CĐ: QL, TK, BV</option>
+                                <option value="Tiện ích kho">8. Tiện ích kho</option>
+                                <option value="Bảo trì kho">9. Bảo trì kho</option>
+                                <option value="Lương ngoài giờ">10. Lương ngoài giờ</option>
+                            </optgroup>
+                            
+                            <optgroup label="PHÍ LOGISTICS">
+                                <option value="Thuê xe">11. Thuê xe</option>
+                                <option value="Đăng kiểm">12. Đăng kiểm</option>
+                                <option value="Bảo hiểm xe">13. Bảo hiểm xe</option>
+                                <option value="Giám sát hành trình">14. Giám sát hành trình</option>
+                                <option value="Lương vị trí, phụ cấp TX, GN, BX">15. Lương vị trí, phụ cấp TX, GN, BX</option>
+                                <option value="Trích BH, CĐ: TX, GN, BX">16. Trích BH, CĐ: TX, GN, BX</option>
+                                <option value="Nhiên liệu">17. Nhiên liệu</option>
+                                <option value="BOT">18. BOT</option>
+                                <option value="Bảo trì, bảo dưỡng xe">19. Bảo trì, bảo dưỡng xe</option>
+                                <option value="Chi phí giao hàng">20. Chi phí giao hàng</option>
+                                <option value="Lương km tài xế">21. Lương km tài xế</option>
+                                <option value="Lương sản lượng Tài xế">22. Lương sản lượng Tài xế</option>
+                                <option value="Lương sản lượng giao nhận">23. Lương sản lượng giao nhận</option>
+                                <option value="Lương sản lượng thủ kho">24. Lương sản lượng thủ kho</option>
+                                <option value="Lương sản lượng bốc xếp">25. Lương sản lượng bốc xếp</option>
+                            </optgroup>
                         </select>
                     </div>
 
@@ -1274,16 +1298,32 @@
 // HOẠCH TOÁN CHI PHÍ
 // Thiết lập mặc định ngày hôm nay cho form
 document.getElementById('nvNgay').value = new Date().toISOString().slice(0, 10);
+
 // Khai báo hàm tự động chọn tỷ lệ ra phạm vi toàn cục
 window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
     const selector = document.getElementById('nvKieuPhanBo');
     if (!hangMuc) return;
-    if (hangMuc.includes("mặt bằng")) {
-        selector.value = "dien-tich";
-    } else if (hangMuc.includes("Thuê xe") || hangMuc.includes("Giao nhận tài xế")) {
-        selector.value = "67-33";
-    } else {selector.value = "50-50";}
+
+    // Nhóm 1: 35 - 65
+    if (hangMuc.includes("Thuê mặt bằng")) {
+        selector.value = "Sơn: 35 - TBVS: 65"; }
+
+    // Nhóm 2: 67 - 33
+    else if (hangMuc === "Thuê xe" || 
+             hangMuc === "Đăng kiểm" ||
+             hangMuc === "Bảo hiểm xe" ||
+             hangMuc === "Giám sát hành trình" || 
+             hangMuc === "Lương vị trí, phụ cấp TX, GN, BX" ||
+             hangMuc === "Trích BH, CĐ: TX, GN, BX" ||
+             hangMuc === "BOT" || 
+             hangMuc === "Bảo trì, bảo dưỡng xe" ||
+             hangMuc.includes("Tài xế")) {
+        selector.value = "Sơn: 67 - TBVS: 33"; }
+
+    // Nhóm 3: 50 - 50
+    else {selector.value = "Sơn: 50 - TBVS: 50";}
     window.tinhPhanBoNghiepVu(); };
+
 // Hàm phụ trợ làm tròn đến hàng triệu gần nhất
 function lamTronHangTrieu(soTien) {return Math.round(soTien / 1000000) * 1000000;}
 // Khai báo hàm tính toán thời gian thực ra phạm vi toàn cục
