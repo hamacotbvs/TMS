@@ -1271,11 +1271,11 @@ window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
     } else {selector.value = "50-50";}
     window.tinhPhanBoNghiepVu(); };
 // Hàm phụ trợ làm tròn đến hàng triệu gần nhất
-function lamTronHangTrieu(soTien) {
-    return Math.round(soTien / 1000000) * 1000000;}
+function lamTronHangTrieu(soTien) {return Math.round(soTien / 1000000) * 1000000;}
 // Khai báo hàm tính toán thời gian thực ra phạm vi toàn cục
 window.tinhPhanBoNghiepVu = function(nguonThayDoi) {
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
+    const hangMuc = document.getElementById('nvHangMuc').value;
     const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
     const vungNhapTBVS = document.getElementById('vungNhapTBVS');
     const inputTBVS = document.getElementById('tienTBVSInput');
