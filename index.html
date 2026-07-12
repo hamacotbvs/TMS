@@ -172,37 +172,28 @@
             .vung-bieu-do-doi .KHUNG-CON-TRONG-TAB {
                 min-height: auto !important;
                 height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */}}
+
         /* CSS CHO FORM HOẠCH TOÁN CHI PHÍ LÀM MỚI */
-        .form-hoach-toan { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
-        .thanh-tieude-form { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; }
-        .thanh-tieude-form h3 { font-size: 16px; color: #0082C8; font-weight: 700; }
-
-        .dong-nhap-lieu { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; transition: all 0.2s; }
-        .dong-nhap-lieu:focus-within { border-color: #0082C8; background: #fff; box-shadow: 0 4px 12px rgba(0,130,200,0.05); }
-
-        .nhan-hang-muc { font-size: 13px; font-weight: 700; color: #1e293b; display: flex; justify-content: space-between; }
-        .nhan-hang-muc span.ma-so { color: #64748b; font-weight: 500; }
-
-        .khung-nhap-so-tien { display: flex; gap: 10px; align-items: center; }
-        .o-nhap-tien { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #334155; text-align: right; outline: none; }
-        .o-chon-ty-le { padding: 9px 6px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: bold; background: #fff; color: #475569; width: 110px; text-align: center; }
-
-        .vung-ket-qua-phan-bo { display: flex; gap: 10px; margin-top: 2px; }
-        .the-phan-bo { flex: 1; background: #fff; border: 1px solid #f1f5f9; padding: 6px 10px; border-radius: 6px; font-size: 11px; color: #64748b; display: flex; justify-content: space-between; align-items: center; }
-        .the-phan-bo strong { color: #0f172a; font-size: 12px; }
-
-        /* KHU VỰC TỔNG KẾT PHÍA DƯỚI FORM */
-        .khung-tong-ket-phi { background: #0f172a; color: #fff; padding: 15px; border-radius: 12px; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .dong-tong-ket { display: flex; justify-content: space-between; font-size: 13px; color: #94a3b8; }
-        .dong-tong-ket.tong-cuoi { font-size: 16px; font-weight: 700; color: #38bdf8; border-top: 1px dashed #334155; padding-top: 8px; margin-top: 4px; }
-        .dong-tong-ket strong { color: #fff; }
-
-        .nut-gui-xac-nhan { width: 100%; background: #0082C8; color: #fff; border: none; padding: 14px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 12px rgba(0, 130, 200, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .nut-gui-xac-nhan:active { transform: scale(0.98); background-color: #006fa3; }
-
-        /* Khống chế cuộn riêng form trên Mobile không bị cấn menu dưới */
+        /* Hiệu ứng mượt mà khi nhấn nút Ghi Sổ */
+        .nut-gui-xac-nhan:active { 
+            transform: scale(0.98); 
+            background-color: #006fa3 !important; 
+        }
+        /* Khống chế khoảng cách cuộn trên Mobile để không bị MENU DƯỚI che khuất nút */
         @media (max-width: 767px) and (orientation: portrait) {
-            #them-moi { padding-bottom: 120px !important; }
+            #them-moi { 
+                padding-bottom: 120px !important; 
+            }
+        }
+        /* Định dạng ô chọn Hạng mục và Kiểu phân bổ giống phom thiết kế chung của App */
+        #nvHangMuc, #nvKieuPhanBo {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 24 24'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 30px !important;
         }
     </style>
 
@@ -213,7 +204,10 @@
     <div class="KHUNG-CAC-TAB">
         
         <div id="home" class="trang-content active">
-            
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h2>📦 Trang chủ</h2>
+                <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
+            </div>
         </div>
 
         <div id="bao-cao" class="trang-content">
@@ -273,91 +267,64 @@
             <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
             
             <div class="KHUNG-CON-TRONG-TAB">
-                <div class="thanh-tieude-form">
-                    <h3>📊 HOẠCH TOÁN CHI PHÍ THÁNG</h3>
-                    <input type="month" id="thangHoachToan" style="border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-family: inherit; color:#334155;">
+                <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                    📝 NHẬP NGHIỆP VỤ PHÁT SINH KHO
+                </h3>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- 1. Ngày phát sinh -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày chứng từ / phát sinh:</label>
+                        <input type="date" id="nvNgay" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
+                    </div>
+
+                    <!-- 2. Hạng mục chi phí -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Hạng mục chi phí:</label>
+                        <select id="nvHangMuc" onchange="tuDongChonTyLeTheoHangMuc(this.value)" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: 500;">
+                            <option value="">-- Chọn hạng mục --</option>
+                            <option value="Thuê mặt bằng">1. Thuê mặt bằng (Diện tích)</option>
+                            <option value="Thuê xe">2. Thuê xe (67% / 33%)</option>
+                            <option value="Phí kho - Sửa chữa">3. Phí kho - Sửa chữa (50% / 50%)</option>
+                            <option value="Phí kho - Điện nước PCCC">3. Phí kho - Điện nước PCCC (50% / 50%)</option>
+                            <option value="Phí kho - Chi phí hành chính">3. Phí kho - Vận hành khác (50% / 50%)</option>
+                            <option value="Lương - Giao nhận tài xế">4. Lương - Giao nhận tài xế (67% / 33%)</option>
+                            <option value="Lương - Quản lý thủ kho">4. Lương - Quản lý, bãi (50% / 50%)</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. Số tiền gốc -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Tổng số tiền thực tế (VNĐ):</label>
+                        <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right;">
+                    </div>
+
+                    <!-- 4. Nguyên tắc phân bổ -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Nguyên tắc phân bổ:</label>
+                        <select id="nvKieuPhanBo" onchange="tinhPhanBoNghiepVu()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #0082C8;">
+                            <option value="50-50">Tỷ lệ cố định 50% / 50%</option>
+                            <option value="67-33">Tỷ lệ vận tải 67% / 33%</option>
+                            <option value="dien-tich">Theo diện tích (Ví dụ: Sơn 35% - TBVS 65%)</option>
+                        </select>
+                    </div>
+
+                    <!-- Xem trước kết quả phân bổ -->
+                    <div style="display: flex; gap: 10px; margin-top: 5px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">Sơn phân bổ:<br><strong id="previewSon" style="color:#ef4444; font-size: 14px;">0 đ</strong></div>
+                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">TBVS phân bổ:<br><strong id="previewTBVS" style="color:#22c55e; font-size: 14px;">0 đ</strong></div>
+                    </div>
+
+                    <!-- 5. Ghi chú thêm -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ghi chú nội dung nghiệp vụ:</label>
+                        <input type="text" id="nvGhiChu" placeholder="Ví dụ: Thanh toán tiền điện kho tháng 07..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
+                    </div>
+
+                    <button class="nut-gui-xac-nhan" onclick="luuNghiepVuVaoFirebase()" style="width: 100%; background: #0082C8; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 130, 200, 0.25);">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ & Lưu Trực Tuyến
+                    </button>
                 </div>
-
-                <div class="form-hoach-toan">
-                    <!-- HẠNG MỤC 1 -->
-                    <div class="dong-nhap-lieu" data-loai="dien-tich">
-                        <div class="nhan-hang-muc"><span class="ten">1. Thuê mặt bằng</span><span class="ma-so">Mặt bằng</span></div>
-                        <div class="khung-nhap-so-tien">
-                            <input type="number" class="o-nhap-tien" placeholder="Nhập tổng phí..." oninput="tinhToanPhanBoDong(this)">
-                            <select class="o-chon-ty-le" onchange="tinhToanPhanBoDong(this.previousElementSibling)">
-                                <option value="dien-tich">Theo diện tích</option>
-                                <option value="50-50">50% / 50%</option>
-                                <option value="67-33">67% / 33%</option>
-                            </select>
-                        </div>
-                        <div class="vung-ket-qua-phan-bo">
-                            <div class="the-phan-bo">Sơn: <strong class="kq-son">0</strong></div>
-                            <div class="the-phan-bo">TBVS: <strong class="kq-tbvs">0</strong></div>
-                        </div>
-                    </div>
-
-                    <!-- HẠNG MỤC 2 -->
-                    <div class="dong-nhap-lieu" data-loai="67-33">
-                        <div class="nhan-hang-muc"><span class="ten">2. Thuê xe</span><span class="ma-so">Vận tải</span></div>
-                        <div class="khung-nhap-so-tien">
-                            <input type="number" class="o-nhap-tien" placeholder="Nhập tổng phí..." oninput="tinhToanPhanBoDong(this)">
-                            <select class="o-chon-ty-le" onchange="tinhToanPhanBoDong(this.previousElementSibling)">
-                                <option value="67-33">67% / 33%</option>
-                                <option value="50-50">50% / 50%</option>
-                                <option value="dien-tich">Theo diện tích</option>
-                            </select>
-                        </div>
-                        <div class="vung-ket-qua-phan-bo">
-                            <div class="the-phan-bo">Sơn: <strong class="kq-son">0</strong></div>
-                            <div class="the-phan-bo">TBVS: <strong class="kq-tbvs">0</strong></div>
-                        </div>
-                    </div>
-
-                    <!-- HẠNG MỤC 3 -->
-                    <div class="dong-nhap-lieu" data-loai="50-50">
-                        <div class="nhan-hang-muc"><span class="ten">3. Chi phí Phí kho (Sửa chữa, điện nước, PCCC...)</span><span class="ma-so">Vận hành</span></div>
-                        <div class="khung-nhap-so-tien">
-                            <input type="number" class="o-nhap-tien" placeholder="Nhập tổng phí..." oninput="tinhToanPhanBoDong(this)">
-                            <select class="o-chon-ty-le" onchange="tinhToanPhanBoDong(this.previousElementSibling)">
-                                <option value="50-50">50% / 50%</option>
-                                <option value="67-33">67% / 33%</option>
-                                <option value="dien-tich">Theo diện tích</option>
-                            </select>
-                        </div>
-                        <div class="vung-ket-qua-phan-bo">
-                            <div class="the-phan-bo">Sơn: <strong class="kq-son">0</strong></div>
-                            <div class="the-phan-bo">TBVS: <strong class="kq-tbvs">0</strong></div>
-                        </div>
-                    </div>
-
-                    <!-- HẠNG MỤC 4 -->
-                    <div class="dong-nhap-lieu" data-loai="67-33">
-                        <div class="nhan-hang-muc"><span class="ten">4. Lương bãi & tài xế (Cố định + Ngoại giờ)</span><span class="ma-so">Nhân sự</span></div>
-                        <div class="khung-nhap-so-tien">
-                            <input type="number" class="o-nhap-tien" placeholder="Nhập tổng phí..." oninput="tinhToanPhanBoDong(this)">
-                            <select class="o-chon-ty-le" onchange="tinhToanPhanBoDong(this.previousElementSibling)">
-                                <option value="67-33">67% / 33%</option>
-                                <option value="50-50">50% / 50%</option>
-                                <option value="dien-tich">Theo diện tích</option>
-                            </select>
-                        </div>
-                        <div class="vung-ket-qua-phan-bo">
-                            <div class="the-phan-bo">Sơn: <strong class="kq-son">0</strong></div>
-                            <div class="the-phan-bo">TBVS: <strong class="kq-tbvs">0</strong></div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- BẢNG TỔNG CỘNG CHỐT TIỀN TỰ ĐỘNG -->
-                <div class="khung-tong-ket-phi">
-                    <div class="dong-tong-ket"><span>Tổng chi phí kho thực tế:</span><strong id="tongKetToanBo">0 đ</strong></div>
-                    <div class="dong-tong-ket"><span>Phần bổ ngành Sơn:</span><strong id="tongKetSon" style="color: #facc15;">0 đ</strong></div>
-                    <div class="dong-tong-ket"><span>Phần bổ ngành TBVS:</span><strong id="tongKetTBVS" style="color: #4ade80;">0 đ</strong></div>
-                    <div class="dong-tong-ket tong-cuoi"><span>TỔNG DOANH NGHIỆP:</span><span id="tongChiPhiCuoiCung">0 đ</span></div>
-                </div>
-
-                <button class="nut-gui-xac-nhan" onclick="guiDuLieuHoachToan()"><i class="fa-solid fa-paper-plane"></i> Gửi 2 Ngành Xác Nhận</button>
             </div>
         </div>
 
@@ -1284,14 +1251,28 @@ async function taiBieuDoNhietKhachHangTheoVung(vungDuocClick, namHienHanh) {
             if (event.target === lopNenMo) {lopNenMo.style.display = 'none';} });   // Ẩn toàn bộ modal đi
 
 // HOẠCH TOÁN CHI PHÍ
-// Thiết lập mặc định tháng hiện tại khi mở app
-document.getElementById('thangHoachToan').value = new Date().toISOString().slice(0, 7);
+// Đặt mặc định ngày hôm nay cho form khi mở ứng dụng
+document.getElementById('nvNgay').value = new Date().toISOString().slice(0, 10);
 
-// Hàm tính phân bổ chi tiết cho từng dòng khi gõ số tiền hoặc thay đổi lựa chọn tỉ lệ
-function tinhToanPhanBoDong(inputElement) {
-    const value = parseFloat(inputElement.value) || 0;
-    const selectElement = inputElement.nextElementSibling;
-    const kieuPhanBo = selectElement.value;
+// Hàm tự động đổi mẫu tỷ lệ thông dụng khi chọn hạng mục nhanh
+function tuDongChonTyLeTheoHangMuc(hangMuc) {
+    const selector = document.getElementById('nvKieuPhanBo');
+    if (!hangMuc) return;
+    
+    if (hangMuc.includes("mặt bằng")) {
+        selector.value = "dien-tich";
+    } else if (hangMuc.includes("Thuê xe") || hangMuc.includes("Giao nhận tài xế")) {
+        selector.value = "67-33";
+    } else {
+        selector.value = "50-50";
+    }
+    tinhPhanBoNghiepVu();
+}
+
+// Hàm tính toán số tiền thời gian thực hiển thị lên màn hình
+function tinhPhanBoNghiepVu() {
+    const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
+    const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
     
     let phanTramSon = 0.5;
     let phanTramTBVS = 0.5;
@@ -1299,60 +1280,72 @@ function tinhToanPhanBoDong(inputElement) {
     if (kieuPhanBo === '67-33') {
         phanTramSon = 0.67; phanTramTBVS = 0.33;
     } else if (kieuPhanBo === 'dien-tich') {
-        // Tỷ lệ ví dụ mẫu theo diện tích thực tế kho (Sơn chiếm 35%, TBVS chiếm 65%)
-        // Bạn có thể tùy chỉnh lại con số chính xác của kho bạn tại đây
-        phanTramSon = 0.352; phanTramTBVS = 0.648; 
+        phanTramSon = 0.352; phanTramTBVS = 0.648; // Tỷ lệ diện tích thực tế của bạn
     }
     
-    const dongNhapLieu = inputElement.closest('.dong-nhap-lieu');
-    const tienSon = Math.round(value * phanTramSon);
-    const tienTBVS = Math.round(value * phanTramTBVS);
+    const tienSon = Math.round(tongTien * phanTramSon);
+    const tienTBVS = Math.round(tongTien * phanTramTBVS);
     
-    // Đưa kết quả tính toán lên giao diện của dòng đó
-    dongNhapLieu.querySelector('.kq-son').innerText = tienSon.toLocaleString('vi-VN');
-    dongNhapLieu.querySelector('.kq-tbvs').innerText = tienTBVS.toLocaleString('vi-VN');
-    
-    // Cập nhật lại toàn bộ bảng tổng kết cuối trang
-    tinhTongToanBoForm();
+    document.getElementById('previewSon').innerText = tienSon.toLocaleString('vi-VN') + " đ";
+    document.getElementById('previewTBVS').innerText = tienTBVS.toLocaleString('vi-VN') + " đ";
 }
 
-// Hàm quét tất cả các dòng để gom tổng chi phí tổng và tổng riêng của 2 ngành
-function tinhTongToanBoForm() {
-    let tongCong = 0;
-    let tongSon = 0;
-    let tongTBVS = 0;
+// HÀM LƯU DỮ LIỆU ĐỊNH KHOẢN VÀO FIRESTORE
+async function luuNghiepVuVaoFirebase() {
+    const ngay = document.getElementById('nvNgay').value;
+    const hangMuc = document.getElementById('nvHangMuc').value;
+    const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
+    const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
+    const ghiChu = document.getElementById('nvGhiChu').value.trim();
     
-    document.querySelectorAll('.dong-nhap-lieu .o-nhap-tien').forEach(input => {
-        tongCong += parseFloat(input.value) || 0;
-    });
+    // Kiểm tra dữ liệu hợp lệ trước khi đẩy lên Server
+    if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
+    if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
     
-    document.querySelectorAll('.dong-nhap-lieu .kq-son').forEach(span => {
-        tongSon += parseInt(span.innerText.replace(/\./g, '')) || 0;
-    });
-    
-    document.querySelectorAll('.dong-nhap-lieu .kq-tbvs').forEach(span => {
-        tongTBVS += parseInt(span.innerText.replace(/\./g, '')) || 0;
-    });
-    
-    // Đẩy số liệu tổng kết ra ngoài màn hình chính
-    document.getElementById('tongKetToanBo').innerText = tongCong.toLocaleString('vi-VN') + " đ";
-    document.getElementById('tongKetSon').innerText = tongSon.toLocaleString('vi-VN') + " đ";
-    document.getElementById('tongKetTBVS').innerText = tongTBVS.toLocaleString('vi-VN') + " đ";
-    document.getElementById('tongChiPhiCuoiCung').innerText = tongCong.toLocaleString('vi-VN') + " đ";
-}
+    // Tách chuỗi thời gian để lưu thành trường độc lập phục vụ cho việc Group By vẽ biểu đồ
+    const thoiGian = new Date(ngay);
+    const nam = thoiGian.getFullYear();
+    const thang = thoiGian.getMonth() + 1; // getMonth trả từ 0 -> 11
 
-// Hành động khi nhấn nút gửi dữ liệu duyệt hóa toán
-function guiDuLieuHoachToan() {
-    const thang = document.getElementById('thangHoachToan').value;
-    const tongTien = document.getElementById('tongChiPhiCuoiCung').innerText;
+    // Tính toán số tiền lưu trữ chính xác
+    let phanTramSon = 0.5, phanTramTBVS = 0.5;
+    if (kieuPhanBo === '67-33') { phanTramSon = 0.67; phanTramTBVS = 0.33; }
+    else if (kieuPhanBo === 'dien-tich') { phanTramSon = 0.352; phanTramTBVS = 0.648; }
     
-    if(tongTien === "0 đ") {
-        alert("Vui lòng nhập số liệu chi phí trước khi gửi duyệt!");
-        return;
+    const tienSon = Math.round(tongTien * phanTramSon);
+    const tienTBVS = Math.round(tongTien * phanTramTBVS);
+
+    // Cấu trúc Data Object chuẩn lưu trữ kế toán
+    const duLieuGhiSo = {
+        ngayPhatSinh: ngay,
+        nam: nam,
+        thang: thang,
+        hangMuc: hangMuc,
+        chiPhiGoc: tongTien,
+        nguyenTacPhanBo: kieuPhanBo,
+        tienSon: tienSon,
+        tienTBVS: tienTBVS,
+        ghiChu: ghiChu,
+        ngayTaoHeThong: new Date().toISOString()
+    };
+
+    try {
+        // "db" là biến firestore của bạn đã khai báo toàn cục
+        // Lưu vào collection mang tên NHATKYCHUNG_KHO
+        const docRef = await addDoc(collection(db, "NHATKYCHUNG_KHO"), duLieuGhiSo);
+        
+        alert(`🎉 Đã ghi sổ nghiệp vụ thành công!\nMã ID: ${docRef.id}`);
+        
+        // Reset form nhập liệu để chuẩn bị cho nghiệp vụ tiếp theo
+        document.getElementById('nvTongTien').value = '';
+        document.getElementById('nvGhiChu').value = '';
+        document.getElementById('previewSon').innerText = '0 đ';
+        document.getElementById('previewTBVS').innerText = '0 đ';
+        
+    } catch (lỗi) {
+        console.error("Lỗi không ghi được sổ dữ liệu: ", lỗi);
+        alert("Gặp lỗi kết nối mạng, không thể ghi dữ liệu lên hệ thống.");
     }
-    
-    // Ghi nhận trạng thái gửi thành công (Sau này bạn cấu hình lệnh setDoc của Firebase vào đây)
-    alert(`🚀 Đã gửi bảng hoạch toán chi phí [Tháng ${thang}] thành công!\nHệ thống đã chuyển dữ liệu đến bộ phận quản lý ngành Sơn & TBVS để xác nhận.`);
 }
 
     </script>
