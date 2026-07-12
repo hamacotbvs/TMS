@@ -1251,11 +1251,11 @@
             if (event.target === lopNenMo) {lopNenMo.style.display = 'none';} });   // Ẩn toàn bộ modal đi
 
 // HOẠCH TOÁN CHI PHÍ
-// Đặt mặc định ngày hôm nay cho form khi mở ứng dụng
+// Thiết lập mặc định ngày hôm nay cho form
 document.getElementById('nvNgay').value = new Date().toISOString().slice(0, 10);
 
-// Hàm tự động đổi mẫu tỷ lệ thông dụng khi chọn hạng mục nhanh
-function tuDongChonTyLeTheoHangMuc(hangMuc) {
+// Khai báo hàm tự động chọn tỷ lệ ra phạm vi toàn cục
+window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
     const selector = document.getElementById('nvKieuPhanBo');
     if (!hangMuc) return;
     
@@ -1266,11 +1266,11 @@ function tuDongChonTyLeTheoHangMuc(hangMuc) {
     } else {
         selector.value = "50-50";
     }
-    tinhPhanBoNghiepVu();
-}
+    window.tinhPhanBoNghiepVu();
+};
 
-// Hàm tính toán số tiền thời gian thực hiển thị lên màn hình
-function tinhPhanBoNghiepVu() {
+// Khai báo hàm tính toán thời gian thực ra phạm vi toàn cục
+window.tinhPhanBoNghiepVu = function() {
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
     const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
     
@@ -1280,7 +1280,7 @@ function tinhPhanBoNghiepVu() {
     if (kieuPhanBo === '67-33') {
         phanTramSon = 0.67; phanTramTBVS = 0.33;
     } else if (kieuPhanBo === 'dien-tich') {
-        phanTramSon = 0.352; phanTramTBVS = 0.648; // Tỷ lệ diện tích thực tế của bạn
+        phanTramSon = 0.352; phanTramTBVS = 0.648; 
     }
     
     const tienSon = Math.round(tongTien * phanTramSon);
@@ -1288,10 +1288,10 @@ function tinhPhanBoNghiepVu() {
     
     document.getElementById('previewSon').innerText = tienSon.toLocaleString('vi-VN') + " đ";
     document.getElementById('previewTBVS').innerText = tienTBVS.toLocaleString('vi-VN') + " đ";
-}
+};
 
-// HÀM LƯU DỮ LIỆU ĐỊNH KHOẢN VÀO FIRESTORE
-async function luuNghiepVuVaoFirebase() {
+// HÀM LƯU CHÍNH XÁC ĐÃ ĐƯỢC ĐƯA RA TOÀN CỤC ĐỂ HTML GỌI ONCLICK
+window.luuNghiepVuVaoFirebase = async function() {
     const ngay = document.getElementById('nvNgay').value;
     const hangMuc = document.getElementById('nvHangMuc').value;
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
@@ -1312,11 +1312,11 @@ async function luuNghiepVuVaoFirebase() {
     const tienSon = Math.round(tongTien * phanTramSon);
     const tienTBVS = Math.round(tongTien * phanTramTBVS);
 
-    // Tham chiếu tới bộ đếm STT tự động tăng
+    // Tham chiếu tới tài liệu bộ đếm STT
     const counterDocRef = doc(db, "CAUHINH_HETHONG", "bo_dem_chi_phi");
 
     try {
-        // 1. Chạy Transaction để lấy mã ID chuẩn dạng CP-000001-07-2026
+        // 1. Chạy Transaction lấy mã chuỗi ID (Bỏ hoàn toàn await ở lệnh .set để tránh treo luồng)
         const maDinhDanhId = await runTransaction(db, async (transaction) => {
             const counterSnapshot = await transaction.get(counterDocRef);
             
@@ -1325,14 +1325,12 @@ async function luuNghiepVuVaoFirebase() {
                 STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1;
             }
             
-            // 🌟 SỬA TẠI ĐÂY: Bỏ "await" trước lệnh transaction.set để chạy đúng nguyên lý của Firebase Transaction
             transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
-            
             const chuoiSTT = String(STT_HienTai).padStart(6, '0');
             return `CP-${chuoiSTT}-${thang}-${nam}`;
         });
 
-        // 2. Cấu trúc nội dung dữ liệu bên trong Document
+        // 2. Gom đóng dữ liệu
         const duLieuGhiSo = {
             ngayPhatSinh: ngay,
             nam: nam,
@@ -1346,11 +1344,11 @@ async function luuNghiepVuVaoFirebase() {
             ngayTaoHeThong: new Date().toISOString()
         };
 
-        // Ép mã tự sinh "maDinhDanhId" làm tên Document luôn
+        // 3. Tiến hành ép ID tùy chỉnh vào tên Document
         const taiLieuChiPhiRef = doc(db, "NHATKYCHUNG_KHO", maDinhDanhId);
         await setDoc(taiLieuChiPhiRef, duLieuGhiSo);
         
-        alert(`🎉 Đã ghi sổ thành công!\nDocument ID trên hệ thống là: ${maDinhDanhId}`);
+        alert(`🎉 Đã ghi sổ và tạo Document ID thành công:\n👉 ${maDinhDanhId}`);
         
         // Reset sạch form nhập liệu
         document.getElementById('nvTongTien').value = '';
@@ -1359,15 +1357,11 @@ async function luuNghiepVuVaoFirebase() {
         document.getElementById('previewTBVS').innerText = '0 đ';
         
     } catch (error) {
-        console.error("Lỗi khi ghi đè Document ID:", error);
-        alert("Không thể kết nối Server hoặc lỗi xử lý Transaction: " + error.message);
+        console.error("Lỗi hệ thống chi tiết:", error);
+        alert("Lỗi kết nối hoặc Firebase chặn quyền ghi Document ID riêng! Chi tiết: " + error.message);
     }
-}
+};
 
-// 🌟 BẮT BUỘC: Đưa các hàm này ra phạm vi toàn cục để lệnh "onclick" ở HTML đọc được
-window.tuDongChonTyLeTheoHangMuc = tuDongChonTyLeTheoHangMuc;
-window.tinhPhanBoNghiepVu = tinhPhanBoNghiepVu;
-window.luuNghiepVuVaoFirebase = luuNghiepVuVaoFirebase;
 
     </script>
 </body>
