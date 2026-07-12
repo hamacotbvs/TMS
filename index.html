@@ -1325,7 +1325,9 @@ async function luuNghiepVuVaoFirebase() {
                 STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1;
             }
             
+            // 🌟 SỬA TẠI ĐÂY: Bỏ "await" trước lệnh transaction.set để chạy đúng nguyên lý của Firebase Transaction
             transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
+            
             const chuoiSTT = String(STT_HienTai).padStart(6, '0');
             return `CP-${chuoiSTT}-${thang}-${nam}`;
         });
@@ -1344,7 +1346,7 @@ async function luuNghiepVuVaoFirebase() {
             ngayTaoHeThong: new Date().toISOString()
         };
 
-        // 🌟 ĐIỂM THAY ĐỔI CHÍNH: Ép mã tự sinh "maDinhDanhId" làm tên Document luôn
+        // Ép mã tự sinh "maDinhDanhId" làm tên Document luôn
         const taiLieuChiPhiRef = doc(db, "NHATKYCHUNG_KHO", maDinhDanhId);
         await setDoc(taiLieuChiPhiRef, duLieuGhiSo);
         
@@ -1358,9 +1360,10 @@ async function luuNghiepVuVaoFirebase() {
         
     } catch (error) {
         console.error("Lỗi khi ghi đè Document ID:", error);
-        alert("Không thể kết nối Server để tạo ID riêng!");
+        alert("Không thể kết nối Server hoặc lỗi xử lý Transaction: " + error.message);
     }
 }
+
 // 🌟 BẮT BUỘC: Đưa các hàm này ra phạm vi toàn cục để lệnh "onclick" ở HTML đọc được
 window.tuDongChonTyLeTheoHangMuc = tuDongChonTyLeTheoHangMuc;
 window.tinhPhanBoNghiepVu = tinhPhanBoNghiepVu;
