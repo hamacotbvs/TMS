@@ -229,6 +229,11 @@
         background-position: right 10px center;
         background-size: 16px;
     }
+
+    /* KHUNG XEM LỊCH SỬ */
+    .modal-hidden { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+    .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; border-radius: 10px; }
+    .btn-history { width: 100%; padding: 10px; background: #0082C8; color: white; border: none; border-radius: 5px; margin-bottom: 20px; }
     </style>
 
 </head>
@@ -238,9 +243,23 @@
     <div class="KHUNG-CAC-TAB">
         
         <div id="home" class="trang-content active">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📦 Trang chủ</h2>
-                <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
+            <!-- Nút mở lịch sử -->
+            <button onclick="moLichSuChiPhi()" class="btn-history">
+                <i class="fa-solid fa-clock-rotate-left"></i> Xem lịch sử chi phí
+            </button>
+
+            <!-- Modal hiển thị lịch sử -->
+            <div id="modalLichSu" class="modal-hidden">
+                <div class="modal-content">
+                    <h3>Lịch sử chi phí</h3>
+                    <!-- Chọn tháng -->
+                    <input type="month" id="thangLoc" onchange="taiLichSuTheoThang()">
+                    
+                    <div id="danhSachLichSu" style="margin-top: 15px;">
+                        <!-- Dữ liệu sẽ đổ vào đây -->
+                    </div>
+                    <button onclick="dongModal()">Đóng</button>
+                </div>
             </div>
         </div>
 
@@ -423,12 +442,12 @@
         import { getFirestore, collection, query, where, getDocs, getAggregateFromServer, sum, addDoc, runTransaction, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
-            apiKey: "AIzaSyAcFUlGoqOxxvpXKUY46rn1Yru1ek8upnE",
-            authDomain: "hamaco-tms-402e6.firebaseapp.com",
-            projectId: "hamaco-tms-402e6",
-            storageBucket: "hamaco-tms-402e6.firebasestorage.app",
-            messagingSenderId: "7841847297",
-            appId: "1:7841847297:web:0297092078a55eeabd8800",}
+            apiKey: "AIzaSyA4N3-5OhkDXZV8Yw-TEymODHuv_-QwPGU",
+            authDomain: "hamaco-tms-ac51b.firebaseapp.com",
+            projectId: "hamaco-tms-ac51b",
+            storageBucket: "hamaco-tms-ac51b.firebasestorage.app",
+            messagingSenderId: "593078964705",
+            appId: "1:593078964705:web:44302d0eb998c2c27542a0",}
 
         // KHỞI TẠO FIREBASE
         const app = initializeApp(firebaseConfig);
@@ -1511,6 +1530,47 @@ window.luuNghiepVuVaoFirebase = async function() {
             }, 150); // Đợi bàn phím đóng xong mới chạy
         });
     });
+
+// XEM LỊCH SỬ CHI PHÍ
+window.moLichSuChiPhi = () => {
+    document.getElementById('modalLichSu').style.display = 'block';
+    // Mặc định chọn tháng hiện tại
+    const thangHienTai = new Date().toISOString().slice(0, 7);
+    document.getElementById('thangLoc').value = thangHienTai;
+    taiLichSuTheoThang();
+};
+
+window.taiLichSuTheoThang = async () => {
+    const thang = document.getElementById('thangLoc').value; // Định dạng "YYYY-MM"
+    const [nam, thg] = thang.split('-');
+    
+    const container = document.getElementById('danhSachLichSu');
+    container.innerHTML = "Đang tải...";
+
+    // Truy vấn dữ liệu từ Firestore
+    const q = query(collection(db, "CHIPHI"), 
+        where("nam", "==", Number(nam)), 
+        where("thang", "==", Number(thg)));
+    
+    const querySnapshot = await getDocs(q);
+    let html = `<table border="1" width="100%"><tr><th>Ngày</th><th>Hạng mục</th><th>Số tiền</th></tr>`;
+    
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        html += `<tr>
+            <td>${data.ngayPhatSinh}</td>
+            <td>${data.hangMuc}</td>
+            <td>${data.chiPhiGoc.toLocaleString()} đ</td>
+        </tr>`;
+    });
+    
+    html += `</table>`;
+    container.innerHTML = html;
+};
+
+window.dongModal = () => {
+    document.getElementById('modalLichSu').style.display = 'none';
+};
     </script>
 </body>
 </html>
