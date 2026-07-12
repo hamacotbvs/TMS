@@ -1439,11 +1439,16 @@ window.luuNghiepVuVaoFirebase = async function() {
         const selectedIndex = selectElement.selectedIndex;
         // PHÍ KHO: từ 1 đến 12 (đánh số 1-12)
         // PHÍ LOGISTICS: từ 13 đến 25 (đánh số 13-25)
-        let cauTruc = "Biến phí"; // Mặc định
-        if (selectedIndex >= 1 && selectedIndex <= 12) {
-            cauTruc = "Cố định";
-        } else if (selectedIndex >= 13 && selectedIndex <= 18) {
-            cauTruc = "Cố định";
+        let cauTruc = ( (selectedIndex >= 1 && selectedIndex <= 12) || (selectedIndex >= 13 && selectedIndex <= 18) ) ? "Cố định" : "Biến phí";
+        // Nhân sự: 6-7, 10-12, 17-18, 22-25
+        let phanNhom = "Hạ tầng"; // Mặc định
+        if (
+            (selectedIndex >= 6 && selectedIndex <= 7) ||
+            (selectedIndex >= 10 && selectedIndex <= 12) ||
+            (selectedIndex >= 17 && selectedIndex <= 18) ||
+            (selectedIndex >= 22 && selectedIndex <= 25)
+        ) {
+            phanNhom = "Nhân sự";
         }
         // 2. Gom đóng dữ liệu
         const duLieuGhiSo = {
@@ -1454,6 +1459,7 @@ window.luuNghiepVuVaoFirebase = async function() {
             hangMuc: hangMuc,
             loaiChiPhi: (selectedIndex <= 12) ? "Kho" : "Logistics",
             cauTrucKeToan: cauTruc,
+            phanNhom: phanNhom,
             chiPhiGoc: tongTien,
             nguyenTacPhanBo: kieuPhanBo,
             tienSon: tienSon,
