@@ -1312,11 +1312,12 @@ window.luuNghiepVuVaoFirebase = async function() {
     const tienSon = Math.round(tongTien * phanTramSon);
     const tienTBVS = Math.round(tongTien * phanTramTBVS);
 
-    // Tham chiếu tới tài liệu bộ đếm STT
-    const counterDocRef = doc(db, "CAUHINH_HETHONG", "bo_dem_chi_phi");
+    // 🌟 THAY ĐỔI 1: Tạo tài liệu bộ đếm riêng biệt cho từng tháng-năm (Ví dụ: bo_dem_06_2026)
+    const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
+    const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
 
     try {
-        // 1. Chạy Transaction lấy mã chuỗi ID (Bỏ hoàn toàn await ở lệnh .set để tránh treo luồng)
+        // 1. Chạy Transaction lấy mã chuỗi ID tăng dần theo tháng
         const maDinhDanhId = await runTransaction(db, async (transaction) => {
             const counterSnapshot = await transaction.get(counterDocRef);
             
@@ -1332,6 +1333,7 @@ window.luuNghiepVuVaoFirebase = async function() {
 
         // 2. Gom đóng dữ liệu
         const duLieuGhiSo = {
+            maDinhChuan: maDinhDanhId, // 🌟 THAY ĐỔI 2: Thêm ID vào thành 1 trường (field) bên trong bảng
             ngayPhatSinh: ngay,
             nam: nam,
             thang: Number(thang), 
@@ -1358,7 +1360,7 @@ window.luuNghiepVuVaoFirebase = async function() {
         
     } catch (error) {
         console.error("Lỗi hệ thống chi tiết:", error);
-        alert("Lỗi kết nối hoặc Firebase chặn quyền ghi Document ID riêng! Chi tiết: " + error.message);
+        alert("Lỗi kết nối hoặc lỗi cú pháp Firebase! Chi tiết: " + error.message);
     }
 };
 
