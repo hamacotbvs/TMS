@@ -1398,6 +1398,16 @@ window.luuNghiepVuVaoFirebase = async function() {
         nutBam.style.cursor = "pointer";
         nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;}
 };
+
+    // SỬA LỖI KẸT KHUNG HÌNH KHI ẤN BÀN PHÍM NHẬP LIỆU TRÊN ĐIỆN THOẠI
+    document.querySelectorAll('input, select, textarea').forEach(element => {
+        element.addEventListener('blur', () => {
+            // Kiểm tra nếu là thiết bị di động thì cuộn nhẹ màn hình để reset khung nhìn
+            setTimeout(() => {
+                window.scrollTo(0, window.scrollY || document.documentElement.scrollTop);
+            }, 50);
+        });
+    });
     </script>
 </body>
 </html>
