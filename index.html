@@ -296,23 +296,34 @@
                     <!-- 3. Số tiền gốc -->
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Tổng số tiền thực tế (VNĐ):</label>
-                        <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right;">
+                        <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu('TONG-TIEN')" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right;">
                     </div>
 
                     <!-- 4. Nguyên tắc phân bổ -->
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Nguyên tắc phân bổ:</label>
-                        <select id="nvKieuPhanBo" onchange="tinhPhanBoNghiepVu()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #0082C8;">
+                        <select id="nvKieuPhanBo" onchange="tinhPhanBoNghiepVu('TI-LE')" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #0082C8;">
                             <option value="50-50">Tỷ lệ cố định 50% / 50%</option>
                             <option value="67-33">Tỷ lệ vận tải 67% / 33%</option>
                             <option value="dien-tich">Theo diện tích (Ví dụ: Sơn 35% - TBVS 65%)</option>
+                            <option value="tbvs-truoc">Phân bổ TBVS trước</option>
                         </select>
                     </div>
 
-                    <!-- Xem trước kết quả phân bổ -->
+                    <!-- 🌟 KHU VỰC ĐÃ CẬP NHẬT: XEM TRƯỚC VÀ NHẬP PHÂN BỔ TRỰC TIẾP -->
                     <div style="display: flex; gap: 10px; margin-top: 5px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">Sơn phân bổ:<br><strong id="previewSon" style="color:#ef4444; font-size: 14px;">0 đ</strong></div>
-                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">TBVS phân bổ:<br><strong id="previewTBVS" style="color:#22c55e; font-size: 14px;">0 đ</strong></div>
+                        <!-- Sơn phân bổ (Luôn tính tự động) -->
+                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">
+                            Sơn phân bổ:<br>
+                            <strong id="previewSon" style="color:#ef4444; font-size: 14px; display: block; margin-top: 7px;">0 đ</strong>
+                        </div>
+                        
+                        <!-- TBVS phân bổ (Chuyển thành input để nhập được khi chọn 'tbvs-truoc') -->
+                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">
+                            TBVS phân bổ:<br>
+                            <input type="number" id="tienTBVSInput" oninput="tinhPhanBoNghiepVu('TBVS')" placeholder="0" readonly 
+                                   style="width: 90%; text-align: center; color:#22c55e; font-size: 14px; font-weight: bold; border: none; background: transparent; padding: 4px 0; margin-top: 3px; outline: none;">
+                        </div>
                     </div>
 
                     <!-- 5. Ghi chú thêm -->
@@ -1253,7 +1264,8 @@
 // HOẠCH TOÁN CHI PHÍ
 // Thiết lập mặc định ngày hôm nay cho form
 document.getElementById('nvNgay').value = new Date().toISOString().slice(0, 10);
-// Khai báo hàm tự động chọn tỷ lệ ra phạm vi toàn cục
+
+// Khai báo hàm tự động chọn tỷ lệ ra phạm vi toàn cục (Giữ nguyên logic cũ)
 window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
     const selector = document.getElementById('nvKieuPhanBo');
     if (!hangMuc) return;
@@ -1261,60 +1273,126 @@ window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
         selector.value = "dien-tich";
     } else if (hangMuc.includes("Thuê xe") || hangMuc.includes("Giao nhận tài xế")) {
         selector.value = "67-33";
-    } else {selector.value = "50-50";}
-    window.tinhPhanBoNghiepVu(); };
-// Khai báo hàm tính toán thời gian thực ra phạm vi toàn cục
-window.tinhPhanBoNghiepVu = function() {
+    } else {
+        selector.value = "50-50";
+    }
+    window.tinhPhanBoNghiepVu('TI-LE'); 
+};
+
+// 🌟 HÀM TÍNH TOÁN CẬP NHẬT LOGIC: Giữ nguyên cái cũ + Bổ sung mở khóa nhập TBVS trước
+window.tinhPhanBoNghiepVu = function(nguonKichHoat) {
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
     const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
-    let phanTramSon = 0.5;
-    let phanTramTBVS = 0.5;
-    if (kieuPhanBo === '67-33') {
-        phanTramSon = 0.67; phanTramTBVS = 0.33;
-    } else if (kieuPhanBo === 'dien-tich') {
-        phanTramSon = 0.352; phanTramTBVS = 0.648; }
-    const tienSon = Math.round(tongTien * phanTramSon);
-    const tienTBVS = Math.round(tongTien * phanTramTBVS);
+    const inputTBVS = document.getElementById('tienTBVSInput');
+    
+    let tienSon = 0;
+    let tienTBVS = 0;
+
+    // A. NẾU CHỌN NGUYÊN TẮC: PHÂN BỔ TBVS TRƯỚC
+    if (kieuPhanBo === 'tbvs-truoc') {
+        // Mở khóa cho phép nhập ô TBVS, đổi nền trắng dễ nhìn
+        inputTBVS.readOnly = false;
+        inputTBVS.style.background = "#ffffff";
+        inputTBVS.placeholder = "Nhập số tiền TBVS vào đây...";
+
+        // Nếu kích hoạt do đổi tỷ lệ/tổng tiền và ô đang trống, cho mặc định bằng 0
+        if (nguonKichHoat !== 'TBVS' && !inputTBVS.value) {
+            inputTBVS.value = 0;
+        }
+
+        tienTBVS = parseFloat(inputTBVS.value) || 0;
+
+        // Khống chế số tiền nhập không vượt quá tổng tiền hóa đơn
+        if (tienTBVS > tongTien) {
+            tienTBVS = tongTien;
+            inputTBVS.value = tienTBVS;
+        }
+
+        // Sơn nhận số tiền còn lại
+        tienSon = tongTien - tienTBVS;
+    } 
+    // B. NẾU CHỌN CÁC TỶ LỆ CŨ (50-50, 67-33, diện tích) -> KHÓA Ô NHẬP, TỰ TÍNH TỶ LỆ
+    else {
+        // Khóa ô nhập TBVS lại, đổi nền xám
+        inputTBVS.readOnly = true;
+        inputTBVS.style.background = "#f5f5f5";
+        inputTBVS.placeholder = "Tự động tính...";
+
+        let phanTramSon = 0.5;
+        let phanTramTBVS = 0.5;
+        
+        if (kieuPhanBo === '67-33') {
+            phanTramSon = 0.67; phanTramTBVS = 0.33;
+        } else if (kieuPhanBo === 'dien-tich') {
+            phanTramSon = 0.352; phanTramTBVS = 0.648; 
+        }
+
+        tienTBVS = Math.round(tongTien * phanTramTBVS);
+        tienSon = tongTien - tienTBVS; // Lấy tổng trừ đi để tránh lệch tiền lẻ làm tròn
+        
+        // Điền số tiền tự động tính vào ô TBVS
+        inputTBVS.value = tongTien > 0 ? tienTBVS : '';
+    }
+    
+    // Hiển thị số tiền trực quan ra màn hình
     document.getElementById('previewSon').innerText = tienSon.toLocaleString('vi-VN') + " đ";
-    document.getElementById('previewTBVS').innerText = tienTBVS.toLocaleString('vi-VN') + " đ"; };
+    
+    // Lưu tạm giá trị số nguyên không dấu vào biến dataset để hàm Lưu Firebase lấy ra
+    document.getElementById('previewSon').dataset.value = tienSon;
+    inputTBVS.dataset.value = tienTBVS;
+};
+
+// Lắng nghe sự kiện gõ tổng tiền để cập nhật tính toán thời gian thực
+document.getElementById('nvTongTien').addEventListener('input', () => window.tinhPhanBoNghiepVu('TONG-TIEN'));
+
 // HÀM LƯU CHÍNH XÁC ĐÃ ĐƯỢC ĐƯA RA TOÀN CỤC ĐỂ HTML GỌI ONCLICK
 window.luuNghiepVuVaoFirebase = async function() {
-    const nutBam = document.getElementById('btnLuuNghiepVu');       // 🌟 LẤY ĐỐI TƯỢNG NÚT BẤM
-    // Nếu nút đang ở trạng thái disable (đang xử lý), thoát ra luôn không chạy tiếp
+    const nutBam = document.getElementById('btnLuuNghiepVu'); 
     if (nutBam.disabled) return;
+
     const ngay = document.getElementById('nvNgay').value;
     const hangMuc = document.getElementById('nvHangMuc').value;
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
     const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
     const ghiChu = document.getElementById('nvGhiChu').value.trim();
+    
+    // Lấy giá trị số nguyên cuối cùng sau khi phân bổ
+    const tienTBVS = parseFloat(document.getElementById('tienTBVSInput').dataset.value) || 0;
+    const tienSon = parseFloat(document.getElementById('previewSon').dataset.value) || 0;
+
     if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
     if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
-    // 🌟 KHÓA NÚT BẤM NGAY LẬP TỨC & THAY ĐỔI GIAO DIỆN KHÁCH HÀNG
+    
+    // Kiểm tra chặn nếu tổng tiền phân bổ bị lệch so với hóa đơn gốc
+    if ((tienSon + tienTBVS) !== tongTien) { 
+        alert("Lỗi: Tổng số tiền phân bổ (Sơn + TBVS) đang không khớp với Tổng chi phí gốc!"); 
+        return; 
+    }
+    
     nutBam.disabled = true;
     nutBam.style.opacity = "0.6";
     nutBam.style.cursor = "not-allowed";
     nutBam.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghi sổ... Vui lòng đợi`;
+
     const thoiGian = new Date(ngay);
     const nam = thoiGian.getFullYear();
     const thang = String(thoiGian.getMonth() + 1).padStart(2, '0'); 
-    let phanTramSon = 0.5, phanTramTBVS = 0.5;
-    if (kieuPhanBo === '67-33') { phanTramSon = 0.67; phanTramTBVS = 0.33; }
-    else if (kieuPhanBo === 'dien-tich') { phanTramSon = 0.352; phanTramTBVS = 0.648; }
-    const tienSon = Math.round(tongTien * phanTramSon);
-    const tienTBVS = Math.round(tongTien * phanTramTBVS);
+
     const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
     const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
+
     try {
-        // 1. Chạy Transaction lấy mã chuỗi ID tăng dần theo tháng
         const maDinhDanhId = await runTransaction(db, async (transaction) => {
             const counterSnapshot = await transaction.get(counterDocRef);
             let STT_HienTai = 1; 
             if (counterSnapshot.exists()) {
-                STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1; }
+                STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1; 
+            }
             transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
             const chuoiSTT = String(STT_HienTai).padStart(6, '0');
-            return `CP-${chuoiSTT}-${thang}-${nam}`; });
-        // 2. Gom đóng dữ liệu
+            return `CP-${chuoiSTT}-${thang}-${nam}`; 
+        });
+
         const duLieuGhiSo = {
             IDChiPhi: maDinhDanhId, 
             ngayPhatSinh: ngay,
@@ -1328,29 +1406,34 @@ window.luuNghiepVuVaoFirebase = async function() {
             ghiChu: ghiChu,
             ngayTaoHeThong: new Date().toISOString()
         };
-        // 3. Tiến hành ép ID tùy chỉnh vào tên Document
+
         const taiLieuChiPhiRef = doc(db, "CHIPHI", maDinhDanhId);
         await setDoc(taiLieuChiPhiRef, duLieuGhiSo);
-        // 🌟 HIỂU ỨNG THÔNG BÁO TRÊN NÚT BẤM TRONG 2 GIÂY
-        nutBam.style.background = "#2e7d32"; // Đổi sang màu xanh lá
+        
+        nutBam.style.background = "#2e7d32"; 
         nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã ghi sổ thành công! (${maDinhDanhId})`;
-        // Reset sạch form nhập liệu
+        
+        // Reset sạch form nhập liệu về trạng thái ban đầu
         document.getElementById('nvTongTien').value = '';
+        document.getElementById('tienTBVSInput').value = '';
+        document.getElementById('tienTBVSInput').readOnly = true;
+        document.getElementById('tienTBVSInput').style.background = "#f5f5f5";
         document.getElementById('nvGhiChu').value = '';
         document.getElementById('previewSon').innerText = '0 đ';
-        document.getElementById('previewTBVS').innerText = '0 đ';
-        // Đợi 2 giây rồi trả nút bấm về trạng thái ban đầu để nhập ca tiếp theo
+        document.getElementById('previewSon').dataset.value = 0;
+        document.getElementById('tienTBVSInput').dataset.value = 0;
+
         await new Promise(resolve => setTimeout(resolve, 2000));
     } catch (error) {
         console.error("Lỗi hệ thống chi tiết:", error);
         alert("Lỗi kết nối hoặc lỗi cú pháp Firebase! Chi tiết: " + error.message);
     } finally {
-        // KHÔI PHỤC TRẠNG THÁI NÚT BẤM VỀ MÀU XANH DƯƠNG BAN ĐẦU
         nutBam.disabled = false;
         nutBam.style.opacity = "1";
-        nutBam.style.background = "#0082C8"; // Màu xanh dương ban đầu của bạn
+        nutBam.style.background = "#0082C8"; 
         nutBam.style.cursor = "pointer";
-        nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;}
+        nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;
+    }
 };
     </script>
 </body>
