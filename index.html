@@ -321,7 +321,7 @@
                         <input type="text" id="nvGhiChu" placeholder="Ví dụ: Thanh toán tiền điện kho tháng 07..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
                     </div>
 
-                    <button class="nut-gui-xac-nhan" onclick="luuNghiepVuVaoFirebase()" style="width: 100%; background: #0082C8; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 130, 200, 0.25);">
+                    <button id="btnLuuNghiepVu" class="nut-gui-xac-nhan" onclick="luuNghiepVuVaoFirebase()" style="width: 100%; background: #0082C8; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 130, 200, 0.25);">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ & Lưu Trực Tuyến
                     </button>
                 </div>
@@ -1292,6 +1292,12 @@ window.tinhPhanBoNghiepVu = function() {
 
 // HÀM LƯU CHÍNH XÁC ĐÃ ĐƯỢC ĐƯA RA TOÀN CỤC ĐỂ HTML GỌI ONCLICK
 window.luuNghiepVuVaoFirebase = async function() {
+    // 🌟 LẤY ĐỐI TƯỢNG NÚT BẤM
+    const nutBam = document.getElementById('btnLuuNghiepVu');
+    
+    // Nếu nút đang ở trạng thái disable (đang xử lý), thoát ra luôn không chạy tiếp
+    if (nutBam.disabled) return;
+
     const ngay = document.getElementById('nvNgay').value;
     const hangMuc = document.getElementById('nvHangMuc').value;
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
@@ -1301,6 +1307,12 @@ window.luuNghiepVuVaoFirebase = async function() {
     if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
     if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
     
+    // 🌟 KHÓA NÚT BẤM NGAY LẬP TỨC & THAY ĐỔI GIAO DIỆN KHÁCH HÀNG
+    nutBam.disabled = true;
+    nutBam.style.opacity = "0.6";
+    nutBam.style.cursor = "not-allowed";
+    nutBam.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghi sổ... Vui lòng đợi`;
+
     const thoiGian = new Date(ngay);
     const nam = thoiGian.getFullYear();
     const thang = String(thoiGian.getMonth() + 1).padStart(2, '0'); 
@@ -1312,7 +1324,6 @@ window.luuNghiepVuVaoFirebase = async function() {
     const tienSon = Math.round(tongTien * phanTramSon);
     const tienTBVS = Math.round(tongTien * phanTramTBVS);
 
-    // 🌟 THAY ĐỔI 1: Tạo tài liệu bộ đếm riêng biệt cho từng tháng-năm (Ví dụ: bo_dem_06_2026)
     const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
     const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
 
@@ -1333,7 +1344,7 @@ window.luuNghiepVuVaoFirebase = async function() {
 
         // 2. Gom đóng dữ liệu
         const duLieuGhiSo = {
-            maDinhChuan: maDinhDanhId, // 🌟 THAY ĐỔI 2: Thêm ID vào thành 1 trường (field) bên trong bảng
+            maDinhChuan: maDinhDanhId, 
             ngayPhatSinh: ngay,
             nam: nam,
             thang: Number(thang), 
@@ -1361,10 +1372,14 @@ window.luuNghiepVuVaoFirebase = async function() {
     } catch (error) {
         console.error("Lỗi hệ thống chi tiết:", error);
         alert("Lỗi kết nối hoặc lỗi cú pháp Firebase! Chi tiết: " + error.message);
+    } finally {
+        // 🌟 KHÔI PHỤC TRẠNG THÁI NÚT BẤM KHI HOÀN THÀNH (BẤT KỂ THÀNH CÔNG HAY THẤT BẠI)
+        nutBam.disabled = false;
+        nutBam.style.opacity = "1";
+        nutBam.style.cursor = "pointer";
+        nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ & Lưu Trực Tuyến`;
     }
 };
-
-
     </script>
 </body>
 </html>
