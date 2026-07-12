@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
     <title>HAMACO-TMS</title>
     <link rel="icon" type="image/png" href="logo.png">
@@ -26,7 +26,7 @@
         .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
 
         /* ĐỊNH DẠNG CHUNG */
-        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; .container {height: 100dvh; } /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
+        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
         .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 5px 12px 0px 12px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
@@ -194,6 +194,20 @@
             background-repeat: no-repeat;
             background-position: right 12px center;
             padding-right: 30px !important;
+        }
+        body {
+            /* Đảm bảo body không bị tràn ra khỏi vùng hiển thị thực tế */
+            margin: 0;
+            padding: 0;
+            /* Dùng env() để iOS tự tính khoảng cách tai thỏ và thanh home dưới */
+            padding-bottom: env(safe-area-inset-bottom);
+            min-height: 100dvh;
+        }
+
+        /* Áp dụng cho container chính của form */
+        .container {
+            padding-bottom: constant(safe-area-inset-bottom); /* Cho iOS cũ */
+            padding-bottom: env(safe-area-inset-bottom);     /* Cho iOS mới */
         }
     </style>
 
@@ -1402,20 +1416,18 @@ window.luuNghiepVuVaoFirebase = async function() {
     // SỬA LỖI KẸT MÀN HÌNH - TỰ ĐỘNG HẠ KHUNG HÌNH VỀ VỊ TRÍ CŨ KHI ẨN BÀN PHÍM
     document.querySelectorAll('input, select, textarea').forEach(element => {
         element.addEventListener('blur', () => {
-            // Đợi bàn phím ẩn hoàn toàn (khoảng 100ms) rồi tính toán lại khung nhìn
             setTimeout(() => {
-                // Lấy vị trí cuộn hiện tại
-                const currentScroll = window.scrollY || document.documentElement.scrollTop;
+                // Ép iOS vẽ lại toàn bộ body bằng cách thay đổi tạm thời overflow
+                document.body.style.overflow = 'hidden';
                 
-                // Ép trình duyệt dịch chuyển nhẹ 1px rồi trả về vị trí cũ để reset lỗi kẹt màn hình của iOS
-                window.scrollTo(0, currentScroll + 1);
-                window.scrollTo(0, currentScroll);
+                // Cuộn về 0 để reset
+                window.scrollTo(0, 0);
                 
-                // Trường hợp nếu form nằm ở top, ép về hẳn 0
-                if (currentScroll < 10) {
-                    window.scrollTo(0, 0);
-                }
-            }, 100);
+                // Trả lại trạng thái cũ ngay lập tức
+                setTimeout(() => {
+                    document.body.style.overflow = '';
+                }, 50);
+            }, 150); // Đợi bàn phím đóng xong mới chạy
         });
     });
     </script>
