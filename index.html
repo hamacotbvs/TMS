@@ -355,7 +355,7 @@
     <script type="module">
         // CẤU HÌNH FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, getAggregateFromServer, sum, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, getAggregateFromServer, sum, addDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = { 
             apiKey: "AIzaSyAcFUlGoqOxxvpXKUY46rn1Yru1ek8upnE",
@@ -1298,16 +1298,13 @@ async function luuNghiepVuVaoFirebase() {
     const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
     const ghiChu = document.getElementById('nvGhiChu').value.trim();
     
-    // Kiểm tra dữ liệu hợp lệ trước khi đẩy lên Server
     if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
     if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
     
-    // Tách chuỗi thời gian để lưu thành trường độc lập phục vụ cho việc Group By vẽ biểu đồ
     const thoiGian = new Date(ngay);
     const nam = thoiGian.getFullYear();
-    const thang = thoiGian.getMonth() + 1; // getMonth trả từ 0 -> 11
+    const thang = String(thoiGian.getMonth() + 1).padStart(2, '0'); 
 
-    // Tính toán số tiền lưu trữ chính xác
     let phanTramSon = 0.5, phanTramTBVS = 0.5;
     if (kieuPhanBo === '67-33') { phanTramSon = 0.67; phanTramTBVS = 0.33; }
     else if (kieuPhanBo === 'dien-tich') { phanTramSon = 0.352; phanTramTBVS = 0.648; }
@@ -1315,36 +1312,53 @@ async function luuNghiepVuVaoFirebase() {
     const tienSon = Math.round(tongTien * phanTramSon);
     const tienTBVS = Math.round(tongTien * phanTramTBVS);
 
-    // Cấu trúc Data Object chuẩn lưu trữ kế toán
-    const duLieuGhiSo = {
-        ngayPhatSinh: ngay,
-        nam: nam,
-        thang: thang,
-        hangMuc: hangMuc,
-        chiPhiGoc: tongTien,
-        nguyenTacPhanBo: kieuPhanBo,
-        tienSon: tienSon,
-        tienTBVS: tienTBVS,
-        ghiChu: ghiChu,
-        ngayTaoHeThong: new Date().toISOString()
-    };
+    // Tham chiếu tới bộ đếm STT tự động tăng
+    const counterDocRef = doc(db, "CAUHINH_HETHONG", "bo_dem_chi_phi");
 
     try {
-        // "db" là biến firestore của bạn đã khai báo toàn cục
-        // Lưu vào collection mang tên NHATKYCHIPHI
-        const docRef = await addDoc(collection(db, "NHATKYCHIPHI"), duLieuGhiSo);
+        // 1. Chạy Transaction để lấy mã ID chuẩn dạng CP-000001-07-2026
+        const maDinhDanhId = await runTransaction(db, async (transaction) => {
+            const counterSnapshot = await transaction.get(counterDocRef);
+            
+            let STT_HienTai = 1; 
+            if (counterSnapshot.exists()) {
+                STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1;
+            }
+            
+            transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
+            const chuoiSTT = String(STT_HienTai).padStart(6, '0');
+            return `CP-${chuoiSTT}-${thang}-${nam}`;
+        });
+
+        // 2. Cấu trúc nội dung dữ liệu bên trong Document
+        const duLieuGhiSo = {
+            ngayPhatSinh: ngay,
+            nam: nam,
+            thang: Number(thang), 
+            hangMuc: hangMuc,
+            chiPhiGoc: tongTien,
+            nguyenTacPhanBo: kieuPhanBo,
+            tienSon: tienSon,
+            tienTBVS: tienTBVS,
+            ghiChu: ghiChu,
+            ngayTaoHeThong: new Date().toISOString()
+        };
+
+        // 🌟 ĐIỂM THAY ĐỔI CHÍNH: Ép mã tự sinh "maDinhDanhId" làm tên Document luôn
+        const taiLieuChiPhiRef = doc(db, "NHATKYCHUNG_KHO", maDinhDanhId);
+        await setDoc(taiLieuChiPhiRef, duLieuGhiSo);
         
-        alert(`🎉 Đã ghi sổ nghiệp vụ thành công!\nMã ID: ${docRef.id}`);
+        alert(`🎉 Đã ghi sổ thành công!\nDocument ID trên hệ thống là: ${maDinhDanhId}`);
         
-        // Reset form nhập liệu để chuẩn bị cho nghiệp vụ tiếp theo
+        // Reset sạch form nhập liệu
         document.getElementById('nvTongTien').value = '';
         document.getElementById('nvGhiChu').value = '';
         document.getElementById('previewSon').innerText = '0 đ';
         document.getElementById('previewTBVS').innerText = '0 đ';
         
-    } catch (lỗi) {
-        console.error("Lỗi không ghi được sổ dữ liệu: ", lỗi);
-        alert("Gặp lỗi kết nối mạng, không thể ghi dữ liệu lên hệ thống.");
+    } catch (error) {
+        console.error("Lỗi khi ghi đè Document ID:", error);
+        alert("Không thể kết nối Server để tạo ID riêng!");
     }
 }
 // 🌟 BẮT BUỘC: Đưa các hàm này ra phạm vi toàn cục để lệnh "onclick" ở HTML đọc được
