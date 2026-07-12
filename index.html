@@ -296,34 +296,23 @@
                     <!-- 3. Số tiền gốc -->
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Tổng số tiền thực tế (VNĐ):</label>
-                        <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu('TONG-TIEN')" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right;">
+                        <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right;">
                     </div>
 
                     <!-- 4. Nguyên tắc phân bổ -->
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Nguyên tắc phân bổ:</label>
-                        <select id="nvKieuPhanBo" onchange="tinhPhanBoNghiepVu('TI-LE')" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #0082C8;">
+                        <select id="nvKieuPhanBo" onchange="tinhPhanBoNghiepVu()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #0082C8;">
                             <option value="50-50">Tỷ lệ cố định 50% / 50%</option>
                             <option value="67-33">Tỷ lệ vận tải 67% / 33%</option>
                             <option value="dien-tich">Theo diện tích (Ví dụ: Sơn 35% - TBVS 65%)</option>
-                            <option value="tbvs-truoc">Phân bổ TBVS trước</option>
                         </select>
                     </div>
 
-                    <!-- 🌟 KHU VỰC ĐÃ CẬP NHẬT: XEM TRƯỚC VÀ NHẬP PHÂN BỔ TRỰC TIẾP -->
+                    <!-- Xem trước kết quả phân bổ -->
                     <div style="display: flex; gap: 10px; margin-top: 5px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                        <!-- Sơn phân bổ (Luôn tính tự động) -->
-                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">
-                            Sơn phân bổ:<br>
-                            <strong id="previewSon" style="color:#ef4444; font-size: 14px; display: block; margin-top: 7px;">0 đ</strong>
-                        </div>
-                        
-                        <!-- TBVS phân bổ (Chuyển thành input để nhập được khi chọn 'tbvs-truoc') -->
-                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">
-                            TBVS phân bổ:<br>
-                            <input type="number" id="tienTBVSInput" oninput="tinhPhanBoNghiepVu('TBVS')" placeholder="0" readonly 
-                                   style="width: 90%; text-align: center; color:#22c55e; font-size: 14px; font-weight: bold; border: none; background: transparent; padding: 4px 0; margin-top: 3px; outline: none;">
-                        </div>
+                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">Sơn phân bổ:<br><strong id="previewSon" style="color:#ef4444; font-size: 14px;">0 đ</strong></div>
+                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">TBVS phân bổ:<br><strong id="previewTBVS" style="color:#22c55e; font-size: 14px;">0 đ</strong></div>
                     </div>
 
                     <!-- 5. Ghi chú thêm -->
