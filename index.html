@@ -1399,13 +1399,23 @@ window.luuNghiepVuVaoFirebase = async function() {
         nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;}
 };
 
-    // SỬA LỖI KẸT KHUNG HÌNH KHI ẤN BÀN PHÍM NHẬP LIỆU TRÊN ĐIỆN THOẠI
+    // SỬA LỖI KẸT MÀN HÌNH - TỰ ĐỘNG HẠ KHUNG HÌNH VỀ VỊ TRÍ CŨ KHI ẨN BÀN PHÍM
     document.querySelectorAll('input, select, textarea').forEach(element => {
         element.addEventListener('blur', () => {
-            // Kiểm tra nếu là thiết bị di động thì cuộn nhẹ màn hình để reset khung nhìn
+            // Đợi bàn phím ẩn hoàn toàn (khoảng 100ms) rồi tính toán lại khung nhìn
             setTimeout(() => {
-                window.scrollTo(0, window.scrollY || document.documentElement.scrollTop);
-            }, 50);
+                // Lấy vị trí cuộn hiện tại
+                const currentScroll = window.scrollY || document.documentElement.scrollTop;
+                
+                // Ép trình duyệt dịch chuyển nhẹ 1px rồi trả về vị trí cũ để reset lỗi kẹt màn hình của iOS
+                window.scrollTo(0, currentScroll + 1);
+                window.scrollTo(0, currentScroll);
+                
+                // Trường hợp nếu form nằm ở top, ép về hẳn 0
+                if (currentScroll < 10) {
+                    window.scrollTo(0, 0);
+                }
+            }, 100);
         });
     });
     </script>
