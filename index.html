@@ -341,10 +341,10 @@
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Nguyên tắc phân bổ:</label>
                         <select id="nvKieuPhanBo" onchange="tinhPhanBoNghiepVu('thay-doi-nguyen-tac')" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #0082C8;">
-                            <option value="50-50">Tỷ lệ cố định 50% / 50%</option>
-                            <option value="67-33">Tỷ lệ vận tải 67% / 33%</option>
-                            <option value="dien-tich">Theo diện tích (Ví dụ: Sơn 35% - TBVS 65%)</option>
-                            <option value="tbvs-truoc">Phân bổ TBVS trước (Nhập tay số tiền)</option>
+                            <option value="Sơn: 50 - TBVS: 50">Kho 50% / 50%</option>
+                            <option value="Sơn: 67 - TBVS: 33">Vận tải 67% / 33%</option>
+                            <option value="Sơn: 35 - TBVS: 65">Diện tích (Sơn 35% - TBVS 65%)</option>
+                            <option value="tbvs-truoc">Phân bổ TBVS trước (Nhập tay)</option>
                         </select>
                     </div>
 
@@ -1348,8 +1348,8 @@ window.tinhPhanBoNghiepVu = function(nguonThayDoi) {
         if (nguonThayDoi === 'thay-doi-nguyen-tac') inputTBVS.value = '';
         // Tính tiền TBVS trước theo tỷ lệ %
         let phanTramTBVS = 0.5; // Mặc định của 50-50
-        if (kieuPhanBo === '67-33') phanTramTBVS = 0.33;
-        else if (kieuPhanBo === 'dien-tich') phanTramTBVS = 0.648;
+        if (kieuPhanBo === 'Sơn: 67 - TBVS: 33') phanTramTBVS = 0.33;
+        else if (kieuPhanBo === 'Sơn: 35 - TBVS: 65') phanTramTBVS = 0.648;
         tienTBVS = Math.round(tongTien * phanTramTBVS);}
     if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
         tienTBVS = lamTronHangTrieu(tienTBVS);
