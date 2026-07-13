@@ -228,12 +228,37 @@
         background-repeat: no-repeat;
         background-position: right 10px center;
         background-size: 16px;
-    }
+        }
 
-    /* KHUNG XEM LỊCH SỬ */
-    .modal-hidden { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
-    .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; border-radius: 10px; }
-    .btn-history { width: 100%; padding: 10px; background: #0082C8; color: white; border: none; border-radius: 5px; margin-bottom: 20px; }
+        /* --- CSS CHO LỊCH SỬ CHI PHÍ (NÂNG CẤP) --- */
+        .modal-hidden { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.6); z-index: 1000; 
+        }
+        .modal-content { 
+            background: white; margin: 5% auto; padding: 20px; width: 92%; 
+            border-radius: 12px; max-height: 80vh; display: flex; flex-direction: column;
+        }
+        /* Khu vực danh sách cuộn được */
+        #danhSachLichSu { 
+            overflow-y: auto; flex: 1; margin-top: 15px; padding-right: 5px; 
+        }
+        .btn-history { 
+            width: 100%; padding: 12px; background: #0082C8; color: white; 
+            border: none; border-radius: 8px; margin-bottom: 20px; font-weight: bold;
+        }
+        /* Style cho từng dòng chi phí */
+        .card-item {
+            background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; 
+            border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .card-item .header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .card-item .header strong { color: #1e293b; font-size: 14px; }
+        .card-item .header span { font-size: 11px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; }
+        .card-item .body { font-size: 13px; color: #64748b; }
+        .card-item .footer { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-del { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
+        .btn-edit { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
     </style>
 
 </head>
@@ -251,14 +276,15 @@
             <!-- Modal hiển thị lịch sử -->
             <div id="modalLichSu" class="modal-hidden">
                 <div class="modal-content">
-                    <h3>Lịch sử chi phí</h3>
-                    <!-- Chọn tháng -->
-                    <input type="month" id="thangLoc" onchange="taiLichSuTheoThang()">
-                    
-                    <div id="danhSachLichSu" style="margin-top: 15px;">
-                        <!-- Dữ liệu sẽ đổ vào đây -->
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>Lịch sử chi phí</h3>
+                        <button onclick="dongModal()" style="border:none; background:none; font-size: 20px;">×</button>
                     </div>
-                    <button onclick="dongModal()">Đóng</button>
+                    
+                    <input type="month" id="thangLoc" onchange="taiLichSuTheoThang()" style="padding: 10px; width: 100%; border-radius: 6px; border: 1px solid #ccc;">
+                    
+                    <!-- Danh sách card sẽ nằm ở đây -->
+                    <div id="danhSachLichSu"></div>
                 </div>
             </div>
         </div>
@@ -1541,31 +1567,56 @@ window.moLichSuChiPhi = () => {
 };
 
 window.taiLichSuTheoThang = async () => {
-    const thang = document.getElementById('thangLoc').value; // Định dạng "YYYY-MM"
+    const thang = document.getElementById('thangLoc').value;
+    if(!thang) return;
     const [nam, thg] = thang.split('-');
-    
     const container = document.getElementById('danhSachLichSu');
-    container.innerHTML = "Đang tải...";
+    
+    container.innerHTML = "<p style='text-align:center;'>Đang tải dữ liệu...</p>";
+    
+    try {
+        const q = query(collection(db, "CHIPHI"), 
+            where("nam", "==", Number(nam)), 
+            where("thang", "==", Number(thg)));
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            container.innerHTML = "<p style='text-align:center; color:#666;'>Tháng này chưa có chi phí nào.</p>";
+            return;
+        }
 
-    // Truy vấn dữ liệu từ Firestore
-    const q = query(collection(db, "CHIPHI"), 
-        where("nam", "==", Number(nam)), 
-        where("thang", "==", Number(thg)));
-    
-    const querySnapshot = await getDocs(q);
-    let html = `<table border="1" width="100%"><tr><th>Ngày</th><th>Hạng mục</th><th>Số tiền</th></tr>`;
-    
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        html += `<tr>
-            <td>${data.ngayPhatSinh}</td>
-            <td>${data.hangMuc}</td>
-            <td>${data.chiPhiGoc.toLocaleString()} đ</td>
-        </tr>`;
-    });
-    
-    html += `</table>`;
-    container.innerHTML = html;
+        let html = '';
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            // Đảm bảo dữ liệu số hiển thị đúng format
+            const tong = (data.chiPhiGoc || 0).toLocaleString('vi-VN');
+            const son = (data.tienSon || 0).toLocaleString('vi-VN');
+            const tbvs = (data.tienTBVS || 0).toLocaleString('vi-VN');
+
+            html += `
+            <div class="card-item">
+                <div class="header">
+                    <strong>${data.hangMuc}</strong> 
+                    <span>${data.loaiChiPhi || 'Khác'}</span>
+                </div>
+                <div class="body">
+                    <div style="font-weight: bold; color: #0082C8; margin-bottom: 5px;">${tong} đ</div>
+                    <div style="display:flex; justify-content: space-between; font-size: 12px; color: #555;">
+                        <span>Sơn: ${son} đ</span>
+                        <span>TBVS: ${tbvs} đ</span>
+                    </div>
+                </div>
+                <div class="footer">
+                    <button onclick="suaChiPhi('${doc.id}')" class="btn-edit">Sửa</button>
+                    <button onclick="xoaChiPhi('${doc.id}')" class="btn-del">Xóa</button>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = "<p style='color:red;'>Lỗi tải dữ liệu: " + e.message + "</p>";
+    }
 };
 
 window.dongModal = () => {
