@@ -1465,7 +1465,10 @@ window.luuNghiepVuVaoFirebase = async function() {
     nutBam.disabled = true;
     nutBam.style.opacity = "0.6";
     nutBam.style.cursor = "not-allowed";
-    nutBam.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghi sổ... Vui lòng đợi`;
+    const laCheDoSua = !!window.idGiaoDichDangSua;
+    nutBam.innerHTML = laCheDoSua 
+        ? `<i class="fa-solid fa-spinner fa-spin"></i> Đang cập nhật... Vui lòng đợi`
+        : `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghi sổ... Vui lòng đợi`;
     const thoiGian = new Date(ngay);
     const nam = thoiGian.getFullYear();
     const thang = String(thoiGian.getMonth() + 1).padStart(2, '0'); 
@@ -1490,18 +1493,28 @@ window.luuNghiepVuVaoFirebase = async function() {
     // Tiền Sơn luôn bằng Tổng tiền trừ đi TBVS (Không sợ lệch 1 đồng do làm tròn)
     const tienSon = tongTien - tienTBVS;
 
-    const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
-    const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
     try {
-        // 1. Chạy Transaction lấy mã chuỗi ID tăng dần theo tháng
-        const maDinhDanhId = await runTransaction(db, async (transaction) => {
-            const counterSnapshot = await transaction.get(counterDocRef);
-            let STT_HienTai = 1; 
-            if (counterSnapshot.exists()) {
-                STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1; }
-            transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
-            const chuoiSTT = String(STT_HienTai).padStart(6, '0');
-            return `CP-${chuoiSTT}-${thang}-${nam}`; });
+        let maDinhDanhId = "";
+
+        // TỰ ĐỘNG PHÂN TÁCH: SỬA HOẶC THÊM MỚI
+        if (laCheDoSua) {
+            // NẾU LÀ SỬA: Lấy lại chính xác ID đang sửa lưu trong cột IDChiPhi
+            maDinhDanhId = window.idGiaoDichDangSua;
+        } else {
+            // NẾU LÀ THÊM MỚI: Chạy Transaction sinh mã tự tăng
+            const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
+            const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
+            maDinhDanhId = await runTransaction(db, async (transaction) => {
+                const counterSnapshot = await transaction.get(counterDocRef);
+                let STT_HienTai = 1; 
+                if (counterSnapshot.exists()) {
+                    STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1; 
+                }
+                transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
+                const chuoiSTT = String(STT_HienTai).padStart(6, '0');
+                return `CP-${chuoiSTT}-${thang}-${nam}`; 
+            });
+        }
         // phân nhóm cố định biến phí
         // Lấy index của option được chọn (0 là -- Chọn hạng mục --)
         const selectElement = document.getElementById('nvHangMuc');
@@ -1534,17 +1547,26 @@ window.luuNghiepVuVaoFirebase = async function() {
             tienSon: tienSon,
             tienTBVS: tienTBVS,
             ghiChu: ghiChu,
-            ngayTaoHeThong: new Date().toISOString()
+            ngayCapNhatCuoi: new Date().toISOString()
+            
         };
+        // Nếu là thêm mới thì bổ sung thêm ngày tạo đầu tiên
+        if (!laCheDoSua) {
+            duLieuGhiSo.ngayTaoHeThong = new Date().toISOString();
         if (phuongTien) {duLieuGhiSo.phuongTien = phuongTien;}  // Chỉ đẩy data phương tiện lên Firebase nếu có chọn xe
 
         // 3. Tiến hành ép ID tùy chỉnh vào tên Document
         const taiLieuChiPhiRef = doc(db, "CHIPHI", maDinhDanhId);
-        await setDoc(taiLieuChiPhiRef, duLieuGhiSo);
-        // 🌟 HIỂU ỨNG THÔNG BÁO TRÊN NÚT BẤM TRONG 2 GIÂY
-        nutBam.style.background = "#2e7d32"; // Đổi sang màu xanh lá
-        nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã ghi sổ thành công! (${maDinhDanhId})`;
-        // Reset sạch form nhập liệu
+        await setDoc(taiLieuChiPhiRef, duLieuGhiSo, { merge: true });
+        // HIỂN THỊ THÔNG BÁO THÀNH CÔNG KHÁC NHAU THEO TRẠNG THÁI
+        nutBam.style.background = "#2e7d32"; 
+        if (laCheDoSua) {
+            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Cập nhật thành công! (${maDinhDanhId})`;
+        } else {
+            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã ghi sổ thành công! (${maDinhDanhId})`;
+        }
+        // XÓA SẠCH FORM VÀ GIẢI PHÓNG TRẠNG THÁI SỬA
+        window.idGiaoDichDangSua = null; // 🌟 Reset biến ID về null để lần sau bấm lại là thêm mới
         document.getElementById('nvTongTien').value = '';
         document.getElementById('tienTBVSInput').value = ''; // 🌟 THÊM DÒNG NÀY ĐỂ XÓA Ô NHẬP TAY TBVS
         document.getElementById('nvGhiChu').value = '';
@@ -1553,6 +1575,10 @@ window.luuNghiepVuVaoFirebase = async function() {
         // Xóa và ẩn ô phương tiện đi sau khi lưu thành công
         document.getElementById('nvPhuongTien').value = ''; 
         document.getElementById('vungPhuongTien').style.display = 'none';
+        // Nếu có mở bảng danh sách lịch sử, tự động tải lại để cập nhật số liệu mới ngay lập tức
+        if (typeof taiLichSuTheoThang === 'function') {
+            taiLichSuTheoThang();
+        }
         // Đợi 2 giây rồi trả nút bấm về trạng thái ban đầu để nhập ca tiếp theo
         await new Promise(resolve => setTimeout(resolve, 2000));
     } catch (error) {
