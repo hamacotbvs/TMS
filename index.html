@@ -1381,16 +1381,15 @@ document.getElementById('nvNgay').value = new Date().toISOString().slice(0, 10);
 // Khai báo hàm tự động chọn tỷ lệ ra phạm vi toàn cục
 window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
     const selector = document.getElementById('nvKieuPhanBo');
-    const selectElement = document.getElementById('nvHangMuc');
-    const selectedIndex = selectElement.selectedIndex;
     const vungPhuongTien = document.getElementById('vungPhuongTien');
     if (!hangMuc) return;
-    // --- LOGIC ẨN/HIỆN PHƯƠNG TIỆN TRÊN CÙNG MỘT DÒNG ---
-    const loaiChiPhi = (selectedIndex <= 12) ? "Kho" : "Logistics";
-    if (loaiChiPhi === "Logistics" && (selectedIndex === 22 || selectedIndex === 25)) {
-        vungPhuongTien.style.display = 'flex'; } else { // Hiện lên, Flexbox sẽ tự chia đôi dòng với ô Tổng tiền
-        vungPhuongTien.style.display = 'none';  // Ẩn đi, ô Tổng tiền tự động giãn rộng 100%
-        document.getElementById('nvPhuongTien').value = ''; } // Reset lựa chọn xe
+    // --- LOGIC ẨN/HIỆN PHƯƠNG TIỆN (Dùng tên trực tiếp cho chính xác 100%) ---
+    if (hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") {
+        vungPhuongTien.style.display = 'flex'; // Hiện ra chia đôi dòng
+    } else { 
+        vungPhuongTien.style.display = 'none'; // Ẩn đi
+        document.getElementById('nvPhuongTien').value = ''; // Reset lựa chọn xe
+    }
     
     // Nhóm 1: 35 - 65
     if (hangMuc.includes("Thuê mặt bằng")) {
@@ -1458,8 +1457,13 @@ window.luuNghiepVuVaoFirebase = async function() {
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
     const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
     const ghiChu = document.getElementById('nvGhiChu').value.trim();
+    const phuongTien = document.getElementById('nvPhuongTien').value;
     if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
     if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
+    // 🌟 THÊM MỚI: Bắt buộc chọn xe nếu thuộc 2 hạng mục này
+    if ((hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") && !phuongTien) {
+        alert("Vui lòng chọn biển số xe phương tiện!");
+        return;}
     // 🌟 KHÓA NÚT BẤM NGAY LẬP TỨC & THAY ĐỔI GIAO DIỆN KHÁCH HÀNG
     nutBam.disabled = true;
     nutBam.style.opacity = "0.6";
@@ -1535,6 +1539,7 @@ window.luuNghiepVuVaoFirebase = async function() {
             ghiChu: ghiChu,
             ngayTaoHeThong: new Date().toISOString()
         };
+        if (phuongTien) {duLieuGhiSo.phuongTien = phuongTien;}  // Chỉ đẩy data phương tiện lên Firebase nếu có chọn xe
 
         // 3. Tiến hành ép ID tùy chỉnh vào tên Document
         const taiLieuChiPhiRef = doc(db, "CHIPHI", maDinhDanhId);
@@ -1548,6 +1553,9 @@ window.luuNghiepVuVaoFirebase = async function() {
         document.getElementById('nvGhiChu').value = '';
         document.getElementById('previewSon').innerText = '0 đ';
         document.getElementById('previewTBVS').innerText = '0 đ';
+        // Xóa và ẩn ô phương tiện đi sau khi lưu thành công
+        document.getElementById('nvPhuongTien').value = ''; 
+        document.getElementById('vungPhuongTien').style.display = 'none';
         // Đợi 2 giây rồi trả nút bấm về trạng thái ban đầu để nhập ca tiếp theo
         await new Promise(resolve => setTimeout(resolve, 2000));
     } catch (error) {
