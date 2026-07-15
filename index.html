@@ -1764,13 +1764,12 @@ function khoiTaoVuotChamLichSu() {
             xDiChuyen = 0;
         };
 
-        // Gắn sự kiện vuốt chạm trên Điện thoại
-        noiDung.addEventListener('touchstart', batDauVuot); 
-        noiDung.addEventListener('touchmove', dangKeo); 
-        noiDung.addEventListener('touchend', ketThucVuot); 
-        
-        // Gắn sự kiện rê chuột trên Máy tính (tiện cho việc test)
+        // Gắn sự kiện rê chuột trên Máy tính (Tiện cho việc test chuột)
         noiDung.addEventListener('mousedown', (e) => {
+            // Chặn hành vi bôi đen text/kéo hình mặc định của trình duyệt để chuột mượt mà hơn
+            if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+                e.preventDefault();
+            }
             batDauVuot(e);
             const xửLýDiChuột = (ev) => dangKeo(ev);
             const xửLýThảChuột = () => { 
@@ -1783,6 +1782,94 @@ function khoiTaoVuotChamLichSu() {
         }); 
     });
 }
+
+window.suaChiPhi = function(idTaiLieu) {
+    // 🌟 1. Tìm tấm card dựa theo ID tài liệu
+    const card = document.querySelector(`.card-item[data-id="${idTaiLieu}"]`);
+    if (!card) return;
+
+    // 🌟 2. Trích xuất dữ liệu từ các thẻ HTML (Dựa theo cấu trúc hàm render của bạn)
+    const hangMuc = card.querySelector('.giao-dich-hang-muc').innerText;
+    const ngay = card.querySelector('.giao-dich-thoi-gian').innerText;
+    const tongTien = card.querySelector('.giao-dich-tien').getAttribute('data-raw');
+    const phuongTien = card.querySelector('.giao-dich-xe') ? card.querySelector('.giao-dich-xe').value : '';
+    const ghiChu = card.querySelector('.giao-dich-ghi-chu') ? card.querySelector('.giao-dich-ghi-chu').value : '';
+
+    // 🌟 3. Điền ngược toàn bộ dữ liệu vào Form nhập liệu chính
+    document.getElementById('nvNgay').value = ngay;
+    document.getElementById('nvHangMuc').value = hangMuc;
+    document.getElementById('nvTongTien').value = tongTien;
+    document.getElementById('nvGhiChu').value = ghiChu;
+
+    // 🌟 4. Kích hoạt logic tự động chọn tỷ lệ phân bổ & hiển thị vùng xe nếu có
+    if (typeof window.tuDongChonTyLeTheoHangMuc === 'function') {
+        window.tuDongChonTyLeTheoHangMuc(hangMuc);
+    }
+
+    // Điền xe vào sau khi hàm tự động hiển thị vùng xe chạy xong
+    if (phuongTien) {
+        document.getElementById('nvPhuongTien').value = phuongTien;
+    }
+
+    // 🌟 5. GHI NHỚ ID VÀO BIẾN TOÀN CỤC ĐỂ HÀM LƯU ĐÈ KHÔNG TẠO DÒNG MỚI
+    window.idGiaoDichDangSua = idTaiLieu;
+
+    // Đổi diện mạo nút bấm để người dùng biết họ đang ở chế độ Sửa
+    const nutBam = document.getElementById('btnLuuNghiepVu');
+    if (nutBam) {
+        nutBam.style.background = "#e67e22"; // Đổi sang màu cam (Chế độ sửa)
+        nutBam.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Cập nhật thay đổi`;
+    }
+
+    // Cuộn màn hình lên trên đầu form để tiện thao tác
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+window.xoaChiPhi = async function(idTaiLieu) {
+    const card = document.querySelector(`.card-item[data-id="${idTaiLieu}"]`);
+    const hangMuc = card ? card.querySelector('.giao-dich-hang-muc').innerText : "Chi phí";
+
+    // Hiện hộp thoại xác nhận nhanh trước khi xóa dữ liệu
+    if (!confirm(`Bạn có chắc chắn muốn XÓA mục "${hangMuc}" này không? Thao tác không thể hoàn tác.`)) {
+        return;
+    }
+
+    try {
+        // Thực hiện lệnh xóa trực tiếp document trên Firebase
+        await deleteDoc(doc(db, "CHIPHI", idTaiLieu));
+        
+        alert("Đã xóa chi phí thành công!");
+
+        // Tự động tải lại danh sách lịch sử tháng đó để cập nhật giao diện lập tức
+        if (typeof taiLichSuTheoThang === 'function') {
+            taiLichSuTheoThang();
+        }
+
+        // Nếu tình cờ dòng vừa xóa cũng chính là dòng đang mở ra để sửa thì reset form luôn
+        if (window.idGiaoDichDangSua === idTaiLieu) {
+            window.idGiaoDichDangSua = null;
+            document.getElementById('nvTongTien').value = '';
+            document.getElementById('nvGhiChu').value = '';
+            const nutBam = document.getElementById('btnLuuNghiepVu');
+            if (nutBam) {
+                nutBam.style.background = "#0082C8";
+                nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;
+            }
+        }
+    } catch (error) {
+        console.error("Lỗi khi xóa dữ liệu:", error);
+        alert("Không thể xóa. Lỗi: " + error.message);
+    }
+};
+window.huyCheDoSua = function() {
+    window.idGiaoDichDangSua = null;
+    document.getElementById('nvTongTien').value = '';
+    document.getElementById('nvGhiChu').value = '';
+    const nutBam = document.getElementById('btnLuuNghiepVu');
+    if (nutBam) {
+        nutBam.style.background = "#0082C8";
+        nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;
+    }
+};
     </script>
 </body>
 </html>
