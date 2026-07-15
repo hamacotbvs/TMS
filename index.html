@@ -396,10 +396,24 @@
                         </select>
                     </div>
 
-                    <!-- 3. Số tiền gốc -->
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Tổng số tiền thực tế (VNĐ):</label>
-                        <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right;">
+                    <!-- 3. Số tiền gốc & Phương tiện giao nhận -->
+                    <div style="display: flex; gap: 12px; width: 100%;">
+                        <!-- Ô nhập tiền gốc (Tự động co giãn) -->
+                        <div id="vungTongTien" style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Tổng số tiền thực tế (VNĐ):</label>
+                            <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right; width: 100%; box-sizing: border-box;">
+                        </div>
+
+                        <!-- Ô chọn Phương tiện (Mặc định ẩn, tự động hiện bên phải ô Số tiền) -->
+                        <div id="vungPhuongTien" style="display: none; flex: 1; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
+                            <select id="nvPhuongTien" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box; height: 41px;">
+                                <option value="">-- Chọn xe --</option>
+                                <option value="65C-06126">65C-06126</option>
+                                <option value="65H-02591">65H-02591</option>
+                                <option value="65C-12290">65C-12290</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- 4. Nguyên tắc phân bổ -->
@@ -1367,8 +1381,17 @@ document.getElementById('nvNgay').value = new Date().toISOString().slice(0, 10);
 // Khai báo hàm tự động chọn tỷ lệ ra phạm vi toàn cục
 window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
     const selector = document.getElementById('nvKieuPhanBo');
+    const selectElement = document.getElementById('nvHangMuc');
+    const selectedIndex = selectElement.selectedIndex;
+    const vungPhuongTien = document.getElementById('vungPhuongTien');
     if (!hangMuc) return;
-
+    // --- LOGIC ẨN/HIỆN PHƯƠNG TIỆN TRÊN CÙNG MỘT DÒNG ---
+    const loaiChiPhi = (selectedIndex <= 12) ? "Kho" : "Logistics";
+    if (loaiChiPhi === "Logistics" && (selectedIndex === 22 || selectedIndex === 25)) {
+        vungPhuongTien.style.display = 'block'; } else { // Hiện lên, Flexbox sẽ tự chia đôi dòng với ô Tổng tiền
+        vungPhuongTien.style.display = 'none';  // Ẩn đi, ô Tổng tiền tự động giãn rộng 100%
+        document.getElementById('nvPhuongTien').value = ''; } // Reset lựa chọn xe
+    
     // Nhóm 1: 35 - 65
     if (hangMuc.includes("Thuê mặt bằng")) {
         selector.value = "Sơn: 35 - TBVS: 65"; }
