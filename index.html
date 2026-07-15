@@ -1388,7 +1388,7 @@ window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
     // --- LOGIC ẨN/HIỆN PHƯƠNG TIỆN TRÊN CÙNG MỘT DÒNG ---
     const loaiChiPhi = (selectedIndex <= 12) ? "Kho" : "Logistics";
     if (loaiChiPhi === "Logistics" && (selectedIndex === 22 || selectedIndex === 25)) {
-        vungPhuongTien.style.display = 'block'; } else { // Hiện lên, Flexbox sẽ tự chia đôi dòng với ô Tổng tiền
+        vungPhuongTien.style.display = 'flex'; } else { // Hiện lên, Flexbox sẽ tự chia đôi dòng với ô Tổng tiền
         vungPhuongTien.style.display = 'none';  // Ẩn đi, ô Tổng tiền tự động giãn rộng 100%
         document.getElementById('nvPhuongTien').value = ''; } // Reset lựa chọn xe
     
