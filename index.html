@@ -230,35 +230,32 @@
         background-size: 16px;
         }
 
-        /* --- CSS CHO LỊCH SỬ CHI PHÍ (NÂNG CẤP) --- */
-        .modal-hidden { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.6); z-index: 1000; 
-        }
-        .modal-content { 
-            background: white; margin: 5% auto; padding: 20px; width: 92%; 
-            border-radius: 12px; max-height: 80vh; display: flex; flex-direction: column;
-        }
+        /* CSS CHO LỊCH SỬ CHI PHÍ (NÂNG CẤP) */
+        .modal-hidden { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
+        .modal-content { background: white; margin: 5% auto; padding: 20px; width: 92%; border-radius: 12px; max-height: 80vh; display: flex; flex-direction: column;}
         /* Khu vực danh sách cuộn được */
-        #danhSachLichSu { 
-            overflow-y: auto; flex: 1; margin-top: 15px; padding-right: 5px; 
-        }
-        .btn-history { 
-            width: 100%; padding: 12px; background: #0082C8; color: white; 
-            border: none; border-radius: 8px; margin-bottom: 20px; font-weight: bold;
-        }
+        #danhSachLichSu { overflow-y: auto; flex: 1; margin-top: 15px; padding-right: 5px; }
+        .btn-history { width: 100%; padding: 12px; background: #0082C8; color: white; border: none; border-radius: 8px; margin-bottom: 20px; font-weight: bold;}
+         /* LỚP NỀN ẨN PHÍA SAU KHI VUỐT */
+         .card-swipe { position: relative; background: #f1f5f9; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+        .nen-hanh-dong {position: absolute;top: 0;bottom: 0;left: 0;right: 0;z-index: 1;display: flex;align-items: center;justify-content: space-between;font-weight: 600;font-size: 14px;color: white;}
+        .hanh-dong-sua {background-color: #3498db;height: 100%;width: 50%;display: flex;align-items: center;padding-left: 20px;justify-content: flex-start; cursor: pointer;}
+        .hanh-dong-xoa {background-color: #e74c3c;height: 100%;width: 50%;display: flex;align-items: center;padding-right: 20px;justify-content: flex-end; cursor: pointer;}
         /* Style cho từng dòng chi phí */
         .card-item {
-            background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; 
-            border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            z-index: 2;
+            margin-bottom: 0 !important; /* Đè margin-bottom cũ để chuyển sang cho .card-swipe quản lý */
+            transition: transform 0.25s ease-out; /* Tạo hiệu ứng trượt mượt mà */
         }
         .card-item .header { display: flex; justify-content: space-between; margin-bottom: 8px; }
         .card-item .header strong { color: #1e293b; font-size: 14px; }
         .card-item .header span { font-size: 11px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; }
         .card-item .body { font-size: 13px; color: #64748b; }
-        .card-item .footer { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-del { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
-        .btn-edit { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
     </style>
 
 </head>
@@ -1625,26 +1622,46 @@ window.taiLichSuTheoThang = async () => {
             const son = (data.tienSon || 0).toLocaleString('vi-VN');
             const tbvs = (data.tienTBVS || 0).toLocaleString('vi-VN');
 
+            // Cấu trúc HTML mới: Tương thích hoàn hảo với CSS vuốt của bạn
             html += `
-            <div class="card-item">
-                <div class="header">
-                    <strong>${data.hangMuc}</strong> 
-                    <span>${data.loaiChiPhi || 'Khác'}</span>
-                </div>
-                <div class="body">
-                    <div style="font-weight: bold; color: #0082C8; margin-bottom: 5px;">${tong} đ</div>
-                    <div style="display:flex; justify-content: space-between; font-size: 12px; color: #555;">
-                        <span>Sơn: ${son} đ</span>
-                        <span>TBVS: ${tbvs} đ</span>
+            <div class="card-swipe" id="wrapper-${doc.id}">
+                <!-- Lớp nền ẩn phía sau khi vuốt (CSS của bạn) -->
+                <div class="nen-hanh-dong">
+                    <div class="hanh-dong-sua">
+                        <i class="fa-solid fa-pen-to-square"></i> <span style="margin-left: 8px;">Sửa</span>
+                    </div>
+                    <div class="hanh-dong-xoa">
+                        <span style="margin-right: 8px;">Xóa</span> <i class="fa-solid fa-trash-can"></i>
                     </div>
                 </div>
-                <div class="footer">
-                    <button onclick="suaChiPhi('${doc.id}')" class="btn-edit">Sửa</button>
-                    <button onclick="xoaChiPhi('${doc.id}')" class="btn-del">Xóa</button>
+
+                <!-- Tấm Card nội dung chính nằm đè lên trên (Người dùng vuốt tấm này) -->
+                <div class="card-item giao-dich-noi-dung" data-id="${doc.id}">
+                    <div class="header">
+                        <strong class="giao-dich-hang-muc">${data.hangMuc}</strong> 
+                        <span class="giao-dich-thoi-gian" style="display:none;">${data.ngayPhatSinh || ''}</span> <!-- Thẻ ẩn lưu ngày để JS tự bốc thuốc -->
+                        <span>${data.loaiChiPhi || 'Khác'}</span>
+                    </div>
+                    <div class="body">
+                        <!-- Lưu chi phí gốc thô vào thuộc tính data để dễ lấy ra tính toán khi sửa -->
+                        <div class="giao-dich-tien" data-raw="${data.chiPhiGoc || 0}" style="font-weight: bold; color: #0082C8; margin-bottom: 5px;">${tong} đ</div>
+                        <div style="display:flex; justify-content: space-between; font-size: 12px; color: #555;">
+                            <span>Sơn: ${son} đ</span>
+                            <span>TBVS: ${tbvs} đ</span>
+                        </div>
+                        <!-- Lưu trữ thêm các thông tin ẩn để điền ngược form chuẩn xác -->
+                        <input type="hidden" class="giao-dich-xe" value="${data.phuongTien || ''}">
+                        <input type="hidden" class="giao-dich-ghi-chu" value="${data.ghiChu || ''}">
+                    </div>
                 </div>
             </div>`;
         });
+        
         container.innerHTML = html;
+
+        // 🌟 KÍCH HOẠT HIỆU ỨNG VUỐT CHẠM CHO CÁC DÒNG VỪA TẢI XONG
+        khoiTaoVuotChamLichSu();
+
     } catch (e) {
         container.innerHTML = "<p style='color:red;'>Lỗi tải dữ liệu: " + e.message + "</p>";
     }
@@ -1653,6 +1670,90 @@ window.taiLichSuTheoThang = async () => {
 window.dongModal = () => {
     document.getElementById('modalLichSu').style.display = 'none';
 };
+// HÀM KHỞI TẠO ĐĂNG KÝ SỰ KIỆN VUỐT
+function khoiTaoVuotChamLichSu() {
+    document.querySelectorAll('.giao-dich-noi-dung').forEach(noiDung => {
+        let xBatDau = 0; 
+        let xDiChuyen = 0; 
+        let dangVuot = false;
+
+        const batDauVuot = (e) => { 
+            dangVuot = true; 
+            xBatDau = e.touches ? e.touches[0].clientX : e.clientX; 
+        };
+
+        const dangKeo = (e) => { 
+            if (!dangVuot) return; 
+            const xHienTai = e.touches ? e.touches[0].clientX : e.clientX; 
+            xDiChuyen = xHienTai - xBatDau; 
+            
+            // Giới hạn biên độ kéo tối đa 100px sang mỗi bên
+            if (xDiChuyen > 100) xDiChuyen = 100; 
+            if (xDiChuyen < -100) xDiChuyen = -100; 
+            
+            noiDung.style.transform = `translateX(${xDiChuyen}px)`; 
+            noiDung.style.transition = 'none';
+        };
+
+        const ketThucVuot = async () => { 
+            if (!dangVuot) return; 
+            dangVuot = false; 
+            noiDung.style.transition = 'transform 0.2s ease-out';
+            
+            const idTaiLieu = noiDung.getAttribute('data-id');
+
+            // 1. VUỐT SANG TRÁI (Kéo sang trái > 60px) -> Kích hoạt XÓA
+            if (xDiChuyen < -60) {
+                noiDung.style.transform = 'translateX(-50%)'; // Giữ nguyên vị trí lộ nửa màu đỏ
+                
+                setTimeout(() => {
+                    // Gọi lại chính xác hàm xóa cũ của bạn
+                    if (typeof xoaChiPhi === 'function') {
+                        xoaChiPhi(idTaiLieu);
+                    }
+                    // Trả lại vị trí cũ sau khi xử lý xong
+                    noiDung.style.transform = 'translateX(0)';
+                }, 200);
+            } 
+            // 2. VUỐT SANG PHẢI (Kéo sang phải > 60px) -> Kích hoạt SỬA
+            else if (xDiChuyen > 60) {
+                noiDung.style.transform = 'translateX(0)'; // Trả card về vị trí cũ
+
+                setTimeout(() => {
+                    // Gọi lại chính xác hàm sửa cũ của bạn
+                    if (typeof suaChiPhi === 'function') {
+                        suaChiPhi(idTaiLieu);
+                    }
+                    // Đóng modal lịch sử lại để người dùng thấy form nhập liệu
+                    dongModal();
+                }, 100);
+            } 
+            // 3. VUỐT KHÔNG ĐỦ LỰC -> Trả về vị trí cũ
+            else { 
+                noiDung.style.transform = 'translateX(0)'; 
+            }
+            xDiChuyen = 0;
+        };
+
+        // Gắn sự kiện vuốt chạm trên Điện thoại
+        noiDung.addEventListener('touchstart', batDauVuot); 
+        noiDung.addEventListener('touchmove', dangKeo); 
+        noiDung.addEventListener('touchend', ketThucVuot); 
+        
+        // Gắn sự kiện rê chuột trên Máy tính (tiện cho việc test)
+        noiDung.addEventListener('mousedown', (e) => {
+            batDauVuot(e);
+            const xửLýDiChuột = (ev) => dangKeo(ev);
+            const xửLýThảChuột = () => { 
+                ketThucVuot(); 
+                window.removeEventListener('mousemove', xửLýDiChuột); 
+                window.removeEventListener('mouseup', xửLýThảChuột); 
+            };
+            window.addEventListener('mousemove', xửLýDiChuột); 
+            window.addEventListener('mouseup', xửLýThảChuột);
+        }); 
+    });
+}
     </script>
 </body>
 </html>
