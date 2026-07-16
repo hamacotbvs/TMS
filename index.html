@@ -231,31 +231,189 @@
         }
 
         /* CSS CHO LỊCH SỬ CHI PHÍ (NÂNG CẤP) */
-        .modal-hidden { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
-        .modal-content { background: white; margin: 5% auto; padding: 20px; width: 92%; border-radius: 12px; max-height: 80vh; display: flex; flex-direction: column;}
-        /* Khu vực danh sách cuộn được */
-        #danhSachLichSu { overflow-y: auto; flex: 1; margin-top: 15px; padding-right: 5px; }
-        .btn-history { width: 100%; padding: 12px; background: #0082C8; color: white; border: none; border-radius: 8px; margin-bottom: 20px; font-weight: bold;}
-         /* LỚP NỀN ẨN PHÍA SAU KHI VUỐT */
-         .card-swipe { position: relative; background: #f1f5f9; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
-        .nen-hanh-dong {position: absolute;top: 0;bottom: 0;left: 0;right: 0;z-index: 1;display: flex;align-items: center;justify-content: space-between;font-weight: 600;font-size: 14px;color: white;}
-        .hanh-dong-sua {background-color: #3498db;height: 100%;width: 50%;display: flex;align-items: center;padding-left: 20px;justify-content: flex-start; cursor: pointer;}
-        .hanh-dong-xoa {background-color: #e74c3c;height: 100%;width: 50%;display: flex;align-items: center;padding-right: 20px;justify-content: flex-end; cursor: pointer;}
-        /* Style cho từng dòng chi phí */
+
+        /* Khung nền Modal mờ */
+        .modal-hidden { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.6); /* Màu nền tối sâu hơn */
+            backdrop-filter: blur(4px); /* Làm mờ hậu cảnh sang trọng */
+            z-index: 1000; 
+        }
+
+        /* Nội dung Modal dạng hộp bo tròn */
+        .modal-content { 
+            background: #f8fafc; /* Nền xám nhẹ dịu mắt */
+            margin: 8vh auto; 
+            padding: 24px; 
+            width: 92%; 
+            max-width: 500px;
+            border-radius: 20px; 
+            max-height: 82vh; 
+            display: flex; 
+            flex-direction: column;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Tiêu đề Modal */
+        .modal-header h3 {
+            font-size: 18px;
+            color: #0f172a;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        /* Bộ lọc tháng */
+        #thangLoc {
+            padding: 12px 16px; 
+            width: 100%; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            background: #ffffff;
+            font-size: 15px;
+            color: #334155;
+            font-weight: 500;
+            margin-top: 15px;
+            outline: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        #thangLoc:focus {
+            border-color: #0082C8;
+            box-shadow: 0 0 0 3px rgba(0, 130, 200, 0.15);
+        }
+
+        /* Vùng cuộn danh sách */
+        #danhSachLichSu { 
+            overflow-y: auto; 
+            flex: 1; 
+            margin-top: 16px; 
+            padding-right: 2px; 
+        }
+
+        /* Ẩn thanh cuộn xấu xí nhưng vẫn cuộn được */
+        #danhSachLichSu::-webkit-scrollbar { width: 4px; }
+        #danhSachLichSu::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Bọc viền vuốt chạm */
+        .card-swipe { 
+            position: relative; 
+            background: #e2e8f0; 
+            border-radius: 14px; 
+            margin-bottom: 14px; 
+            overflow: hidden; 
+        }
+
+        /* Nền chức năng ẩn phía sau */
+        .nen-hanh-dong {
+            position: absolute;
+            top: 0; bottom: 0; left: 0; right: 0;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+            color: white;
+        }
+        .hanh-dong-sua {
+            background: #3498db;
+            height: 100%; width: 50%;
+            display: flex; align-items: center;
+            padding-left: 20px; justify-content: flex-start; 
+            font-weight: 600;
+        }
+        .hanh-dong-xoa {
+            background: #e74c3c;
+            height: 100%; width: 50%;
+            display: flex; align-items: center;
+            padding-right: 20px; justify-content: flex-end; 
+            font-weight: 600;
+        }
+
+        /* TẤM CARD NỘI DUNG CHÍNH (THAY ĐỔI MẠNH MẼ) */
         .card-item {
             background: #ffffff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 16px;
+            border-radius: 14px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             position: relative;
             z-index: 2;
-            margin-bottom: 0 !important; /* Đè margin-bottom cũ để chuyển sang cho .card-swipe quản lý */
-            transition: transform 0.25s ease-out; /* Tạo hiệu ứng trượt mượt mà */
+            margin-bottom: 0 !important;
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+            border-left: 5px solid #cbd5e1; /* Vách màu mặc định */
         }
-        .card-item .header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .card-item .header strong { color: #1e293b; font-size: 14px; }
-        .card-item .header span { font-size: 11px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; }
-        .card-item .body { font-size: 13px; color: #64748b; }
+
+        /* Đổi màu vách Card tùy theo phân loại chi phí */
+        .card-item.loai-kho { border-left-color: #2ecc71; }      /* Xanh lá cho Kho */
+        .card-item.loai-logistics { border-left-color: #9b59b6; }/* Tím cho Logistics */
+
+        /* Cấu trúc Header bên trong Card */
+        .card-item .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            margin-bottom: 10px; 
+        }
+        .card-item .header strong { 
+            color: #1e293b; 
+            font-size: 15px; 
+            font-weight: 600;
+            line-height: 1.4;
+            max-width: 70%;
+        }
+        .card-item .header .badge-loai { 
+            font-size: 11px; 
+            font-weight: 600;
+            background: #f1f5f9; 
+            color: #64748b;
+            padding: 4px 8px; 
+            border-radius: 20px; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Phần hiển thị tiền số lớn */
+        .card-item .body .giao-dich-tien {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0082C8;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        /* Chi tiết phân bổ bên dưới */
+        .card-item .body .chi-tiet-pb {
+            display: flex; 
+            gap: 15px;
+            font-size: 12px; 
+            color: #64748b;
+            background: #f8fafc;
+            padding: 6px 10px;
+            border-radius: 8px;
+            margin-top: 6px;
+        }
+        .card-item .body .chi-tiet-pb span strong {
+            color: #334155;
+        }
+
+        /* Hiển thị biển số xe hoặc ghi chú ngắn nếu có */
+        .card-item .footer-info {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-item .info-xe {
+            background: #fff8e1;
+            color: #b78103;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
     </style>
 
 </head>
@@ -273,14 +431,14 @@
             <!-- Modal hiển thị lịch sử -->
             <div id="modalLichSu" class="modal-hidden">
                 <div class="modal-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
                         <h3>Lịch sử chi phí</h3>
-                        <button onclick="dongModal()" style="border:none; background:none; font-size: 20px;">×</button>
+                        <button onclick="dongModal()" style="border:none; background:none; font-size: 24px; color: #94a3b8; cursor: pointer; padding: 0 5px;">&times;</button>
                     </div>
                     
-                    <input type="month" id="thangLoc" onchange="taiLichSuTheoThang()" style="padding: 10px; width: 100%; border-radius: 6px; border: 1px solid #ccc;">
+                    <input type="month" id="thangLoc" onchange="taiLichSuTheoThang()">
                     
-                    <!-- Danh sách card sẽ nằm ở đây -->
+                    <!-- Danh sách card cuộn mượt -->
                     <div id="danhSachLichSu"></div>
                 </div>
             </div>
@@ -1651,10 +1809,12 @@ window.taiLichSuTheoThang = async () => {
             const son = (data.tienSon || 0).toLocaleString('vi-VN');
             const tbvs = (data.tienTBVS || 0).toLocaleString('vi-VN');
 
-            // Cấu trúc HTML mới: Tương thích hoàn hảo với CSS vuốt của bạn
+            // Giao diện Card thiết kế lại, tự động nhận diện class để đổi màu vách Card
+            const classTheoLoai = (data.loaiChiPhi === "Kho") ? "loai-kho" : "loai-logistics";
+
             html += `
             <div class="card-swipe" id="wrapper-${doc.id}">
-                <!-- Lớp nền ẩn phía sau khi vuốt (CSS của bạn) -->
+                <!-- Lớp nền ẩn phía sau khi vuốt -->
                 <div class="nen-hanh-dong">
                     <div class="hanh-dong-sua">
                         <i class="fa-solid fa-pen-to-square"></i> <span style="margin-left: 8px;">Sửa</span>
@@ -1664,21 +1824,31 @@ window.taiLichSuTheoThang = async () => {
                     </div>
                 </div>
 
-                <!-- Tấm Card nội dung chính nằm đè lên trên (Người dùng vuốt tấm này) -->
-                <div class="card-item giao-dich-noi-dung" data-id="${doc.id}">
+                <!-- Tấm Card nội dung chính nâng cấp sạch đẹp -->
+                <div class="card-item ${classTheoLoai} giao-dich-noi-dung" data-id="${doc.id}">
                     <div class="header">
                         <strong class="giao-dich-hang-muc">${data.hangMuc}</strong> 
-                        <span class="giao-dich-thoi-gian" style="display:none;">${data.ngayPhatSinh || ''}</span> <!-- Thẻ ẩn lưu ngày để JS tự bốc thuốc -->
-                        <span>${data.loaiChiPhi || 'Khác'}</span>
+                        <span class="giao-dich-thoi-gian" style="display:none;">${data.ngayPhatSinh || ''}</span>
+                        <span class="badge-loai">${data.loaiChiPhi || 'Khác'}</span>
                     </div>
+                    
                     <div class="body">
-                        <!-- Lưu chi phí gốc thô vào thuộc tính data để dễ lấy ra tính toán khi sửa -->
-                        <div class="giao-dich-tien" data-raw="${data.chiPhiGoc || 0}" style="font-weight: bold; color: #0082C8; margin-bottom: 5px;">${tong} đ</div>
-                        <div style="display:flex; justify-content: space-between; font-size: 12px; color: #555;">
-                            <span>Sơn: ${son} đ</span>
-                            <span>TBVS: ${tbvs} đ</span>
+                        <div class="giao-dich-tien" data-raw="${data.chiPhiGoc || 0}">${tong} đ</div>
+                        
+                        <div class="chi-tiet-pb">
+                            <span>Sơn: <strong>${son} đ</strong></span>
+                            <span>TBVS: <strong>${tbvs} đ</strong></span>
                         </div>
-                        <!-- Lưu trữ thêm các thông tin ẩn để điền ngược form chuẩn xác -->
+                        
+                        <!-- Phần ghi chú và biển số xe chân trang card -->
+                        <div class="footer-info">
+                            <span style="font-style: italic; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${data.ghiChu ? `<i class="fa-regular fa-comment-dots"></i> ${data.ghiChu}` : ''}
+                            </span>
+                            ${data.phuongTien ? `<span class="info-xe"><i class="fa-solid fa-truck"></i> ${data.phuongTien}</span>` : ''}
+                        </div>
+
+                        <!-- Lưu trữ thêm dữ liệu ẩn phục vụ hàm sửa -->
                         <input type="hidden" class="giao-dich-xe" value="${data.phuongTien || ''}">
                         <input type="hidden" class="giao-dich-ghi-chu" value="${data.ghiChu || ''}">
                     </div>
