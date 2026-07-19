@@ -1824,10 +1824,11 @@ window.taiLichSuTheoThang = async () => {
                     </div>
                 </div>
 
-                <!-- Tấm Card nội dung chính nâng cấp sạch đẹp -->
+                <!-- Tấm Card nội dung chính -->
                 <div class="card-item ${classTheoLoai} giao-dich-noi-dung" data-id="${doc.id}">
                     <div class="header">
                         <strong class="giao-dich-hang-muc">${data.hangMuc}</strong> 
+                        <!-- 🌟 QUAN TRỌNG: Thẻ lưu ngày phát sinh không được để trống -->
                         <span class="giao-dich-thoi-gian" style="display:none;">${data.ngayPhatSinh || ''}</span>
                         <span class="badge-loai">${data.loaiChiPhi || 'Khác'}</span>
                     </div>
@@ -1840,7 +1841,6 @@ window.taiLichSuTheoThang = async () => {
                             <span>TBVS: <strong>${tbvs} đ</strong></span>
                         </div>
                         
-                        <!-- Phần ghi chú và biển số xe chân trang card -->
                         <div class="footer-info">
                             <span style="font-style: italic; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                 ${data.ghiChu ? `<i class="fa-regular fa-comment-dots"></i> ${data.ghiChu}` : ''}
@@ -1848,9 +1848,11 @@ window.taiLichSuTheoThang = async () => {
                             ${data.phuongTien ? `<span class="info-xe"><i class="fa-solid fa-truck"></i> ${data.phuongTien}</span>` : ''}
                         </div>
 
-                        <!-- Lưu trữ thêm dữ liệu ẩn phục vụ hàm sửa -->
+                        <!-- 🌟 Lớp dữ liệu ẩn bổ sung để hàm sửa trích xuất chính xác 100% -->
                         <input type="hidden" class="giao-dich-xe" value="${data.phuongTien || ''}">
                         <input type="hidden" class="giao-dich-ghi-chu" value="${data.ghiChu || ''}">
+                        <input type="hidden" class="giao-dich-nguyen-tac" value="${data.nguyenTacPhanBo || ''}">
+                        <input type="hidden" class="giao-dich-tbvs-raw" value="${data.tienTBVS || 0}">
                     </div>
                 </div>
             </div>`;
@@ -1958,40 +1960,60 @@ window.suaChiPhi = function(idTaiLieu) {
     const card = document.querySelector(`.card-item[data-id="${idTaiLieu}"]`);
     if (!card) return;
 
-    // 🌟 2. Trích xuất dữ liệu từ các thẻ HTML (Dựa theo cấu trúc hàm render của bạn)
+    // 🌟 2. Trích xuất dữ liệu từ các thẻ HTML ẩn/hiện trên card
     const hangMuc = card.querySelector('.giao-dich-hang-muc').innerText;
-    const ngay = card.querySelector('.giao-dich-thoi-gian').innerText;
+    
+    // Khắc phục lỗi lấy ngày: Tìm thẻ ẩn chứa ngày phát sinh chính xác từ Firebase
+    const thẻNgay = card.querySelector('.giao-dich-thoi-gian');
+    const ngay = thẻNgay ? thẻNgay.innerText.trim() : new Date().toISOString().slice(0, 10);
+    
     const tongTien = card.querySelector('.giao-dich-tien').getAttribute('data-raw');
     const phuongTien = card.querySelector('.giao-dich-xe') ? card.querySelector('.giao-dich-xe').value : '';
     const ghiChu = card.querySelector('.giao-dich-ghi-chu') ? card.querySelector('.giao-dich-ghi-chu').value : '';
 
-    // 🌟 3. Điền ngược toàn bộ dữ liệu vào Form nhập liệu chính
+    // Lấy thêm nguyên tắc phân bổ và tiền TBVS lưu ẩn phục vụ trường hợp nhập tay
+    const nguyenTacPB = card.querySelector('.giao-dich-nguyen-tac') ? card.querySelector('.giao-dich-nguyen-tac').value : '';
+    const tienTBVSRaw = card.querySelector('.giao-dich-tbvs-raw') ? card.querySelector('.giao-dich-tbvs-raw').value : '0';
+
+    // 🌟 3. Điền ngược toàn bộ dữ liệu vào các ô Input ở trang Home
     document.getElementById('nvNgay').value = ngay;
     document.getElementById('nvHangMuc').value = hangMuc;
     document.getElementById('nvTongTien').value = tongTien;
     document.getElementById('nvGhiChu').value = ghiChu;
 
-    // 🌟 4. Kích hoạt logic tự động chọn tỷ lệ phân bổ & hiển thị vùng xe nếu có
+    // 🌟 4. Kích hoạt logic tự động chọn tỷ lệ phân bổ & hiển thị vùng xe
     if (typeof window.tuDongChonTyLeTheoHangMuc === 'function') {
         window.tuDongChonTyLeTheoHangMuc(hangMuc);
     }
 
-    // Điền xe vào sau khi hàm tự động hiển thị vùng xe chạy xong
+    // Nếu dữ liệu cũ chạy bằng tính tay 'tbvs-truoc', ép ngược bộ chọn và điền số tiền vào
+    if (nguyenTacPB === 'tbvs-truoc') {
+        document.getElementById('nvKieuPhanBo').value = 'tbvs-truoc';
+        const inputTBVS = document.getElementById('tienTBVSInput');
+        if (inputTBVS) inputTBVS.value = tienTBVSRaw;
+    }
+
+    // Điền xe vào sau khi vùng xe đã được mở ra
     if (phuongTien) {
         document.getElementById('nvPhuongTien').value = phuongTien;
     }
 
-    // 🌟 5. GHI NHỚ ID VÀO BIẾN TOÀN CỤC ĐỂ HÀM LƯU ĐÈ KHÔNG TẠO DÒNG MỚI
+    // 🌟 5. GHI NHỚ ID VÀO BIẾN TOÀN CỤC ĐỂ LƯU ĐÈ
     window.idGiaoDichDangSua = idTaiLieu;
 
-    // Đổi diện mạo nút bấm để người dùng biết họ đang ở chế độ Sửa
-    const nutBam = document.getElementById('btnLuuNghiepVu');
-    if (nutBam) {
-        nutBam.style.background = "#e67e22"; // Đổi sang màu cam (Chế độ sửa)
-        nutBam.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Cập nhật thay đổi`;
+    // Kích hoạt tính toán lại lập tức để hiển thị tiền Sơn / TBVS lên giao diện xem trước (Home)
+    if (typeof window.tinhPhanBoNghiepVu === 'function') {
+        window.tinhPhanBoNghiepVu();
     }
 
-    // Cuộn màn hình lên trên đầu form để tiện thao tác
+    // 🌟 6. Đổi diện mạo nút bấm sang màu cam trạng thái Sửa
+    const nutBam = document.getElementById('btnLuuNghiepVu');
+    if (nutBam) {
+        nutBam.style.background = "#e67e22"; 
+        nutBam.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Cập nhật thay đổi (${idTaiLieu})`;
+    }
+
+    // Cuộn mượt màn hình lên đầu trang để người dùng thao tác form
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 window.xoaChiPhi = async function(idTaiLieu) {
