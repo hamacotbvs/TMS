@@ -96,6 +96,12 @@
 
         /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
         @media (max-height: 500px) and (orientation: landscape) {
+            /* 0. Cấu hình khung chứa tab để hỗ trợ cuộn từng biểu đồ (Scroll Snapping) */
+            .trang-content.active {
+                height: 100vh !important;
+                overflow-y: scroll !important;
+                scroll-snap-type: y mandatory !important; /* Bật tính năng hít theo chiều dọc */
+                scroll-behavior: smooth;}
             /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
             nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100vh !important; flex-direction: column !important; justify-content: center !important;
                 gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important;}
@@ -106,13 +112,23 @@
                 font-size: 10px !important;}
             /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
             .vung-bieu-do-doi-ngang {
-                margin-right: 75px !important; 
+                margin-right: 55px !important; 
                 flex-direction: column !important;
-                gap: 20px !important;}
+                gap: 0px !important;
+                padding-bottom: 0 !important;}
             /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
                 min-height: auto !important;
-                height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */}}
+                height: 100vh !important; /* Ép biểu đồ cao bằng đúng màn hình */
+                box-sizing: border-box;
+                scroll-snap-align: start !important; /* Điểm neo để hít biểu đồ lại khi vuốt qua */
+                border-radius: 0 !important; /* Bỏ bo góc để tối ưu diện tích hiển thị full màn hình */
+                margin-bottom: 0 !important;
+                padding: 40px 20px 20px 20px !important; /* Chừa khoảng trống bên trên cho nút lọc/ngày tháng */} 
+            /* 5. Ép vùng canvas bên trong co giãn tối đa theo khung */
+            .vung-bieu-do-doi-ngang .vung-bieu-do {
+                height: calc(100% - 30px) !important;
+            } }
 
         /* CSS CHO FORM HOẠCH TOÁN CHI PHÍ LÀM MỚI */
         /* Hiệu ứng mượt mà khi nhấn nút Ghi Sổ */
