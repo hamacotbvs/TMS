@@ -95,54 +95,74 @@
             .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 25px) !important;} }
 
         /* CẤU HÌNH KHI XOAY NGANG TRÊN ĐIỆN THOẠI */
+        /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
         @media (max-height: 500px) and (orientation: landscape) {
+            
+            /* 0. BIẾN KHUNG CHA THÀNH MỘT TRÌNH TRƯỢT THEO TRANG VÀ XÓA VIỀN CAM THỪA */
             .KHUNG-CAC-TAB {
-                padding: 0px !important; /* Xóa padding ngoài để biểu đồ tràn sát viền trên dưới */
-                height: 100vh !important; /* Cố định chiều cao bằng màn hình */
-                overflow-y: scroll !important; /* Bắt buộc mở cuộn dọc mượt */
-                scroll-snap-type: y mandatory !important; /* Kích hoạt tính năng hít/cuộn theo từng trang */
+                padding: 0px !important; /* Xóa sạch padding ngoài để biểu đồ ăn sát viền trên dưới */
+                height: 100vh !important; /* Dùng vh cứng để đồng bộ tuyệt đối với body */
+                overflow-y: scroll !important; /* Kích hoạt cuộn mượt */
+                scroll-snap-type: y mandatory !important; /* 🌟 Tự động hít khít từng trang biểu đồ khi vuốt */
                 -webkit-overflow-scrolling: touch;
                 box-sizing: border-box !important;
             }
+            
             .trang-content.active {
-                height: 100vh !important;
+                height: auto !important;
                 padding: 0px !important;
                 margin: 0px !important;
             }
-            /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
-            nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100vh !important; flex-direction: column !important; justify-content: center !important;
-                gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important;}
-            /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
+
+            /* 1. Bẻ cố định thanh menu dọc bên phải */
+            nav.MENU-DUOI {
+                position: fixed !important;
+                top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; 
+                width: 55px !important; height: 100vh !important; flex-direction: column !important; 
+                justify-content: center !important; gap: 15px !important; border-radius: 0 !important; 
+                padding: 10px 0 !important; z-index: 9999 !important;
+            }
+
+            /* 2. Thu nhỏ chữ trong menu */
             nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
-            /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
+            
+            /* 3. Vùng chứa chừa lề phải đúng 55px né menu dọc, triệt tiêu khoảng cách các con */
             .vung-bieu-do-doi-ngang {
-                margin-right: 55px !important; 
-                flex-direction: column !important;
-                gap: 0px !important;
-                box-sizing: border-box !important;
-                height: auto !important;}
-            /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
-                min-height: auto !important;
-                height: 100vh !important; /* 🌟 Thay vì 280px cố định, ép cao bằng đúng 1 màn hình */
-                width: 100% !important;
-                margin: 0 !important; /* Bỏ margin để không lệch trang */
-                border-radius: 0px !important; /* Bỏ bo góc ngoài để tràn phẳng viền */
-                /* 🌟 Tăng padding đáy lên 35px để đẩy trục số (1, 2, 3...) lên hẳn trên thanh Home ảo iOS */
-                padding: 12px 16px 35px 16px !important; 
-                scroll-snap-align: start !important; /* 🌟 Đánh dấu điểm neo để tự động hít khít màn hình */
-                box-sizing: border-box !important;
+                padding: 0 55px 0 0 !important; 
                 display: flex !important;
-                flex-direction: column !important; }
+                flex-direction: column !important; 
+                gap: 0px !important; /* Triệt tiêu gap giữa 2 biểu đồ để nối đuôi liền mạch */
+                box-sizing: border-box !important;
+                margin: 0 !important;
+                height: auto !important;
+            }
+
+            /* 4. ÉP MỖI BIỂU ĐỒ LÀ MỘT MÀN HÌNH ĐỘC LẬP */
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
+                min-height: auto !important; 
+                height: 100vh !important; /* 🌟 Chiếm trọn 100% chiều cao màn hình */
+                width: 100% !important; 
+                margin: 0 !important; 
+                padding: 12px 16px !important; /* Khoảng đệm ruột để các đường vẽ biểu đồ không chạm mép màn hình */
+                border-radius: 0px !important; /* Bỏ bo góc ngoài để biểu đồ phẳng lỳ full viền */
+                box-sizing: border-box !important;
+                scroll-snap-align: start !important; /* 🌟 Đánh dấu điểm neo hít màn hình */
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
+            /* Ép canvas ruột co giãn khít khao diện tích hiển thị */
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB canvas {
-                display: block !important;
+                display: block !important; 
                 height: 100% !important;
                 width: 100% !important;
             }
+
             .vung-bieu-do-doi-ngang .vung-bieu-do {
-                flex: 1 !important;
+                flex: 1 !important; /* Tự động nở rộng chiếm hết phần trống còn lại dưới tiêu đề */
                 height: auto !important;
-            } }
+            }
+        }
 
         /* CSS CHO FORM HOẠCH TOÁN CHI PHÍ LÀM MỚI */
         /* Hiệu ứng mượt mà khi nhấn nút Ghi Sổ */
