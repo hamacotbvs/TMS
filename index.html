@@ -98,7 +98,7 @@
         @media (max-height: 500px) and (orientation: landscape) {
             /* 0. ÉP TẤT CẢ CÁC KHUNG CHA XẢ HẾT PADDING ĐÁY CŨ */
             .KHUNG-CAC-TAB {padding: 0px !important; height: 100vh !important; overflow-y: scroll !important; scroll-snap-type: y mandatory !important; -webkit-overflow-scrolling: touch; box-sizing: border-box !important;}
-            .trang-content.active {height: auto !important; padding: 0px !important; margin: 0px !important;}
+            .trang-content.active {display: block !important; height: 100vh !important; padding: 0px !important; margin: 0px !important; box-sizing: border-box !important;}
             /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
             nav.MENU-DUOI {
                 position: fixed !important;
@@ -110,14 +110,14 @@
             /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
             nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
             /* 3. Ép vùng chứa chừa ra 55px bên phải để không bị menu dọc đè lên */
-            .vung-bieu-do-doi-ngang {padding: 0 55px 0 0 !important; display: flex !important; flex-direction: column !important; gap: 0px !important; box-sizing: border-box !important; margin: 0 !important; height: auto !important;}
+            .vung-bieu-do-doi-ngang {padding: 0px !important; margin-right: 55px !important; display: flex !important; flex-direction: column !important; gap: 0px !important; box-sizing: border-box !important; height: auto !important;}
             /* 4. Khống chế chiều cao biểu đồ vừa vặn khít màn hình dynamic */
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
                 min-height: auto !important; 
                 height: 100vh !important; 
                 width: 100% !important; 
                 margin: 0 !important; 
-                padding: 10px !important; 
+                border-radius: 0px !important;
                 box-sizing: border-box !important;
                 scroll-snap-align: start !important; /* 🌟 Đánh dấu điểm neo hít màn hình */
                 display: flex !important;
