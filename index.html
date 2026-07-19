@@ -142,84 +142,37 @@
         /* --- PHẦN BỐ CỤC HEADER MỚI --- */
         .modal-header-custom {
             display: flex;
+            justify-content: space-between; /* Đẩy tiêu đề sang trái, nút đóng sang phải */
             align-items: center;
-            justify-content: center; /* Đảm bảo khối giữa luôn ở tâm */
-            position: relative; /* Làm gốc định vị cho nút đóng */
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
-            width: 100%;
+            padding: 10px 5px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        /* Khối gom nhóm Tiêu đề và Ô chọn tháng nằm ngang */
-        .header-title-block {
+        .date-navigator {
             display: flex;
             align-items: center;
-            gap: 12px; /* Khoảng cách giữa chữ CHI PHÍ KHO và ô chọn lịch */
-        }
-
-        /* Chữ tiêu đề chính */
-        .modal-title-main {
-            font-size: 16px; 
-            color: #0082C8; 
-            font-weight: 700;
-            margin: 0;
-            padding: 0;
-            white-space: nowrap; /* Không cho chữ bị xuống dòng */
-        }
-
-        /* Nút đóng cố định chắc chắn ở góc bên phải */
-        .btn-dong-modal {
-            position: absolute;
-            right: 5px;
-            top: 50%;
-            transform: translateY(-50%); /* Căn giữa nút theo chiều dọc */
-            border: none; 
-            background: none; 
-            font-size: 26px; 
-            color: #94a3b8; 
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-        }
-
-        /* --- HỘP CHỌN THÁNG NĂM (TRÊN DƯỚI) --- */
-        .custom-month-picker {
-            position: relative;
-            display: flex;
-            flex-direction: column; /* Xếp dọc: tháng ở trên, năm ở dưới */
-            align-items: center;
-            justify-content: center;
-            background: #f1f5f9; /* Nền xám nhạt nhẹ làm nổi bật vùng nhấn */
-            padding: 4px 10px;
+            background: #f1f5f9;
             border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            min-width: 80px;
-            cursor: pointer;
+            padding: 4px;
+            gap: 8px;
         }
 
-        /* Cài đặt kiểu chữ cho tháng/năm */
-        .custom-month-picker span#labelThang {
-            font-size: 12px;
-            font-weight: 700;
-            color: #1e293b;
-            text-transform: capitalize;
-        }
-        .custom-month-picker span#labelNam {
-            font-size: 11px;
-            font-weight: 500;
+        .nav-btn {
+            border: none;
+            background: none;
             color: #64748b;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px 8px;
         }
 
-        /* Ẩn giao diện gốc của Input Month nhưng giữ lại vùng tương tác */
-        #thangLoc {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0; /* Trong suốt hoàn toàn */
+        .date-display {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
             cursor: pointer;
-            margin: 0 !important;
-            padding: 0 !important;
-            z-index: 5;
+            min-width: 100px;
+            text-align: center;
         }
 
         /* Vùng cuộn danh sách */
@@ -369,22 +322,22 @@
                 <div class="modal-content">
                     <!-- HEADER MỚI CỦA MODAL -->
                     <div class="modal-header-custom">
-                        <!-- Khối chứa Tiêu đề + Khung chọn Tháng Năm xếp cạnh nhau -->
-                        <div class="header-title-block">
-                            <h3 class="modal-title-main">CHI PHÍ KHO</h3>
-                            
-                            <!-- Custom wrapper giả lập ô chọn tháng trên/năm dưới -->
-                            <div class="custom-month-picker">
-                                <span id="labelThang">tháng --</span>
-                                <span id="labelNam">năm ----</span>
-                                <!-- Ô input ẩn độ đục (opacity: 0) nằm đè lên trên để khi kích vào vẫn mở được lịch -->
-                                <input type="month" id="thangLoc" onchange="capNhatGiaoDienThang(this)">
+                        <h3 class="modal-title-main">CHI PHÍ KHO</h3>
+                        
+                        <!-- Thanh chọn tháng theo mẫu -->
+                        <div class="date-navigator">
+                            <button class="nav-btn" onclick="thayDoiThang(-1)">◀</button>
+                            <div class="date-display" onclick="moBangChonThang()">
+                                <span id="labelThangNam">Tháng 07/2026</span>
                             </div>
+                            <button class="nav-btn" onclick="thayDoiThang(1)">▶</button>
                         </div>
                         
-                        <!-- Nút đóng đẩy hẳn ra góc phải -->
                         <button class="btn-dong-modal" onclick="dongModal()">&times;</button>
                     </div>
+
+                    <!-- Input ẩn để hiện bảng chọn chuẩn của trình duyệt khi click vào text -->
+                    <input type="month" id="inputThangAn" style="display:none" onchange="chonThang(this)">
                     
                     <!-- Danh sách card cuộn mượt phía dưới -->
                     <div id="danhSachLichSu"></div>
@@ -1478,284 +1431,306 @@
             if (event.target === lopNenMo) {lopNenMo.style.display = 'none';} });   // Ẩn toàn bộ modal đi
 
 // HOẠCH TOÁN CHI PHÍ
-// Thiết lập mặc định ngày hôm nay cho form
-document.getElementById('nvNgay').value = new Date().toISOString().slice(0, 10);
+        // Thiết lập mặc định ngày hôm nay cho form
+        document.getElementById('nvNgay').value = new Date().toISOString().slice(0, 10);
 
-// Khai báo hàm tự động chọn tỷ lệ ra phạm vi toàn cục
-window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
-    const selector = document.getElementById('nvKieuPhanBo');
-    const vungPhuongTien = document.getElementById('vungPhuongTien');
-    if (!hangMuc) return;
-    // --- LOGIC ẨN/HIỆN PHƯƠNG TIỆN (Dùng tên trực tiếp cho chính xác 100%) ---
-    if (hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") {
-        vungPhuongTien.style.display = 'flex'; // Hiện ra chia đôi dòng
-    } else { 
-        vungPhuongTien.style.display = 'none'; // Ẩn đi
-        document.getElementById('nvPhuongTien').value = ''; // Reset lựa chọn xe
-    }
-    
-    // Nhóm 1: 35 - 65
-    if (hangMuc.includes("Thuê mặt bằng")) {
-        selector.value = "Sơn: 35 - TBVS: 65"; }
+        // Khai báo hàm tự động chọn tỷ lệ ra phạm vi toàn cục
+        window.tuDongChonTyLeTheoHangMuc = function(hangMuc) {
+            const selector = document.getElementById('nvKieuPhanBo');
+            const vungPhuongTien = document.getElementById('vungPhuongTien');
+            if (!hangMuc) return;
+            // --- LOGIC ẨN/HIỆN PHƯƠNG TIỆN (Dùng tên trực tiếp cho chính xác 100%) ---
+            if (hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") {
+                vungPhuongTien.style.display = 'flex'; // Hiện ra chia đôi dòng
+            } else { 
+                vungPhuongTien.style.display = 'none'; // Ẩn đi
+                document.getElementById('nvPhuongTien').value = ''; // Reset lựa chọn xe
+            }
+            
+            // Nhóm 1: 35 - 65
+            if (hangMuc.includes("Thuê mặt bằng")) {
+                selector.value = "Sơn: 35 - TBVS: 65"; }
 
-    // Nhóm 2: 67 - 33
-    else if (hangMuc === "Thuê xe" || 
-             hangMuc === "Đăng kiểm" ||
-             hangMuc === "Bảo hiểm xe" ||
-             hangMuc === "Giám sát hành trình" || 
-             hangMuc === "Lương vị trí, phụ cấp TX, GN, BX" ||
-             hangMuc === "Trích BH, CĐ: TX, GN, BX" ||
-             hangMuc === "BOT" || 
-             hangMuc === "Bảo trì, bảo dưỡng xe" ||
-             hangMuc.includes("Tài xế")) {
-        selector.value = "Sơn: 67 - TBVS: 33"; }
+            // Nhóm 2: 67 - 33
+            else if (hangMuc === "Thuê xe" || 
+                    hangMuc === "Đăng kiểm" ||
+                    hangMuc === "Bảo hiểm xe" ||
+                    hangMuc === "Giám sát hành trình" || 
+                    hangMuc === "Lương vị trí, phụ cấp TX, GN, BX" ||
+                    hangMuc === "Trích BH, CĐ: TX, GN, BX" ||
+                    hangMuc === "BOT" || 
+                    hangMuc === "Bảo trì, bảo dưỡng xe" ||
+                    hangMuc.includes("Tài xế")) {
+                selector.value = "Sơn: 67 - TBVS: 33"; }
 
-    // Nhóm 3: 50 - 50
-    else {selector.value = "Sơn: 50 - TBVS: 50";}
-    window.tinhPhanBoNghiepVu(); };
+            // Nhóm 3: 50 - 50
+            else {selector.value = "Sơn: 50 - TBVS: 50";}
+            window.tinhPhanBoNghiepVu(); };
 
-// Hàm phụ trợ làm tròn đến hàng triệu gần nhất
-function lamTronHangTrieu(soTien) {return Math.round(soTien / 1000000) * 1000000;}
-// Khai báo hàm tính toán thời gian thực ra phạm vi toàn cục
-window.tinhPhanBoNghiepVu = function(nguonThayDoi) {
-    const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
-    const hangMuc = document.getElementById('nvHangMuc').value;
-    const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
-    const vungNhapTBVS = document.getElementById('vungNhapTBVS');
-    const inputTBVS = document.getElementById('tienTBVSInput');
-    let tienTBVS = 0;
-    if (kieuPhanBo === 'tbvs-truoc') {
-        // 1. Hiện ô nhập tay nếu chọn 'tbvs-truoc'
-        vungNhapTBVS.style.display = 'block';
-        let tbvsNhap = parseFloat(inputTBVS.value) || 0;
-        if (tbvsNhap > tongTien) { // Khống chế nếu nhập lố tổng tiền
-            tbvsNhap = tongTien;
-            inputTBVS.value = tongTien;}
-        tienTBVS = Math.round(tbvsNhap);
-    } else {
-        // 2. Ẩn và xóa ô nhập tay khi chọn các tỷ lệ % cố định
-        vungNhapTBVS.style.display = 'none';
-        if (nguonThayDoi === 'thay-doi-nguyen-tac') inputTBVS.value = '';
-        // Tính tiền TBVS trước theo tỷ lệ %
-        let phanTramTBVS = 0.5; // Mặc định của 50-50
-        if (kieuPhanBo === 'Sơn: 67 - TBVS: 33') phanTramTBVS = 0.33;
-        else if (kieuPhanBo === 'Sơn: 35 - TBVS: 65') phanTramTBVS = 0.648;
-        tienTBVS = Math.round(tongTien * phanTramTBVS);}
-    if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
-        tienTBVS = lamTronHangTrieu(tienTBVS);
-        if (tienTBVS > tongTien) tienTBVS = lamTronHangTrieu(tongTien);}
-    // 🌟 ĐỒNG NHẤT CÔNG THỨC: Sơn luôn bằng Tổng trừ đi TBVS
-    const tienSon = tongTien - tienTBVS;
-    // Hiển thị lên giao diện xem trước
-    document.getElementById('previewSon').innerText = tienSon.toLocaleString('vi-VN') + " đ";
-    document.getElementById('previewTBVS').innerText = tienTBVS.toLocaleString('vi-VN') + " đ"; 
-};
-// HÀM LƯU CHÍNH XÁC ĐÃ ĐƯỢC ĐƯA RA TOÀN CỤC ĐỂ HTML GỌI ONCLICK
-window.luuNghiepVuVaoFirebase = async function() {
-    const nutBam = document.getElementById('btnLuuNghiepVu');       // 🌟 LẤY ĐỐI TƯỢNG NÚT BẤM
-    // Nếu nút đang ở trạng thái disable (đang xử lý), thoát ra luôn không chạy tiếp
-    if (nutBam.disabled) return;
-    const ngay = document.getElementById('nvNgay').value;
-    const hangMuc = document.getElementById('nvHangMuc').value;
-    const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
-    const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
-    const ghiChu = document.getElementById('nvGhiChu').value.trim();
-    const phuongTien = document.getElementById('nvPhuongTien').value;
-    if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
-    if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
-    // 🌟 THÊM MỚI: Bắt buộc chọn xe nếu thuộc 2 hạng mục này
-    if ((hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") && !phuongTien) {
-        alert("Vui lòng chọn biển số xe phương tiện!");
-        return;}
-    // 🌟 KHÓA NÚT BẤM NGAY LẬP TỨC & THAY ĐỔI GIAO DIỆN KHÁCH HÀNG
-    nutBam.disabled = true;
-    nutBam.style.opacity = "0.6";
-    nutBam.style.cursor = "not-allowed";
-    nutBam.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghi sổ... Vui lòng đợi`;
-    const thoiGian = new Date(ngay);
-    const nam = thoiGian.getFullYear();
-    const thang = String(thoiGian.getMonth() + 1).padStart(2, '0'); 
-
-    // 🌟 ĐỒNG NHẤT CÔNG THỨC: TÍNH TBVS TRƯỚC THEO TỪNG TRƯỜNG HỢP
-    let tienTBVS = 0;
-    if (kieuPhanBo === 'tbvs-truoc') {
-        // Nếu chọn tự nhập, lấy thẳng số tiền từ ô input màu xanh lá
-        tienTBVS = Math.round(parseFloat(document.getElementById('tienTBVSInput').value) || 0);
-    } else {
-        // Nếu chọn tỷ lệ %, tính theo công thức phần trăm
-        let phanTramTBVS = 0.5; // Mặc định của tỷ lệ 50-50
-        if (kieuPhanBo === '67-33') { phanTramTBVS = 0.33; }
-        else if (kieuPhanBo === 'dien-tich') { phanTramTBVS = 0.648; }
-        
-        tienTBVS = Math.round(tongTien * phanTramTBVS);
-    }
-    if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
-        tienTBVS = lamTronHangTrieu(tienTBVS);
-        if (tienTBVS > tongTien) tienTBVS = lamTronHangTrieu(tongTien);
-    }
-    // Tiền Sơn luôn bằng Tổng tiền trừ đi TBVS (Không sợ lệch 1 đồng do làm tròn)
-    const tienSon = tongTien - tienTBVS;
-
-    const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
-    const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
-    try {
-        // 1. Chạy Transaction lấy mã chuỗi ID tăng dần theo tháng
-        const maDinhDanhId = await runTransaction(db, async (transaction) => {
-            const counterSnapshot = await transaction.get(counterDocRef);
-            let STT_HienTai = 1; 
-            if (counterSnapshot.exists()) {
-                STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1; }
-            transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
-            const chuoiSTT = String(STT_HienTai).padStart(6, '0');
-            return `CP-${chuoiSTT}-${thang}-${nam}`; });
-        // phân nhóm cố định biến phí
-        // Lấy index của option được chọn (0 là -- Chọn hạng mục --)
-        const selectElement = document.getElementById('nvHangMuc');
-        const selectedIndex = selectElement.selectedIndex;
-        // PHÍ KHO: từ 1 đến 12 (đánh số 1-12)
-        // PHÍ LOGISTICS: từ 13 đến 25 (đánh số 13-25)
-        let cauTruc = ( (selectedIndex >= 1 && selectedIndex <= 12) || (selectedIndex >= 13 && selectedIndex <= 18) ) ? "Cố định" : "Biến phí";
-        // Nhân sự: 6-7, 10-12, 17-18, 22-25
-        let phanNhom = "Hạ tầng"; // Mặc định
-        if (
-            (selectedIndex >= 6 && selectedIndex <= 7) ||
-            (selectedIndex >= 10 && selectedIndex <= 12) ||
-            (selectedIndex >= 17 && selectedIndex <= 18) ||
-            (selectedIndex >= 22 && selectedIndex <= 25)
-        ) {
-            phanNhom = "Nhân sự";
-        }
-        // 2. Gom đóng dữ liệu
-        const duLieuGhiSo = {
-            IDChiPhi: maDinhDanhId, 
-            ngayPhatSinh: ngay,
-            nam: nam,
-            thang: Number(thang), 
-            hangMuc: hangMuc,
-            loaiChiPhi: (selectedIndex <= 12) ? "Kho" : "Logistics",
-            cauTrucKeToan: cauTruc,
-            phanNhom: phanNhom,
-            chiPhiGoc: tongTien,
-            nguyenTacPhanBo: kieuPhanBo,
-            tienSon: tienSon,
-            tienTBVS: tienTBVS,
-            ghiChu: ghiChu,
-            ngayTaoHeThong: new Date().toISOString()
+        // Hàm phụ trợ làm tròn đến hàng triệu gần nhất
+        function lamTronHangTrieu(soTien) {return Math.round(soTien / 1000000) * 1000000;}
+        // Khai báo hàm tính toán thời gian thực ra phạm vi toàn cục
+        window.tinhPhanBoNghiepVu = function(nguonThayDoi) {
+            const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
+            const hangMuc = document.getElementById('nvHangMuc').value;
+            const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
+            const vungNhapTBVS = document.getElementById('vungNhapTBVS');
+            const inputTBVS = document.getElementById('tienTBVSInput');
+            let tienTBVS = 0;
+            if (kieuPhanBo === 'tbvs-truoc') {
+                // 1. Hiện ô nhập tay nếu chọn 'tbvs-truoc'
+                vungNhapTBVS.style.display = 'block';
+                let tbvsNhap = parseFloat(inputTBVS.value) || 0;
+                if (tbvsNhap > tongTien) { // Khống chế nếu nhập lố tổng tiền
+                    tbvsNhap = tongTien;
+                    inputTBVS.value = tongTien;}
+                tienTBVS = Math.round(tbvsNhap);
+            } else {
+                // 2. Ẩn và xóa ô nhập tay khi chọn các tỷ lệ % cố định
+                vungNhapTBVS.style.display = 'none';
+                if (nguonThayDoi === 'thay-doi-nguyen-tac') inputTBVS.value = '';
+                // Tính tiền TBVS trước theo tỷ lệ %
+                let phanTramTBVS = 0.5; // Mặc định của 50-50
+                if (kieuPhanBo === 'Sơn: 67 - TBVS: 33') phanTramTBVS = 0.33;
+                else if (kieuPhanBo === 'Sơn: 35 - TBVS: 65') phanTramTBVS = 0.648;
+                tienTBVS = Math.round(tongTien * phanTramTBVS);}
+            if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
+                tienTBVS = lamTronHangTrieu(tienTBVS);
+                if (tienTBVS > tongTien) tienTBVS = lamTronHangTrieu(tongTien);}
+            // 🌟 ĐỒNG NHẤT CÔNG THỨC: Sơn luôn bằng Tổng trừ đi TBVS
+            const tienSon = tongTien - tienTBVS;
+            // Hiển thị lên giao diện xem trước
+            document.getElementById('previewSon').innerText = tienSon.toLocaleString('vi-VN') + " đ";
+            document.getElementById('previewTBVS').innerText = tienTBVS.toLocaleString('vi-VN') + " đ"; 
         };
-        if (phuongTien) {duLieuGhiSo.phuongTien = phuongTien;}  // Chỉ đẩy data phương tiện lên Firebase nếu có chọn xe
+        // HÀM LƯU CHÍNH XÁC ĐÃ ĐƯỢC ĐƯA RA TOÀN CỤC ĐỂ HTML GỌI ONCLICK
+        window.luuNghiepVuVaoFirebase = async function() {
+            const nutBam = document.getElementById('btnLuuNghiepVu');       // 🌟 LẤY ĐỐI TƯỢNG NÚT BẤM
+            // Nếu nút đang ở trạng thái disable (đang xử lý), thoát ra luôn không chạy tiếp
+            if (nutBam.disabled) return;
+            const ngay = document.getElementById('nvNgay').value;
+            const hangMuc = document.getElementById('nvHangMuc').value;
+            const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
+            const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
+            const ghiChu = document.getElementById('nvGhiChu').value.trim();
+            const phuongTien = document.getElementById('nvPhuongTien').value;
+            if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
+            if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
+            // 🌟 THÊM MỚI: Bắt buộc chọn xe nếu thuộc 2 hạng mục này
+            if ((hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") && !phuongTien) {
+                alert("Vui lòng chọn biển số xe phương tiện!");
+                return;}
+            // 🌟 KHÓA NÚT BẤM NGAY LẬP TỨC & THAY ĐỔI GIAO DIỆN KHÁCH HÀNG
+            nutBam.disabled = true;
+            nutBam.style.opacity = "0.6";
+            nutBam.style.cursor = "not-allowed";
+            nutBam.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghi sổ... Vui lòng đợi`;
+            const thoiGian = new Date(ngay);
+            const nam = thoiGian.getFullYear();
+            const thang = String(thoiGian.getMonth() + 1).padStart(2, '0'); 
 
-        // 3. Tiến hành ép ID tùy chỉnh vào tên Document
-        const taiLieuChiPhiRef = doc(db, "CHIPHI", maDinhDanhId);
-        await setDoc(taiLieuChiPhiRef, duLieuGhiSo);
-        // 🌟 HIỂU ỨNG THÔNG BÁO TRÊN NÚT BẤM TRONG 2 GIÂY
-        nutBam.style.background = "#2e7d32"; // Đổi sang màu xanh lá
-        nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã ghi sổ thành công! (${maDinhDanhId})`;
-        // Reset sạch form nhập liệu
-        document.getElementById('nvTongTien').value = '';
-        document.getElementById('tienTBVSInput').value = ''; // 🌟 THÊM DÒNG NÀY ĐỂ XÓA Ô NHẬP TAY TBVS
-        document.getElementById('nvGhiChu').value = '';
-        document.getElementById('previewSon').innerText = '0 đ';
-        document.getElementById('previewTBVS').innerText = '0 đ';
-        // Xóa và ẩn ô phương tiện đi sau khi lưu thành công
-        document.getElementById('nvPhuongTien').value = ''; 
-        document.getElementById('vungPhuongTien').style.display = 'none';
-        // Đợi 2 giây rồi trả nút bấm về trạng thái ban đầu để nhập ca tiếp theo
-        await new Promise(resolve => setTimeout(resolve, 2000));
-    } catch (error) {
-        console.error("Lỗi hệ thống chi tiết:", error);
-        alert("Lỗi kết nối hoặc lỗi cú pháp Firebase! Chi tiết: " + error.message);
-    } finally {
-        // KHÔI PHỤC TRẠNG THÁI NÚT BẤM VỀ MÀU XANH DƯƠNG BAN ĐẦU
-        nutBam.disabled = false;
-        nutBam.style.opacity = "1";
-        nutBam.style.background = "#0082C8"; // Màu xanh dương ban đầu của bạn
-        nutBam.style.cursor = "pointer";
-        nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;}
-};
-
-    // SỬA LỖI KẸT MÀN HÌNH - TỰ ĐỘNG HẠ KHUNG HÌNH VỀ VỊ TRÍ CŨ KHI ẨN BÀN PHÍM
-    document.querySelectorAll('input, select, textarea').forEach(element => {
-        element.addEventListener('blur', () => {
-            setTimeout(() => {
-                // Ép iOS vẽ lại toàn bộ body bằng cách thay đổi tạm thời overflow
-                document.body.style.overflow = 'hidden';
+            // 🌟 ĐỒNG NHẤT CÔNG THỨC: TÍNH TBVS TRƯỚC THEO TỪNG TRƯỜNG HỢP
+            let tienTBVS = 0;
+            if (kieuPhanBo === 'tbvs-truoc') {
+                // Nếu chọn tự nhập, lấy thẳng số tiền từ ô input màu xanh lá
+                tienTBVS = Math.round(parseFloat(document.getElementById('tienTBVSInput').value) || 0);
+            } else {
+                // Nếu chọn tỷ lệ %, tính theo công thức phần trăm
+                let phanTramTBVS = 0.5; // Mặc định của tỷ lệ 50-50
+                if (kieuPhanBo === '67-33') { phanTramTBVS = 0.33; }
+                else if (kieuPhanBo === 'dien-tich') { phanTramTBVS = 0.648; }
                 
-                // Cuộn về 0 để reset
-                window.scrollTo(0, 0);
+                tienTBVS = Math.round(tongTien * phanTramTBVS);
+            }
+            if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
+                tienTBVS = lamTronHangTrieu(tienTBVS);
+                if (tienTBVS > tongTien) tienTBVS = lamTronHangTrieu(tongTien);
+            }
+            // Tiền Sơn luôn bằng Tổng tiền trừ đi TBVS (Không sợ lệch 1 đồng do làm tròn)
+            const tienSon = tongTien - tienTBVS;
+
+            const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
+            const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
+            try {
+                // 1. Chạy Transaction lấy mã chuỗi ID tăng dần theo tháng
+                const maDinhDanhId = await runTransaction(db, async (transaction) => {
+                    const counterSnapshot = await transaction.get(counterDocRef);
+                    let STT_HienTai = 1; 
+                    if (counterSnapshot.exists()) {
+                        STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1; }
+                    transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
+                    const chuoiSTT = String(STT_HienTai).padStart(6, '0');
+                    return `CP-${chuoiSTT}-${thang}-${nam}`; });
+                // phân nhóm cố định biến phí
+                // Lấy index của option được chọn (0 là -- Chọn hạng mục --)
+                const selectElement = document.getElementById('nvHangMuc');
+                const selectedIndex = selectElement.selectedIndex;
+                // PHÍ KHO: từ 1 đến 12 (đánh số 1-12)
+                // PHÍ LOGISTICS: từ 13 đến 25 (đánh số 13-25)
+                let cauTruc = ( (selectedIndex >= 1 && selectedIndex <= 12) || (selectedIndex >= 13 && selectedIndex <= 18) ) ? "Cố định" : "Biến phí";
+                // Nhân sự: 6-7, 10-12, 17-18, 22-25
+                let phanNhom = "Hạ tầng"; // Mặc định
+                if (
+                    (selectedIndex >= 6 && selectedIndex <= 7) ||
+                    (selectedIndex >= 10 && selectedIndex <= 12) ||
+                    (selectedIndex >= 17 && selectedIndex <= 18) ||
+                    (selectedIndex >= 22 && selectedIndex <= 25)
+                ) {
+                    phanNhom = "Nhân sự";
+                }
+                // 2. Gom đóng dữ liệu
+                const duLieuGhiSo = {
+                    IDChiPhi: maDinhDanhId, 
+                    ngayPhatSinh: ngay,
+                    nam: nam,
+                    thang: Number(thang), 
+                    hangMuc: hangMuc,
+                    loaiChiPhi: (selectedIndex <= 12) ? "Kho" : "Logistics",
+                    cauTrucKeToan: cauTruc,
+                    phanNhom: phanNhom,
+                    chiPhiGoc: tongTien,
+                    nguyenTacPhanBo: kieuPhanBo,
+                    tienSon: tienSon,
+                    tienTBVS: tienTBVS,
+                    ghiChu: ghiChu,
+                    ngayTaoHeThong: new Date().toISOString()
+                };
+                if (phuongTien) {duLieuGhiSo.phuongTien = phuongTien;}  // Chỉ đẩy data phương tiện lên Firebase nếu có chọn xe
+
+                // 3. Tiến hành ép ID tùy chỉnh vào tên Document
+                const taiLieuChiPhiRef = doc(db, "CHIPHI", maDinhDanhId);
+                await setDoc(taiLieuChiPhiRef, duLieuGhiSo);
+                // 🌟 HIỂU ỨNG THÔNG BÁO TRÊN NÚT BẤM TRONG 2 GIÂY
+                nutBam.style.background = "#2e7d32"; // Đổi sang màu xanh lá
+                nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã ghi sổ thành công! (${maDinhDanhId})`;
+                // Reset sạch form nhập liệu
+                document.getElementById('nvTongTien').value = '';
+                document.getElementById('tienTBVSInput').value = ''; // 🌟 THÊM DÒNG NÀY ĐỂ XÓA Ô NHẬP TAY TBVS
+                document.getElementById('nvGhiChu').value = '';
+                document.getElementById('previewSon').innerText = '0 đ';
+                document.getElementById('previewTBVS').innerText = '0 đ';
+                // Xóa và ẩn ô phương tiện đi sau khi lưu thành công
+                document.getElementById('nvPhuongTien').value = ''; 
+                document.getElementById('vungPhuongTien').style.display = 'none';
+                // Đợi 2 giây rồi trả nút bấm về trạng thái ban đầu để nhập ca tiếp theo
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (error) {
+                console.error("Lỗi hệ thống chi tiết:", error);
+                alert("Lỗi kết nối hoặc lỗi cú pháp Firebase! Chi tiết: " + error.message);
+            } finally {
+                // KHÔI PHỤC TRẠNG THÁI NÚT BẤM VỀ MÀU XANH DƯƠNG BAN ĐẦU
+                nutBam.disabled = false;
+                nutBam.style.opacity = "1";
+                nutBam.style.background = "#0082C8"; // Màu xanh dương ban đầu của bạn
+                nutBam.style.cursor = "pointer";
+                nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;}
+        };
+
+            // SỬA LỖI KẸT MÀN HÌNH - TỰ ĐỘNG HẠ KHUNG HÌNH VỀ VỊ TRÍ CŨ KHI ẨN BÀN PHÍM
+            document.querySelectorAll('input, select, textarea').forEach(element => {
+                element.addEventListener('blur', () => {
+                    setTimeout(() => {
+                        // Ép iOS vẽ lại toàn bộ body bằng cách thay đổi tạm thời overflow
+                        document.body.style.overflow = 'hidden';
+                        
+                        // Cuộn về 0 để reset
+                        window.scrollTo(0, 0);
+                        
+                        // Trả lại trạng thái cũ ngay lập tức
+                        setTimeout(() => {
+                            document.body.style.overflow = '';
+                        }, 50);
+                    }, 150); // Đợi bàn phím đóng xong mới chạy
+                });
+            });
+
+        // XEM LỊCH SỬ CHI PHÍ
+        window.moLichSuChiPhi = () => {
+            document.getElementById('modalLichSu').style.display = 'block';
+            // Mặc định chọn tháng hiện tại
+            const thangHienTai = new Date().toISOString().slice(0, 7);
+            document.getElementById('thangLoc').value = thangHienTai;
+            taiLichSuTheoThang();
+        };
+
+        window.taiLichSuTheoThang = async () => {
+            const thang = document.getElementById('thangLoc').value;
+            if(!thang) return;
+            const [nam, thg] = thang.split('-');
+            const container = document.getElementById('danhSachLichSu');
+            
+            container.innerHTML = "<p style='text-align:center;'>Đang tải dữ liệu...</p>";
+            
+            try {
+                const q = query(collection(db, "CHIPHI"), 
+                    where("nam", "==", Number(nam)), 
+                    where("thang", "==", Number(thg)));
                 
-                // Trả lại trạng thái cũ ngay lập tức
-                setTimeout(() => {
-                    document.body.style.overflow = '';
-                }, 50);
-            }, 150); // Đợi bàn phím đóng xong mới chạy
-        });
-    });
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    container.innerHTML = "<p style='text-align:center; color:#666;'>Tháng này chưa có chi phí nào.</p>";
+                    return;
+                }
 
-// XEM LỊCH SỬ CHI PHÍ
-window.moLichSuChiPhi = () => {
-    document.getElementById('modalLichSu').style.display = 'block';
-    // Mặc định chọn tháng hiện tại
-    const thangHienTai = new Date().toISOString().slice(0, 7);
-    document.getElementById('thangLoc').value = thangHienTai;
-    taiLichSuTheoThang();
-};
+                let html = '';
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    // Đảm bảo dữ liệu số hiển thị đúng format
+                    const tong = (data.chiPhiGoc || 0).toLocaleString('vi-VN');
+                    const son = (data.tienSon || 0).toLocaleString('vi-VN');
+                    const tbvs = (data.tienTBVS || 0).toLocaleString('vi-VN');
 
-window.taiLichSuTheoThang = async () => {
-    const thang = document.getElementById('thangLoc').value;
-    if(!thang) return;
-    const [nam, thg] = thang.split('-');
-    const container = document.getElementById('danhSachLichSu');
-    
-    container.innerHTML = "<p style='text-align:center;'>Đang tải dữ liệu...</p>";
-    
-    try {
-        const q = query(collection(db, "CHIPHI"), 
-            where("nam", "==", Number(nam)), 
-            where("thang", "==", Number(thg)));
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            container.innerHTML = "<p style='text-align:center; color:#666;'>Tháng này chưa có chi phí nào.</p>";
-            return;
+                    html += `
+                    <div class="card-item">
+                        <div class="header">
+                            <strong>${data.hangMuc}</strong> 
+                            <span>${data.loaiChiPhi || 'Khác'}</span>
+                        </div>
+                        <div class="body">
+                            <div style="font-weight: bold; color: #0082C8; margin-bottom: 5px;">${tong} đ</div>
+                            <div style="display:flex; justify-content: space-between; font-size: 12px; color: #555;">
+                                <span>Sơn: ${son} đ</span>
+                                <span>TBVS: ${tbvs} đ</span>
+                            </div>
+                        </div>
+                        <div class="footer">
+                            <button onclick="suaChiPhi('${doc.id}')" class="btn-edit">Sửa</button>
+                            <button onclick="xoaChiPhi('${doc.id}')" class="btn-del">Xóa</button>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = "<p style='color:red;'>Lỗi tải dữ liệu: " + e.message + "</p>";
+            }
+        };
+
+        window.dongModal = () => {
+            document.getElementById('modalLichSu').style.display = 'none';
+        };
+
+// LỊCH SỬ CHI PHÍ KHO
+        let currentMonth = new Date(); // Khởi tạo ngày hiện tại
+        function capNhatLabel() {
+            const y = currentMonth.getFullYear();
+            const m = (currentMonth.getMonth() + 1).toString().padStart(2, '0');
+            document.getElementById('labelThangNam').innerText = `Tháng ${m}/${y}`;
+            // Gọi hàm load dữ liệu của bạn ở đây với giá trị y và m
         }
-
-        let html = '';
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            // Đảm bảo dữ liệu số hiển thị đúng format
-            const tong = (data.chiPhiGoc || 0).toLocaleString('vi-VN');
-            const son = (data.tienSon || 0).toLocaleString('vi-VN');
-            const tbvs = (data.tienTBVS || 0).toLocaleString('vi-VN');
-
-            html += `
-            <div class="card-item">
-                <div class="header">
-                    <strong>${data.hangMuc}</strong> 
-                    <span>${data.loaiChiPhi || 'Khác'}</span>
-                </div>
-                <div class="body">
-                    <div style="font-weight: bold; color: #0082C8; margin-bottom: 5px;">${tong} đ</div>
-                    <div style="display:flex; justify-content: space-between; font-size: 12px; color: #555;">
-                        <span>Sơn: ${son} đ</span>
-                        <span>TBVS: ${tbvs} đ</span>
-                    </div>
-                </div>
-                <div class="footer">
-                    <button onclick="suaChiPhi('${doc.id}')" class="btn-edit">Sửa</button>
-                    <button onclick="xoaChiPhi('${doc.id}')" class="btn-del">Xóa</button>
-                </div>
-            </div>`;
-        });
-        container.innerHTML = html;
-    } catch (e) {
-        container.innerHTML = "<p style='color:red;'>Lỗi tải dữ liệu: " + e.message + "</p>";
-    }
-};
-
-window.dongModal = () => {
-    document.getElementById('modalLichSu').style.display = 'none';
-};
+        function thayDoiThang(delta) {
+            currentMonth.setMonth(currentMonth.getMonth() + delta);
+            capNhatLabel();
+        }
+        function moBangChonThang() {
+            document.getElementById('inputThangAn').showPicker(); // Hàm này mở bảng chọn tháng chuẩn
+        }
+        function chonThang(input) {
+            if(input.value) {
+                currentMonth = new Date(input.value + "-01");
+                capNhatLabel();
+            }
+        }
     </script>
 </body>
 </html>
