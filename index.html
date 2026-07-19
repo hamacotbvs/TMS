@@ -56,19 +56,15 @@
 
         /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
         @media (max-height: 500px) and (orientation: landscape) {
-            .KHUNG-CAC-TAB {padding: 8px 12px 0px 12px !important; overflow-y: auto !important; height: calc(100dvh - env(safe-area-inset-bottom)) !important; }
-            .trang-content.active {height: calc(100dvh - env(safe-area-inset-bottom)) !important; padding-bottom: 0px !important; margin-bottom: 0px !important;}
             /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
             nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100vh !important; flex-direction: column !important; justify-content: center !important;
-                gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important; box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1) !important;}
+                gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important;}
             /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
             nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
             /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
-            .vung-bieu-do-doi-ngang {padding: 0 55px 0 0 !important; flex-direction: column !important; gap: 0px !important; box-sizing: border-box !important; margin: 0 !important; height: 100% !important;}
+            .vung-bieu-do-doi-ngang {padding: 0 55px 0 0 !important; flex-direction: column !important; gap: 0px !important; box-sizing: border-box !important;}
             /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {min-height: auto !important; height: 100% !important; width: 100% !important; margin: 5 !important; padding: 10px !important; box-sizing: border-box !important;} 
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB canvas {display: block !important; height: 100% !important;}
-            .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 25px) !important;} }
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {min-height: auto !important; height: 100dvh !important; width: 100% !important; margin: 0 !important; padding: 10px !important; box-sizing: border-box !important; } }
 
         /* KHUNG CHỌN NGÀY HIỆN HÀNH */
         .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
