@@ -127,7 +127,7 @@
             /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
                 min-height: auto !important;
-                height: calc(100vh - env(safe-area-inset-bottom, 0px)) !important;
+                height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
                 box-sizing: border-box;
                 scroll-snap-align: start !important; /* Điểm neo để hít biểu đồ lại khi vuốt qua */
                 margin-bottom: 0 !important;
