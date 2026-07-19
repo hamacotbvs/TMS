@@ -26,7 +26,7 @@
         .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
 
         /* ĐỊNH DẠNG CHUNG */
-        body {background-color: #fa4903; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
+        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
         .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 5px 12px 0px 12px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
@@ -43,7 +43,7 @@
 
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
-            .KHUNG-CAC-TAB {padding: 8px 12px 65px 12px} /* Thu hẹp khoảng đệm nội dung */
+            .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
             .KHUNG-CON-TRONG-TAB {padding: 12px 16px;    /* Giảm từ 20px xuống còn 12px */ margin-bottom: 10px;   /* Giảm khoảng cách giữa các card */}
             .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} /* Đẩy nút reset sát lên góc hơn để không chiếm diện tích */
             .nut-treo-ngay-thang-nam {top: 8px; right: 12px; padding: 1px 6px;} 
@@ -54,17 +54,22 @@
             .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
             .MENU-item.add-btn i {font-size: 16px;} }
 
-        /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
+        /* CẤU HÌNH KHI XOAY NGANG TRÊN ĐIỆN THOẠI */
         @media (max-height: 500px) and (orientation: landscape) {
             /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
-            nav.MENU-DUOI {position: fixed !important; top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100dvh !important; flex-direction: column !important; justify-content: center !important;
+            nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100vh !important; flex-direction: column !important; justify-content: center !important;
                 gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important;}
             /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
             nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
             /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
-            .vung-bieu-do-doi-ngang {padding: 0 55px 0 0 !important; display: flex !important; flex-direction: column !important; gap: 0px !important; box-sizing: border-box !important; margin: 0 !important; height: auto !important;}
+            .vung-bieu-do-doi-ngang {
+                margin-right: 55px !important; 
+                flex-direction: column !important;
+                gap: 5px !important;}
             /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {min-height: auto !important; height: 100dvh !important; width: 100% !important; margin: 5px !important; padding: 12px 16px 10px 16px !important; border-radius: 0px !important; box-sizing: border-box !important; scroll-snap-align: start !important; display: flex !important; flex-direction: column !important;} 
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
+                min-height: auto !important;
+                height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */}}
 
         /* KHUNG CHỌN NGÀY HIỆN HÀNH */
         .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
@@ -100,7 +105,7 @@
             /* 2. Cấu hình vùng chứa 2 biểu đồ */
             .vung-bieu-do-doi-ngang {display: flex !important; flex-direction: column !important; justify-content: flex-start !important; height: auto !important; gap: 10px !important; padding-bottom: 30px !important;}
             /* 3. Chia đều chiều cao cho từng biểu đồ */
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: none !important; height: 38vh !important; padding: 8px 6px 8px 6px !important; margin-bottom: 0px !important; border-radius: 12px !important; }
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: none !important; height: 38vh !important; padding: 8px 6px !important; margin-bottom: 0px !important; border-radius: 12px !important; }
             /* 4. Thu nhỏ tiêu đề biểu đồ một chút cho đỡ chiếm diện tích dọc */
             .vung-bieu-do-doi-ngang .tieu-de-bieu-do {font-size: 14px !important; margin-bottom: 3px !important;}
             /* 5. Ép canvas của biểu đồ co giãn theo khung bọc */
