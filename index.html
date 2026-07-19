@@ -133,22 +133,11 @@
         /* CSS CHO LỊCH SỬ CHI PHÍ */
         .modal-hidden { display: none; position: fixed; top: 0; left: 0; width: 100%; height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important; background-color: #f5f6f8 } /* khung nền modal */
         .modal-content { background: #ffffff; margin: 0.5vh auto; padding: 10px; width: 96%; max-width: 500px;
-            border-radius: 20px; height: calc(100vh - 140px) !important; overflow-y: auto;
+            border-radius: 20px; height: calc(100vh - 130px) !important; overflow-y: auto;
             display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);}
         @media (min-width: 850px) {
-            .modal-content {
-                background: #ffffff; margin: 0.5vh auto; padding: 10px; max-width: 500px;
-            border-radius: 20px; height: calc(100vh - 70px) !important; overflow-y: auto;
-            display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);; 
-            }
-        }
-        /* Tiêu đề Modal */
-        .modal-header h3 {
-            font-size: 18px;
-            color: #0f172a;
-            font-weight: 700;
-            margin: 0;
-        }
+            .modal-content {background: #ffffff; margin: 0.5vh auto; padding: 10px; max-width: 500px; border-radius: 20px;
+            height: calc(100vh - 70px) !important; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);; } }
 
         /* Bộ lọc tháng */
         #thangLoc {
@@ -317,7 +306,8 @@
             <div id="modalLichSu" class="modal-hidden">
                 <div class="modal-content">
                     <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-                        <h3>Lịch sử chi phí</h3>
+                        <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                            CHI PHÍ KHO THÁNG</h3>
                         <button onclick="dongModal()" style="border:none; background:none; font-size: 24px; color: #94a3b8; cursor: pointer; padding: 0 5px;">&times;</button>
                     </div>
                     
