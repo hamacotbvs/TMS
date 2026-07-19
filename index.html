@@ -121,16 +121,17 @@
             .vung-bieu-do-doi-ngang {
                 display: flex !important;
                 flex-direction: column !important;
-                gap: 2px !important;
+                gap: 4px !important;
+                margin-right: 0 !important;
                 padding-bottom: 0 !important;}
             /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
                 min-height: auto !important;
-                height: 100vh !important; /* Ép biểu đồ cao bằng đúng màn hình */
+                height: calc(100vh - env(safe-area-inset-bottom, 0px)) !important;
                 box-sizing: border-box;
                 scroll-snap-align: start !important; /* Điểm neo để hít biểu đồ lại khi vuốt qua */
                 margin-bottom: 0 !important;
-                padding: 10px 55px 10px 10px !important; /* Chừa khoảng trống bên trên cho nút lọc/ngày tháng */} 
+                padding: 10px 55px calc(15px + env(safe-area-inset-bottom, 0px)) 10px !important; /* Chừa khoảng trống bên trên cho nút lọc/ngày tháng */} 
             /* 5. Ép vùng canvas bên trong co giãn tối đa theo khung */
             .vung-bieu-do-doi-ngang .vung-bieu-do {
                 height: calc(100% - 50px) !important; width: 100% !important;
