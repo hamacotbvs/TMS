@@ -42,7 +42,6 @@
         /* VÙNG BIỂU ĐỒ ĐÔI NGANG TRÊN DESKTOP*/
         .vung-bieu-do-doi-ngang {display: flex; flex-direction: column; gap: 15px; width: 100%; padding-bottom: 80px}
         .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: 1; width: 100%;}
-        /* Khi màn hình bự hơn (từ 768px trở lên như Máy tính, iPad...), tự động dàn ngang */
         @media (min-width: 850px) {.vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
         /* VÙNG BIỂU ĐỒ ĐÔI DỌC TRÊN ĐIỆN THOẠI */
         @media (max-width: 767px) and (orientation: portrait) {
@@ -71,33 +70,16 @@
 
         /* KHUNG CHỌN NGÀY HIỆN HÀNH */
         .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
-            /* Dòng ngày/tháng ở trên */
-            .dong-ngay-thang {font-size: 11px; font-weight: 700; color: #0082C8; line-height: 1.2;}
-            /* Dòng năm ở dưới */
-            .dong-nam {font-size: 9px; font-weight: 500; color: #64748b; line-height: 1.2;}
-            /* Ẩn giấu ô nhập lịch gốc đi nhưng vẫn để nó nằm đè lên để hứng click chạm */
-            .o-lich-an-giao-dien {position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;}
-        
+            .dong-ngay-thang {font-size: 11px; font-weight: 700; color: #0082C8; line-height: 1.2;} /* Dòng ngày/tháng ở trên */
+            .dong-nam {font-size: 9px; font-weight: 500; color: #64748b; line-height: 1.2;} /* Dòng năm ở dưới */
+            .o-lich-an-giao-dien {position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;} /* Ẩn giấu ô nhập lịch gốc đi nhưng vẫn để nó nằm đè lên để hứng click chạm */
+
         /* KHUNG CHỌN LỌC NGÀNH */
         .nut-treo-loc-nganh {position: absolute; top: 15px; left: 15px; z-index: 10;}
         /* Định dạng cho ô chọn (Select) giống phom nút cũ */
         .nut-treo-loc-nganh select {
-            background-color: #ffffff;
-            color: #333;
-            border: 1px solid #e2e8f0;
-            padding: 2px 8px;
-            font-size: 11px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            outline: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            font-family: inherit;
-            /* Loại bỏ mũi tên mặc định của trình duyệt để nhìn gọn hơn (tùy chọn) */
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            text-align: center;}
+            background-color: #ffffff; color: #333; border: 1px solid #e2e8f0; padding: 2px 8px; font-size: 11px; font-weight: bold; border-radius: 8px; cursor: pointer; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-family: inherit;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none; text-align: center;} /* Loại bỏ mũi tên mặc định của trình duyệt để nhìn gọn hơn (tùy chọn) */
 
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
@@ -115,12 +97,8 @@
         /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
         @media (max-height: 500px) and (orientation: landscape) {
             /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
-            nav.MENU-DUOI {
-                top: 0 !important;
-                bottom: 0 !important;
-                left: auto !important;
-                right: 0 !important; /* Dính chặt mép phải */
-                width: 70px !important; /* Thu hẹp chiều ngang của menu */
+            nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important;
+                width: 50px !important; /* Thu hẹp chiều ngang của menu */
                 height: 100vh !important; /* Chiều cao chiếm trọn màn hình */
                 flex-direction: column !important; /* Xếp các nút theo hàng dọc */
                 justify-content: center !important; /* Căn các nút vào giữa theo chiều dọc */
