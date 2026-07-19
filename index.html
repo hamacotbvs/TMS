@@ -97,29 +97,14 @@
         /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
         @media (max-height: 500px) and (orientation: landscape) {
             /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
-            nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important;
-                width: 55px !important; /* Thu hẹp chiều ngang của menu */
-                height: 100vh !important; /* Chiều cao chiếm trọn màn hình */
-                flex-direction: column !important; /* Xếp các nút theo hàng dọc */
-                justify-content: center !important; /* Căn các nút vào giữa theo chiều dọc */
-                gap: 15px !important; /* Khoảng cách giữa các nút */
-                border-radius: 0 !important; /* Bỏ bo góc nếu có để áp sát viền màn hình */
-                padding: 10px 0 !important;
-                z-index: 9999 !important;}
+            nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100vh !important; flex-direction: column !important; justify-content: center !important;
+                gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important;}
             /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
-            nav.MENU-DUOI .MENU-item {
-                flex-direction: column !important;
-                gap: 2px !important;
-                font-size: 10px !important;}
+            nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
             /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
-            .vung-bieu-do-doi {
-                margin-right: 75px !important; 
-                flex-direction: column !important;
-                gap: 20px !important;}
+            .vung-bieu-do-doi-ngang {margin-right: 55px !important; flex-direction: column !important; gap: 20px !important;}
             /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
-            .vung-bieu-do-doi .KHUNG-CON-TRONG-TAB {
-                min-height: auto !important;
-                height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */}}
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {min-height: auto !important; height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */}}
 
         /* CSS CHO FORM HOẠCH TOÁN CHI PHÍ LÀM MỚI */
         /* Hiệu ứng mượt mà khi nhấn nút Ghi Sổ */
