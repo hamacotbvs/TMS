@@ -62,9 +62,9 @@
             /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
             nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
             /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
-            .vung-bieu-do-doi-ngang {margin-right: 55px !important; flex-direction: column !important; gap: 20px !important;}
+            .vung-bieu-do-doi-ngang {padding-right: 55px !important; flex-direction: column !important; gap: 20px !important; box-sizing: border-box !important;}
             /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {min-height: auto !important; height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */}}
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {min-height: auto !important; height: 280px !important; width: 100% !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */}}
 
         /* KHUNG CHỌN NGÀY HIỆN HÀNH */
         .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
