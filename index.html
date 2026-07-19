@@ -96,56 +96,55 @@
 
         /* CẤU HÌNH KHI XOAY NGANG TRÊN ĐIỆN THOẠI */
         @media (max-height: 500px) and (orientation: landscape) {
-            .KHUNG-CAC-TAB {
-                padding: 0px !important; height: 100vh !important; overflow-y: scroll !important; scroll-snap-type: y mandatory !important; -webkit-overflow-scrolling: touch; box-sizing: border-box !important;}
-            /* SỬA LỖI: ÉP TAB CON PHẢI ĐỒNG BỘ CHIỀU CAO 100VH VỚI CHA MẸ */
+            /* 0. ÉP TẤT CẢ CÁC KHUNG CHA XẢ HẾT PADDING ĐÁY CŨ */
+            .KHUNG-CAC-TAB {padding: 8px 12px 0px 12px !important; overflow-y: auto !important;
+            }
             .trang-content.active {
-                display: block !important; height: 100vh !important; padding: 0px !important; margin: 0px !important; box-sizing: border-box !important;}
-            /* 1. Bẻ cố định thanh menu dọc bên phải (Giữ nguyên cấu trúc của bạn) */
+                height: 100dvh !important;
+                padding-bottom: 0px !important;
+                margin-bottom: 0px !important;
+            }
+
+            /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
             nav.MENU-DUOI {
-                position: fixed !important;
                 top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; 
-                width: 55px !important; height: 100vh !important; flex-direction: column !important; 
+                width: 55px !important; height: 100dvh !important; flex-direction: column !important; 
                 justify-content: center !important; gap: 15px !important; border-radius: 0 !important; 
                 padding: 10px 0 !important; z-index: 9999 !important;
-                background-color: #0082C8 !important;}
-            /* 2. Thu nhỏ chữ trong menu (Giữ nguyên) */
-            nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
-            /* 3. SỬA LỖI VÙNG CHỨA: Chừa lề phải chuẩn và bao quát toàn chiều cao */
-            .vung-bieu-do-doi-ngang {
-                padding: 0px !important;
-                margin-right: 55px !important; /* Chừa khoảng trống bên phải cho menu dọc */
-                display: flex !important;
-                flex-direction: column !important; 
-                gap: 0px !important; /* Triệt tiêu khoảng cách để không bị lệch trang */
-                box-sizing: border-box !important;
-                height: 100vh !important;
-                width: auto !important;
+                box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1) !important; /* Đổ bóng sang trái vì menu nằm bên phải */
             }
 
-            /* 4. ÉP MỖI BIỂU ĐỒ LÀ MỘT MÀN HÌNH ĐỘC LẬP HOÀN HẢO */
+            /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
+            nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
+            
+            /* 3. Ép vùng chứa chừa ra 55px bên phải để không bị menu dọc đè lên */
+            .vung-bieu-do-doi-ngang {
+                padding: 0 55px 0 0 !important; 
+                flex-direction: column !important; 
+                gap: 0px !important; 
+                box-sizing: border-box !important;
+                margin: 0 !important;
+            }
+
+            /* 4. Khống chế chiều cao biểu đồ vừa vặn khít màn hình dynamic */
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
                 min-height: auto !important; 
-                height: 100vh !important; /* Chiếm trọn 100% chiều cao màn hình khả dụng */
+                height: 100dvh !important; 
                 width: 100% !important; 
-                margin: 0px !important; 
-                border-radius: 0px !important; /* Bỏ bo góc ngoài để tràn phẳng viền */
+                margin: 0 !important; 
+                padding: 10px !important; 
                 box-sizing: border-box !important;
-                scroll-snap-align: start !important; /* Điểm neo hít màn hình khi vuốt */
-                display: flex !important;
-                flex-direction: column !important;
-                /* SỬA LỖI CHE SỐ: Padding đáy tăng lên 35px giúp đẩy hàng số lên trên thanh Home đỏ */
-                padding: 12px 16px 35px 16px !important; }
-            /* Ép canvas ruột co giãn khít khao diện tích hiển thị */
+            } 
+            
+            /* Đã kéo lệnh canvas vào ĐÚNG TRONG media query để tránh lỗi global */
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB canvas {
                 display: block !important; 
-                height: 100vh !important;
-                width: 100% !important;
+                height: 100% !important;
             }
-
+            
+            /* Tinh chỉnh ruột vùng chứa đồ họa */
             .vung-bieu-do-doi-ngang .vung-bieu-do {
-                flex: 1 !important; 
-                height: 100vh !important;
+                height: calc(100% - 25px) !important;
             }
         }
 
