@@ -32,33 +32,6 @@
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
 
-        /* ĐỊNH DẠNG BIỂU ĐỒ */
-        .tieu-de-bieu-do {font-size: 18px; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 8px;}
-        .vung-bieu-do { position: relative; width: 100%; height: 340px; }
-        /* HIỆU ỨNG NÚT XOAY ĐANG TẢI DỮ LIỆU BIỂU ĐỒ */
-        .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; width: 90%; text-align: center; justify-content: center;}
-        .loading-box i { animation: spin 1s linear infinite; color: #3498db; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* VÙNG BIỂU ĐỒ ĐÔI NGANG TRÊN DESKTOP*/
-        .vung-bieu-do-doi-ngang {display: flex; flex-direction: column; gap: 15px; width: 100%; padding-bottom: 80px}
-        .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: 1; width: 100%;}
-        @media (min-width: 850px) {.vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
-        /* VÙNG BIỂU ĐỒ ĐÔI DỌC TRÊN ĐIỆN THOẠI */
-        @media (max-width: 767px) and (orientation: portrait) {
-            /* 1. Khống chế trang không cho cuộn tràn lan */
-            .trang-content.active {
-                overflow-y: auto !important;
-                height: calc(100vh - 110px) !important;   /* Trừ đi chiều cao menu dưới - CHỈNH BIỂU ĐỒ NẰM TRÊN MENU Ở ĐÂY*/
-                -webkit-overflow-scrolling: touch; }
-            /* 2. Cấu hình vùng chứa 2 biểu đồ */
-            .vung-bieu-do-doi-ngang {display: flex !important; flex-direction: column !important; justify-content: flex-start !important; height: auto !important; gap: 10px !important; padding-bottom: 30px !important;}
-            /* 3. Chia đều chiều cao cho từng biểu đồ */
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: none !important; height: 38vh !important; padding: 8px 6px !important; margin-bottom: 0px !important; border-radius: 12px !important; }
-            /* 4. Thu nhỏ tiêu đề biểu đồ một chút cho đỡ chiếm diện tích dọc */
-            .vung-bieu-do-doi-ngang .tieu-de-bieu-do {font-size: 14px !important; margin-bottom: 3px !important;}
-            /* 5. Ép canvas của biểu đồ co giãn theo khung bọc */
-            .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 25px) !important;} }
-
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 10px; left: 5%; right: 5%; height: 60px; background-color: #0082C8; /* Màu xanh chủ đạo */ border-radius: 30px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
         .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
@@ -67,19 +40,6 @@
         .MENU-item.add-btn {flex: none; width: 50px; height: 50px; background-color: #ffffff; color: #0082C8; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #6b6b6c; color: #ffffff;}
-
-        /* KHUNG CHỌN NGÀY HIỆN HÀNH */
-        .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
-            .dong-ngay-thang {font-size: 11px; font-weight: 700; color: #0082C8; line-height: 1.2;} /* Dòng ngày/tháng ở trên */
-            .dong-nam {font-size: 9px; font-weight: 500; color: #64748b; line-height: 1.2;} /* Dòng năm ở dưới */
-            .o-lich-an-giao-dien {position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;} /* Ẩn giấu ô nhập lịch gốc đi nhưng vẫn để nó nằm đè lên để hứng click chạm */
-
-        /* KHUNG CHỌN LỌC NGÀNH */
-        .nut-treo-loc-nganh {position: absolute; top: 15px; left: 15px; z-index: 10;}
-        /* Định dạng cho ô chọn (Select) giống phom nút cũ */
-        .nut-treo-loc-nganh select {
-            background-color: #ffffff; color: #333; border: 1px solid #e2e8f0; padding: 2px 8px; font-size: 11px; font-weight: bold; border-radius: 8px; cursor: pointer; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-family: inherit;
-            -webkit-appearance: none; -moz-appearance: none; appearance: none; text-align: center;} /* Loại bỏ mũi tên mặc định của trình duyệt để nhìn gọn hơn (tùy chọn) */
 
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
@@ -94,105 +54,81 @@
             .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
             .MENU-item.add-btn i {font-size: 16px;} }
 
-        /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
-        @media (max-height: 500px) and (orientation: landscape) {
-            /* 0. Cấu hình khung chứa tab để hỗ trợ cuộn từng biểu đồ (Scroll Snapping) */
-            .KHUNG-CAC-TAB {
-                padding-right: 60px !important; 
-                padding-top: 0px !important;
-                padding-bottom: 0px !important; /* KHÓA KHOẢNG ĐỆM ĐÁY CỦA KHUNG CHA */
-                scroll-snap-type: y mandatory !important; 
-                overflow-y: scroll !important;
-                height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
-                box-sizing: border-box;
-            }
+        /* KHUNG CHỌN NGÀY HIỆN HÀNH */
+        .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
+            .dong-ngay-thang {font-size: 11px; font-weight: 700; color: #0082C8; line-height: 1.2;} /* Dòng ngày/tháng ở trên */
+            .dong-nam {font-size: 9px; font-weight: 500; color: #64748b; line-height: 1.2;} /* Dòng năm ở dưới */
+            .o-lich-an-giao-dien {position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;} /* Ẩn giấu ô nhập lịch gốc đi nhưng vẫn để nó nằm đè lên để hứng click chạm */
+
+        /* KHUNG CHỌN LỌC NGÀNH */
+        .nut-treo-loc-nganh {position: absolute; top: 15px; left: 15px; z-index: 10;}
+        /* Định dạng cho ô chọn (Select) giống phom nút cũ */
+        .nut-treo-loc-nganh select {
+            background-color: #ffffff; color: #333; border: 1px solid #e2e8f0; padding: 2px 8px; font-size: 11px; font-weight: bold; border-radius: 8px; cursor: pointer; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-family: inherit;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none; text-align: center;} /* Loại bỏ mũi tên mặc định của trình duyệt để nhìn gọn hơn (tùy chọn) */
+
+        /* ĐỊNH DẠNG BIỂU ĐỒ */
+        .tieu-de-bieu-do {font-size: 18px; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 8px;}
+        .vung-bieu-do { position: relative; width: 100%; height: 340px; }
+        /* HIỆU ỨNG NÚT XOAY ĐANG TẢI DỮ LIỆU BIỂU ĐỒ */
+        .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; width: 90%; text-align: center; justify-content: center;}
+        .loading-box i { animation: spin 1s linear infinite; color: #3498db; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* VÙNG BIỂU ĐỒ NGANG TRÊN DESKTOP*/
+        .vung-bieu-do-doi-ngang {display: flex; flex-direction: column; gap: 15px; width: 100%; padding-bottom: 80px}
+        .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: 1; width: 100%;}
+        @media (min-width: 850px) {.vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
+        /* VÙNG BIỂU ĐỒ DỌC TRÊN ĐIỆN THOẠI */
+        @media (max-width: 767px) and (orientation: portrait) {
+            /* 1. Khống chế trang không cho cuộn tràn lan */
             .trang-content.active {
-                height: auto !important;
-                overflow: visible !important;}
-            /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
+                overflow-y: auto !important;
+                height: calc(100vh - 110px) !important;   /* Trừ đi chiều cao menu dưới - CHỈNH BIỂU ĐỒ NẰM TRÊN MENU Ở ĐÂY*/
+                -webkit-overflow-scrolling: touch; }
+            /* 2. Cấu hình vùng chứa 2 biểu đồ */
+            .vung-bieu-do-doi-ngang {display: flex !important; flex-direction: column !important; justify-content: flex-start !important; height: auto !important; gap: 10px !important; padding-bottom: 30px !important;}
+            /* 3. Chia đều chiều cao cho từng biểu đồ */
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: none !important; height: 38vh !important; padding: 8px 6px !important; margin-bottom: 0px !important; border-radius: 12px !important; }
+            /* 4. Thu nhỏ tiêu đề biểu đồ một chút cho đỡ chiếm diện tích dọc */
+            .vung-bieu-do-doi-ngang .tieu-de-bieu-do {font-size: 14px !important; margin-bottom: 3px !important;}
+            /* 5. Ép canvas của biểu đồ co giãn theo khung bọc */
+            .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 25px) !important;} }
+        /* VÙNG BIỂU ĐỒ NGANG TRÊN ĐIỆN THOẠI */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .KHUNG-CAC-TAB {
+                padding-right: 60px !important; padding-top: 0px !important; padding-bottom: 0px !important;
+                scroll-snap-type: y mandatory !important; overflow-y: scroll !important;
+                height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
+                box-sizing: border-box;}
+            .trang-content.active {height: auto !important; overflow: visible !important;}
             nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100vh !important; flex-direction: column !important; justify-content: center !important;
                 gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important;}
-            /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
-            nav.MENU-DUOI .MENU-item {
-                flex-direction: column !important;
-                gap: 2px !important;
-                font-size: 10px !important;}
-            /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
-            .vung-bieu-do-doi-ngang {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 4px !important;
-                margin-right: 0 !important;
-                padding-bottom: 0 !important;}
-            /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
+            nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
+            .vung-bieu-do-doi-ngang {display: flex !important; flex-direction: column !important; gap: 4px !important; margin-right: 0 !important; padding-bottom: 0 !important;}
             .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
                 min-height: auto !important;
                 height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
                 box-sizing: border-box;
-                scroll-snap-align: start !important; /* Điểm neo để hít biểu đồ lại khi vuốt qua */
+                scroll-snap-align: start !important;
                 margin-bottom: 0 !important;
                 padding: 10px 10px 10px 10px !important;} 
-            /* 5. Ép vùng canvas bên trong co giãn tối đa theo khung */
-            .vung-bieu-do-doi-ngang .vung-bieu-do {
-                height: calc(100% - 50px) !important; width: 100% !important;
-            } }
+            .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 50px) !important; width: 100% !important;}}
 
         /* CSS CHO FORM HOẠCH TOÁN CHI PHÍ LÀM MỚI */
-        /* Hiệu ứng mượt mà khi nhấn nút Ghi Sổ */
-        .nut-gui-xac-nhan:active { 
-            transform: scale(0.98); 
-            background-color: #006fa3 !important; 
-        }
-        /* Khống chế khoảng cách cuộn trên Mobile để không bị MENU DƯỚI che khuất nút */
-        @media (max-width: 767px) and (orientation: portrait) {
-            #them-moi { 
-                padding-bottom: 120px !important; 
-            }
-        }
-        /* Định dạng ô chọn Hạng mục và Kiểu phân bổ giống phom thiết kế chung của App */
-        #nvHangMuc, #nvKieuPhanBo {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
+        .nut-gui-xac-nhan:active { transform: scale(0.98); background-color: #006fa3 !important; }
+        @media (max-width: 767px) and (orientation: portrait) {#them-moi { padding-bottom: 120px !important; } }   /* Khống chế khoảng cách cuộn trên Mobile để không bị MENU DƯỚI che khuất nút */
+        #nvHangMuc, #nvKieuPhanBo {-webkit-appearance: none; -moz-appearance: none; appearance: none;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 24 24'><path d='M7 10l5 5 5-5z'/></svg>");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 30px !important;
-        }
-        body {
-            /* Đảm bảo body không bị tràn ra khỏi vùng hiển thị thực tế */
-            margin: 0;
-            padding: 0;
-            /* Dùng env() để iOS tự tính khoảng cách tai thỏ và thanh home dưới */
-            padding-bottom: env(safe-area-inset-bottom);
-            min-height: 100dvh;
-        }
-
-        /* Áp dụng cho container chính của form */
-        .container {
-            padding-bottom: constant(safe-area-inset-bottom); /* Cho iOS cũ */
-            padding-bottom: env(safe-area-inset-bottom);     /* Cho iOS mới */
-        }
-        /* KHUNG CHO CHỌN CHỌN DỮ LIỆU SỔ XUỐNG */
-        .custom-select {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #cbd5e1; /* Khôi phục đường viền */
-        border-radius: 8px;        /* Bo góc */
-        background-color: #fff;
-        font-size: 14px;
-        color: #475569;
-        
-        /* Ép iOS không được bỏ style của mình */
-        -webkit-appearance: none; 
-        appearance: none;
-        
-        /* Thêm icon mũi tên nhỏ bên phải cho đẹp */
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 16px;
-        }
+            background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px !important;}
+        body {margin: 0; padding: 0;
+              padding-bottom: env(safe-area-inset-bottom);    /* Dùng env() để iOS tự tính khoảng cách tai thỏ và thanh home dưới */
+              min-height: 100dvh;}
+        .container {padding-bottom: constant(safe-area-inset-bottom); /* Cho iOS cũ */
+                    padding-bottom: env(safe-area-inset-bottom); }    /* Cho iOS mới */
+        .Dropdown {width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #fff; font-size: 14px; color: #475569; -webkit-appearance: none; appearance: none;
+            /* Thêm icon mũi tên nhỏ bên phải cho đẹp */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 5px center; background-size: 16px;}
 
         /* CSS CHO LỊCH SỬ CHI PHÍ (NÂNG CẤP) */
 
@@ -479,7 +415,7 @@
                     <!-- 2. Hạng mục chi phí -->
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Hạng mục chi phí:</label>
-                        <select id="nvHangMuc" class="custom-select" onchange="tuDongChonTyLeTheoHangMuc(this.value); tinhPhanBoNghiepVu('thay-doi-nguyen-tac')">
+                        <select id="nvHangMuc" class="Dropdown" onchange="tuDongChonTyLeTheoHangMuc(this.value); tinhPhanBoNghiepVu('thay-doi-nguyen-tac')">
                             <option value="">-- Chọn hạng mục --</option>
                             
                             <optgroup label="PHÍ KHO">
