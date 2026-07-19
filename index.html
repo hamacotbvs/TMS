@@ -58,6 +58,7 @@
         @media (max-height: 500px) and (orientation: landscape) {
             /* 0. KHÓA CỨNG KHUNG CHA CHỐNG TRÀN NỀN CAM */
             .KHUNG-CAC-TAB {
+                height: calc(100dvh - env(safe-area-inset-bottom)) !important;
                 padding: 0px !important; /* Xóa sạch padding viền để biểu đồ ăn sát ra mép */
                 height: 100dvh !important;
                 overflow-y: scroll !important; /* Cho phép cuộn trang dạng trang đơn */
