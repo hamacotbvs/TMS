@@ -26,11 +26,69 @@
         .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
 
         /* ĐỊNH DẠNG CHUNG */
-        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important; /* cao app = 100% màn hình + home ảo iphone */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
+        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: 100vh /* cao app = 100% màn hình */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
         .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 5px 12px 0px 12px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
         .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
+
+        /* ĐỊNH DẠNG BIỂU ĐỒ */
+        .tieu-de-bieu-do {font-size: 18px; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 8px;}
+        .vung-bieu-do { position: relative; width: 100%; height: 340px; }
+            /* HIỆU ỨNG NÚT XOAY ĐANG TẢI DỮ LIỆU BIỂU ĐỒ */
+            .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; width: 90%; text-align: center; justify-content: center;}
+            .loading-box i { animation: spin 1s linear infinite; color: #3498db; }
+            /* Ép khung loading và thông báo lỗi Firebase luôn nổi lên trên cùng */
+            .loading-box {
+                z-index: 100000 !important; /* Đẩy độ ưu tiên lên cao nhất để không bị canvas đè */
+                background: rgba(255, 255, 255, 0.95); /* Thêm nền trắng đục để dễ đọc chữ link index */
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* Tạo bóng đổ cho đẹp và nổi bật */
+            }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            /* VÙNG BIỂU ĐỒ ĐÔI NGANG TRÊN DESKTOP*/
+            .vung-bieu-do-doi-ngang {display: flex; flex-direction: column; gap: 15px; width: 100%; padding-bottom: 80px}
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: 1; width: 100%;}
+            /* Khi màn hình bự hơn (từ 768px trở lên như Máy tính, iPad...), tự động dàn ngang */
+            @media (min-width: 850px) {
+            .vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
+            /* VÙNG BIỂU ĐỒ ĐÔI DỌC TRÊN ĐIỆN THOẠI */
+            @media (max-width: 767px) and (orientation: portrait) {
+                /* 1. Khống chế trang không cho cuộn tràn lan */
+                .trang-content.active {
+                    overflow-y: hidden !important; /* Khóa cuộn dọc để cố định giao diện */
+                    height: calc(100vh - 110px) !important; /* Trừ đi chiều cao menu dưới - CHỈNH BIỂU ĐỒ NẰM TRÊN MENU Ở ĐÂY*/
+                }
+                /* 2. Cấu hình vùng chứa 2 biểu đồ */
+                .vung-bieu-do-doi-ngang {
+                    display: flex !important;
+                    flex-direction: column !important; /* Xếp trên dưới */
+                    justify-content: space-between !important; /* Chia đều khoảng cách */
+                    height: 100% !important;
+                    gap: 10px !important;  /* khoảng cách giữa 2 biểu đồ */
+                    padding-bottom: 20px !important; /* Khoảng cách an toàn với menu dưới */
+                }
+                /* 3. Chia đều chiều cao cho từng biểu đồ */
+                .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
+                    flex: 1 !important; /* Tự động chia đôi không gian đều nhau */
+                    min-height: auto !important;
+                    /* Ép chiều cao tối đa khoảng 36% chiều cao màn hình để không bị lấn chiếm */
+                    height: 36vh !important; 
+                    padding: 5px 3px 0px 0px !important; /* Thu nhỏ padding ruột để tăng diện tích vẽ bđ */
+                    margin-bottom: 3px !important; /* Giảm khoảng cách giữa 2 biểu đồ xuống còn 8px */
+                    border-radius: 12px !important; /* Thu nhỏ bo góc một chút cho thanh thoát */
+                }
+                /* 4. Thu nhỏ tiêu đề biểu đồ một chút cho đỡ chiếm diện tích dọc */
+                .vung-bieu-do-doi-ngang .tieu-de-bieu-do {
+                    font-size: 14px !important;
+                    margin-bottom: 3px !important;
+                }
+                /* 5. Ép canvas của biểu đồ co giãn theo khung bọc */
+                .vung-bieu-do-doi-ngang .vung-bieu-do {
+                    height: calc(100% - 25px) !important;
+                }
+            }
 
         /* THANH MENU DƯỚI */
         .MENU-DUOI {position: fixed; bottom: 10px; left: 5%; right: 5%; height: 60px; background-color: #0082C8; /* Màu xanh chủ đạo */ border-radius: 30px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
@@ -40,6 +98,36 @@
         .MENU-item.add-btn {flex: none; width: 50px; height: 50px; background-color: #ffffff; color: #0082C8; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
         .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
         .MENU-item.add-btn.active {background-color: #6b6b6c; color: #ffffff;}
+
+        /* KHUNG CHỌN NGÀY HIỆN HÀNH */
+        .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
+            /* Dòng ngày/tháng ở trên */
+            .dong-ngay-thang {font-size: 11px; font-weight: 700; color: #0082C8; line-height: 1.2;}
+            /* Dòng năm ở dưới */
+            .dong-nam {font-size: 9px; font-weight: 500; color: #64748b; line-height: 1.2;}
+            /* Ẩn giấu ô nhập lịch gốc đi nhưng vẫn để nó nằm đè lên để hứng click chạm */
+            .o-lich-an-giao-dien {position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;}
+        
+        /* KHUNG CHỌN LỌC NGÀNH */
+        .nut-treo-loc-nganh {position: absolute; top: 15px; left: 15px; z-index: 10;}
+        /* Định dạng cho ô chọn (Select) giống phom nút cũ */
+        .nut-treo-loc-nganh select {
+            background-color: #ffffff;
+            color: #333;
+            border: 1px solid #e2e8f0;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            font-family: inherit;
+            /* Loại bỏ mũi tên mặc định của trình duyệt để nhìn gọn hơn (tùy chọn) */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            text-align: center;}
 
         /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
         @media (orientation: landscape) {
@@ -54,240 +142,123 @@
             .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
             .MENU-item.add-btn i {font-size: 16px;} }
 
-        /* KHUNG CHỌN NGÀY HIỆN HÀNH */
-        .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
-            .dong-ngay-thang {font-size: 11px; font-weight: 700; color: #0082C8; line-height: 1.2;} /* Dòng ngày/tháng ở trên */
-            .dong-nam {font-size: 9px; font-weight: 500; color: #64748b; line-height: 1.2;} /* Dòng năm ở dưới */
-            .o-lich-an-giao-dien {position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;} /* Ẩn giấu ô nhập lịch gốc đi nhưng vẫn để nó nằm đè lên để hứng click chạm */
-
-        /* KHUNG CHỌN LỌC NGÀNH */
-        .nut-treo-loc-nganh {position: absolute; top: 15px; left: 15px; z-index: 10;}
-        /* Định dạng cho ô chọn (Select) giống phom nút cũ */
-        .nut-treo-loc-nganh select {
-            background-color: #ffffff; color: #333; border: 1px solid #e2e8f0; padding: 2px 8px; font-size: 11px; font-weight: bold; border-radius: 8px; cursor: pointer; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-family: inherit;
-            -webkit-appearance: none; -moz-appearance: none; appearance: none; text-align: center;} /* Loại bỏ mũi tên mặc định của trình duyệt để nhìn gọn hơn (tùy chọn) */
-
-        /* ĐỊNH DẠNG BIỂU ĐỒ */
-        .tieu-de-bieu-do {font-size: 18px; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 8px;}
-        .vung-bieu-do { position: relative; width: 100%; height: 340px; }
-        /* HIỆU ỨNG NÚT XOAY ĐANG TẢI DỮ LIỆU BIỂU ĐỒ */
-        .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; width: 90%; text-align: center; justify-content: center;}
-        .loading-box i { animation: spin 1s linear infinite; color: #3498db; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* VÙNG BIỂU ĐỒ NGANG TRÊN DESKTOP*/
-        .vung-bieu-do-doi-ngang {display: flex; flex-direction: column; gap: 15px; width: 100%; padding-bottom: 80px}
-        .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: 1; width: 100%;}
-        @media (min-width: 850px) {.vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
-        /* VÙNG BIỂU ĐỒ DỌC TRÊN ĐIỆN THOẠI */
-        @media (max-width: 767px) and (orientation: portrait) {
-            /* 1. Khống chế trang không cho cuộn tràn lan */
-            .trang-content.active {
-                overflow-y: auto !important;
-                height: calc(100vh - env(safe-area-inset-bottom, 0px)) !important;   /* Trừ đi chiều cao menu dưới - CHỈNH BIỂU ĐỒ NẰM TRÊN MENU Ở ĐÂY*/
-                -webkit-overflow-scrolling: touch; }
-            /* 2. Cấu hình vùng chứa 2 biểu đồ */
-            .vung-bieu-do-doi-ngang {display: flex !important; flex-direction: column !important; justify-content: flex-start !important; height: auto !important; gap: 10px !important; padding-bottom: 30px !important;}
-            /* 3. Chia đều chiều cao cho từng biểu đồ */
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: none !important; height: 38vh !important; padding: 8px 6px !important; margin-bottom: 0px !important; border-radius: 12px !important; }
-            /* 4. Thu nhỏ tiêu đề biểu đồ một chút cho đỡ chiếm diện tích dọc */
-            .vung-bieu-do-doi-ngang .tieu-de-bieu-do {font-size: 14px !important; margin-bottom: 3px !important;}
-            /* 5. Ép canvas của biểu đồ co giãn theo khung bọc */
-            .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 25px) !important;} }
-        /* VÙNG BIỂU ĐỒ NGANG TRÊN ĐIỆN THOẠI */
+        /* CHUYỂN MENU THÀNH DỌC KHI ĐIỆN THOẠI XOAY NGANG */
         @media (max-height: 500px) and (orientation: landscape) {
-            .KHUNG-CAC-TAB {
-                padding-right: 60px !important; padding-top: 0px !important; padding-bottom: 0px !important;
-                scroll-snap-type: y mandatory !important; overflow-y: scroll !important;
-                height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
-                box-sizing: border-box;}
-            .trang-content.active {height: auto !important; overflow: visible !important;}
-            nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100vh !important; flex-direction: column !important; justify-content: center !important;
-                gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important;}
-            nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
-            .vung-bieu-do-doi-ngang {display: flex !important; flex-direction: column !important; gap: 4px !important; margin-right: 0 !important; padding-bottom: 0 !important;}
-            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
+            /* 1. Bẻ thanh menu từ nằm ngang đáy thành nằm dọc bên phải */
+            nav.MENU-DUOI {
+                top: 0 !important;
+                bottom: 0 !important;
+                left: auto !important;
+                right: 0 !important; /* Dính chặt mép phải */
+                width: 70px !important; /* Thu hẹp chiều ngang của menu */
+                height: 100vh !important; /* Chiều cao chiếm trọn màn hình */
+                flex-direction: column !important; /* Xếp các nút theo hàng dọc */
+                justify-content: center !important; /* Căn các nút vào giữa theo chiều dọc */
+                gap: 15px !important; /* Khoảng cách giữa các nút */
+                border-radius: 0 !important; /* Bỏ bo góc nếu có để áp sát viền màn hình */
+                padding: 10px 0 !important;
+                z-index: 9999 !important;}
+            /* 2. Thu nhỏ chữ hoặc ẩn bớt chữ trong menu để đỡ chật dòng dọc */
+            nav.MENU-DUOI .MENU-item {
+                flex-direction: column !important;
+                gap: 2px !important;
+                font-size: 10px !important;}
+            /* 3. Ép biểu đồ chừa ra 70px bên phải để không bị menu dọc đè lên */
+            .vung-bieu-do-doi {
+                margin-right: 75px !important; 
+                flex-direction: column !important;
+                gap: 20px !important;}
+            /* 4. Khống chế chiều cao biểu đồ vừa vặn, lúc này không sợ menu đáy nữa */
+            .vung-bieu-do-doi .KHUNG-CON-TRONG-TAB {
                 min-height: auto !important;
-                height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
-                box-sizing: border-box;
-                scroll-snap-align: start !important;
-                margin-bottom: 0 !important;
-                padding: 10px 10px 10px 10px !important;} 
-            .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 50px) !important; width: 100% !important;}}
+                height: 280px !important; /* Biểu đồ sẽ cao ráo và hiển thị rất đẹp */}}
 
-        /* TAB NHẬP LIỆU */
-        .nut-gui-xac-nhan:active { transform: scale(0.98); background-color: #006fa3 !important; }
-        @media (max-width: 767px) and (orientation: portrait) {#them-moi { padding-bottom: 120px !important; } }   /* Khống chế khoảng cách cuộn trên Mobile để không bị MENU DƯỚI che khuất nút */
-        #nvHangMuc, #nvKieuPhanBo {-webkit-appearance: none; -moz-appearance: none; appearance: none;
+        /* CSS CHO FORM HOẠCH TOÁN CHI PHÍ LÀM MỚI */
+        /* Hiệu ứng mượt mà khi nhấn nút Ghi Sổ */
+        .nut-gui-xac-nhan:active { 
+            transform: scale(0.98); 
+            background-color: #006fa3 !important; 
+        }
+        /* Khống chế khoảng cách cuộn trên Mobile để không bị MENU DƯỚI che khuất nút */
+        @media (max-width: 767px) and (orientation: portrait) {
+            #them-moi { 
+                padding-bottom: 120px !important; 
+            }
+        }
+        /* Định dạng ô chọn Hạng mục và Kiểu phân bổ giống phom thiết kế chung của App */
+        #nvHangMuc, #nvKieuPhanBo {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 24 24'><path d='M7 10l5 5 5-5z'/></svg>");
-            background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px !important;}
-        body {margin: 0; padding: 0;
-              padding-bottom: env(safe-area-inset-bottom);    /* Dùng env() để iOS tự tính khoảng cách tai thỏ và thanh home dưới */
-              min-height: 100dvh;}
-        .container {padding-bottom: constant(safe-area-inset-bottom); /* Cho iOS cũ */
-                    padding-bottom: env(safe-area-inset-bottom); }    /* Cho iOS mới */
-        .Dropdown {width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #fff; font-size: 14px; color: #475569; -webkit-appearance: none; appearance: none;
-            /* Thêm icon mũi tên nhỏ bên phải cho đẹp */
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat; background-position: right 5px center; background-size: 16px;}
-
-        /* CSS CHO LỊCH SỬ CHI PHÍ */
-        .modal-hidden { display: none; position: fixed; top: 0; left: 0; width: 100%; height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important; background-color: #f5f6f8 } /* khung nền modal */
-        .modal-content { background: #ffffff; margin: 0.5vh auto; padding: 10px; width: 96%; max-width: 500px;
-            border-radius: 20px; height: calc(100vh - 130px) !important; overflow-y: auto;
-            display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);}
-        @media (min-width: 850px) {
-            .modal-content {background: #ffffff; margin: 0.5vh auto; padding: 10px; max-width: 500px; border-radius: 20px;
-            height: calc(100vh - 70px) !important; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);; } }
-
-        /* Bộ lọc tháng */
-        #thangLoc {
-            padding: 12px 16px; 
-            width: 100%; 
-            border-radius: 12px; 
-            border: 1px solid #e2e8f0; 
-            background: #ffffff;
-            font-size: 15px;
-            color: #334155;
-            font-weight: 500;
-            margin-top: 15px;
-            outline: none;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            transition: all 0.2s;
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 30px !important;
         }
-        #thangLoc:focus {
-            border-color: #0082C8;
-            box-shadow: 0 0 0 3px rgba(0, 130, 200, 0.15);
+        body {
+            /* Đảm bảo body không bị tràn ra khỏi vùng hiển thị thực tế */
+            margin: 0;
+            padding: 0;
+            /* Dùng env() để iOS tự tính khoảng cách tai thỏ và thanh home dưới */
+            padding-bottom: env(safe-area-inset-bottom);
+            min-height: 100dvh;
         }
 
-        /* Vùng cuộn danh sách */
+        /* Áp dụng cho container chính của form */
+        .container {
+            padding-bottom: constant(safe-area-inset-bottom); /* Cho iOS cũ */
+            padding-bottom: env(safe-area-inset-bottom);     /* Cho iOS mới */
+        }
+        /* KHUNG CHO CHỌN CHỌN DỮ LIỆU SỔ XUỐNG */
+        .custom-select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #cbd5e1; /* Khôi phục đường viền */
+        border-radius: 8px;        /* Bo góc */
+        background-color: #fff;
+        font-size: 14px;
+        color: #475569;
+        
+        /* Ép iOS không được bỏ style của mình */
+        -webkit-appearance: none; 
+        appearance: none;
+        
+        /* Thêm icon mũi tên nhỏ bên phải cho đẹp */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 16px;
+        }
+
+        /* --- CSS CHO LỊCH SỬ CHI PHÍ (NÂNG CẤP) --- */
+        .modal-hidden { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.6); z-index: 1000; 
+        }
+        .modal-content { 
+            background: white; margin: 5% auto; padding: 20px; width: 92%; 
+            border-radius: 12px; max-height: 80vh; display: flex; flex-direction: column;
+        }
+        /* Khu vực danh sách cuộn được */
         #danhSachLichSu { 
-            overflow-y: auto; 
-            flex: 1; 
-            margin-top: 16px; 
-            padding-right: 2px; 
+            overflow-y: auto; flex: 1; margin-top: 15px; padding-right: 5px; 
         }
-
-        /* Ẩn thanh cuộn xấu xí nhưng vẫn cuộn được */
-        #danhSachLichSu::-webkit-scrollbar { width: 4px; }
-        #danhSachLichSu::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-        /* Bọc viền vuốt chạm */
-        .card-swipe { 
-            position: relative; 
-            background: #e2e8f0; 
-            border-radius: 14px; 
-            margin-bottom: 14px; 
-            overflow: hidden; 
+        .btn-history { 
+            width: 100%; padding: 12px; background: #0082C8; color: white; 
+            border: none; border-radius: 8px; margin-bottom: 20px; font-weight: bold;
         }
-
-        /* Nền chức năng ẩn phía sau */
-        .nen-hanh-dong {
-            position: absolute;
-            top: 0; bottom: 0; left: 0; right: 0;
-            z-index: 1;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 14px;
-            color: white;
-        }
-        .hanh-dong-sua {
-            background: #3498db;
-            height: 100%; width: 50%;
-            display: flex; align-items: center;
-            padding-left: 20px; justify-content: flex-start; 
-            font-weight: 600;
-        }
-        .hanh-dong-xoa {
-            background: #e74c3c;
-            height: 100%; width: 50%;
-            display: flex; align-items: center;
-            padding-right: 20px; justify-content: flex-end; 
-            font-weight: 600;
-        }
-
-        /* TẤM CARD NỘI DUNG CHÍNH (THAY ĐỔI MẠNH MẼ) */
+        /* Style cho từng dòng chi phí */
         .card-item {
-            background: #ffffff;
-            padding: 16px;
-            border-radius: 14px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            position: relative;
-            z-index: 2;
-            margin-bottom: 0 !important;
-            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
-            border-left: 5px solid #cbd5e1; /* Vách màu mặc định */
+            background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; 
+            border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-
-        /* Đổi màu vách Card tùy theo phân loại chi phí */
-        .card-item.loai-kho { border-left-color: #2ecc71; }      /* Xanh lá cho Kho */
-        .card-item.loai-logistics { border-left-color: #9b59b6; }/* Tím cho Logistics */
-
-        /* Cấu trúc Header bên trong Card */
-        .card-item .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start;
-            margin-bottom: 10px; 
-        }
-        .card-item .header strong { 
-            color: #1e293b; 
-            font-size: 15px; 
-            font-weight: 600;
-            line-height: 1.4;
-            max-width: 70%;
-        }
-        .card-item .header .badge-loai { 
-            font-size: 11px; 
-            font-weight: 600;
-            background: #f1f5f9; 
-            color: #64748b;
-            padding: 4px 8px; 
-            border-radius: 20px; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Phần hiển thị tiền số lớn */
-        .card-item .body .giao-dich-tien {
-            font-size: 18px;
-            font-weight: 700;
-            color: #0082C8;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        /* Chi tiết phân bổ bên dưới */
-        .card-item .body .chi-tiet-pb {
-            display: flex; 
-            gap: 15px;
-            font-size: 12px; 
-            color: #64748b;
-            background: #f8fafc;
-            padding: 6px 10px;
-            border-radius: 8px;
-            margin-top: 6px;
-        }
-        .card-item .body .chi-tiet-pb span strong {
-            color: #334155;
-        }
-
-        /* Hiển thị biển số xe hoặc ghi chú ngắn nếu có */
-        .card-item .footer-info {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #94a3b8;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .card-item .info-xe {
-            background: #fff8e1;
-            color: #b78103;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
+        .card-item .header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .card-item .header strong { color: #1e293b; font-size: 14px; }
+        .card-item .header span { font-size: 11px; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; }
+        .card-item .body { font-size: 13px; color: #64748b; }
+        .card-item .footer { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-del { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
+        .btn-edit { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
     </style>
 
 </head>
@@ -305,12 +276,14 @@
             <!-- Modal hiển thị lịch sử -->
             <div id="modalLichSu" class="modal-hidden">
                 <div class="modal-content">
-                        <button onclick="dongModal()" style="border:none; background:none; font-size: 24px; color: #94a3b8; cursor: pointer; padding: 0 5px;">&times;</button>
-                        <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
-                            CHI PHÍ KHO THÁNG</h3>
-                    <input type="month" id="thangLoc" onchange="taiLichSuTheoThang()">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>Lịch sử chi phí</h3>
+                        <button onclick="dongModal()" style="border:none; background:none; font-size: 20px;">×</button>
+                    </div>
                     
-                    <!-- Danh sách card cuộn mượt -->
+                    <input type="month" id="thangLoc" onchange="taiLichSuTheoThang()" style="padding: 10px; width: 100%; border-radius: 6px; border: 1px solid #ccc;">
+                    
+                    <!-- Danh sách card sẽ nằm ở đây -->
                     <div id="danhSachLichSu"></div>
                 </div>
             </div>
@@ -345,15 +318,15 @@
                 </div>
             </div>
             <div class="vung-bieu-do-doi-ngang">
-                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
+                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 450px; width: 100%;">
                     <h2 class="tieu-de-bieu-do" id="tieuDeNhiet">Sản lượng giao hàng theo vùng năm</h2>
-                    <div class="vung-bieu-do">
+                    <div class="vung-bieu-do" style="height: calc(100% - 40px);">
                         <canvas id="bieuDoNhietVung"></canvas>
                     </div>
                 </div>
-                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
+                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 450px; width: 100%;">
                     <h2 class="tieu-de-bieu-do" id="tieuDeNhietDT">Doanh thu giao hàng theo vùng năm</h2>
-                    <div class="vung-bieu-do">
+                    <div class="vung-bieu-do" style="height: calc(100% - 40px);">
                         <canvas id="bieuDoNhietVungDT"></canvas>
                     </div>
                 </div>
@@ -387,7 +360,7 @@
                     <!-- 2. Hạng mục chi phí -->
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Hạng mục chi phí:</label>
-                        <select id="nvHangMuc" class="Dropdown" onchange="tuDongChonTyLeTheoHangMuc(this.value); tinhPhanBoNghiepVu('thay-doi-nguyen-tac')">
+                        <select id="nvHangMuc" class="custom-select" onchange="tuDongChonTyLeTheoHangMuc(this.value); tinhPhanBoNghiepVu('thay-doi-nguyen-tac')">
                             <option value="">-- Chọn hạng mục --</option>
                             
                             <optgroup label="PHÍ KHO">
@@ -1474,93 +1447,82 @@ window.tinhPhanBoNghiepVu = function(nguonThayDoi) {
     document.getElementById('previewSon').innerText = tienSon.toLocaleString('vi-VN') + " đ";
     document.getElementById('previewTBVS').innerText = tienTBVS.toLocaleString('vi-VN') + " đ"; 
 };
-// HÀM LƯU CHÍNH XÁC TỰ ĐỘNG NHẬN DIỆN THÊM MỚI / CẬP NHẬT (SỬA)
+// HÀM LƯU CHÍNH XÁC ĐÃ ĐƯỢC ĐƯA RA TOÀN CỤC ĐỂ HTML GỌI ONCLICK
 window.luuNghiepVuVaoFirebase = async function() {
-    const nutBam = document.getElementById('btnLuuNghiepVu');
+    const nutBam = document.getElementById('btnLuuNghiepVu');       // 🌟 LẤY ĐỐI TƯỢNG NÚT BẤM
+    // Nếu nút đang ở trạng thái disable (đang xử lý), thoát ra luôn không chạy tiếp
     if (nutBam.disabled) return;
-
     const ngay = document.getElementById('nvNgay').value;
     const hangMuc = document.getElementById('nvHangMuc').value;
     const tongTien = parseFloat(document.getElementById('nvTongTien').value) || 0;
     const kieuPhanBo = document.getElementById('nvKieuPhanBo').value;
     const ghiChu = document.getElementById('nvGhiChu').value.trim();
     const phuongTien = document.getElementById('nvPhuongTien').value;
-
     if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
     if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
+    // 🌟 THÊM MỚI: Bắt buộc chọn xe nếu thuộc 2 hạng mục này
     if ((hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") && !phuongTien) {
         alert("Vui lòng chọn biển số xe phương tiện!");
-        return;
-    }
-
-    // KHÓA NÚT BẤM & HIỂN THỊ TRẠNG THÁI XỬ LÝ
+        return;}
+    // 🌟 KHÓA NÚT BẤM NGAY LẬP TỨC & THAY ĐỔI GIAO DIỆN KHÁCH HÀNG
     nutBam.disabled = true;
     nutBam.style.opacity = "0.6";
     nutBam.style.cursor = "not-allowed";
-    
-    // Kiểm tra xem đang ở chế độ Sửa hay Thêm mới
-    const laCheDoSua = !!window.idGiaoDichDangSua;
-    nutBam.innerHTML = laCheDoSua 
-        ? `<i class="fa-solid fa-spinner fa-spin"></i> Đang cập nhật... Vui lòng đợi`
-        : `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghi sổ... Vui lòng đợi`;
-
+    nutBam.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghi sổ... Vui lòng đợi`;
     const thoiGian = new Date(ngay);
     const nam = thoiGian.getFullYear();
     const thang = String(thoiGian.getMonth() + 1).padStart(2, '0'); 
 
-    // TÍNH TOÁN PHÂN BỔ TIỀN SƠN / TBVS
+    // 🌟 ĐỒNG NHẤT CÔNG THỨC: TÍNH TBVS TRƯỚC THEO TỪNG TRƯỜNG HỢP
     let tienTBVS = 0;
     if (kieuPhanBo === 'tbvs-truoc') {
+        // Nếu chọn tự nhập, lấy thẳng số tiền từ ô input màu xanh lá
         tienTBVS = Math.round(parseFloat(document.getElementById('tienTBVSInput').value) || 0);
     } else {
-        let phanTramTBVS = 0.5;
-        if (kieuPhanBo === 'Sơn: 67 - TBVS: 33' || kieuPhanBo === '67-33') { phanTramTBVS = 0.33; }
-        else if (kieuPhanBo === 'Sơn: 35 - TBVS: 65' || kieuPhanBo === 'dien-tich') { phanTramTBVS = 0.648; }
+        // Nếu chọn tỷ lệ %, tính theo công thức phần trăm
+        let phanTramTBVS = 0.5; // Mặc định của tỷ lệ 50-50
+        if (kieuPhanBo === '67-33') { phanTramTBVS = 0.33; }
+        else if (kieuPhanBo === 'dien-tich') { phanTramTBVS = 0.648; }
+        
         tienTBVS = Math.round(tongTien * phanTramTBVS);
     }
     if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
         tienTBVS = lamTronHangTrieu(tienTBVS);
         if (tienTBVS > tongTien) tienTBVS = lamTronHangTrieu(tongTien);
     }
+    // Tiền Sơn luôn bằng Tổng tiền trừ đi TBVS (Không sợ lệch 1 đồng do làm tròn)
     const tienSon = tongTien - tienTBVS;
 
+    const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
+    const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
     try {
-        let maDinhDanhId = "";
-
-        // TỰ ĐỘNG PHÂN TÁCH: SỬA HOẶC THÊM MỚI
-        if (laCheDoSua) {
-            // NẾU LÀ SỬA: Lấy lại chính xác ID đang sửa lưu trong cột IDChiPhi
-            maDinhDanhId = window.idGiaoDichDangSua;
-        } else {
-            // NẾU LÀ THÊM MỚI: Chạy Transaction sinh mã tự tăng
-            const tenBoDemTheoThang = `bo_dem_${thang}_${nam}`;
-            const counterDocRef = doc(db, "CAUHINH_HETHONG", tenBoDemTheoThang);
-            maDinhDanhId = await runTransaction(db, async (transaction) => {
-                const counterSnapshot = await transaction.get(counterDocRef);
-                let STT_HienTai = 1; 
-                if (counterSnapshot.exists()) {
-                    STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1; 
-                }
-                transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
-                const chuoiSTT = String(STT_HienTai).padStart(6, '0');
-                return `CP-${chuoiSTT}-${thang}-${nam}`; 
-            });
-        }
-
-        // PHÂN NHÓM CỐ ĐỊNH / BIẾN PHÍ
+        // 1. Chạy Transaction lấy mã chuỗi ID tăng dần theo tháng
+        const maDinhDanhId = await runTransaction(db, async (transaction) => {
+            const counterSnapshot = await transaction.get(counterDocRef);
+            let STT_HienTai = 1; 
+            if (counterSnapshot.exists()) {
+                STT_HienTai = (counterSnapshot.data().giaTriHienTai || 0) + 1; }
+            transaction.set(counterDocRef, { giaTriHienTai: STT_HienTai }, { merge: true });
+            const chuoiSTT = String(STT_HienTai).padStart(6, '0');
+            return `CP-${chuoiSTT}-${thang}-${nam}`; });
+        // phân nhóm cố định biến phí
+        // Lấy index của option được chọn (0 là -- Chọn hạng mục --)
         const selectElement = document.getElementById('nvHangMuc');
         const selectedIndex = selectElement.selectedIndex;
-        let cauTruc = ((selectedIndex >= 1 && selectedIndex <= 12) || (selectedIndex >= 13 && selectedIndex <= 18)) ? "Cố định" : "Biến phí";
-        
-        let phanNhom = "Hạ tầng"; 
-        if ((selectedIndex >= 6 && selectedIndex <= 7) ||
+        // PHÍ KHO: từ 1 đến 12 (đánh số 1-12)
+        // PHÍ LOGISTICS: từ 13 đến 25 (đánh số 13-25)
+        let cauTruc = ( (selectedIndex >= 1 && selectedIndex <= 12) || (selectedIndex >= 13 && selectedIndex <= 18) ) ? "Cố định" : "Biến phí";
+        // Nhân sự: 6-7, 10-12, 17-18, 22-25
+        let phanNhom = "Hạ tầng"; // Mặc định
+        if (
+            (selectedIndex >= 6 && selectedIndex <= 7) ||
             (selectedIndex >= 10 && selectedIndex <= 12) ||
             (selectedIndex >= 17 && selectedIndex <= 18) ||
-            (selectedIndex >= 22 && selectedIndex <= 25)) {
+            (selectedIndex >= 22 && selectedIndex <= 25)
+        ) {
             phanNhom = "Nhân sự";
         }
-
-        // GOM DỮ LIỆU ĐỂ ĐẨY LÊN FIREBASE (IDChiPhi khớp với tên Document ID)
+        // 2. Gom đóng dữ liệu
         const duLieuGhiSo = {
             IDChiPhi: maDinhDanhId, 
             ngayPhatSinh: ngay,
@@ -1575,55 +1537,37 @@ window.luuNghiepVuVaoFirebase = async function() {
             tienSon: tienSon,
             tienTBVS: tienTBVS,
             ghiChu: ghiChu,
-            ngayCapNhatCuoi: new Date().toISOString() // Thêm lịch sử vết lưu
+            ngayTaoHeThong: new Date().toISOString()
         };
-        
-        // Nếu là thêm mới thì bổ sung thêm ngày tạo đầu tiên
-        if (!laCheDoSua) {
-            duLieuGhiSo.ngayTaoHeThong = new Date().toISOString();
-        }
-        if (phuongTien) { duLieuGhiSo.phuongTien = phuongTien; }
+        if (phuongTien) {duLieuGhiSo.phuongTien = phuongTien;}  // Chỉ đẩy data phương tiện lên Firebase nếu có chọn xe
 
-        // TIẾN HÀNH GHI ĐÈ HOẶC THÊM MỚI VÀO FIRESTORE
+        // 3. Tiến hành ép ID tùy chỉnh vào tên Document
         const taiLieuChiPhiRef = doc(db, "CHIPHI", maDinhDanhId);
-        await setDoc(taiLieuChiPhiRef, duLieuGhiSo, { merge: true });
-
-        // HIỂN THỊ THÔNG BÁO THÀNH CÔNG KHÁC NHAU THEO TRẠNG THÁI
-        nutBam.style.background = "#2e7d32"; 
-        if (laCheDoSua) {
-            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Cập nhật thành công! (${maDinhDanhId})`;
-        } else {
-            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã ghi sổ thành công! (${maDinhDanhId})`;
-        }
-
-        // XÓA SẠCH FORM VÀ GIẢI PHÓNG TRẠNG THÁI SỬA
-        window.idGiaoDichDangSua = null; // 🌟 Reset biến ID về null để lần sau bấm lại là thêm mới
-        
+        await setDoc(taiLieuChiPhiRef, duLieuGhiSo);
+        // 🌟 HIỂU ỨNG THÔNG BÁO TRÊN NÚT BẤM TRONG 2 GIÂY
+        nutBam.style.background = "#2e7d32"; // Đổi sang màu xanh lá
+        nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã ghi sổ thành công! (${maDinhDanhId})`;
+        // Reset sạch form nhập liệu
         document.getElementById('nvTongTien').value = '';
-        document.getElementById('tienTBVSInput').value = ''; 
+        document.getElementById('tienTBVSInput').value = ''; // 🌟 THÊM DÒNG NÀY ĐỂ XÓA Ô NHẬP TAY TBVS
         document.getElementById('nvGhiChu').value = '';
         document.getElementById('previewSon').innerText = '0 đ';
         document.getElementById('previewTBVS').innerText = '0 đ';
+        // Xóa và ẩn ô phương tiện đi sau khi lưu thành công
         document.getElementById('nvPhuongTien').value = ''; 
         document.getElementById('vungPhuongTien').style.display = 'none';
-
-        // Nếu có mở bảng danh sách lịch sử, tự động tải lại để cập nhật số liệu mới ngay lập tức
-        if (typeof taiLichSuTheoThang === 'function') {
-            taiLichSuTheoThang();
-        }
-
+        // Đợi 2 giây rồi trả nút bấm về trạng thái ban đầu để nhập ca tiếp theo
         await new Promise(resolve => setTimeout(resolve, 2000));
     } catch (error) {
         console.error("Lỗi hệ thống chi tiết:", error);
         alert("Lỗi kết nối hoặc lỗi cú pháp Firebase! Chi tiết: " + error.message);
     } finally {
-        // KHÔI PHỤC DIỆN MẠO NÚT BẤM VỀ BAN ĐẦU
+        // KHÔI PHỤC TRẠNG THÁI NÚT BẤM VỀ MÀU XANH DƯƠNG BAN ĐẦU
         nutBam.disabled = false;
         nutBam.style.opacity = "1";
-        nutBam.style.background = "#0082C8"; 
+        nutBam.style.background = "#0082C8"; // Màu xanh dương ban đầu của bạn
         nutBam.style.cursor = "pointer";
-        nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;
-    }
+        nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;}
 };
 
     // SỬA LỖI KẸT MÀN HÌNH - TỰ ĐỘNG HẠ KHUNG HÌNH VỀ VỊ TRÍ CŨ KHI ẨN BÀN PHÍM
@@ -1681,60 +1625,26 @@ window.taiLichSuTheoThang = async () => {
             const son = (data.tienSon || 0).toLocaleString('vi-VN');
             const tbvs = (data.tienTBVS || 0).toLocaleString('vi-VN');
 
-            // Giao diện Card thiết kế lại, tự động nhận diện class để đổi màu vách Card
-            const classTheoLoai = (data.loaiChiPhi === "Kho") ? "loai-kho" : "loai-logistics";
-
             html += `
-            <div class="card-swipe" id="wrapper-${doc.id}">
-                <!-- Lớp nền ẩn phía sau khi vuốt -->
-                <div class="nen-hanh-dong">
-                    <div class="hanh-dong-sua">
-                        <i class="fa-solid fa-pen-to-square"></i> <span style="margin-left: 8px;">Sửa</span>
-                    </div>
-                    <div class="hanh-dong-xoa">
-                        <span style="margin-right: 8px;">Xóa</span> <i class="fa-solid fa-trash-can"></i>
+            <div class="card-item">
+                <div class="header">
+                    <strong>${data.hangMuc}</strong> 
+                    <span>${data.loaiChiPhi || 'Khác'}</span>
+                </div>
+                <div class="body">
+                    <div style="font-weight: bold; color: #0082C8; margin-bottom: 5px;">${tong} đ</div>
+                    <div style="display:flex; justify-content: space-between; font-size: 12px; color: #555;">
+                        <span>Sơn: ${son} đ</span>
+                        <span>TBVS: ${tbvs} đ</span>
                     </div>
                 </div>
-
-                <!-- Tấm Card nội dung chính -->
-                <div class="card-item ${classTheoLoai} giao-dich-noi-dung" data-id="${doc.id}">
-                    <div class="header">
-                        <strong class="giao-dich-hang-muc">${data.hangMuc}</strong> 
-                        <!-- 🌟 QUAN TRỌNG: Thẻ lưu ngày phát sinh không được để trống -->
-                        <span class="giao-dich-thoi-gian" style="display:none;">${data.ngayPhatSinh || ''}</span>
-                        <span class="badge-loai">${data.loaiChiPhi || 'Khác'}</span>
-                    </div>
-                    
-                    <div class="body">
-                        <div class="giao-dich-tien" data-raw="${data.chiPhiGoc || 0}">${tong} đ</div>
-                        
-                        <div class="chi-tiet-pb">
-                            <span>Sơn: <strong>${son} đ</strong></span>
-                            <span>TBVS: <strong>${tbvs} đ</strong></span>
-                        </div>
-                        
-                        <div class="footer-info">
-                            <span style="font-style: italic; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                ${data.ghiChu ? `<i class="fa-regular fa-comment-dots"></i> ${data.ghiChu}` : ''}
-                            </span>
-                            ${data.phuongTien ? `<span class="info-xe"><i class="fa-solid fa-truck"></i> ${data.phuongTien}</span>` : ''}
-                        </div>
-
-                        <!-- 🌟 Lớp dữ liệu ẩn bổ sung để hàm sửa trích xuất chính xác 100% -->
-                        <input type="hidden" class="giao-dich-xe" value="${data.phuongTien || ''}">
-                        <input type="hidden" class="giao-dich-ghi-chu" value="${data.ghiChu || ''}">
-                        <input type="hidden" class="giao-dich-nguyen-tac" value="${data.nguyenTacPhanBo || ''}">
-                        <input type="hidden" class="giao-dich-tbvs-raw" value="${data.tienTBVS || 0}">
-                    </div>
+                <div class="footer">
+                    <button onclick="suaChiPhi('${doc.id}')" class="btn-edit">Sửa</button>
+                    <button onclick="xoaChiPhi('${doc.id}')" class="btn-del">Xóa</button>
                 </div>
             </div>`;
         });
-        
         container.innerHTML = html;
-
-        // 🌟 KÍCH HOẠT HIỆU ỨNG VUỐT CHẠM CHO CÁC DÒNG VỪA TẢI XONG
-        khoiTaoVuotChamLichSu();
-
     } catch (e) {
         container.innerHTML = "<p style='color:red;'>Lỗi tải dữ liệu: " + e.message + "</p>";
     }
@@ -1742,197 +1652,6 @@ window.taiLichSuTheoThang = async () => {
 
 window.dongModal = () => {
     document.getElementById('modalLichSu').style.display = 'none';
-};
-// HÀM KHỞI TẠO ĐĂNG KÝ SỰ KIỆN VUỐT
-function khoiTaoVuotChamLichSu() {
-    document.querySelectorAll('.giao-dich-noi-dung').forEach(noiDung => {
-        let xBatDau = 0; 
-        let xDiChuyen = 0; 
-        let dangVuot = false;
-
-        const batDauVuot = (e) => { 
-            dangVuot = true; 
-            xBatDau = e.touches ? e.touches[0].clientX : e.clientX; 
-        };
-
-        const dangKeo = (e) => { 
-            if (!dangVuot) return; 
-            const xHienTai = e.touches ? e.touches[0].clientX : e.clientX; 
-            xDiChuyen = xHienTai - xBatDau; 
-            
-            // Giới hạn biên độ kéo tối đa 100px sang mỗi bên
-            if (xDiChuyen > 100) xDiChuyen = 100; 
-            if (xDiChuyen < -100) xDiChuyen = -100; 
-            
-            noiDung.style.transform = `translateX(${xDiChuyen}px)`; 
-            noiDung.style.transition = 'none';
-        };
-
-        const ketThucVuot = async () => { 
-            if (!dangVuot) return; 
-            dangVuot = false; 
-            noiDung.style.transition = 'transform 0.2s ease-out';
-            
-            const idTaiLieu = noiDung.getAttribute('data-id');
-
-            // 1. VUỐT SANG TRÁI (Kéo sang trái > 60px) -> Kích hoạt XÓA
-            if (xDiChuyen < -60) {
-                noiDung.style.transform = 'translateX(-50%)'; // Giữ nguyên vị trí lộ nửa màu đỏ
-                
-                setTimeout(() => {
-                    // Gọi lại chính xác hàm xóa cũ của bạn
-                    if (typeof xoaChiPhi === 'function') {
-                        xoaChiPhi(idTaiLieu);
-                    }
-                    // Trả lại vị trí cũ sau khi xử lý xong
-                    noiDung.style.transform = 'translateX(0)';
-                }, 200);
-            } 
-            // 2. VUỐT SANG PHẢI (Kéo sang phải > 60px) -> Kích hoạt SỬA
-            else if (xDiChuyen > 60) {
-                noiDung.style.transform = 'translateX(0)'; // Trả card về vị trí cũ
-
-                setTimeout(() => {
-                    // Gọi lại chính xác hàm sửa cũ của bạn
-                    if (typeof suaChiPhi === 'function') {
-                        suaChiPhi(idTaiLieu);
-                    }
-                    // Đóng modal lịch sử lại để người dùng thấy form nhập liệu
-                    dongModal();
-                }, 100);
-            } 
-            // 3. VUỐT KHÔNG ĐỦ LỰC -> Trả về vị trí cũ
-            else { 
-                noiDung.style.transform = 'translateX(0)'; 
-            }
-            xDiChuyen = 0;
-        };
-
-        // Gắn sự kiện rê chuột trên Máy tính (Tiện cho việc test chuột)
-        noiDung.addEventListener('mousedown', (e) => {
-            // Chặn hành vi bôi đen text/kéo hình mặc định của trình duyệt để chuột mượt mà hơn
-            if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
-                e.preventDefault();
-            }
-            batDauVuot(e);
-            const xửLýDiChuột = (ev) => dangKeo(ev);
-            const xửLýThảChuột = () => { 
-                ketThucVuot(); 
-                window.removeEventListener('mousemove', xửLýDiChuột); 
-                window.removeEventListener('mouseup', xửLýThảChuột); 
-            };
-            window.addEventListener('mousemove', xửLýDiChuột); 
-            window.addEventListener('mouseup', xửLýThảChuột);
-        }); 
-    });
-}
-
-window.suaChiPhi = function(idTaiLieu) {
-    // 🌟 1. Tìm tấm card dựa theo ID tài liệu
-    const card = document.querySelector(`.card-item[data-id="${idTaiLieu}"]`);
-    if (!card) return;
-
-    // 🌟 2. Trích xuất dữ liệu từ các thẻ HTML ẩn/hiện trên card
-    const hangMuc = card.querySelector('.giao-dich-hang-muc').innerText;
-    
-    // Khắc phục lỗi lấy ngày: Tìm thẻ ẩn chứa ngày phát sinh chính xác từ Firebase
-    const thẻNgay = card.querySelector('.giao-dich-thoi-gian');
-    const ngay = thẻNgay ? thẻNgay.innerText.trim() : new Date().toISOString().slice(0, 10);
-    
-    const tongTien = card.querySelector('.giao-dich-tien').getAttribute('data-raw');
-    const phuongTien = card.querySelector('.giao-dich-xe') ? card.querySelector('.giao-dich-xe').value : '';
-    const ghiChu = card.querySelector('.giao-dich-ghi-chu') ? card.querySelector('.giao-dich-ghi-chu').value : '';
-
-    // Lấy thêm nguyên tắc phân bổ và tiền TBVS lưu ẩn phục vụ trường hợp nhập tay
-    const nguyenTacPB = card.querySelector('.giao-dich-nguyen-tac') ? card.querySelector('.giao-dich-nguyen-tac').value : '';
-    const tienTBVSRaw = card.querySelector('.giao-dich-tbvs-raw') ? card.querySelector('.giao-dich-tbvs-raw').value : '0';
-
-    // 🌟 3. Điền ngược toàn bộ dữ liệu vào các ô Input ở trang Home
-    document.getElementById('nvNgay').value = ngay;
-    document.getElementById('nvHangMuc').value = hangMuc;
-    document.getElementById('nvTongTien').value = tongTien;
-    document.getElementById('nvGhiChu').value = ghiChu;
-
-    // 🌟 4. Kích hoạt logic tự động chọn tỷ lệ phân bổ & hiển thị vùng xe
-    if (typeof window.tuDongChonTyLeTheoHangMuc === 'function') {
-        window.tuDongChonTyLeTheoHangMuc(hangMuc);
-    }
-
-    // Nếu dữ liệu cũ chạy bằng tính tay 'tbvs-truoc', ép ngược bộ chọn và điền số tiền vào
-    if (nguyenTacPB === 'tbvs-truoc') {
-        document.getElementById('nvKieuPhanBo').value = 'tbvs-truoc';
-        const inputTBVS = document.getElementById('tienTBVSInput');
-        if (inputTBVS) inputTBVS.value = tienTBVSRaw;
-    }
-
-    // Điền xe vào sau khi vùng xe đã được mở ra
-    if (phuongTien) {
-        document.getElementById('nvPhuongTien').value = phuongTien;
-    }
-
-    // 🌟 5. GHI NHỚ ID VÀO BIẾN TOÀN CỤC ĐỂ LƯU ĐÈ
-    window.idGiaoDichDangSua = idTaiLieu;
-
-    // Kích hoạt tính toán lại lập tức để hiển thị tiền Sơn / TBVS lên giao diện xem trước (Home)
-    if (typeof window.tinhPhanBoNghiepVu === 'function') {
-        window.tinhPhanBoNghiepVu();
-    }
-
-    // 🌟 6. Đổi diện mạo nút bấm sang màu cam trạng thái Sửa
-    const nutBam = document.getElementById('btnLuuNghiepVu');
-    if (nutBam) {
-        nutBam.style.background = "#e67e22"; 
-        nutBam.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Cập nhật thay đổi (${idTaiLieu})`;
-    }
-
-    // Cuộn mượt màn hình lên đầu trang để người dùng thao tác form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-window.xoaChiPhi = async function(idTaiLieu) {
-    const card = document.querySelector(`.card-item[data-id="${idTaiLieu}"]`);
-    const hangMuc = card ? card.querySelector('.giao-dich-hang-muc').innerText : "Chi phí";
-
-    // Hiện hộp thoại xác nhận nhanh trước khi xóa dữ liệu
-    if (!confirm(`Bạn có chắc chắn muốn XÓA mục "${hangMuc}" này không? Thao tác không thể hoàn tác.`)) {
-        return;
-    }
-
-    try {
-        // Thực hiện lệnh xóa trực tiếp document trên Firebase
-        await deleteDoc(doc(db, "CHIPHI", idTaiLieu));
-        
-        alert("Đã xóa chi phí thành công!");
-
-        // Tự động tải lại danh sách lịch sử tháng đó để cập nhật giao diện lập tức
-        if (typeof taiLichSuTheoThang === 'function') {
-            taiLichSuTheoThang();
-        }
-
-        // Nếu tình cờ dòng vừa xóa cũng chính là dòng đang mở ra để sửa thì reset form luôn
-        if (window.idGiaoDichDangSua === idTaiLieu) {
-            window.idGiaoDichDangSua = null;
-            document.getElementById('nvTongTien').value = '';
-            document.getElementById('nvGhiChu').value = '';
-            const nutBam = document.getElementById('btnLuuNghiepVu');
-            if (nutBam) {
-                nutBam.style.background = "#0082C8";
-                nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;
-            }
-        }
-    } catch (error) {
-        console.error("Lỗi khi xóa dữ liệu:", error);
-        alert("Không thể xóa. Lỗi: " + error.message);
-    }
-};
-window.huyCheDoSua = function() {
-    window.idGiaoDichDangSua = null;
-    document.getElementById('nvTongTien').value = '';
-    document.getElementById('nvGhiChu').value = '';
-    const nutBam = document.getElementById('btnLuuNghiepVu');
-    if (nutBam) {
-        nutBam.style.background = "#0082C8";
-        nutBam.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ`;
-    }
 };
     </script>
 </body>
