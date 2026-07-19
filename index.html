@@ -103,7 +103,7 @@
                 padding-bottom: 0px !important; /* KHÓA KHOẢNG ĐỆM ĐÁY CỦA KHUNG CHA */
                 scroll-snap-type: y mandatory !important; 
                 overflow-y: scroll !important;
-                height: 100vh !important;
+                height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
                 box-sizing: border-box;
             }
             .trang-content.active {
