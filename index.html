@@ -1538,7 +1538,7 @@
         };
 
 // LỊCH SỬ CHI PHÍ KHO
-        // --- KHỞI TẠO THÁNG/NĂM HIỆN HÀNH KHI MỞ TRANG ---
+        // KHỞI TẠO THÁNG/NĂM HIỆN HÀNH KHI MỞ TRANG
         window.addEventListener('DOMContentLoaded', function() {
             const now = new Date();
             const year = now.getFullYear();
@@ -1548,13 +1548,16 @@
             if (inputThang && labelThang) {
                 inputThang.value = `${year}-${month}`;      // Gán giá trị chuẩn cho input type="month" (định dạng YYYY-MM)
                 labelThang.innerText = `${month}/${year}`;} });     // Hiển thị ra giao diện (định dạng MM/YYYY)
-        // Onclick chọn tháng năm //
-        document.querySelector('.bo-chon-thang').addEventListener('click', function() {
-            const inputThang = document.getElementById('inputThangAn');
-            if (inputThang.showPicker) {inputThang.showPicker(); // Mở bảng lịch chuẩn trên các trình duyệt hiện đại
-            } else {inputThang.click(); }  });  // Dự phòng cho các trình duyệt cũ
+
+        // ONCLICK CHỌN THÁNG NĂM //
+        document.querySelector('.modal-header-custom').addEventListener('click', function(e) {
+            // Chỉ mở lịch khi bấm vào đúng khung `.bo-chon-thang` hoặc các thẻ bên trong nó (như chữ, span)
+            const boChon = e.target.closest('.bo-chon-thang');
+            if (boChon) {const inputThang = document.getElementById('inputThangAn');
+                if (inputThang.showPicker) {inputThang.showPicker();
+                } else {inputThang.click(); } } });
             
-        // Xử lý khi người dùng chọn xong tháng/năm từ bảng
+        // XỬ LÝ KHI NGƯỜI DÙNG CHỌN XONG THÁNG/NĂM TỪ BẢNG
         document.getElementById('inputThangAn').addEventListener('change', function() {
             if (this.value) {
                 const parts = this.value.split('-'); // Định dạng trả về: YYYY-MM
