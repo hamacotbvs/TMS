@@ -143,10 +143,8 @@
         .modal-header-custom {display: flex; flex-direction: column; align-items: center; position: relative; padding: 2px 5px; border-bottom: 1px solid #e2e8f0;}
         .nut-dong-modal {position: absolute; right: 2px; top: 2px; border: none; background: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1;}
         .modal-tieu-de {margin: 0 0 2px 0; font-size: 16px; color: #0082C8; font-weight: 700;}
-        .bo-chon-thang {position: relative; display: flex; align-items: center; justify-content: center; background-color: #f1f2f6; border-radius: 12px; padding: 3px 12px 5px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; overflow: hidden;}
+        .bo-chon-thang {display: flex; align-items: center; justify-content: center; background-color: #f1f2f6; border-radius: 12px; padding: 3px 12px 5px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; }
         .bo-chon-thang:active {transform: scale(0.95);}
-        /* Thẻ input tháng nằm đè trùm kín 100% và làm tàng hình (opacity: 0) */
-        #inputThangAn {position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 5;}
     </style>
 
 </head>
@@ -166,13 +164,14 @@
                     <div class="modal-header-custom">
                         <button class="nut-dong-modal" onclick="dongModal()">&times;</button>
                         <h3 class="modal-tieu-de">💸 CHI PHÍ KHO</h3>
-                        
                         <!-- Khung chứa có input tàng hình nằm đè lên trên tuyệt đối -->
-                        <div class="bo-chon-thang">
+                        <div class="bo-chon-thang" onclick="moBangChonThang()">
                             <span id="labelThangNam">--/----</span>
-                            <input type="month" id="inputThangAn" onchange="chonThang(this)">
                         </div>
                     </div>
+
+                    <!-- Input ẩn nằm bên ngoài, không lo bị che khuất sự kiện click -->
+                    <input type="month" id="inputThangAn" style="display:none" onchange="chonThang(this)">
                     <!-- Danh sách card cuộn mượt phía dưới -->
                     <div id="danhSachLichSu"></div>
                 </div>
@@ -1553,19 +1552,28 @@
             
             const inputAn = document.getElementById('inputThangAn');
             if (inputAn) {
-                inputAn.value = `${year}-${month}`; // Gán giá trị chuẩn cho input type="month"
-                document.getElementById('labelThangNam').innerText = `${month}/${year}`; // Hiển thị ra màn hình
+                inputAn.value = `${year}-${month}`;
+                document.getElementById('labelThangNam').innerText = `${month}/${year}`;
             }
         });
 
-        // Xử lý khi người dùng bấm vào thay đổi tháng khác
+        // Hàm mở bảng chọn tháng khi click vào khung trên PC / Điện thoại
+        function moBangChonThang() {
+            const inputAn = document.getElementById('inputThangAn');
+            if (inputAn.showPicker) {
+                inputAn.showPicker(); // Hỗ trợ cực tốt trên Chrome, Edge, Safari hiện đại
+            } else {
+                inputAn.click();     // Dự phòng cho trình duyệt cũ
+            }
+        }
+
+        // Hàm nhận giá trị khi chọn xong
         function chonThang(input) {
             if (input.value) {
                 const parts = input.value.split('-');
                 const year = parts[0];
                 const month = parts[1];
                 
-                // Cập nhật lại chữ hiển thị trên giao diện thành MM/YYYY
                 document.getElementById('labelThangNam').innerText = `${month}/${year}`;
                 
                 // Gọi hàm tải dữ liệu của bạn ở đây (nếu có)
