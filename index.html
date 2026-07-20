@@ -1575,29 +1575,27 @@
                 taiDuLieuTheoThang(month, year); } });
                 
         // --- HÀM TẢI DỮ LIỆU LỊCH SỬ CHI PHÍ KHO TỪ FIREBASE ---
-        async function taiDuLieuTheoThang(thang, nam) {
+        async function taiDuLieuTheoThang(thangChon, namChon) {
             const container = document.getElementById('danhSachLichSu');
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Đang tải dữ liệu...</div>';
 
             try {
-                // Tạo khoảng thời gian bắt đầu và kết thúc của tháng đã chọn (để query tối ưu trên Firestore)
-                // Ví dụ: Tháng 07 năm 2026 -> Từ 2026-07-01 đến 2026-07-31
-                const ngayBatDau = `${nam}-${thang}-01`;
-                // Tính ngày cuối tháng (hoặc dùng string so sánh prefix nếu lưu dạng chuỗi YYYY-MM-DD)
-                const ngayKetThuc = `${nam}-${thang}-31`; // Hoặc xử lý theo định dạng lưu trữ của bạn
+                // Chuyển tháng và năm về kiểu số để khớp với dữ liệu trên Firestore của bạn
+                const thangNum = parseInt(thangChon, 10);
+                const namNum = parseInt(namChon, 10);
 
-                // Giả sử collection trên Firestore của bạn tên là "ChiPhiKho" 
-                // và trường lưu ngày tháng phát sinh tên là "ngayPhatSinh" (định dạng 'YYYY-MM-DD')
+                // Truy vấn collection "CHIPHI" dựa theo trường "thang" và "nam"
                 const q = query(
-                    collection(db, "ChiPhiKho"), 
-                    where("ngayPhatSinh", ">=", ngayBatDau),
-                    where("ngayPhatSinh", "<=", ngayKetThuc),
-                    orderBy("ngayPhatSinh", "desc") // Sắp xếp mới nhất lên đầu
+                    collection(db, "CHIPHI"), 
+                    where("thang", "==", thangNum),
+                    where("nam", "==", namNum)
+                    // Nếu muốn sắp xếp theo ngày phát sinh mới nhất, bạn cần tạo Index trên Firestore cho trường ngayPhatSinh
+                    // orderBy("ngayPhatSinh", "desc") 
                 );
 
                 const querySnapshot = await getDocs(q);
                 
-                // Xóa nội dung cũ
+                // Xóa nội dung cũ trước khi render
                 container.innerHTML = '';
 
                 if (querySnapshot.empty) {
@@ -1605,19 +1603,19 @@
                     return;
                 }
 
-                // Duyệt qua từng bản ghi và render ra giao diện card
+                // Duyệt qua từng document và render ra giao diện
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     
-                    // Lấy dữ liệu các trường theo yêu cầu (có dự phòng giá trị mặc định nếu trống)
+                    // Lấy dữ liệu khớp với cấu trúc trong ảnh Firestore của bạn
                     const ghiChu = data.ghiChu || 'Không có ghi chú';
                     const ngayPhatSinh = data.ngayPhatSinh || '';
-                    const chiPhiGoc = data.chiPhiGoc ? Number(data.chiPhiGoc).toLocaleString('vi-VN') + ' đ' : '0 đ';
-                    const nguyeTacPhanBo = data.nguyeTacPhanBo || 'Chưa phân bổ';
-                    const tienSon = data.tienSon ? Number(data.tienSon).toLocaleString('vi-VN') + ' đ' : '0 đ';
-                    const tienTBVS = data.tienTBVS ? Number(data.tienTBVS).toLocaleString('vi-VN') + ' đ' : '0 đ';
+                    const chiPhiGoc = data.chiPhiGoc !== undefined ? Number(data.chiPhiGoc).toLocaleString('vi-VN') + ' đ' : '0 đ';
+                    const nguyenTacPhanBo = data.nguyenTacPhanBo || 'Chưa phân bổ';
+                    const tienSon = data.tienSon !== undefined ? Number(data.tienSon).toLocaleString('vi-VN') + ' đ' : '0 đ';
+                    const tienTBVS = data.tienTBVS !== undefined ? Number(data.tienTBVS).toLocaleString('vi-VN') + ' đ' : '0 đ';
 
-                    // Tạo khung card cho mỗi phát sinh
+                    // Tạo khung card cho mỗi bản ghi phát sinh
                     const cardItem = document.createElement('div');
                     cardItem.className = 'card-lich-su-item';
                     
@@ -1629,7 +1627,7 @@
                         
                         <div class="card-dong-2">
                             <span>Chi phí gốc: <strong>${chiPhiGoc}</strong></span>
-                            <span>Nguyên tắc: ${nguyeTacPhanBo}</span>
+                            <span>Nguyên tắc: ${nguyenTacPhanBo}</span>
                         </div>
                         
                         <div class="card-dong-3">
