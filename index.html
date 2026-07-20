@@ -1633,6 +1633,11 @@
             // Đóng modal lịch sử lại để user thấy form chính và bấm lưu
             const modalLichSu = document.getElementById('modalLichSu');
             if(modalLichSu) modalLichSu.style.display = 'none';
+            // Nhảy qua tab + để chỉnh sửa
+            if (typeof chuyenTab === 'function') {chuyenTab('them-moi');
+            } else {
+                const tabThemMoi = document.querySelector('[data-tab="them-moi"]') || document.getElementById('btnTabThemMoi');
+                if (tabThemMoi) {tabThemMoi.click();} }
         };
             
         
