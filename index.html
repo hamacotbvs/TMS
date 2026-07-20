@@ -1406,15 +1406,31 @@
                             ghiChu: ghiChu};
                         if (phuongTien) {duLieuCapNhat.phuongTien = phuongTien;
                         } else {duLieuCapNhat.phuongTien = deleteField();} // Xóa field nếu bỏ chọn xe
-                        await updateDoc(taiLieuChiPhiRef, duLieuCapNhat);
-                        nutBam.style.background = "#2e7d32";
-                        nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Cập nhật thành công!`;
-                        // 🌟 1. GỌI HÀM TẢI LẠI DỮ LIỆU BẢNG/LỊCH SỬ (Thay tên hàm tải lịch sử của bạn vào đây nếu khác tên)
-                        if (typeof taiDuLieuTheoThang === 'function') {
-                            taiDuLieuTheoThang(thang, nam); }   // Truyền tháng nam vừa sửa để load đúng dữ liệu
-                        // 🌟 2. MỞ LẠI MODAL LỊCH SỬ ĐỂ KIỂM TRA NGAY
+                        // 🌟 2. NHẢY TRỞ VỀ TAB HOME (Nơi chứa modal lịch sử)
+                        if (typeof chuyenTab === 'function') {chuyenTab('home');
+                        } else {const tabHome = document.querySelector('[data-tab="home"]') || document.getElementById('btnTabHome');
+                            if (tabHome) tabHome.click();}
+                        // 🌟 3. MỞ LẠI MODAL LỊCH SỬ ĐỂ KIỂM TRA NGAY
                         const modalLichSu = document.getElementById('modalLichSu');
                         if (modalLichSu) {modalLichSu.style.display = 'block';}
+                        // bạn cập nhật trực tiếp vào mảng đó để bảng hiện dữ liệu mới luôn khỏi cần chờ tải lại:
+                        if (typeof danhSachChiPhi !== 'undefined' && Array.isArray(danhSachChiPhi)) {
+                            const indexItem = danhSachChiPhi.findIndex(item => item.id === dangSuaIdDoc || item.IDChiPhi === dangSuaIdDoc);
+                            if (indexItem !== -1) {
+                                danhSachChiPhi[indexItem] = { ...danhSachChiPhi[indexItem], ...duLieuCapNhat };
+                                if (typeof hienThiBangLichSu === 'function') hienThiBangLichSu(danhSachChiPhi); // Hàm vẽ lại bảng từ mảng tạm
+                            }
+                        }
+                        nutBam.style.background = "#2e7d32";
+                        nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Cập nhật thành công!`;
+                        // 🌟 2. ĐẨY NGẦM LÊN FIREBASE PHÍA SAU (Chạy bất đồng bộ không chặn UI)
+                        updateDoc(taiLieuChiPhiRef, duLieuCapNhat).then(() => {
+                            // 🌟 1. GỌI HÀM TẢI LẠI DỮ LIỆU BẢNG/LỊCH SỬ (Thay tên hàm tải lịch sử của bạn vào đây nếu khác tên)
+                            if (typeof taiDuLieuTheoThang === 'function') {
+                                taiDuLieuTheoThang(thang, nam); }   // Truyền tháng nam vừa sửa để load đúng dữ liệu
+                        }).catch(err => {
+                            console.error("Lỗi đồng bộ ngầm Firebase:", err);
+                        });
                         dangSuaIdDoc = null;        // Reset trạng thái sửa
                     } else {
                 // HẾT SỬA
