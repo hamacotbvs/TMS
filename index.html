@@ -147,8 +147,12 @@
         #danhSachLichSu {height: calc(100vh - 70px) !important; overflow-y: auto; padding: 10px;}
         .card-lich-su-item {background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
             border-bottom: 1px solid rgba(226, 232, 240, 0.8); } /* Tạo đường gạch mờ phân cách giữa các phát sinh */
-        .card-dong-1 {display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px;}
-        .ngay-phat-sinh {font-size: 12px; color: #64748b; font-weight: 500;}
+        .card-dong-1 {display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 2px;}
+        .card-dong-ngay {margin-bottom: 6px;}
+        .ngay-phat-sinh {font-size: 11px; color: #64748b; font-weight: 500;}
+        .nhan-loai-chi-phi {font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .badge-kho {background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;}
+        .badge-logistics {background-color: #ffedd5; color: #c2410c; border: 1px solid #fed7aa;}
         .card-dong-2 {display: flex; justify-content: space-between; font-size: 12px; color: #475569; margin-bottom: 6px;}
         .card-dong-3 {display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #0f172a; padding: 2px 0px; }
         .card-dong-3 .phan-cach {display: none; }/* Màu gạch mờ phân chia Sơn và TBVS */
@@ -1464,87 +1468,17 @@
             document.querySelectorAll('input, select, textarea').forEach(element => {
                 element.addEventListener('blur', () => {
                     setTimeout(() => {
-                        // Ép iOS vẽ lại toàn bộ body bằng cách thay đổi tạm thời overflow
-                        document.body.style.overflow = 'hidden';
-                        
-                        // Cuộn về 0 để reset
-                        window.scrollTo(0, 0);
-                        
-                        // Trả lại trạng thái cũ ngay lập tức
-                        setTimeout(() => {
-                            document.body.style.overflow = '';
-                        }, 50);
-                    }, 150); // Đợi bàn phím đóng xong mới chạy
-                });
-            });
-
-        // XEM LỊCH SỬ CHI PHÍ
-        window.moLichSuChiPhi = () => {
-            document.getElementById('modalLichSu').style.display = 'block';
-            // Mặc định chọn tháng hiện tại
-            const thangHienTai = new Date().toISOString().slice(0, 7);
-            document.getElementById('thangLoc').value = thangHienTai;
-            taiLichSuTheoThang();
-        };
-
-        window.taiLichSuTheoThang = async () => {
-            const thang = document.getElementById('thangLoc').value;
-            if(!thang) return;
-            const [nam, thg] = thang.split('-');
-            const container = document.getElementById('danhSachLichSu');
-            
-            container.innerHTML = "<p style='text-align:center;'>Đang tải dữ liệu...</p>";
-            
-            try {
-                const q = query(collection(db, "CHIPHI"), 
-                    where("nam", "==", Number(nam)), 
-                    where("thang", "==", Number(thg)));
-                
-                const querySnapshot = await getDocs(q);
-                
-                if (querySnapshot.empty) {
-                    container.innerHTML = "<p style='text-align:center; color:#666;'>Tháng này chưa có chi phí nào.</p>";
-                    return;
-                }
-
-                let html = '';
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    // Đảm bảo dữ liệu số hiển thị đúng format
-                    const tong = (data.chiPhiGoc || 0).toLocaleString('vi-VN');
-                    const son = (data.tienSon || 0).toLocaleString('vi-VN');
-                    const tbvs = (data.tienTBVS || 0).toLocaleString('vi-VN');
-
-                    html += `
-                    <div class="card-item">
-                        <div class="header">
-                            <strong>${data.hangMuc}</strong> 
-                            <span>${data.loaiChiPhi || 'Khác'}</span>
-                        </div>
-                        <div class="body">
-                            <div style="font-weight: bold; color: #0082C8; margin-bottom: 5px;">${tong} đ</div>
-                            <div style="display:flex; justify-content: space-between; font-size: 12px; color: #555;">
-                                <span>Sơn: ${son} đ</span>
-                                <span>TBVS: ${tbvs} đ</span>
-                            </div>
-                        </div>
-                        <div class="footer">
-                            <button onclick="suaChiPhi('${doc.id}')" class="btn-edit">Sửa</button>
-                            <button onclick="xoaChiPhi('${doc.id}')" class="btn-del">Xóa</button>
-                        </div>
-                    </div>`;
-                });
-                container.innerHTML = html;
-            } catch (e) {
-                container.innerHTML = "<p style='color:red;'>Lỗi tải dữ liệu: " + e.message + "</p>";
-            }
-        };
-
-        window.dongModal = () => {
-            document.getElementById('modalLichSu').style.display = 'none';
-        };
+                        document.body.style.overflow = 'hidden';     // Ép iOS vẽ lại toàn bộ body bằng cách thay đổi tạm thời overflow
+                        window.scrollTo(0, 0);      // Cuộn về 0 để reset
+                        setTimeout(() => {document.body.style.overflow = ''; }, 50);     // Trả lại trạng thái cũ ngay lập tức
+                    }, 150); }); });   // Đợi bàn phím đóng xong mới chạy
 
 // LỊCH SỬ CHI PHÍ KHO
+
+        // MỞ LỊCH SỬ CHI PHÍ TỪ TRANG HOME
+        window.moLichSuChiPhi = () => {document.getElementById('modalLichSu').style.display = 'block';};
+        window.dongModal = () => {document.getElementById('modalLichSu').style.display = 'none';};
+
         // KHỞI TẠO THÁNG/NĂM HIỆN HÀNH KHI MỞ TRANG
         window.addEventListener('DOMContentLoaded', function() {
             const now = new Date();
@@ -1552,11 +1486,9 @@
             const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Định dạng 2 chữ số (VD: 07)
             const inputThang = document.getElementById('inputThangAn');
             const labelThang = document.getElementById('labelThangNam');
-            if (inputThang && labelThang) {
-                inputThang.value = `${year}-${month}`;      // Gán giá trị chuẩn cho input type="month" (định dạng YYYY-MM)
+            if (inputThang && labelThang) {inputThang.value = `${year}-${month}`;      // Gán giá trị chuẩn cho input type="month" (định dạng YYYY-MM)
                 labelThang.innerText = `${month}/${year}`;
-                // Tự động load dữ liệu của tháng hiện tại ngay khi vừa mở modal hoặc mở trang
-                taiDuLieuTheoThang(month, year); } });
+                taiDuLieuTheoThang(month, year); } });      // Tự động load dữ liệu của tháng hiện tại ngay khi vừa mở modal hoặc mở trang
 
         // ONCLICK CHỌN THÁNG NĂM //
         document.querySelector('.bo-chon-thang').addEventListener('click', function() {
@@ -1570,81 +1502,60 @@
                 const parts = this.value.split('-'); // Định dạng trả về: YYYY-MM
                 const year = parts[0];
                 const month = parts[1];
-                // Cập nhật lại chữ hiển thị trên giao diện thành MM/YYYY
                 document.getElementById('labelThangNam').innerText = `${month}/${year}`; 
-                // 2. Gọi hàm tải dữ liệu từ Firebase theo tháng năm mới chọn
-                taiDuLieuTheoThang(month, year); } });
+                taiDuLieuTheoThang(month, year); } });      // 2. Gọi hàm tải dữ liệu từ Firebase theo tháng năm mới chọn
                 
-        // --- HÀM TẢI DỮ LIỆU LỊCH SỬ CHI PHÍ KHO TỪ FIREBASE ---
+        // HÀM TẢI DỮ LIỆU LỊCH SỬ CHI PHÍ KHO TỪ FIREBASE
         async function taiDuLieuTheoThang(thangChon, namChon) {
             const container = document.getElementById('danhSachLichSu');
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Đang tải dữ liệu...</div>';
-
             try {
-                // Chuyển tháng và năm về kiểu số để khớp với dữ liệu trên Firestore của bạn
-                const thangNum = parseInt(thangChon, 10);
-                const namNum = parseInt(namChon, 10);
-
                 // Truy vấn collection "CHIPHI" dựa theo trường "thang" và "nam"
-                const q = query(
-                    collection(db, "CHIPHI"), 
-                    where("thang", "==", thangNum),
-                    where("nam", "==", namNum)
-                    // Nếu muốn sắp xếp theo ngày phát sinh mới nhất, bạn cần tạo Index trên Firestore cho trường ngayPhatSinh
-                    // orderBy("ngayPhatSinh", "desc") 
-                );
-
+                const q = query(collection(db, "CHIPHI"), 
+                    where("thang", "==", thangChon),
+                    where("nam", "==", namChon) );
                 const querySnapshot = await getDocs(q);
-                
                 // Xóa nội dung cũ trước khi render
                 container.innerHTML = '';
-
-                if (querySnapshot.empty) {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chi phí nào trong tháng này.</div>';
-                    return;
-                }
-
+                if (querySnapshot.empty) {container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chi phí nào trong tháng này.</div>'; return;}
                 // Duyệt qua từng document và render ra giao diện
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
-                    
-                    // Lấy dữ liệu khớp với cấu trúc trong ảnh Firestore của bạn
                     const ghiChu = data.ghiChu || 'Không có ghi chú';
                     const ngayPhatSinh = data.ngayPhatSinh || '';
                     const chiPhiGoc = data.chiPhiGoc !== undefined ? Number(data.chiPhiGoc).toLocaleString('vi-VN') + ' đ' : '0 đ';
                     const nguyenTacPhanBo = data.nguyenTacPhanBo || 'Chưa phân bổ';
                     const tienSon = data.tienSon !== undefined ? Number(data.tienSon).toLocaleString('vi-VN') + ' đ' : '0 đ';
                     const tienTBVS = data.tienTBVS !== undefined ? Number(data.tienTBVS).toLocaleString('vi-VN') + ' đ' : '0 đ';
-
+                    // Gán icon cho phân loại chi phí
+                    const loaiChiPhi = data.loaiChiPhi || 'Kho'; // Mặc định là Kho nếu chưa có
+                    let badgeClass = 'badge-kho'; let badgeText = '📦 Kho';
+                    if (loaiChiPhi.toLowerCase().includes('logistics') || loaiChiPhi.toLowerCase().includes('vận')) {
+                        badgeClass = 'badge-logistics'; badgeText = '🚚 Logistics';}
                     // Tạo khung card cho mỗi bản ghi phát sinh
                     const cardItem = document.createElement('div');
                     cardItem.className = 'card-lich-su-item';
-                    
                     cardItem.innerHTML = `
                         <div class="card-dong-1">
                             <span class="ghi-chu">${ghiChu}</span>
-                            <span class="ngay-phat-sinh">${ngayPhatSinh}</span>
+                            <span class="nhan-loai-chi-phi ${badgeClass}">${badgeText}</span>
                         </div>
-                        
+                        <div class="card-dong-ngay">
+                            <span class="ngay-phat-sinh">📅 ${ngayPhatSinh}</span>
+                        </div>
                         <div class="card-dong-2">
                             <span><strong>${chiPhiGoc}</strong></span>
                             <span>${nguyenTacPhanBo}</span>
                         </div>
-                        
                         <div class="card-dong-3">
                             <span>Sơn: ${tienSon}</span>
-                            <span class="phan-cach">|</span>
                             <span>TBVS: ${tienTBVS}</span>
                         </div>
                     `;
-                    
-                    container.appendChild(cardItem);
-                });
-
+                    container.appendChild(cardItem); });
             } catch (error) {
                 console.error("Lỗi tải dữ liệu chi phí kho: ", error);
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu từ máy chủ!</div>';
-            }
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu từ máy chủ!</div>';}
         }
             
         
