@@ -1538,30 +1538,35 @@
         };
 
 // LỊCH SỬ CHI PHÍ KHO
-        // Bắt sự kiện click vào khung `.bo-chon-thang` để mở bảng chọn tháng
+        // --- KHỞI TẠO THÁNG/NĂM HIỆN HÀNH KHI MỞ TRANG ---
+        window.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Định dạng 2 chữ số (VD: 07)
+            const inputThang = document.getElementById('inputThangAn');
+            const labelThang = document.getElementById('labelThangNam');
+            if (inputThang && labelThang) {
+                inputThang.value = `${year}-${month}`;      // Gán giá trị chuẩn cho input type="month" (định dạng YYYY-MM)
+                labelThang.innerText = `${month}/${year}`;} });     // Hiển thị ra giao diện (định dạng MM/YYYY)
+        // Onclick chọn tháng năm //
         document.querySelector('.bo-chon-thang').addEventListener('click', function() {
             const inputThang = document.getElementById('inputThangAn');
-            if (inputThang.showPicker) {
-                inputThang.showPicker(); // Mở bảng lịch chuẩn trên các trình duyệt hiện đại
-            } else {
-                inputThang.click();     // Dự phòng cho các trình duyệt cũ
-            }
-        });
-
+            if (inputThang.showPicker) {inputThang.showPicker(); // Mở bảng lịch chuẩn trên các trình duyệt hiện đại
+            } else {inputThang.click(); }  });  // Dự phòng cho các trình duyệt cũ
+            
         // Xử lý khi người dùng chọn xong tháng/năm từ bảng
         document.getElementById('inputThangAn').addEventListener('change', function() {
             if (this.value) {
                 const parts = this.value.split('-'); // Định dạng trả về: YYYY-MM
                 const year = parts[0];
                 const month = parts[1];
-                
                 // Cập nhật lại chữ hiển thị trên giao diện thành MM/YYYY
-                document.getElementById('labelThangNam').innerText = `${month}/${year}`;
+                document.getElementById('labelThangNam').innerText = `${month}/${year}`; } });
                 
                 // Gọi hàm tải dữ liệu của bạn ở đây (nếu có)
                 // taiDuLieuTheoThang(month, year);
-            }
-        });
+            
+        
     </script>
 </body>
 </html>
