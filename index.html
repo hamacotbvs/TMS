@@ -1512,7 +1512,8 @@
                 // Truy vấn collection "CHIPHI" dựa theo trường "thang" và "nam"
                 const q = query(collection(db, "CHIPHI"), 
                     where("thang", "==", thangNum),
-                    where("nam", "==", namNum) );
+                    where("nam", "==", namNum),
+                    orderBy("ngayPhatSinh", "asc") );
                 const querySnapshot = await getDocs(q);
                 // Xóa nội dung cũ trước khi render
                 container.innerHTML = '';
@@ -1535,7 +1536,7 @@
                     cardItem.innerHTML = `
                         <div class="card-dong-1">
                             <span class="ghi-chu">${ghiChu}</span>
-                            <span class="ngay-phat-sinh">${iconLoai} ${ngayPhatSinh}</span>
+                            <span class="ngay-phat-sinh">${ngayPhatSinh} ${iconLoai}</span>
                         </div>
                         <div class="card-dong-2">
                             <span><strong>${chiPhiGoc}</strong></span>
