@@ -1363,26 +1363,12 @@
             const thoiGian = new Date(ngay);
             const nam = thoiGian.getFullYear();
             const thang = String(thoiGian.getMonth() + 1).padStart(2, '0'); 
-
-            // 🌟 ĐỒNG NHẤT CÔNG THỨC: TÍNH TBVS TRƯỚC THEO TỪNG TRƯỜNG HỢP
-            let tienTBVS = 0;
-            if (kieuPhanBo === 'tbvs-truoc') {
-                // Nếu chọn tự nhập, lấy thẳng số tiền từ ô input màu xanh lá
-                tienTBVS = Math.round(parseFloat(document.getElementById('tienTBVSInput').value) || 0);
-            } else {
-                // Nếu chọn tỷ lệ %, tính theo công thức phần trăm
-                let phanTramTBVS = 0.5; // Mặc định của tỷ lệ 50-50
-                if (kieuPhanBo === '67-33') { phanTramTBVS = 0.33; }
-                else if (kieuPhanBo === 'dien-tich') { phanTramTBVS = 0.648; }
-                
-                tienTBVS = Math.round(tongTien * phanTramTBVS);
-            }
-            if (kieuPhanBo !== 'tbvs-truoc' && (hangMuc === "Thuê mặt bằng" || hangMuc === "Thuê xe")) {
-                tienTBVS = lamTronHangTrieu(tienTBVS);
-                if (tienTBVS > tongTien) tienTBVS = lamTronHangTrieu(tongTien);
-            }
-            // Tiền Sơn luôn bằng Tổng tiền trừ đi TBVS (Không sợ lệch 1 đồng do làm tròn)
-            const tienSon = tongTien - tienTBVS;
+            // 🌟 Lấy thẳng kết quả tiền Sơn và TBVS đang hiển thị trực tiếp trên giao diện
+            const textTBVS = document.getElementById('previewTBVS') ? document.getElementById('previewTBVS').innerText : '0';
+            const textSon = document.getElementById('previewSon') ? document.getElementById('previewSon').innerText : '0';
+            // Xóa tất cả các ký tự không phải số để lấy giá trị số nguyên chính xác
+            const tienTBVS = parseFloat(textTBVS.replace(/\D/g, '')) || 0;
+            const tienSon = parseFloat(textSon.replace(/\D/g, '')) || 0;
                 // phân nhóm cố định biến phí
                 // Lấy index của option được chọn (0 là -- Chọn hạng mục --)
                 const selectElement = document.getElementById('nvHangMuc');
