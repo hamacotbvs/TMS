@@ -143,8 +143,10 @@
         .modal-header-custom {display: flex; flex-direction: column; align-items: center; position: relative; padding: 2px 5px; border-bottom: 1px solid #e2e8f0;}
         .nut-dong-modal {position: absolute; right: 2px; top: 2px; border: none; background: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1;}
         .modal-tieu-de {margin: 0 0 2px 0; font-size: 16px; color: #0082C8; font-weight: 700;}
-        .bo-chon-thang {display: flex; align-items: center; justify-content: center; background-color: #f1f2f6; border-radius: 12px; padding: 3px 12px 5px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer;}
+        .bo-chon-thang {position: relative; display: flex; align-items: center; justify-content: center; background-color: #f1f2f6; border-radius: 12px; padding: 3px 12px 5px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; overflow: hidden;}
         .bo-chon-thang:active {transform: scale(0.95);}
+        /* Thẻ input tháng nằm đè trùm kín 100% và làm tàng hình (opacity: 0) */
+        #inputThangAn {position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 5;}
     </style>
 
 </head>
@@ -164,8 +166,11 @@
                     <div class="modal-header-custom">
                         <button class="nut-dong-modal" onclick="dongModal()">&times;</button>
                         <h3 class="modal-tieu-de">💸 CHI PHÍ KHO</h3>
-                        <div class="bo-chon-thang" onclick="document.getElementById('inputThangAn').showPicker()">
+                        
+                        <!-- Khung chứa có input tàng hình nằm đè lên trên tuyệt đối -->
+                        <div class="bo-chon-thang">
                             <span id="labelThangNam">07/2026</span>
+                            <input type="month" id="inputThangAn" onchange="chonThang(this)">
                         </div>
                     </div>
                     <!-- Danh sách card cuộn mượt phía dưới -->
@@ -1546,10 +1551,8 @@
                 const parts = input.value.split('-');
                 const year = parts[0];
                 const month = parts[1];
-                
                 // Cập nhật lại chữ hiển thị trên giao diện thành MM/YYYY
                 document.getElementById('labelThangNam').innerText = `${month}/${year}`;
-                
                 // Gọi hàm tải dữ liệu của bạn ở đây (nếu có)
                 // taiDuLieuTheoThang(month, year);
             }
