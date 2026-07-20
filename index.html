@@ -140,53 +140,11 @@
             height: calc(100vh - 70px) !important; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);; } }
 
         /* --- PHẦN BỐ CỤC HEADER MỚI --- */
-        .modal-header-custom {
-    display: flex;
-    flex-direction: column; /* Xếp chồng các thành phần theo chiều dọc */
-    align-items: center;    /* Canh giữa tất cả theo chiều ngang */
-    position: relative;     /* Cần thiết để định vị nút đóng */
-    padding: 10px;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.btn-dong-modal {
-    position: absolute;
-    right: 5px;
-    top: 5px;               /* Đẩy lên góc trên cùng */
-    border: none;
-    background: none;
-    font-size: 24px;
-    color: #94a3b8;
-    cursor: pointer;
-    line-height: 1;
-}
-
-.modal-title-main {
-    margin: 0 0 5px 0;      /* Khoảng cách nhỏ giữa tiêu đề và khung tháng */
-    font-size: 16px;
-    color: #0082C8;
-}
-
-.mini-month-picker {
-    display: flex;
-    align-items: center;
-    background: #f1f5f9;
-    border-radius: 6px;
-    padding: 2px 8px;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #334155;
-    cursor: pointer;
-}
-
-.mini-month-picker button {
-    border: none;
-    background: none;
-    padding: 2px;
-    color: #64748b;
-    cursor: pointer;
-}
+        .modal-header-custom {display: flex; flex-direction: column; align-items: center; position: relative; padding: 5px; border-bottom: 1px solid #e2e8f0;}
+        .btn-dong-modal {position: absolute; right: 5px; top: 5px; border: none; background: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1;}
+        .modal-title-main {margin: 0 0 2px 0; font-size: 16px; color: #0082C8;}
+        .mini-month-picker {display: flex; align-items: center; background: #ffffff;border-radius: 12px; padding: 2px 8px; gap: 8px; font-size: 12px; font-weight: 700; color: #334155; cursor: pointer;}
+        .mini-month-picker button {border: none; background: none; padding: 1px 1px; color: #64748b; cursor: pointer;}
     </style>
 
 </head>
