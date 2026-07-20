@@ -1549,6 +1549,16 @@
                     container.appendChild(cardItem); });
             } catch (error) {
                 console.error("Lỗi tải dữ liệu chi phí kho: ", error);
+                // Kiểm tra xem lỗi có phải do thiếu Index của Firebase không
+                const errorMessage = error.message || "";
+                if (errorMessage.includes("index")) {const matchLink = errorMessage.match(/https:\/\/console\.firebase\.google\.com[^\s]+/);
+                    if (matchLink) {const indexUrl = matchLink[0].replace(/['"].*/, '');
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 20px; color: #b45309; font-size: 13px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; margin: 10px;">
+                                ⚠️ <strong>Thiếu Index trên Firebase!</strong><br> Hệ thống cần tạo cấu trúc sắp xếp để hiển thị dữ liệu.<br><br>
+                                <a href="${indexUrl}" target="_blank" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+                                    👉 Bấm vào đây để tạo Index ngay </a> </div> `; return; } }
+                // Trường hợp lỗi khác
                 container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu từ máy chủ!</div>';}
         }
             
