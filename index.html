@@ -143,7 +143,7 @@
         .modal-header-custom {display: flex; flex-direction: column; align-items: center; position: relative; padding: 2px 5px; border-bottom: 1px solid #e2e8f0;}
         .nut-dong-modal {position: absolute; right: 2px; top: 2px; border: none; background: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1;}
         .modal-tieu-de {margin: 0 0 2px 0; font-size: 16px; color: #0082C8; font-weight: 700;}
-        .bo-chon-thang {display: flex; align-items: center; justify-content: center; background-color: #f1f2f6; border-radius: 12px; padding: 3px 12px 5px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; }
+        .bo-chon-thang {position: relative; display: inline-flex; align-items: center; justify-content: center; background-color: #f1f2f6; border-radius: 12px; padding: 3px 12px 5px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; overflow: hidden;}
         .bo-chon-thang:active {transform: scale(0.95);}
     </style>
 
@@ -1550,12 +1550,10 @@
                 labelThang.innerText = `${month}/${year}`;} });     // Hiển thị ra giao diện (định dạng MM/YYYY)
 
         // ONCLICK CHỌN THÁNG NĂM //
-        document.querySelector('.modal-header-custom').addEventListener('click', function(e) {
-            // Chỉ mở lịch khi bấm vào đúng khung `.bo-chon-thang` hoặc các thẻ bên trong nó (như chữ, span)
-            const boChon = e.target.closest('.bo-chon-thang');
-            if (boChon) {const inputThang = document.getElementById('inputThangAn');
-                if (inputThang.showPicker) {inputThang.showPicker();
-                } else {inputThang.click(); } } });
+        document.querySelector('.bo-chon-thang').addEventListener('click', function() {
+            const inputThang = document.getElementById('inputThangAn');
+            if (inputThang.showPicker) {inputThang.showPicker(); // Mở bảng lịch chuẩn trên các trình duyệt hiện đại
+            } else {inputThang.click(); }  });  // Dự phòng cho các trình duyệt cũ
             
         // XỬ LÝ KHI NGƯỜI DÙNG CHỌN XONG THÁNG/NĂM TỪ BẢNG
         document.getElementById('inputThangAn').addEventListener('change', function() {
