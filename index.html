@@ -154,24 +154,18 @@
     <div class="KHUNG-CAC-TAB">
         
         <div id="home" class="trang-content active">
-            <!-- Nút mở lịch sử -->
-            <button onclick="moLichSuChiPhi()" class="btn-history">
-                <i class="fa-solid fa-clock-rotate-left"></i> Xem lịch sử chi phí
-            </button>
-
+            <button onclick="moLichSuChiPhi()" class="btn-history"> <i class="fa-solid fa-clock-rotate-left"></i> Xem lịch sử chi phí </button> <!-- Nút mở lịch sử -->
             <div id="modalLichSu" class="modal-hidden">
                 <div class="modal-content">
                     <div class="modal-header-custom">
                         <button class="nut-dong-modal" onclick="dongModal()">&times;</button>
                         <h3 class="modal-tieu-de">💸 CHI PHÍ KHO</h3>
-                        <!-- Khung chứa có input tàng hình nằm đè lên trên tuyệt đối -->
-                        <div class="bo-chon-thang" onclick="moBangChonThang()">
+                        <div class="bo-chon-thang">
                             <span id="labelThangNam">--/----</span>
+                            <input type="month" id="inputThangAn" class="o-lich-an-giao-dien">
                         </div>
                     </div>
-
-                    <!-- Input ẩn nằm bên ngoài, không lo bị che khuất sự kiện click -->
-                    <input type="month" id="inputThangAn" style="display:none" onchange="chonThang(this)">
+                    
                     <!-- Danh sách card cuộn mượt phía dưới -->
                     <div id="danhSachLichSu"></div>
                 </div>
@@ -1544,42 +1538,30 @@
         };
 
 // LỊCH SỬ CHI PHÍ KHO
-        // Tự động gán tháng hiện tại khi load trang
-        window.addEventListener('DOMContentLoaded', () => {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = (now.getMonth() + 1).toString().padStart(2, '0');
-            
-            const inputAn = document.getElementById('inputThangAn');
-            if (inputAn) {
-                inputAn.value = `${year}-${month}`;
-                document.getElementById('labelThangNam').innerText = `${month}/${year}`;
+        // Bắt sự kiện click vào khung `.bo-chon-thang` để mở bảng chọn tháng
+        document.querySelector('.bo-chon-thang').addEventListener('click', function() {
+            const inputThang = document.getElementById('inputThangAn');
+            if (inputThang.showPicker) {
+                inputThang.showPicker(); // Mở bảng lịch chuẩn trên các trình duyệt hiện đại
+            } else {
+                inputThang.click();     // Dự phòng cho các trình duyệt cũ
             }
         });
 
-        // Hàm mở bảng chọn tháng khi click vào khung trên PC / Điện thoại
-        function moBangChonThang() {
-            const inputAn = document.getElementById('inputThangAn');
-            if (inputAn.showPicker) {
-                inputAn.showPicker(); // Hỗ trợ cực tốt trên Chrome, Edge, Safari hiện đại
-            } else {
-                inputAn.click();     // Dự phòng cho trình duyệt cũ
-            }
-        }
-
-        // Hàm nhận giá trị khi chọn xong
-        function chonThang(input) {
-            if (input.value) {
-                const parts = input.value.split('-');
+        // Xử lý khi người dùng chọn xong tháng/năm từ bảng
+        document.getElementById('inputThangAn').addEventListener('change', function() {
+            if (this.value) {
+                const parts = this.value.split('-'); // Định dạng trả về: YYYY-MM
                 const year = parts[0];
                 const month = parts[1];
                 
+                // Cập nhật lại chữ hiển thị trên giao diện thành MM/YYYY
                 document.getElementById('labelThangNam').innerText = `${month}/${year}`;
                 
                 // Gọi hàm tải dữ liệu của bạn ở đây (nếu có)
                 // taiDuLieuTheoThang(month, year);
             }
-        }
+        });
     </script>
 </body>
 </html>
