@@ -1513,7 +1513,7 @@
                 const q = query(collection(db, "CHIPHI"), 
                     where("thang", "==", thangNum),
                     where("nam", "==", namNum),
-                     );
+                    orderBy("ngayPhatSinh", "asc") );
                 const querySnapshot = await getDocs(q);
                 // Xóa nội dung cũ trước khi render
                 container.innerHTML = '';
