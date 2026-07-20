@@ -169,7 +169,7 @@
                         
                         <!-- Khung chứa có input tàng hình nằm đè lên trên tuyệt đối -->
                         <div class="bo-chon-thang">
-                            <span id="labelThangNam">07/2026</span>
+                            <span id="labelThangNam">--/----</span>
                             <input type="month" id="inputThangAn" onchange="chonThang(this)">
                         </div>
                     </div>
@@ -1545,14 +1545,29 @@
         };
 
 // LỊCH SỬ CHI PHÍ KHO
-        // chọn tháng năm lịch sử chi phí //
+        // Tự động gán tháng hiện tại khi load trang
+        window.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            
+            const inputAn = document.getElementById('inputThangAn');
+            if (inputAn) {
+                inputAn.value = `${year}-${month}`; // Gán giá trị chuẩn cho input type="month"
+                document.getElementById('labelThangNam').innerText = `${month}/${year}`; // Hiển thị ra màn hình
+            }
+        });
+
+        // Xử lý khi người dùng bấm vào thay đổi tháng khác
         function chonThang(input) {
             if (input.value) {
                 const parts = input.value.split('-');
                 const year = parts[0];
                 const month = parts[1];
+                
                 // Cập nhật lại chữ hiển thị trên giao diện thành MM/YYYY
                 document.getElementById('labelThangNam').innerText = `${month}/${year}`;
+                
                 // Gọi hàm tải dữ liệu của bạn ở đây (nếu có)
                 // taiDuLieuTheoThang(month, year);
             }
