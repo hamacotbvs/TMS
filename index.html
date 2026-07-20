@@ -161,19 +161,15 @@
 
             <div id="modalLichSu" class="modal-hidden">
                 <div class="modal-content">
-                    <!-- HEADER MỚI CỦA MODAL -->
                     <div class="modal-header-custom">
                         <button class="nut-dong-modal" onclick="dongModal()">&times;</button>
                         <h3 class="modal-tieu-de">💸 CHI PHÍ KHO</h3>
-                        
-                        <!-- Chỉ giữ lại thẻ div bọc chữ tháng năm, click vào sẽ hiện bảng chọn tháng -->
                         <div class="bo-chon-thang" onclick="document.getElementById('inputThangAn').showPicker()">
                             <span id="labelThangNam">07/2026</span>
                         </div>
                     </div>
-
                     <input type="month" id="inputThangAn" style="display:none" onchange="chonThang(this)">
-                    
+
                     <!-- Danh sách card cuộn mượt phía dưới -->
                     <div id="danhSachLichSu"></div>
                 </div>
@@ -1546,26 +1542,31 @@
         };
 
 // LỊCH SỬ CHI PHÍ KHO
-        let currentMonth = new Date(); // Khởi tạo ngày hiện tại
-        function capNhatLabel() {
-            const y = currentMonth.getFullYear();
-            const m = (currentMonth.getMonth() + 1).toString().padStart(2, '0');
-            document.getElementById('labelThangNam').innerText = `Tháng ${m}/${y}`;
-            // Gọi hàm load dữ liệu của bạn ở đây với giá trị y và m
-        }
-        function thayDoiThang(delta) {
-            currentMonth.setMonth(currentMonth.getMonth() + delta);
-            capNhatLabel();
-        }
-        function moBangChonThang() {
-            document.getElementById('inputThangAn').showPicker(); // Hàm này mở bảng chọn tháng chuẩn
-        }
-        function chonThang(input) {
-            if(input.value) {
-                currentMonth = new Date(input.value + "-01");
-                capNhatLabel();
-            }
-        }
+        // Hàm mở bảng chọn tháng/năm chuẩn của trình duyệt
+function moBangChonThang() {
+    const inputAn = document.getElementById('inputThangAn');
+    if (inputAn.showPicker) {
+        inputAn.showPicker(); // Hỗ trợ trên các trình duyệt hiện đại
+    } else {
+        inputAn.click();     // Dự phòng cho các trình duyệt cũ hơn
+    }
+}
+
+// Hàm nhận giá trị khi người dùng đã chọn xong tháng/năm từ bảng
+function chonThang(input) {
+    if (input.value) {
+        // input.value trả về định dạng "YYYY-MM" (ví dụ: "2026-07")
+        const parts = input.value.split('-');
+        const year = parts[0];
+        const month = parts[1];
+        
+        // Cập nhật lại chữ hiển thị trên giao diện thành "MM/YYYY"
+        document.getElementById('labelThangNam').innerText = `${month}/${year}`;
+        
+        // Gọi hàm tải lại dữ liệu lịch sử chi phí theo tháng/năm mới ở đây
+        // Ví dụ: taiDuLieuTheoThang(month, year);
+    }
+}
     </script>
 </body>
 </html>
