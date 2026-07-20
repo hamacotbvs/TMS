@@ -168,8 +168,6 @@
                             <span id="labelThangNam">07/2026</span>
                         </div>
                     </div>
-                    <input type="month" id="inputThangAn" style="display:none" onchange="chonThang(this)">
-
                     <!-- Danh sách card cuộn mượt phía dưới -->
                     <div id="danhSachLichSu"></div>
                 </div>
@@ -1542,31 +1540,20 @@
         };
 
 // LỊCH SỬ CHI PHÍ KHO
-        // Hàm mở bảng chọn tháng/năm chuẩn của trình duyệt
-function moBangChonThang() {
-    const inputAn = document.getElementById('inputThangAn');
-    if (inputAn.showPicker) {
-        inputAn.showPicker(); // Hỗ trợ trên các trình duyệt hiện đại
-    } else {
-        inputAn.click();     // Dự phòng cho các trình duyệt cũ hơn
-    }
-}
-
-// Hàm nhận giá trị khi người dùng đã chọn xong tháng/năm từ bảng
-function chonThang(input) {
-    if (input.value) {
-        // input.value trả về định dạng "YYYY-MM" (ví dụ: "2026-07")
-        const parts = input.value.split('-');
-        const year = parts[0];
-        const month = parts[1];
-        
-        // Cập nhật lại chữ hiển thị trên giao diện thành "MM/YYYY"
-        document.getElementById('labelThangNam').innerText = `${month}/${year}`;
-        
-        // Gọi hàm tải lại dữ liệu lịch sử chi phí theo tháng/năm mới ở đây
-        // Ví dụ: taiDuLieuTheoThang(month, year);
-    }
-}
+        // chọn tháng năm lịch sử chi phí //
+        function chonThang(input) {
+            if (input.value) {
+                const parts = input.value.split('-');
+                const year = parts[0];
+                const month = parts[1];
+                
+                // Cập nhật lại chữ hiển thị trên giao diện thành MM/YYYY
+                document.getElementById('labelThangNam').innerText = `${month}/${year}`;
+                
+                // Gọi hàm tải dữ liệu của bạn ở đây (nếu có)
+                // taiDuLieuTheoThang(month, year);
+            }
+        }
     </script>
 </body>
 </html>
