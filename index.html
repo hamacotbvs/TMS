@@ -1510,10 +1510,13 @@
             const container = document.getElementById('danhSachLichSu');
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Đang tải dữ liệu...</div>';
             try {
+                // Chuyển tháng và năm về kiểu số để khớp với dữ liệu trên Firestore
+                const thangNum = parseInt(thangChon, 10);
+                const namNum = parseInt(namChon, 10);
                 // Truy vấn collection "CHIPHI" dựa theo trường "thang" và "nam"
                 const q = query(collection(db, "CHIPHI"), 
-                    where("thang", "==", thangChon),
-                    where("nam", "==", namChon) );
+                    where("thang", "==", thangNum),
+                    where("nam", "==", namNum) );
                 const querySnapshot = await getDocs(q);
                 // Xóa nội dung cũ trước khi render
                 container.innerHTML = '';
