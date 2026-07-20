@@ -141,10 +141,12 @@
 
         /* --- PHẦN BỐ CỤC HEADER MỚI --- */
         .modal-header-custom {display: flex; flex-direction: column; align-items: center; position: relative; padding: 5px; border-bottom: 1px solid #e2e8f0;}
-        .btn-dong-modal {position: absolute; right: 5px; top: 5px; border: none; background: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1;}
-        .modal-title-main {margin: 0 0 2px 0; font-size: 16px; color: #0082C8;}
-        .mini-month-picker {display: flex; align-items: center; background: #ffffff;border-radius: 12px; padding: 2px 8px; gap: 8px; font-size: 12px; font-weight: 700; color: #334155; cursor: pointer;}
-        .mini-month-picker button {background: none;border: none;font-size: 11px;color: #57606f;padding: 4px 8px;cursor: pointer;}
+        .nut-dong-modal {position: absolute; right: 5px; top: 5px; border: none; background: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1;}
+        .modal-tieu-de {margin: 0 0 2px 0; font-size: 16px; color: #0082C8;}
+        /* Kén chứa 2 nút mũi tên thu nhỏ lại để vừa vặn góc phải */
+        .noi-chon-thang {display: flex;align-items: center;background-color: #f1f2f6;border-radius: 15px;padding: 1px 4px;}
+        .nut-mui-ten {background: none;border: none;font-size: 11px;color: #57606f;padding: 4px 8px;cursor: pointer;}
+        .nut-mui-ten:active {transform: scale(0.85);}
     </style>
 
 </head>
@@ -163,18 +165,9 @@
                 <div class="modal-content">
                     <!-- HEADER MỚI CỦA MODAL -->
                     <div class="modal-header-custom">
-                        <!-- Nút đóng cố định góc phải -->
-                        <button class="btn-dong-modal" onclick="dongModal()">&times;</button>
-                        
-                        <!-- Tiêu đề chính -->
-                        <h3 class="modal-title-main">CHI PHÍ KHO</h3>
-                        
-                        <!-- Khung tháng năm nằm dưới tiêu đề -->
-                        <div class="mini-month-picker" onclick="document.getElementById('inputThangAn').showPicker()">
-                            <button onclick="event.stopPropagation(); thayDoiThang(-1)">◀</button>
-                            <span id="labelThangNam">07/2026</span>
-                            <button onclick="event.stopPropagation(); thayDoiThang(1)">▶</button>
-                        </div>
+                        <button class="nut-dong-modal" onclick="dongModal()">&times;</button>   <!-- Nút đóng cố định góc phải -->
+                        <h3 class="modal-tieu-de">💸 CHI PHÍ KHO</h3>
+                        <div class="noi-chon-thang" id="cum-chuyen-thang"><button id="nut-thang-truoc" class="nut-mui-ten">◀</button><span id="hien-thi-thang-nam-han-muc">Tháng --/----</span><button id="nut-thang-sau" class="nut-mui-ten">▶</button></div>
                     </div>
 
                     <input type="month" id="inputThangAn" style="display:none" onchange="chonThang(this)">
