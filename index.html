@@ -138,13 +138,19 @@
         @media (min-width: 850px) {
             .modal-content {background: #ffffff; margin: 0.5vh auto; padding: 10px; max-width: 500px; border-radius: 20px;
             height: calc(100vh - 70px) !important; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);; } }
-
-        /* --- PHẦN BỐ CỤC HEADER MỚI --- */
         .modal-header-custom {display: flex; flex-direction: column; align-items: center; position: relative; padding: 2px 5px; border-bottom: 1px solid #e2e8f0;}
         .nut-dong-modal {position: absolute; right: 2px; top: 2px; border: none; background: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1;}
         .modal-tieu-de {margin: 0 0 2px 0; font-size: 16px; color: #0082C8; font-weight: 700;}
         .bo-chon-thang {position: relative; display: inline-flex; align-items: center; justify-content: center; background-color: #f1f2f6; border-radius: 12px; padding: 3px 12px 5px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; overflow: hidden;}
         .bo-chon-thang:active {transform: scale(0.95);}
+        #danhSachLichSu {max-height: 400px; overflow-y: auto; padding: 10px;}
+        .card-lich-su-item {background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8); } /* Tạo đường gạch mờ phân cách giữa các phát sinh */
+        .card-dong-1 {display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px;}
+        .ngay-phat-sinh {font-size: 12px; color: #64748b; font-weight: 500;}
+        .card-dong-2 {display: flex; justify-content: space-between; font-size: 12px; color: #475569; margin-bottom: 6px;}
+        .card-dong-3 {display: flex; align-items: center; font-size: 12px; color: #0f172a; background: #f8fafc; padding: 4px 8px; border-radius: 6px;}
+        .card-dong-3 .phan-cach {margin: 0 10px; color: #cbd5e1; }/* Màu gạch mờ phân chia Sơn và TBVS */
     </style>
 
 </head>
@@ -1547,7 +1553,9 @@
             const labelThang = document.getElementById('labelThangNam');
             if (inputThang && labelThang) {
                 inputThang.value = `${year}-${month}`;      // Gán giá trị chuẩn cho input type="month" (định dạng YYYY-MM)
-                labelThang.innerText = `${month}/${year}`;} });     // Hiển thị ra giao diện (định dạng MM/YYYY)
+                labelThang.innerText = `${month}/${year}`;
+                // Tự động load dữ liệu của tháng hiện tại ngay khi vừa mở modal hoặc mở trang
+                taiDuLieuTheoThang(month, year); } });
 
         // ONCLICK CHỌN THÁNG NĂM //
         document.querySelector('.bo-chon-thang').addEventListener('click', function() {
@@ -1562,10 +1570,83 @@
                 const year = parts[0];
                 const month = parts[1];
                 // Cập nhật lại chữ hiển thị trên giao diện thành MM/YYYY
-                document.getElementById('labelThangNam').innerText = `${month}/${year}`; } });
+                document.getElementById('labelThangNam').innerText = `${month}/${year}`; 
+                // 2. Gọi hàm tải dữ liệu từ Firebase theo tháng năm mới chọn
+                taiDuLieuTheoThang(month, year); } });
                 
-                // Gọi hàm tải dữ liệu của bạn ở đây (nếu có)
-                // taiDuLieuTheoThang(month, year);
+        // --- HÀM TẢI DỮ LIỆU LỊCH SỬ CHI PHÍ KHO TỪ FIREBASE ---
+        async function taiDuLieuTheoThang(thang, nam) {
+            const container = document.getElementById('danhSachLichSu');
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Đang tải dữ liệu...</div>';
+
+            try {
+                // Tạo khoảng thời gian bắt đầu và kết thúc của tháng đã chọn (để query tối ưu trên Firestore)
+                // Ví dụ: Tháng 07 năm 2026 -> Từ 2026-07-01 đến 2026-07-31
+                const ngayBatDau = `${nam}-${thang}-01`;
+                // Tính ngày cuối tháng (hoặc dùng string so sánh prefix nếu lưu dạng chuỗi YYYY-MM-DD)
+                const ngayKetThuc = `${nam}-${thang}-31`; // Hoặc xử lý theo định dạng lưu trữ của bạn
+
+                // Giả sử collection trên Firestore của bạn tên là "ChiPhiKho" 
+                // và trường lưu ngày tháng phát sinh tên là "ngayPhatSinh" (định dạng 'YYYY-MM-DD')
+                const q = query(
+                    collection(db, "ChiPhiKho"), 
+                    where("ngayPhatSinh", ">=", ngayBatDau),
+                    where("ngayPhatSinh", "<=", ngayKetThuc),
+                    orderBy("ngayPhatSinh", "desc") // Sắp xếp mới nhất lên đầu
+                );
+
+                const querySnapshot = await getDocs(q);
+                
+                // Xóa nội dung cũ
+                container.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chi phí nào trong tháng này.</div>';
+                    return;
+                }
+
+                // Duyệt qua từng bản ghi và render ra giao diện card
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    
+                    // Lấy dữ liệu các trường theo yêu cầu (có dự phòng giá trị mặc định nếu trống)
+                    const ghiChu = data.ghiChu || 'Không có ghi chú';
+                    const ngayPhatSinh = data.ngayPhatSinh || '';
+                    const chiPhiGoc = data.chiPhiGoc ? Number(data.chiPhiGoc).toLocaleString('vi-VN') + ' đ' : '0 đ';
+                    const nguyeTacPhanBo = data.nguyeTacPhanBo || 'Chưa phân bổ';
+                    const tienSon = data.tienSon ? Number(data.tienSon).toLocaleString('vi-VN') + ' đ' : '0 đ';
+                    const tienTBVS = data.tienTBVS ? Number(data.tienTBVS).toLocaleString('vi-VN') + ' đ' : '0 đ';
+
+                    // Tạo khung card cho mỗi phát sinh
+                    const cardItem = document.createElement('div');
+                    cardItem.className = 'card-lich-su-item';
+                    
+                    cardItem.innerHTML = `
+                        <div class="card-dong-1">
+                            <span class="ghi-chu">${ghiChu}</span>
+                            <span class="ngay-phat-sinh">${ngayPhatSinh}</span>
+                        </div>
+                        
+                        <div class="card-dong-2">
+                            <span>Chi phí gốc: <strong>${chiPhiGoc}</strong></span>
+                            <span>Nguyên tắc: ${nguyeTacPhanBo}</span>
+                        </div>
+                        
+                        <div class="card-dong-3">
+                            <span>Sơn: ${tienSon}</span>
+                            <span class="phan-cach">|</span>
+                            <span>TBVS: ${tienTBVS}</span>
+                        </div>
+                    `;
+                    
+                    container.appendChild(cardItem);
+                });
+
+            } catch (error) {
+                console.error("Lỗi tải dữ liệu chi phí kho: ", error);
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu từ máy chủ!</div>';
+            }
+        }
             
         
     </script>
