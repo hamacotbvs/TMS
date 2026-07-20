@@ -1410,17 +1410,11 @@
                         nutBam.style.background = "#2e7d32";
                         nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Cập nhật thành công!`;
                         // 🌟 1. GỌI HÀM TẢI LẠI DỮ LIỆU BẢNG/LỊCH SỬ (Thay tên hàm tải lịch sử của bạn vào đây nếu khác tên)
-                        if (typeof taiLaiLichSuChiPhi === 'function') {
-                            taiLaiLichSuChiPhi(thang, nam); // Truyền tháng nam vừa sửa để load đúng dữ liệu
-                        } else if (typeof xemLichSuChiPhi === 'function') {
-                            xemLichSuChiPhi(); 
-                        }
-
+                        if (typeof taiDuLieuTheoThang === 'function') {
+                            taiDuLieuTheoThang(thang, nam); }   // Truyền tháng nam vừa sửa để load đúng dữ liệu
                         // 🌟 2. MỞ LẠI MODAL LỊCH SỬ ĐỂ KIỂM TRA NGAY
                         const modalLichSu = document.getElementById('modalLichSu');
-                        if (modalLichSu) {
-                            modalLichSu.style.display = 'block';
-                        }
+                        if (modalLichSu) {modalLichSu.style.display = 'block';}
                         dangSuaIdDoc = null;        // Reset trạng thái sửa
                     } else {
                 // HẾT SỬA
