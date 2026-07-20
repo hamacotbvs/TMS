@@ -1530,21 +1530,18 @@
                     const nguyenTacPhanBo = data.nguyenTacPhanBo || 'Chưa phân bổ';
                     const tienSon = data.tienSon !== undefined ? Number(data.tienSon).toLocaleString('vi-VN') + ' đ' : '0 đ';
                     const tienTBVS = data.tienTBVS !== undefined ? Number(data.tienTBVS).toLocaleString('vi-VN') + ' đ' : '0 đ';
-                    // Gán icon cho phân loại chi phí
-                    const loaiChiPhi = data.loaiChiPhi || 'Kho'; // Mặc định là Kho nếu chưa có
-                    let badgeClass = 'badge-kho'; let badgeText = '📦 Kho';
-                    if (loaiChiPhi.toLowerCase().includes('logistics') || loaiChiPhi.toLowerCase().includes('vận')) {
-                        badgeClass = 'badge-logistics'; badgeText = '🚚 Logistics';}
+                    // Xác định icon dựa vào loaiChiPhi
+                    const loaiChiPhi = (data.loaiChiPhi || 'Kho').toLowerCase();
+                    const iconLoai = (loaiChiPhi.includes('logistics') || loaiChiPhi.includes('vận')) ? '🚚' : '📦';
                     // Tạo khung card cho mỗi bản ghi phát sinh
                     const cardItem = document.createElement('div');
                     cardItem.className = 'card-lich-su-item';
                     cardItem.innerHTML = `
                         <div class="card-dong-1">
                             <span class="ghi-chu">${ghiChu}</span>
-                            <span class="nhan-loai-chi-phi ${badgeClass}">${badgeText}</span>
                         </div>
                         <div class="card-dong-ngay">
-                            <span class="ngay-phat-sinh">📅 ${ngayPhatSinh}</span>
+                            <span class="ngay-phat-sinh">${iconLoai} ${ngayPhatSinh}</span>
                         </div>
                         <div class="card-dong-2">
                             <span><strong>${chiPhiGoc}</strong></span>
@@ -1553,8 +1550,7 @@
                         <div class="card-dong-3">
                             <span>Sơn: ${tienSon}</span>
                             <span>TBVS: ${tienTBVS}</span>
-                        </div>
-                    `;
+                        </div> `;
                     container.appendChild(cardItem); });
             } catch (error) {
                 console.error("Lỗi tải dữ liệu chi phí kho: ", error);
