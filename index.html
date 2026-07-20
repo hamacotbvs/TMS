@@ -140,32 +140,53 @@
             height: calc(100vh - 70px) !important; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);; } }
 
         /* --- PHẦN BỐ CỤC HEADER MỚI --- */
-        .mini-month-picker {
-            display: flex;
-            align-items: center;
-            background: #f1f5f9;
-            border-radius: 6px;
-            padding: 2px 4px;
-            gap: 4px;
-            font-size: 11px; /* Font cực nhỏ */
-        }
+        .modal-header-custom {
+    display: flex;
+    flex-direction: column; /* Xếp chồng các thành phần theo chiều dọc */
+    align-items: center;    /* Canh giữa tất cả theo chiều ngang */
+    position: relative;     /* Cần thiết để định vị nút đóng */
+    padding: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
 
-        .mini-month-picker button {
-            border: none;
-            background: none;
-            padding: 2px 5px;
-            color: #64748b;
-            cursor: pointer;
-            font-size: 10px;
-        }
+.btn-dong-modal {
+    position: absolute;
+    right: 5px;
+    top: 5px;               /* Đẩy lên góc trên cùng */
+    border: none;
+    background: none;
+    font-size: 24px;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+}
 
-        .mini-month-picker div {
-            font-weight: 700;
-            color: #0082C8;
-            cursor: pointer;
-            padding: 0 4px;
-            white-space: nowrap;
-        }
+.modal-title-main {
+    margin: 0 0 5px 0;      /* Khoảng cách nhỏ giữa tiêu đề và khung tháng */
+    font-size: 16px;
+    color: #0082C8;
+}
+
+.mini-month-picker {
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 2px 8px;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+}
+
+.mini-month-picker button {
+    border: none;
+    background: none;
+    padding: 2px;
+    color: #64748b;
+    cursor: pointer;
+}
     </style>
 
 </head>
@@ -184,19 +205,20 @@
                 <div class="modal-content">
                     <!-- HEADER MỚI CỦA MODAL -->
                     <div class="modal-header-custom">
+                        <!-- Nút đóng cố định góc phải -->
+                        <button class="btn-dong-modal" onclick="dongModal()">&times;</button>
+                        
+                        <!-- Tiêu đề chính -->
                         <h3 class="modal-title-main">CHI PHÍ KHO</h3>
                         
-                        <!-- Bộ chọn siêu nhỏ -->
-                        <div class="mini-month-picker">
-                            <button onclick="thayDoiThang(-1)">◀</button>
-                            <div onclick="document.getElementById('inputThangAn').showPicker()">
-                                <span id="labelThangNam">07/2026</span>
-                            </div>
-                            <button onclick="thayDoiThang(1)">▶</button>
+                        <!-- Khung tháng năm nằm dưới tiêu đề -->
+                        <div class="mini-month-picker" onclick="document.getElementById('inputThangAn').showPicker()">
+                            <button onclick="event.stopPropagation(); thayDoiThang(-1)">◀</button>
+                            <span id="labelThangNam">07/2026</span>
+                            <button onclick="event.stopPropagation(); thayDoiThang(1)">▶</button>
                         </div>
-                        
-                        <button class="btn-dong-modal" onclick="dongModal()">&times;</button>
                     </div>
+
                     <input type="month" id="inputThangAn" style="display:none" onchange="chonThang(this)">
                     
                     <!-- Danh sách card cuộn mượt phía dưới -->
