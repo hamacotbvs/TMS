@@ -140,169 +140,31 @@
             height: calc(100vh - 70px) !important; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);; } }
 
         /* --- PHẦN BỐ CỤC HEADER MỚI --- */
-        .modal-header-custom {
-            display: flex;
-            justify-content: space-between; /* Đẩy tiêu đề sang trái, nút đóng sang phải */
-            align-items: center;
-            padding: 10px 5px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .date-navigator {
+        .mini-month-picker {
             display: flex;
             align-items: center;
             background: #f1f5f9;
-            border-radius: 8px;
-            padding: 4px;
-            gap: 8px;
+            border-radius: 6px;
+            padding: 2px 4px;
+            gap: 4px;
+            font-size: 11px; /* Font cực nhỏ */
         }
 
-        .nav-btn {
+        .mini-month-picker button {
             border: none;
             background: none;
+            padding: 2px 5px;
             color: #64748b;
             cursor: pointer;
-            font-size: 14px;
-            padding: 5px 8px;
+            font-size: 10px;
         }
 
-        .date-display {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1e293b;
-            cursor: pointer;
-            min-width: 100px;
-            text-align: center;
-        }
-
-        /* Vùng cuộn danh sách */
-        #danhSachLichSu { 
-            overflow-y: auto; 
-            flex: 1; 
-            margin-top: 16px; 
-            padding-right: 2px; 
-        }
-
-        /* Ẩn thanh cuộn xấu xí nhưng vẫn cuộn được */
-        #danhSachLichSu::-webkit-scrollbar { width: 4px; }
-        #danhSachLichSu::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-        /* Bọc viền vuốt chạm */
-        .card-swipe { 
-            position: relative; 
-            background: #e2e8f0; 
-            border-radius: 14px; 
-            margin-bottom: 14px; 
-            overflow: hidden; 
-        }
-
-        /* Nền chức năng ẩn phía sau */
-        .nen-hanh-dong {
-            position: absolute;
-            top: 0; bottom: 0; left: 0; right: 0;
-            z-index: 1;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 14px;
-            color: white;
-        }
-        .hanh-dong-sua {
-            background: #3498db;
-            height: 100%; width: 50%;
-            display: flex; align-items: center;
-            padding-left: 20px; justify-content: flex-start; 
-            font-weight: 600;
-        }
-        .hanh-dong-xoa {
-            background: #e74c3c;
-            height: 100%; width: 50%;
-            display: flex; align-items: center;
-            padding-right: 20px; justify-content: flex-end; 
-            font-weight: 600;
-        }
-
-        /* TẤM CARD NỘI DUNG CHÍNH (THAY ĐỔI MẠNH MẼ) */
-        .card-item {
-            background: #ffffff;
-            padding: 16px;
-            border-radius: 14px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            position: relative;
-            z-index: 2;
-            margin-bottom: 0 !important;
-            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
-            border-left: 5px solid #cbd5e1; /* Vách màu mặc định */
-        }
-
-        /* Đổi màu vách Card tùy theo phân loại chi phí */
-        .card-item.loai-kho { border-left-color: #2ecc71; }      /* Xanh lá cho Kho */
-        .card-item.loai-logistics { border-left-color: #9b59b6; }/* Tím cho Logistics */
-
-        /* Cấu trúc Header bên trong Card */
-        .card-item .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start;
-            margin-bottom: 10px; 
-        }
-        .card-item .header strong { 
-            color: #1e293b; 
-            font-size: 15px; 
-            font-weight: 600;
-            line-height: 1.4;
-            max-width: 70%;
-        }
-        .card-item .header .badge-loai { 
-            font-size: 11px; 
-            font-weight: 600;
-            background: #f1f5f9; 
-            color: #64748b;
-            padding: 4px 8px; 
-            border-radius: 20px; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Phần hiển thị tiền số lớn */
-        .card-item .body .giao-dich-tien {
-            font-size: 18px;
+        .mini-month-picker div {
             font-weight: 700;
             color: #0082C8;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        /* Chi tiết phân bổ bên dưới */
-        .card-item .body .chi-tiet-pb {
-            display: flex; 
-            gap: 15px;
-            font-size: 12px; 
-            color: #64748b;
-            background: #f8fafc;
-            padding: 6px 10px;
-            border-radius: 8px;
-            margin-top: 6px;
-        }
-        .card-item .body .chi-tiet-pb span strong {
-            color: #334155;
-        }
-
-        /* Hiển thị biển số xe hoặc ghi chú ngắn nếu có */
-        .card-item .footer-info {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #94a3b8;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .card-item .info-xe {
-            background: #fff8e1;
-            color: #b78103;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
+            cursor: pointer;
+            padding: 0 4px;
+            white-space: nowrap;
         }
     </style>
 
@@ -324,19 +186,17 @@
                     <div class="modal-header-custom">
                         <h3 class="modal-title-main">CHI PHÍ KHO</h3>
                         
-                        <!-- Thanh chọn tháng theo mẫu -->
-                        <div class="date-navigator">
-                            <button class="nav-btn" onclick="thayDoiThang(-1)">◀</button>
-                            <div class="date-display" onclick="moBangChonThang()">
-                                <span id="labelThangNam">Tháng 07/2026</span>
+                        <!-- Bộ chọn siêu nhỏ -->
+                        <div class="mini-month-picker">
+                            <button onclick="thayDoiThang(-1)">◀</button>
+                            <div onclick="document.getElementById('inputThangAn').showPicker()">
+                                <span id="labelThangNam">07/2026</span>
                             </div>
-                            <button class="nav-btn" onclick="thayDoiThang(1)">▶</button>
+                            <button onclick="thayDoiThang(1)">▶</button>
                         </div>
                         
                         <button class="btn-dong-modal" onclick="dongModal()">&times;</button>
                     </div>
-
-                    <!-- Input ẩn để hiện bảng chọn chuẩn của trình duyệt khi click vào text -->
                     <input type="month" id="inputThangAn" style="display:none" onchange="chonThang(this)">
                     
                     <!-- Danh sách card cuộn mượt phía dưới -->
