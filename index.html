@@ -1606,6 +1606,9 @@
                 // Trường hợp lỗi khác
                 container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu từ máy chủ!</div>';}
         }
+        // Đóng menu sửa xóa xổ xuống
+        // Bấm bất kỳ đâu ngoài thẻ menu dropdown thì ẩn đi
+        document.addEventListener('click', (event) => {if (!event.target.closest('.card-menu-dropdown')) {document.querySelectorAll('.card-menu-dropdown').forEach(menu => {menu.style.display = 'none';}); } });
 
         // 3. THAO TÁC SỬA / XÓA BẢN GHI
         window.toggleMenuAction = (event, idDoc) => {event.stopPropagation(); document.querySelectorAll('.card-menu-dropdown').forEach(menu => {if (menu.id !== `menu-${idDoc}`) menu.style.display = 'none'; });
