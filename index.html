@@ -172,7 +172,22 @@
                             <input type="month" id="inputThangAn" class="o-lich-an-giao-dien">
                         </div>
                     </div>
-                    
+                    <!-- Khung chứa biểu đồ đặt trên cùng của Modal -->
+                    <div class="cost-comparison-container" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: bold;">
+                            <span style="color: #dc3545;">Tổng phí Kho: <span id="lblTongPhiKho">0 đ</span></span>
+                            <span style="color: #0d6efd;">Tổng phí Logistics: <span id="lblTongPhiLogistics">0 đ</span></span>
+                        </div>
+
+                        <!-- Thanh biểu đồ chia làm 2 phần -->
+                        <div style="display: flex; height: 24px; width: 100%; background-color: #e9ecef; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                            <!-- Phần bên trái: Phí Kho (Màu đỏ) -->
+                            <div id="barPhiKho" style="background-color: #dc3545; height: 100%; width: 50%; transition: width 0.4s ease;" title="Phí Kho"></div>
+                            
+                            <!-- Phần bên phải: Phí Logistics (Màu xanh dương/hoặc màu tùy ý) -->
+                            <div id="barPhiLogistics" style="background-color: #0d6efd; height: 100%; width: 50%; transition: width 0.4s ease;" title="Phí Logistics"></div>
+                        </div>
+                    </div>
                     <!-- Danh sách card cuộn mượt phía dưới -->
                     <div id="danhSachLichSu"></div>
                 </div>
@@ -1670,6 +1685,33 @@
                 const tabThemMoi = document.querySelector('[data-tab="them-moi"]') || document.getElementById('btnTabThemMoi');
                 if (tabThemMoi) {tabThemMoi.click();} }
         };
+        
+        // VẼ BIỂU ĐỒ THANH NGANG TỔNG PHÍ
+        function capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics) {
+            // 1. Format tiền tệ VNĐ
+            const formatVND = (num) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
+            
+            document.getElementById('lblTongPhiKho').innerText = formatVND(tongPhiKho);
+            document.getElementById('lblTongPhiLogistics').innerText = formatVND(tongPhiLogistics);
+
+            // 2. Tính tỷ lệ phần trăm cho thanh ngang
+            let tongCong = tongPhiKho + tongPhiLogistics;
+            let phanTramKho = 50;
+            let phanTramLogistics = 50;
+
+            if (tongCong > 0) {
+                phanTramKho = (tongPhiKho / tongCong) * 100;
+                phanTramLogistics = (tongPhiLogistics / tongCong) * 100;
+            }
+
+            // 3. Gán chiều rộng (width) cho 2 thanh
+            document.getElementById('barPhiKho').style.width = phanTramKho + '%';
+            document.getElementById('barPhiLogistics').style.width = phanTramLogistics + '%';
+            
+            // Cập nhật tooltip hiển thị % khi rê chuột vào
+            document.getElementById('barPhiKho').title = `Phí Kho: ${phanTramKho.toFixed(1)}%`;
+            document.getElementById('barPhiLogistics').title = `Phí Logistics: ${phanTramLogistics.toFixed(1)}%`;
+        }
             
         
     </script>
