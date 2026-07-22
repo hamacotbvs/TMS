@@ -1538,12 +1538,22 @@
 
         // 🎨 HÀM XÁC ĐỊNH MÀU NỀN THEO NGUYÊN TẮC PHÂN BỔ
         function layMauNenPhanBo(nguyenTac) {
-            if (!nguyenTac) return '#f8fafc';
-            if (nguyenTac.includes('67 - TBVS: 33')) return '#eff6ff'; // Xanh dương nhạt
-            if (nguyenTac.includes('50 - TBVS: 50')) return '#f0fdf4'; // Xanh lá nhạt
-            if (nguyenTac.includes('35 - TBVS: 65')) return '#fffbeb'; // Vàng kem nhạt
-            if (nguyenTac === 'tbvs-truoc') return '#fdf4ff';          // Tím nhạt
-            return '#f8fafc';}
+            if (!nguyenTac) return 'background: #f1f5f9; color: #475569;';
+            
+            // Tỷ lệ lệch về Sơn (Xanh dương đậm)
+            if (nguyenTac.includes('67 - TBVS: 33')) return 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;'; 
+            
+            // Tỷ lệ cân bằng (Xanh lá đậm)
+            if (nguyenTac.includes('50 - TBVS: 50')) return 'background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;'; 
+            
+            // Tỷ lệ lệch về TBVS (Vàng/Cam đậm)
+            if (nguyenTac.includes('35 - TBVS: 65')) return 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;'; 
+            
+            // Trường hợp tbvs-truoc (Màu ĐỎ đậm nổi bật)
+            if (nguyenTac === 'tbvs-truoc') return 'background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;'; 
+            
+            return 'background: #f1f5f9; color: #475569;';
+        }
                 
         // HÀM TẢI DỮ LIỆU LỊCH SỬ CHI PHÍ KHO TỪ FIREBASE
         async function taiDuLieuTheoThang(thangChon, namChon) {
