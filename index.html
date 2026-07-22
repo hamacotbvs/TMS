@@ -1538,21 +1538,21 @@
 
         // 🎨 HÀM XÁC ĐỊNH MÀU NỀN THEO NGUYÊN TẮC PHÂN BỔ
         function layMauNenPhanBo(nguyenTac) {
-            if (!nguyenTac) return 'background: #f1f5f9; color: #475569;';
+            if (!nguyenTac) return 'color: #64748b;';
             
-            // Tỷ lệ lệch về Sơn (Xanh dương đậm)
-            if (nguyenTac.includes('67 - TBVS: 33')) return 'background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;'; 
+            // Tỷ lệ lệch về Sơn (Xanh dương)
+            if (nguyenTac.includes('67 - TBVS: 33')) return 'color: #2563eb;'; 
             
-            // Tỷ lệ cân bằng (Xanh lá đậm)
-            if (nguyenTac.includes('50 - TBVS: 50')) return 'background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;'; 
+            // Tỷ lệ cân bằng (Xanh lá)
+            if (nguyenTac.includes('50 - TBVS: 50')) return 'color: #16a34a;'; 
             
-            // Tỷ lệ lệch về TBVS (Vàng/Cam đậm)
-            if (nguyenTac.includes('35 - TBVS: 65')) return 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;'; 
+            // Tỷ lệ lệch về TBVS (Cam đậm)
+            if (nguyenTac.includes('35 - TBVS: 65')) return 'color: #d97706;'; 
             
-            // Trường hợp tbvs-truoc (Màu ĐỎ đậm nổi bật)
-            if (nguyenTac === 'tbvs-truoc') return 'background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;'; 
+            // Trường hợp tbvs-truoc (Màu ĐỎ nổi bật)
+            if (nguyenTac === 'tbvs-truoc') return 'color: #dc2626;'; 
             
-            return 'background: #f1f5f9; color: #475569;';
+            return 'color: #64748b;';
         }
                 
         // HÀM TẢI DỮ LIỆU LỊCH SỬ CHI PHÍ KHO TỪ FIREBASE
@@ -1584,7 +1584,7 @@
                     // Xác định icon dựa vào loaiChiPhi
                     const loaiChiPhi = (data.loaiChiPhi || 'Kho').toLowerCase();
                     const iconLoai = (loaiChiPhi.includes('logistics') || loaiChiPhi.includes('vận')) ? '🚚' : '📦';
-                    const mauNenPhanBo = layMauNenPhanBo(nguyenTacPhanBo);
+                    const stylePhanBo = layMauNenPhanBo(nguyenTacPhanBo);
                     // Tạo khung card cho mỗi bản ghi phát sinh
                     const cardItem = document.createElement('div');
                     cardItem.className = 'card-lich-su-item';
@@ -1605,8 +1605,7 @@
                         </div>
                         <div class="card-dong-2" style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
                             <span><strong>${chiPhiGoc}</strong></span>
-                            <!-- 🎨 Thêm background màu nhẹ cho nguyên tắc phân bổ -->
-                            <span style="background-color: ${mauNenPhanBo}; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; border: 1px solid rgba(0,0,0,0.04);">${nguyenTacPhanBo}</span>
+                            <span style="${stylePhanBo} font-size: 12px; font-weight: 600;">${nguyenTacPhanBo}</span>
                         </div>
                         <div class="card-dong-3">
                             <span>Sơn: ${tienSon}</span>
