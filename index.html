@@ -1586,7 +1586,11 @@
                 const querySnapshot = await getDocs(q);
                 // Xóa nội dung cũ trước khi render
                 container.innerHTML = '';
-                if (querySnapshot.empty) {container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chi phí nào trong tháng này.</div>'; return;}
+                if (querySnapshot.empty) {container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chi phí nào trong tháng này.</div>'; 
+                if (typeof capNhatBieuDoChiPhiThang === 'function') {capNhatBieuDoChiPhiThang(0, 0); }; return;}    // Reset biểu đồ về 0 khi không có dữ liệu
+                // 🌟 KHAI BÁO BIẾN TỔNG ĐỂ CỘNG DỒN
+                let tongPhiKho = 0;
+                let tongPhiLogistics = 0;
                 // Duyệt qua từng document và render ra giao diện
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
@@ -1600,6 +1604,12 @@
                     const loaiChiPhi = (data.loaiChiPhi || 'Kho').toLowerCase();
                     const iconLoai = (loaiChiPhi.includes('logistics') || loaiChiPhi.includes('vận')) ? '🚚' : '📦';
                     const stylePhanBo = layMauNenPhanBo(nguyenTacPhanBo);
+                    // 🌟 CỘNG DỒN VÀO TỔNG PHÍ TƯƠNG ỨNG
+                    if (loaiChiPhi.includes('logistics') || loaiChiPhi.includes('vận')) {
+                        tongPhiLogistics += chiPhiGoc;
+                    } else {
+                        tongPhiKho += chiPhiGoc;
+                    }
                     // Tạo khung card cho mỗi bản ghi phát sinh
                     const cardItem = document.createElement('div');
                     cardItem.className = 'card-lich-su-item';
@@ -1627,6 +1637,10 @@
                             <span>TBVS: ${tienTBVS}</span>
                         </div> `;
                     container.appendChild(cardItem); });
+                    // 🌟 GỌI HÀM CẬP NHẬT BIỂU ĐỒ SAU KHI TÍNH XONG
+                    if (typeof capNhatBieuDoChiPhiThang === 'function') {
+                        capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics);
+                    }
             } catch (error) {
                 console.error("Lỗi tải dữ liệu chi phí kho: ", error);
                 // Kiểm tra xem lỗi có phải do thiếu Index của Firebase không
@@ -1685,7 +1699,7 @@
                 const tabThemMoi = document.querySelector('[data-tab="them-moi"]') || document.getElementById('btnTabThemMoi');
                 if (tabThemMoi) {tabThemMoi.click();} }
         };
-        
+
         // VẼ BIỂU ĐỒ THANH NGANG TỔNG PHÍ
         function capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics) {
             // 1. Format tiền tệ VNĐ
