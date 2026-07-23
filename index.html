@@ -1596,7 +1596,8 @@
                     const data = docSnap.data();
                     const ghiChu = data.ghiChu || 'Không có ghi chú';
                     const ngayPhatSinh = data.ngayPhatSinh || '';
-                    const chiPhiGoc = data.chiPhiGoc !== undefined ? Number(data.chiPhiGoc).toLocaleString('vi-VN') + ' đ' : '0 đ';
+                    const chiPhiGocNum = data.chiPhiGoc !== undefined ? Number(data.chiPhiGoc) : 0;
+                    const chiPhiGoc = chiPhiGocNum.toLocaleString('vi-VN') + ' đ';
                     const nguyenTacPhanBo = data.nguyenTacPhanBo || 'Chưa phân bổ';
                     const tienSon = data.tienSon !== undefined ? Number(data.tienSon).toLocaleString('vi-VN') + ' đ' : '0 đ';
                     const tienTBVS = data.tienTBVS !== undefined ? Number(data.tienTBVS).toLocaleString('vi-VN') + ' đ' : '0 đ';
@@ -1606,9 +1607,9 @@
                     const stylePhanBo = layMauNenPhanBo(nguyenTacPhanBo);
                     // 🌟 CỘNG DỒN VÀO TỔNG PHÍ TƯƠNG ỨNG
                     if (loaiChiPhi.includes('logistics') || loaiChiPhi.includes('vận')) {
-                        tongPhiLogistics += chiPhiGoc;
+                        tongPhiLogistics += chiPhiGocNum;
                     } else {
-                        tongPhiKho += chiPhiGoc;
+                        tongPhiKho += chiPhiGocNum;
                     }
                     // Tạo khung card cho mỗi bản ghi phát sinh
                     const cardItem = document.createElement('div');
