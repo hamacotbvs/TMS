@@ -1729,6 +1729,8 @@
                 let pctTbvsKho = (tbvsKho / tongPhiKho) * 100;
                 document.getElementById('subBarKhoSon').style.width = pctSonKho + '%';
                 document.getElementById('subBarKhoTBVS').style.width = pctTbvsKho + '%';
+                // Đặt vị trí thanh TBVS nằm sát ngay sau thanh Sơn theo chiều ngang
+                document.getElementById('subBarKhoTBVS').style.left = pctSonKho + '%';
             } else {
                 document.getElementById('subBarKhoSon').style.width = '0%';
                 document.getElementById('subBarKhoTBVS').style.width = '0%';
@@ -1740,6 +1742,8 @@
                 let pctTbvsLog = (tbvsLogistics / tongPhiLogistics) * 100;
                 document.getElementById('subBarLogisticsSon').style.width = pctSonLog + '%';
                 document.getElementById('subBarLogisticsTBVS').style.width = pctTbvsLog + '%';
+                // Đặt vị trí thanh TBVS nằm sát ngay sau thanh Sơn
+                document.getElementById('subBarLogisticsTBVS').style.left = pctSonLog + '%';
             } else {
                 document.getElementById('subBarLogisticsSon').style.width = '0%';
                 document.getElementById('subBarLogisticsTBVS').style.width = '0%';
