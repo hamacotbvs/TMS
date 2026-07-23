@@ -175,8 +175,8 @@
                     <!-- Khung chứa biểu đồ đặt trên cùng của Modal -->
                     <div class="cost-comparison-container" style="margin-bottom: 10px; padding: 5px; background: #ffffff; border-radius: 8px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0px; font-size: 13px; font-weight: bold;">
-                            <span>Kho: <span id="lblTongPhiKho">0 đ</span></span>
-                            <span>Logistics: <span id="lblTongPhiLogistics">0 đ</span></span>
+                            <span>Kho: <span id="lblTongPhiKho">0trđ</span></span>
+                            <span>Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
                         </div>
                         <!-- Thanh biểu đồ chia làm 2 phần -->
                         <div style="display: flex; height: 24px; width: 100%; background-color: #e9ecef; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
@@ -1702,29 +1702,30 @@
 
         // VẼ BIỂU ĐỒ THANH NGANG TỔNG PHÍ
         function capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics) {
-            // 🌟 Làm tròn đến hàng triệu (không lấy số thập phân)
-            const khoTr = Math.round(tongKho / 1000000);
-            const logisticsTr = Math.round(tongLogistics / 1000000);
-            // Hiển thị ra giao diện
-            document.getElementById('textKho').innerText = `Kho: ${khoTr} trđ`;
-            document.getElementById('textLogistics').innerText = `Logistics: ${logisticsTr} trđ`;
-            // Khai báo biến phần trăm ra ngoài để các phần sau có thể dùng chung
-            let phanTramKho = 0;
-            let phanTramLogistics = 0;
+            // 🌟 1. Làm tròn đến hàng triệu và thêm chữ "trđ"
+            const khoTr = Math.round(tongPhiKho / 1000000);
+            const logisticsTr = Math.round(tongPhiLogistics / 1000000);
+            
+            document.getElementById('lblTongPhiKho').innerText = `${khoTr} trđ`;
+            document.getElementById('lblTongPhiLogistics').innerText = `${logisticsTr} trđ`;
+
             // 2. Tính tỷ lệ phần trăm cho thanh ngang
-            const tongCong = tongKho + tongLogistics;
+            let tongCong = tongPhiKho + tongPhiLogistics;
+            let phanTramKho = 50;
+            let phanTramLogistics = 50;
+
             if (tongCong > 0) {
                 phanTramKho = (tongPhiKho / tongCong) * 100;
                 phanTramLogistics = (tongPhiLogistics / tongCong) * 100;
-                document.getElementById('thanhKho').style.width = `${phanTramKho}%`;
-                document.getElementById('thanhLogistics').style.width = `${phanTramLogistics}%`;
             }
-            // Cập nhật tooltip hiển thị % khi rê chuột vào
-            const elBarKho = document.getElementById('barPhiKho');
-            const elBarLogistics = document.getElementById('barPhiLogistics');
+
+            // 3. Gán chiều rộng (width) cho 2 thanh
+            document.getElementById('barPhiKho').style.width = phanTramKho + '%';
+            document.getElementById('barPhiLogistics').style.width = phanTramLogistics + '%';
             
-            if (elBarKho) elBarKho.title = `Phí Kho: ${phanTramKho.toFixed(1)}%`;
-            if (elBarLogistics) elBarLogistics.title = `Phí Logistics: ${phanTramLogistics.toFixed(1)}%`;
+            // Cập nhật tooltip hiển thị % khi rê chuột vào
+            document.getElementById('barPhiKho').title = `Phí Kho: ${phanTramKho.toFixed(1)}%`;
+            document.getElementById('barPhiLogistics').title = `Phí Logistics: ${phanTramLogistics.toFixed(1)}%`;
         }
             
         
