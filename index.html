@@ -175,6 +175,7 @@
                     <!-- Khung chứa biểu đồ đặt trên cùng của Modal -->
                     <div class="cost-comparison-container" style="margin-bottom: 10px; padding: 5px; background: #ffffff; border-radius: 8px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0px; font-size: 13px; font-weight: bold;">
+                            <span>Tổng: <span id="lblTongCong">0trđ</span></span>
                             <span>Kho: <span id="lblTongPhiKho">0trđ</span></span>
                             <span>Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
                         </div>
@@ -1705,9 +1706,11 @@
             // 🌟 1. Làm tròn đến hàng triệu và thêm chữ "trđ"
             const khoTr = Math.round(tongPhiKho / 1000000);
             const logisticsTr = Math.round(tongPhiLogistics / 1000000);
+            const tongCongTr = Math.round(tongCong / 1000000);
             
             document.getElementById('lblTongPhiKho').innerText = `${khoTr} trđ`;
             document.getElementById('lblTongPhiLogistics').innerText = `${logisticsTr} trđ`;
+            document.getElementById('lblTongCong').innerText = `${tongCongTr} trđ`;
 
             // 2. Tính tỷ lệ phần trăm cho thanh ngang
             let tongCong = tongPhiKho + tongPhiLogistics;
