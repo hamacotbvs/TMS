@@ -173,24 +173,31 @@
                         </div>
                     </div>
                     <!-- Khung chứa biểu đồ đặt trên cùng của Modal -->
-                    <div class="cost-comparison-container" style="margin-bottom: 10px; padding: 5px; background: #ffffff; border-radius: 8px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0px; font-size: 13px; font-weight: bold;">
-                            <span>Tổng: <span id="lblTongCong">0trđ</span></span>
-                            <span>Kho: <span id="lblTongPhiKho">0trđ</span></span>
+                    <div class="cost-comparison-container" style="margin-bottom: 10px; padding: 8px; background: #ffffff; border-radius: 8px;">
+                        <!-- Dòng hiển thị số tiền -->
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: bold;">
+                            <span>Tổng: <span id="lblTongCong">0 trđ</span></span>
+                            <span>Kho: <span id="lblTongPhiKho">0 trđ</span></span>
                             <span>Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
                         </div>
-                        <div style="display: flex; gap: 10px; margin-top: 6px;">
-                            <!-- THANH KHO -->
-                            <div id="barPhiKho" style="flex: 1; height: 16px; background: #2563eb; border-radius: 4px; position: relative;">
-                                <div id="subBarKhoSon" style="height: 6px !important; background: #f97316; width: 0%; position: absolute; top: 50%; left: 0; transform: translateY(-50%); border-radius: 2px;"></div>
-                                <div id="subBarKhoTBVS" style="height: 6px !important; background: #ffffff; width: 0%; position: absolute; top: 50%; left: 0; transform: translateY(-50%); border-radius: 2px; opacity: 0.9;"></div>
+
+                        <!-- THANH TỔNG CHUNG (Chia tỷ lệ % giữa Kho và Logistics) -->
+                        <div style="display: flex; height: 16px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            
+                            <!-- PHẦN KHO (Nền Xanh dương, chia % theo tổng Kho) -->
+                            <div id="barPhiKho" style="height: 100%; background: #2563eb; width: 50%; display: flex; position: relative; transition: width 0.3s;">
+                                <!-- Thanh con Sơn (Cam) và TBVS (Trắng) xếp nối tiếp nhau bên trong Kho -->
+                                <div id="subBarKhoSon" style="height: 100%; background: #f97316; width: 0%; transition: width 0.3s;"></div>
+                                <div id="subBarKhoTBVS" style="height: 100%; background: #ffffff; width: 0%; transition: width 0.3s; opacity: 0.9; border-left: 1px solid rgba(0,0,0,0.1);"></div>
                             </div>
 
-                            <!-- THANH LOGISTICS -->
-                            <div id="barPhiLogistics" style="flex: 1; height: 16px; background: #dc2626; border-radius: 4px; overflow: hidden; display: flex; position: relative;">
-                                <div id="subBarLogisticsSon" style="height: 100% !important; background: #f97316; width: 0%; flex-shrink: 0;"></div>
-                                <div id="subBarLogisticsTBVS" style="height: 100% !important; background: #ffffff; width: 0%; flex-shrink: 0; opacity: 0.9;"></div>
+                            <!-- PHẦN LOGISTICS (Nền Đỏ, chia % theo tổng Logistics) -->
+                            <div id="barPhiLogistics" style="height: 100%; background: #dc2626; width: 50%; display: flex; position: relative; transition: width 0.3s;">
+                                <!-- Thanh con Sơn (Cam) và TBVS (Trắng) xếp nối tiếp nhau bên trong Logistics -->
+                                <div id="subBarLogisticsSon" style="height: 100%; background: #f97316; width: 0%; transition: width 0.3s;"></div>
+                                <div id="subBarLogisticsTBVS" style="height: 100%; background: #ffffff; width: 0%; transition: width 0.3s; opacity: 0.9; border-left: 1px solid rgba(0,0,0,0.1);"></div>
                             </div>
+
                         </div>
                     </div>
                     <!-- Danh sách card cuộn mượt phía dưới -->
@@ -1704,19 +1711,35 @@
             document.getElementById('lblTongPhiKho').innerText = `${Math.round(tongPhiKho / 1000000)} trđ`;
             document.getElementById('lblTongPhiLogistics').innerText = `${Math.round(tongPhiLogistics / 1000000)} trđ`;
 
-            // 2. Tính tỷ lệ % Sơn và TBVS lồng bên trong KHO (Sơn màu cam, TBVS màu trắng)
+            // 2. Tỷ lệ % của toàn bộ Kho và Logistics so với Tổng chung
+            let phanTramKho = 50;
+            let phanTramLogistics = 50;
+
+            if (tongCong > 0) {
+                phanTramKho = (tongPhiKho / tongCong) * 100;
+                phanTramLogistics = (tongPhiLogistics / tongCong) * 100;
+            }
+
+            document.getElementById('barPhiKho').style.width = phanTramKho + '%';
+            document.getElementById('barPhiLogistics').style.width = phanTramLogistics + '%';
+
+            // 3. Tỷ lệ % của Sơn và TBVS bên trong KHO (Tổng Kho = 100%)
             if (tongPhiKho > 0) {
-                document.getElementById('subBarKhoSon').style.width = ((sonKho / tongPhiKho) * 100) + '%';
-                document.getElementById('subBarKhoTBVS').style.width = ((tbvsKho / tongPhiKho) * 100) + '%';
+                let pctSonKho = (sonKho / tongPhiKho) * 100;
+                let pctTbvsKho = (tbvsKho / tongPhiKho) * 100;
+                document.getElementById('subBarKhoSon').style.width = pctSonKho + '%';
+                document.getElementById('subBarKhoTBVS').style.width = pctTbvsKho + '%';
             } else {
                 document.getElementById('subBarKhoSon').style.width = '0%';
                 document.getElementById('subBarKhoTBVS').style.width = '0%';
             }
 
-            // 3. Tính tỷ lệ % Sơn và TBVS lồng bên trong LOGISTICS
+            // 4. Tỷ lệ % của Sơn và TBVS bên trong LOGISTICS (Tổng Logistics = 100%)
             if (tongPhiLogistics > 0) {
-                document.getElementById('subBarLogisticsSon').style.width = ((sonLogistics / tongPhiLogistics) * 100) + '%';
-                document.getElementById('subBarLogisticsTBVS').style.width = ((tbvsLogistics / tongPhiLogistics) * 100) + '%';
+                let pctSonLog = (sonLogistics / tongPhiLogistics) * 100;
+                let pctTbvsLog = (tbvsLogistics / tongPhiLogistics) * 100;
+                document.getElementById('subBarLogisticsSon').style.width = pctSonLog + '%';
+                document.getElementById('subBarLogisticsTBVS').style.width = pctTbvsLog + '%';
             } else {
                 document.getElementById('subBarLogisticsSon').style.width = '0%';
                 document.getElementById('subBarLogisticsTBVS').style.width = '0%';
