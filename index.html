@@ -1705,45 +1705,38 @@
         // VẼ BIỂU ĐỒ THANH NGANG TỔNG PHÍ
         function capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics, sonKho, tbvsKho, sonLogistics, tbvsLogistics) {
             const tongCong = tongPhiKho + tongPhiLogistics;
-
             // 1. Hiển thị text làm tròn đến hàng triệu
             document.getElementById('lblTongCong').innerText = `${Math.round(tongCong / 1000000)} trđ`;
             document.getElementById('lblTongPhiKho').innerText = `${Math.round(tongPhiKho / 1000000)} trđ`;
             document.getElementById('lblTongPhiLogistics').innerText = `${Math.round(tongPhiLogistics / 1000000)} trđ`;
-
             // 2. Tỷ lệ % của toàn bộ Kho và Logistics so với Tổng chung
             let phanTramKho = 50;
             let phanTramLogistics = 50;
-
             if (tongCong > 0) {
                 phanTramKho = (tongPhiKho / tongCong) * 100;
-                phanTramLogistics = (tongPhiLogistics / tongCong) * 100;
-            }
-
+                phanTramLogistics = (tongPhiLogistics / tongCong) * 100;}
             document.getElementById('barPhiKho').style.width = phanTramKho + '%';
             document.getElementById('barPhiLogistics').style.width = phanTramLogistics + '%';
-
             // 3. Tỷ lệ % của Sơn và TBVS bên trong KHO (Tổng Kho = 100%)
             if (tongPhiKho > 0) {
                 let pctSonKho = (sonKho / tongPhiKho) * 100;
                 let pctTbvsKho = (tbvsKho / tongPhiKho) * 100;
-                document.getElementById('subBarKhoSon').style.width = pctSonKho + '%';
-                document.getElementById('subBarKhoTBVS').style.width = pctTbvsKho + '%';
-                // Đặt vị trí thanh TBVS nằm sát ngay sau thanh Sơn theo chiều ngang
-                document.getElementById('subBarKhoTBVS').style.left = pctSonKho + '%';
+                // Chiều rộng mỗi thanh được phân bổ theo tỷ lệ trên không gian (100% - 4px)
+                document.getElementById('subBarKhoSon').style.width = `calc((100% - 4px) * ${pctSonKho / 100})`;
+                document.getElementById('subBarKhoTBVS').style.width = `calc((100% - 4px) * ${pctTbvsKho / 100})`;
+                document.getElementById('subBarKhoTBVS').style.left = `calc(2px + (100% - 4px) * ${pctSonKho / 100})`;      // Đặt vị trí thanh TBVS nằm sát ngay sau thanh Sơn theo chiều ngang
             } else {
                 document.getElementById('subBarKhoSon').style.width = '0%';
-                document.getElementById('subBarKhoTBVS').style.width = '0%';
-            }
+                document.getElementById('subBarKhoTBVS').style.width = '0%';}
 
             // 4. Tỷ lệ % của Sơn và TBVS bên trong LOGISTICS (Tổng Logistics = 100%)
             if (tongPhiLogistics > 0) {
                 let pctSonLog = (sonLogistics / tongPhiLogistics) * 100;
                 let pctTbvsLog = (tbvsLogistics / tongPhiLogistics) * 100;
-                document.getElementById('subBarLogisticsSon').style.width = pctSonLog + '%';
-                document.getElementById('subBarLogisticsTBVS').style.width = pctTbvsLog + '%';
+                document.getElementById('subBarLogisticsSon').style.width = `calc((100% - 4px) * ${pctSonLog / 100})`;
+                document.getElementById('subBarLogisticsTBVS').style.width = `calc((100% - 4px) * ${pctTbvsLog / 100})`;
                 // Đặt vị trí thanh TBVS nằm sát ngay sau thanh Sơn
-                document.getElementById('subBarLogisticsTBVS').style.left = pctSonLog + '%';
+                document.getElementById('subBarLogisticsTBVS').style.left = `calc(2px + (100% - 4px) * ${pctSonLog / 100})`;
             } else {
                 document.getElementById('subBarLogisticsSon').style.width = '0%';
                 document.getElementById('subBarLogisticsTBVS').style.width = '0%';
