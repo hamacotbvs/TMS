@@ -1600,12 +1600,16 @@
                 // 🌟 KHAI BÁO BIẾN TỔNG ĐỂ CỘNG DỒN
                 let tongPhiKho = 0;
                 let tongPhiLogistics = 0;
+                let sonKho = 0, tbvsKho = 0;
+                let sonLogistics = 0, tbvsLogistics = 0;
                 // Duyệt qua từng document và render ra giao diện
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const ghiChu = data.ghiChu || 'Không có ghi chú';
                     const ngayPhatSinh = data.ngayPhatSinh || '';
                     const chiPhiGocNum = data.chiPhiGoc !== undefined ? Number(data.chiPhiGoc) : 0;
+                    const tienSonNum = data.tienSon !== undefined ? Number(data.tienSon) : 0;
+                    const tienTbvsNum = data.tienTBVS !== undefined ? Number(data.tienTBVS) : 0;
                     const chiPhiGoc = chiPhiGocNum.toLocaleString('vi-VN') + ' đ';
                     const nguyenTacPhanBo = data.nguyenTacPhanBo || 'Chưa phân bổ';
                     const tienSon = data.tienSon !== undefined ? Number(data.tienSon).toLocaleString('vi-VN') + ' đ' : '0 đ';
@@ -1617,8 +1621,12 @@
                     // 🌟 CỘNG DỒN VÀO TỔNG PHÍ TƯƠNG ỨNG
                     if (loaiChiPhi.includes('logistics') || loaiChiPhi.includes('vận')) {
                         tongPhiLogistics += chiPhiGocNum;
+                        sonLogistics += tienSonNum;
+                        tbvsLogistics += tienTbvsNum;
                     } else {
                         tongPhiKho += chiPhiGocNum;
+                        sonKho += tienSonNum;
+                        tbvsKho += tienTbvsNum;
                     }
                     // Tạo khung card cho mỗi bản ghi phát sinh
                     const cardItem = document.createElement('div');
@@ -1649,7 +1657,7 @@
                     container.appendChild(cardItem); });
                     // 🌟 GỌI HÀM CẬP NHẬT BIỂU ĐỒ SAU KHI TÍNH XONG
                     if (typeof capNhatBieuDoChiPhiThang === 'function') {
-                        capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics);
+                        capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics, sonKho, tbvsKho, sonLogistics, tbvsLogistics);
                     }
             } catch (error) {
                 console.error("Lỗi tải dữ liệu chi phí kho: ", error);
@@ -1714,32 +1722,23 @@
         function capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics, sonKho, tbvsKho, sonLogistics, tbvsLogistics) {
             const tongCong = tongPhiKho + tongPhiLogistics;
 
-            // 1. Làm tròn đến hàng triệu và hiển thị text trđ
-            const khoTr = Math.round(tongPhiKho / 1000000);
-            const logisticsTr = Math.round(tongPhiLogistics / 1000000);
-            const tongCongTr = Math.round(tongCong / 1000000);
-            
-            document.getElementById('lblTongPhiKho').innerText = `${khoTr} trđ`;
-            document.getElementById('lblTongPhiLogistics').innerText = `${logisticsTr} trđ`;
-            // document.getElementById('lblTongCong').innerText = `${tongCongTr} trđ`;
+            // 1. Hiển thị text làm tròn đến hàng triệu
+            document.getElementById('lblTongPhiKho').innerText = `${Math.round(tongPhiKho / 1000000)} trđ`;
+            document.getElementById('lblTongPhiLogistics').innerText = `${Math.round(tongPhiLogistics / 1000000)} trđ`;
 
-            // 2. Tính tỷ lệ % Sơn và TBVS lồng bên trong Kho (Tổng Kho = 100%)
+            // 2. Tính tỷ lệ % Sơn và TBVS lồng bên trong KHO (Sơn màu cam, TBVS màu trắng)
             if (tongPhiKho > 0) {
-                let pctSonKho = (sonKho / tongPhiKho) * 100;
-                let pctTbvsKho = (tbvsKho / tongPhiKho) * 100;
-                document.getElementById('subBarKhoSon').style.width = pctSonKho + '%';
-                document.getElementById('subBarKhoTBVS').style.width = pctTbvsKho + '%';
+                document.getElementById('subBarKhoSon').style.width = ((sonKho / tongPhiKho) * 100) + '%';
+                document.getElementById('subBarKhoTBVS').style.width = ((tbvsKho / tongPhiKho) * 100) + '%';
             } else {
                 document.getElementById('subBarKhoSon').style.width = '0%';
                 document.getElementById('subBarKhoTBVS').style.width = '0%';
             }
 
-            // 3. Tính tỷ lệ % Sơn và TBVS lồng bên trong Logistics (Tổng Logistics = 100%)
+            // 3. Tính tỷ lệ % Sơn và TBVS lồng bên trong LOGISTICS
             if (tongPhiLogistics > 0) {
-                let pctSonLog = (sonLogistics / tongPhiLogistics) * 100;
-                let pctTbvsLog = (tbvsLogistics / tongPhiLogistics) * 100;
-                document.getElementById('subBarLogisticsSon').style.width = pctSonLog + '%';
-                document.getElementById('subBarLogisticsTBVS').style.width = pctTbvsLog + '%';
+                document.getElementById('subBarLogisticsSon').style.width = ((sonLogistics / tongPhiLogistics) * 100) + '%';
+                document.getElementById('subBarLogisticsTBVS').style.width = ((tbvsLogistics / tongPhiLogistics) * 100) + '%';
             } else {
                 document.getElementById('subBarLogisticsSon').style.width = '0%';
                 document.getElementById('subBarLogisticsTBVS').style.width = '0%';
