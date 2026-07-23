@@ -1702,26 +1702,20 @@
 
         // VẼ BIỂU ĐỒ THANH NGANG TỔNG PHÍ
         function capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics) {
-            // 1. Format tiền tệ VNĐ
-            const formatVND = (num) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
-            
-            document.getElementById('lblTongPhiKho').innerText = formatVND(tongPhiKho);
-            document.getElementById('lblTongPhiLogistics').innerText = formatVND(tongPhiLogistics);
-
+            // 🌟 Làm tròn đến hàng triệu (không lấy số thập phân)
+            const khoTr = Math.round(tongKho / 1000000);
+            const logisticsTr = Math.round(tongLogistics / 1000000);
+            // Hiển thị ra giao diện
+            document.getElementById('textKho').innerText = `Kho: ${khoTr} trđ`;
+            document.getElementById('textLogistics').innerText = `Logistics: ${logisticsTr} trđ`;
             // 2. Tính tỷ lệ phần trăm cho thanh ngang
-            let tongCong = tongPhiKho + tongPhiLogistics;
-            let phanTramKho = 50;
-            let phanTramLogistics = 50;
-
+            const tongCong = tongKho + tongLogistics;
             if (tongCong > 0) {
-                phanTramKho = (tongPhiKho / tongCong) * 100;
-                phanTramLogistics = (tongPhiLogistics / tongCong) * 100;
+                const phanTramKho = (tongKho / tongCong) * 100;
+                const phanTramLogistics = (tongLogistics / tongCong) * 100;
+                document.getElementById('thanhKho').style.width = `${phanTramKho}%`;
+                document.getElementById('thanhLogistics').style.width = `${phanTramLogistics}%`;
             }
-
-            // 3. Gán chiều rộng (width) cho 2 thanh
-            document.getElementById('barPhiKho').style.width = phanTramKho + '%';
-            document.getElementById('barPhiLogistics').style.width = phanTramLogistics + '%';
-            
             // Cập nhật tooltip hiển thị % khi rê chuột vào
             document.getElementById('barPhiKho').title = `Phí Kho: ${phanTramKho.toFixed(1)}%`;
             document.getElementById('barPhiLogistics').title = `Phí Logistics: ${phanTramLogistics.toFixed(1)}%`;
