@@ -1700,6 +1700,7 @@
             const tongCong = tongPhiKho + tongPhiLogistics;
 
             // 1. Hiển thị text làm tròn đến hàng triệu
+            document.getElementById('lblTongCong').innerText = `${Math.round(tongCong / 1000000)} trđ`;
             document.getElementById('lblTongPhiKho').innerText = `${Math.round(tongPhiKho / 1000000)} trđ`;
             document.getElementById('lblTongPhiLogistics').innerText = `${Math.round(tongPhiLogistics / 1000000)} trđ`;
 
