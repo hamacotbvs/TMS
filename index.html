@@ -179,22 +179,23 @@
                             <span>Kho: <span id="lblTongPhiKho">0trđ</span></span>
                             <span>Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
                         </div>
-                        <!-- Thanh tổng phí Kho -->
-                        <div class="bar-tong-container" id="barPhiKho" style="position: relative; display: flex; height: 24px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                            <!-- Thanh con Sơn (màu cam) nằm lồng bên trong -->
-                            <div id="subBarKhoSon" style="height: 100%; background: #f97316; width: 0%; transition: width 0.3s;"></div>
-                            <!-- Thanh con TBVS (màu trắng) nằm lồng bên trong -->
-                            <div id="subBarKhoTBVS" style="height: 100%; background: #ffffff; border-left: 1px solid #cbd5e1; width: 0%; transition: width 0.3s;"></div>
-                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 6px;">
+                            <!-- THANH TỔNG KHO (Nền màu xanh dương) -->
+                            <div id="barPhiKho" style="flex: 1; height: 16px; background: #2563eb; border-radius: 4px; overflow: hidden; display: flex; position: relative;">
+                                <!-- Thanh con Sơn (Cam) nằm lồng bên trong -->
+                                <div id="subBarKhoSon" style="height: 100%; background: #f97316; width: 0%; transition: width 0.3s;"></div>
+                                <!-- Thanh con TBVS (Trắng) nằm lồng bên trong -->
+                                <div id="subBarKhoTBVS" style="height: 100%; background: #ffffff; width: 0%; transition: width 0.3s; opacity: 0.85;"></div>
+                            </div>
 
-                        <!-- Thanh tổng phí Logistics -->
-                        <div class="bar-tong-container" id="barPhiLogistics" style="position: relative; display: flex; height: 24px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 8px;">
-                            <!-- Thanh con Sơn (màu cam) nằm lồng bên trong -->
-                            <div id="subBarLogisticsSon" style="height: 100%; background: #f97316; width: 0%; transition: width 0.3s;"></div>
-                            <!-- Thanh con TBVS (màu trắng) nằm lồng bên trong -->
-                            <div id="subBarLogisticsTBVS" style="height: 100%; background: #ffffff; border-left: 1px solid #cbd5e1; width: 0%; transition: width 0.3s;"></div>
+                            <!-- THANH TỔNG LOGISTICS (Nền màu đỏ) -->
+                            <div id="barPhiLogistics" style="flex: 1; height: 16px; background: #dc2626; border-radius: 4px; overflow: hidden; display: flex; position: relative;">
+                                <!-- Thanh con Sơn (Cam) nằm lồng bên trong -->
+                                <div id="subBarLogisticsSon" style="height: 100%; background: #f97316; width: 0%; transition: width 0.3s;"></div>
+                                <!-- Thanh con TBVS (Trắng) nằm lồng bên trong -->
+                                <div id="subBarLogisticsTBVS" style="height: 100%; background: #ffffff; width: 0%; transition: width 0.3s; opacity: 0.85;"></div>
+                            </div>
                         </div>
-
                     </div>
                     <!-- Danh sách card cuộn mượt phía dưới -->
                     <div id="danhSachLichSu"></div>
@@ -1713,7 +1714,7 @@
         function capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics, sonKho, tbvsKho, sonLogistics, tbvsLogistics) {
             const tongCong = tongPhiKho + tongPhiLogistics;
 
-            // 1. Làm tròn đến hàng triệu và thêm chữ "trđ"
+            // 1. Làm tròn đến hàng triệu và hiển thị text trđ
             const khoTr = Math.round(tongPhiKho / 1000000);
             const logisticsTr = Math.round(tongPhiLogistics / 1000000);
             const tongCongTr = Math.round(tongCong / 1000000);
@@ -1722,18 +1723,7 @@
             document.getElementById('lblTongPhiLogistics').innerText = `${logisticsTr} trđ`;
             // document.getElementById('lblTongCong').innerText = `${tongCongTr} trđ`;
 
-            // 2. Tính tỷ lệ % bề rộng của thanh Kho và Logistics so với tổng chung (nếu dùng layout chia đôi màn hình)
-            let phanTramKho = 50;
-            let phanTramLogistics = 50;
-            if (tongCong > 0) {
-                phanTramKho = (tongPhiKho / tongCong) * 100;
-                phanTramLogistics = (tongPhiLogistics / tongCong) * 100;
-            }
-
-            document.getElementById('barPhiKho').style.width = phanTramKho + '%';
-            document.getElementById('barPhiLogistics').style.width = phanTramLogistics + '%';
-
-            // 3. Tính tỷ lệ % của Sơn và TBVS LỒNG BÊN TRONG Kho
+            // 2. Tính tỷ lệ % Sơn và TBVS lồng bên trong Kho (Tổng Kho = 100%)
             if (tongPhiKho > 0) {
                 let pctSonKho = (sonKho / tongPhiKho) * 100;
                 let pctTbvsKho = (tbvsKho / tongPhiKho) * 100;
@@ -1744,7 +1734,7 @@
                 document.getElementById('subBarKhoTBVS').style.width = '0%';
             }
 
-            // 4. Tính tỷ lệ % của Sơn và TBVS LỒNG BÊN TRONG Logistics
+            // 3. Tính tỷ lệ % Sơn và TBVS lồng bên trong Logistics (Tổng Logistics = 100%)
             if (tongPhiLogistics > 0) {
                 let pctSonLog = (sonLogistics / tongPhiLogistics) * 100;
                 let pctTbvsLog = (tbvsLogistics / tongPhiLogistics) * 100;
