@@ -1708,17 +1708,23 @@
             // Hiển thị ra giao diện
             document.getElementById('textKho').innerText = `Kho: ${khoTr} trđ`;
             document.getElementById('textLogistics').innerText = `Logistics: ${logisticsTr} trđ`;
+            // Khai báo biến phần trăm ra ngoài để các phần sau có thể dùng chung
+            let phanTramKho = 0;
+            let phanTramLogistics = 0;
             // 2. Tính tỷ lệ phần trăm cho thanh ngang
             const tongCong = tongKho + tongLogistics;
             if (tongCong > 0) {
-                const phanTramKho = (tongKho / tongCong) * 100;
-                const phanTramLogistics = (tongLogistics / tongCong) * 100;
+                phanTramKho = (tongPhiKho / tongCong) * 100;
+                phanTramLogistics = (tongPhiLogistics / tongCong) * 100;
                 document.getElementById('thanhKho').style.width = `${phanTramKho}%`;
                 document.getElementById('thanhLogistics').style.width = `${phanTramLogistics}%`;
             }
             // Cập nhật tooltip hiển thị % khi rê chuột vào
-            document.getElementById('barPhiKho').title = `Phí Kho: ${phanTramKho.toFixed(1)}%`;
-            document.getElementById('barPhiLogistics').title = `Phí Logistics: ${phanTramLogistics.toFixed(1)}%`;
+            const elBarKho = document.getElementById('barPhiKho');
+            const elBarLogistics = document.getElementById('barPhiLogistics');
+            
+            if (elBarKho) elBarKho.title = `Phí Kho: ${phanTramKho.toFixed(1)}%`;
+            if (elBarLogistics) elBarLogistics.title = `Phí Logistics: ${phanTramLogistics.toFixed(1)}%`;
         }
             
         
