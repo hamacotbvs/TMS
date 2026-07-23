@@ -173,24 +173,19 @@
                         </div>
                     </div>
                     <!-- Khung chứa biểu đồ đặt trên cùng của Modal -->
-                    <div class="cost-comparison-container" style="margin-bottom: 10px; padding: 5px; background: #ffffff; border-radius: 8px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0px; font-size: 13px; font-weight: bold;">
-                            <span>Tổng: <span id="lblTongCong">0trđ</span></span>
-                            <span>Kho: <span id="lblTongPhiKho">0trđ</span></span>
-                            <span>Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
+                    <div class="cost-comparison-container" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: bold;">
+                            <span style="color: #dc3545;">Tổng phí Kho: <span id="lblTongPhiKho">0 đ</span></span>
+                            <span style="color: #0d6efd;">Tổng phí Logistics: <span id="lblTongPhiLogistics">0 đ</span></span>
                         </div>
-                        <div style="display: flex; gap: 10px; margin-top: 6px;">
-                            <!-- THANH KHO -->
-                            <div id="barPhiKho" style="flex: 1; height: 16px; background: #2563eb; border-radius: 4px; position: relative;">
-                                <div id="subBarKhoSon" style="height: 6px !important; background: #f97316; width: 0%; position: absolute; top: 50%; left: 0; transform: translateY(-50%); border-radius: 2px;"></div>
-                                <div id="subBarKhoTBVS" style="height: 6px !important; background: #ffffff; width: 0%; position: absolute; top: 50%; left: 0; transform: translateY(-50%); border-radius: 2px; opacity: 0.9;"></div>
-                            </div>
 
-                            <!-- THANH LOGISTICS -->
-                            <div id="barPhiLogistics" style="flex: 1; height: 16px; background: #dc2626; border-radius: 4px; overflow: hidden; display: flex; position: relative;">
-                                <div id="subBarLogisticsSon" style="height: 100% !important; background: #f97316; width: 0%; flex-shrink: 0;"></div>
-                                <div id="subBarLogisticsTBVS" style="height: 100% !important; background: #ffffff; width: 0%; flex-shrink: 0; opacity: 0.9;"></div>
-                            </div>
+                        <!-- Thanh biểu đồ chia làm 2 phần -->
+                        <div style="display: flex; height: 24px; width: 100%; background-color: #e9ecef; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                            <!-- Phần bên trái: Phí Kho (Màu đỏ) -->
+                            <div id="barPhiKho" style="background-color: #dc3545; height: 100%; width: 50%; transition: width 0.4s ease;" title="Phí Kho"></div>
+                            
+                            <!-- Phần bên phải: Phí Logistics (Màu xanh dương/hoặc màu tùy ý) -->
+                            <div id="barPhiLogistics" style="background-color: #0d6efd; height: 100%; width: 50%; transition: width 0.4s ease;" title="Phí Logistics"></div>
                         </div>
                     </div>
                     <!-- Danh sách card cuộn mượt phía dưới -->
@@ -1591,22 +1586,13 @@
                 const querySnapshot = await getDocs(q);
                 // Xóa nội dung cũ trước khi render
                 container.innerHTML = '';
-                if (querySnapshot.empty) {container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chi phí nào trong tháng này.</div>'; 
-                if (typeof capNhatBieuDoChiPhiThang === 'function') {capNhatBieuDoChiPhiThang(0, 0); }; return;}    // Reset biểu đồ về 0 khi không có dữ liệu
-                // 🌟 KHAI BÁO BIẾN TỔNG ĐỂ CỘNG DỒN
-                let tongPhiKho = 0;
-                let tongPhiLogistics = 0;
-                let sonKho = 0, tbvsKho = 0;
-                let sonLogistics = 0, tbvsLogistics = 0;
+                if (querySnapshot.empty) {container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chi phí nào trong tháng này.</div>'; return;}
                 // Duyệt qua từng document và render ra giao diện
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const ghiChu = data.ghiChu || 'Không có ghi chú';
                     const ngayPhatSinh = data.ngayPhatSinh || '';
-                    const chiPhiGocNum = data.chiPhiGoc !== undefined ? Number(data.chiPhiGoc) : 0;
-                    const tienSonNum = data.tienSon !== undefined ? Number(data.tienSon) : 0;
-                    const tienTbvsNum = data.tienTBVS !== undefined ? Number(data.tienTBVS) : 0;
-                    const chiPhiGoc = chiPhiGocNum.toLocaleString('vi-VN') + ' đ';
+                    const chiPhiGoc = data.chiPhiGoc !== undefined ? Number(data.chiPhiGoc).toLocaleString('vi-VN') + ' đ' : '0 đ';
                     const nguyenTacPhanBo = data.nguyenTacPhanBo || 'Chưa phân bổ';
                     const tienSon = data.tienSon !== undefined ? Number(data.tienSon).toLocaleString('vi-VN') + ' đ' : '0 đ';
                     const tienTBVS = data.tienTBVS !== undefined ? Number(data.tienTBVS).toLocaleString('vi-VN') + ' đ' : '0 đ';
@@ -1614,16 +1600,6 @@
                     const loaiChiPhi = (data.loaiChiPhi || 'Kho').toLowerCase();
                     const iconLoai = (loaiChiPhi.includes('logistics') || loaiChiPhi.includes('vận')) ? '🚚' : '📦';
                     const stylePhanBo = layMauNenPhanBo(nguyenTacPhanBo);
-                    // 🌟 CỘNG DỒN VÀO TỔNG PHÍ TƯƠNG ỨNG
-                    if (loaiChiPhi.includes('logistics') || loaiChiPhi.includes('vận')) {
-                        tongPhiLogistics += chiPhiGocNum;
-                        sonLogistics += tienSonNum;
-                        tbvsLogistics += tienTbvsNum;
-                    } else {
-                        tongPhiKho += chiPhiGocNum;
-                        sonKho += tienSonNum;
-                        tbvsKho += tienTbvsNum;
-                    }
                     // Tạo khung card cho mỗi bản ghi phát sinh
                     const cardItem = document.createElement('div');
                     cardItem.className = 'card-lich-su-item';
@@ -1651,10 +1627,6 @@
                             <span>TBVS: ${tienTBVS}</span>
                         </div> `;
                     container.appendChild(cardItem); });
-                    // 🌟 GỌI HÀM CẬP NHẬT BIỂU ĐỒ SAU KHI TÍNH XONG
-                    if (typeof capNhatBieuDoChiPhiThang === 'function') {
-                        capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics, sonKho, tbvsKho, sonLogistics, tbvsLogistics);
-                    }
             } catch (error) {
                 console.error("Lỗi tải dữ liệu chi phí kho: ", error);
                 // Kiểm tra xem lỗi có phải do thiếu Index của Firebase không
@@ -1713,31 +1685,6 @@
                 const tabThemMoi = document.querySelector('[data-tab="them-moi"]') || document.getElementById('btnTabThemMoi');
                 if (tabThemMoi) {tabThemMoi.click();} }
         };
-
-        // VẼ BIỂU ĐỒ THANH NGANG TỔNG PHÍ
-        function capNhatBieuDoChiPhiThang(tongPhiKho, tongPhiLogistics, sonKho, tbvsKho, sonLogistics, tbvsLogistics) {
-            // 1. Hiển thị text làm tròn đến hàng triệu
-            document.getElementById('lblTongPhiKho').innerText = `${Math.round(tongPhiKho / 1000000)} trđ`;
-            document.getElementById('lblTongPhiLogistics').innerText = `${Math.round(tongPhiLogistics / 1000000)} trđ`;
-
-            // 2. Cập nhật bề rộng % cho Kho
-            if (tongPhiKho > 0) {
-                document.getElementById('subBarKhoSon').style.width = ((sonKho / tongPhiKho) * 100) + '%';
-                document.getElementById('subBarKhoTBVS').style.width = ((tbvsKho / tongPhiKho) * 100) + '%';
-            } else {
-                document.getElementById('subBarKhoSon').style.width = '0%';
-                document.getElementById('subBarKhoTBVS').style.width = '0%';
-            }
-
-            // 3. Cập nhật bề rộng % cho Logistics
-            if (tongPhiLogistics > 0) {
-                document.getElementById('subBarLogisticsSon').style.width = ((sonLogistics / tongPhiLogistics) * 100) + '%';
-                document.getElementById('subBarLogisticsTBVS').style.width = ((tbvsLogistics / tongPhiLogistics) * 100) + '%';
-            } else {
-                document.getElementById('subBarLogisticsSon').style.width = '0%';
-                document.getElementById('subBarLogisticsTBVS').style.width = '0%';
-            }
-        }
             
         
     </script>
