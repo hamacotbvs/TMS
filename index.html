@@ -1706,6 +1706,7 @@
             // 🌟 1. Làm tròn đến hàng triệu và thêm chữ "trđ"
             const khoTr = Math.round(tongPhiKho / 1000000);
             const logisticsTr = Math.round(tongPhiLogistics / 1000000);
+            let tongCong = tongPhiKho + tongPhiLogistics;
             const tongCongTr = Math.round(tongCong / 1000000);
             
             document.getElementById('lblTongPhiKho').innerText = `${khoTr} trđ`;
@@ -1713,7 +1714,6 @@
             document.getElementById('lblTongCong').innerText = `${tongCongTr} trđ`;
 
             // 2. Tính tỷ lệ phần trăm cho thanh ngang
-            let tongCong = tongPhiKho + tongPhiLogistics;
             let phanTramKho = 50;
             let phanTramLogistics = 50;
 
