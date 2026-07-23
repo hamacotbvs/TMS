@@ -179,12 +179,20 @@
                             <span>Kho: <span id="lblTongPhiKho">0trđ</span></span>
                             <span>Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
                         </div>
-                        <!-- Thanh biểu đồ chia làm 2 phần -->
-                        <div style="display: flex; height: 24px; width: 100%; background-color: #e9ecef; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
-                            <!-- Phần bên trái: Phí Kho (Màu đỏ) -->
-                            <div id="barPhiKho" style="background-color: #0d6efd; height: 100%; width: 50%; transition: width 0.4s ease;" title="Phí Kho"></div>
-                            <!-- Phần bên phải: Phí Logistics (Màu xanh dương/hoặc màu tùy ý) -->
-                            <div id="barPhiLogistics" style="background-color: #dc3545; height: 100%; width: 50%; transition: width 0.4s ease;" title="Phí Logistics"></div>
+                        <!-- Thanh tổng phí Kho -->
+                        <div class="bar-tong-container" id="barPhiKho" style="position: relative; display: flex; height: 24px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            <!-- Thanh con Sơn (màu cam) nằm lồng bên trong -->
+                            <div id="subBarKhoSon" style="height: 100%; background: #f97316; width: 0%; transition: width 0.3s;"></div>
+                            <!-- Thanh con TBVS (màu trắng) nằm lồng bên trong -->
+                            <div id="subBarKhoTBVS" style="height: 100%; background: #ffffff; border-left: 1px solid #cbd5e1; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+
+                        <!-- Thanh tổng phí Logistics -->
+                        <div class="bar-tong-container" id="barPhiLogistics" style="position: relative; display: flex; height: 24px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 8px;">
+                            <!-- Thanh con Sơn (màu cam) nằm lồng bên trong -->
+                            <div id="subBarLogisticsSon" style="height: 100%; background: #f97316; width: 0%; transition: width 0.3s;"></div>
+                            <!-- Thanh con TBVS (màu trắng) nằm lồng bên trong -->
+                            <div id="subBarLogisticsTBVS" style="height: 100%; background: #ffffff; border-left: 1px solid #cbd5e1; width: 0%; transition: width 0.3s;"></div>
                         </div>
 
                     </div>
