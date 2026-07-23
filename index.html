@@ -185,17 +185,17 @@
                         <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
                             
                             <!-- PHẦN KHO (Nền Xanh dương, chia % theo tổng Kho) -->
-                            <div id="barPhiKho" style="height: 12px; padding-left: 2px; padding-right: 2px; background: #2563eb; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; ">
+                            <div id="barPhiKho" style="height: 12px; padding-left: 2px; padding-right: 2px; background: #2563eb; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
                                 <!-- Thanh con Sơn (Cam) và TBVS (Trắng) xếp nối tiếp nhau bên trong Kho -->
-                                <div id="subBarKhoSon" style="height: 6px !important; background: #f97316; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 2px 0 0 2px; box-sizing: border-box;"></div>
+                                <div id="subBarKhoSon" style="height: 6px !important; background: #f97316; width: 0%; position: absolute; top: 50%; left: 2px; transform: translateY(-50%); border-radius: 2px 0 0 2px; box-sizing: border-box;"></div>
                                 <div id="subBarKhoTBVS" style="height: 6px !important; background: #ffffff; width: 0%; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 0 2px 2px 0; opacity: 0.9; box-sizing: border-box;"></div>
                             </div>
 
                             <!-- PHẦN LOGISTICS (Nền Đỏ, chia % theo tổng Logistics) -->
-                            <div id="barPhiLogistics" style="height: 12px; padding-left: 2px; padding-right: 2px; background: #dc2626; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s;">
+                            <div id="barPhiLogistics" style="height: 12px; padding-left: 2px; padding-right: 2px; background: #dc2626; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
                                 <!-- Thanh con Sơn (Cam) và TBVS (Trắng) xếp nối tiếp nhau bên trong Logistics -->
-                                <div id="subBarLogisticsSon" style="height: 6px !important; background: #f97316; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 2px 0 0 2px; box-sizing: border-box;"></div>
-                                <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #ffffff; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 0 2px 2px 0; opacity: 0.9; box-sizing: border-box;"></div>
+                                <div id="subBarLogisticsSon" style="height: 6px !important; background: #f97316; width: 0%; position: absolute; top: 50%; left: 2px; transform: translateY(-50%); border-radius: 2px 0 0 2px; box-sizing: border-box;"></div>
+                                <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #ffffff; width: 0%; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 0 2px 2px 0; opacity: 0.9; box-sizing: border-box;"></div>
                             </div>
 
                         </div>
