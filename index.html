@@ -200,6 +200,20 @@
                                 <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #fa9797; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
                             </div>
 
+                            <!-- DÒNG HIỂN THỊ CHI TIẾT SƠN / TBVS BÊN DƯỚI -->
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
+                                <!-- Chi tiết Kho -->
+                                <div>
+                                    <span style="color: #1d4ed8; font-weight: 500;">Sơn: <span id="lblSonKho">0đ</span></span> | 
+                                    <span style="color: #2563eb; font-weight: 500;">TBVS: <span id="lblTbvsKho">0đ</span></span>
+                                </div>
+                                <!-- Chi tiết Logistics -->
+                                <div>
+                                    <span style="color: #c2410c; font-weight: 500;">Sơn: <span id="lblSonLogistics">0đ</span></span> | 
+                                    <span style="color: #ea580c; font-weight: 500;">TBVS: <span id="lblTbvsLogistics">0đ</span></span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                     <!-- Danh sách card cuộn mượt phía dưới -->
@@ -1711,6 +1725,11 @@
             document.getElementById('lblTongCong').innerText = `${Math.round(tongCong / 1000000)} trđ`;
             document.getElementById('lblTongPhiKho').innerText = `${Math.round(tongPhiKho / 1000000)} trđ`;
             document.getElementById('lblTongPhiLogistics').innerText = `${Math.round(tongPhiLogistics / 1000000)} trđ`;
+            // Cập nhật chi tiết số tiền Sơn / TBVS bên dưới (có định dạng hoặc làm tròn tùy ý, ở đây mình để hiển thị dạng trđ hoặc số đầy đủ)
+            document.getElementById('lblSonKho').innerText = `${Math.round(sonKho / 1000000)} trđ`;
+            document.getElementById('lblTbvsKho').innerText = `${Math.round(tbvsKho / 1000000)} trđ`;
+            document.getElementById('lblSonLogistics').innerText = `${Math.round(sonLogistics / 1000000)} trđ`;
+            document.getElementById('lblTbvsLogistics').innerText = `${Math.round(tbvsLogistics / 1000000)} trđ`;
             // 2. Tỷ lệ % của toàn bộ Kho và Logistics so với Tổng chung
             let phanTramKho = 50;
             let phanTramLogistics = 50;
