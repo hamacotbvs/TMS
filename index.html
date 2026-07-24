@@ -178,10 +178,10 @@
                         </div>
                     </div>
                     <!-- Khung chứa biểu đồ đặt trên cùng của Modal -->
-                    <div class="cost-comparison-container" style="margin-bottom: 1px; padding: 8px; background: #ffffff; border-radius: 8px;">
+                    <div class="cost-comparison-container" style="margin-bottom: 1px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
                         <!-- Dòng 1: Tổng nằm trên -->
-                        <div style="text-align: center; margin-bottom: 4px; font-size: 13px; font-weight: bold;">
-                            <span>TỔNG CHI PHÍ: <span id="lblTongCong">0 trđ</span></span>
+                        <div style="text-align: center; margin-bottom: 4px; font-size: 13px; font-weight: bold; color: #1e293b;">
+                            <span>TỔNG CHI PHÍ: <span id="lblTongCong" style="color: #0284c7;">0 trđ</span></span>
                         </div>
                         <!-- Dòng 2: Kho và Logistics nằm dưới, căn đều 2 bên -->
                         <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: bold;">
@@ -191,7 +191,6 @@
 
                         <!-- THANH TỔNG CHUNG (Nền xám chung) -->
                         <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-                            
                             <!-- PHẦN KHO -->
                             <div id="barPhiKho" style="height: 12px; background: transparent; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
                                 <!-- Thanh con Sơn (Xanh dương đậm) -->
@@ -199,7 +198,6 @@
                                 <!-- Thanh con TBVS (Xanh dương nhạt) -->
                                 <div id="subBarKhoTBVS" style="height: 6px !important; background: #93c5fd; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
                             </div>
-
                             <!-- PHẦN LOGISTICS -->
                             <div id="barPhiLogistics" style="height: 12px; background: transparent; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
                                 <!-- Thanh con Sơn (Cam cháy đậm) -->
@@ -224,6 +222,10 @@
                         </div>
                     </div>
                     <!-- Danh sách card cuộn mượt phía dưới -->
+                     <!-- Dòng tiêu đề nhỏ phân cách danh sách bên dưới -->
+                    <div style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Chi tiết các khoản phát sinh
+                    </div>
                     <div id="danhSachLichSu"></div>
                 </div>
             </div>
