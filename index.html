@@ -181,23 +181,23 @@
                             <span>Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
                         </div>
 
-                        <!-- THANH TỔNG CHUNG -->
+                        <!-- THANH TỔNG CHUNG (Nền xám chung) -->
                         <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
                             
-                            <!-- PHẦN KHO (Nền xám mờ cao cấp, phân cấp sắc độ Xanh dương bên trong) -->
-                            <div id="barPhiKho" style="height: 12px; background: #cbd5e1; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                            <!-- PHẦN KHO -->
+                            <div id="barPhiKho" style="height: 12px; background: transparent; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
                                 <!-- Thanh con Sơn (Xanh dương đậm) -->
                                 <div id="subBarKhoSon" style="height: 6px !important; background: #1d4ed8; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
                                 <!-- Thanh con TBVS (Xanh dương nhạt) -->
                                 <div id="subBarKhoTBVS" style="height: 6px !important; background: #93c5fd; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
                             </div>
 
-                            <!-- PHẦN LOGISTICS (Đổi sang tông Cam) -->
-                            <div id="barPhiLogistics" style="height: 12px; background: #fed7aa; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
-                                <!-- Thanh con Sơn (Cam đậm / Cam cháy) -->
+                            <!-- PHẦN LOGISTICS -->
+                            <div id="barPhiLogistics" style="height: 12px; background: transparent; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                                <!-- Thanh con Sơn (Cam cháy đậm) -->
                                 <div id="subBarLogisticsSon" style="height: 6px !important; background: #c2410c; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
                                 <!-- Thanh con TBVS (Cam nhạt / Vàng kem) -->
-                                <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #ffedd5; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                                <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #fed7aa; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
                             </div>
 
                         </div>
