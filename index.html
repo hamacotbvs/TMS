@@ -178,7 +178,7 @@
                 <span>TỔNG CHI PHÍ: <span id="lblTongCong" style="color: #0284c7;">0 trđ</span></span>
             </div>
 
-            <!-- HÀNG 2: BỘ CHỌN THÁNG (NẰM DƯỚI TỔNG, CĂN GIỮA) -->
+            <!-- HÀNG 2: BỘ CHỌN THÁNG -->
             <div style="text-align: center; margin-bottom: 8px;">
                 <div class="bo-chon-thang" style="display: inline-flex; align-items: center; background: #f1f5f9; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
                     <span id="labelThangNam">--/----</span>
@@ -186,12 +186,26 @@
                 </div>
             </div>
 
-            <!-- KHUNG BIỂU ĐỒ CHÍNH (Đã bỏ thanh ngang, chỉ giữ lại phần hiển thị số liệu Kho & Logistics) -->
+            <!-- KHUNG BIỂU ĐỒ CHÍNH (Đã khôi phục lại THANH TỔNG CHUNG và các thanh con tỉ lệ) -->
             <div class="cost-comparison-container" style="margin-bottom: 1px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                <!-- Kho và Logistics -->
+                <!-- Dòng: Kho và Logistics -->
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: bold;">
                     <span style="color: #2563eb;">Kho: <span id="lblTongPhiKho">0 trđ</span></span>
                     <span style="color: #dc2626;">Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
+                </div>
+
+                <!-- THANH TỔNG CHUNG (Đã thêm lại để hiển thị biểu đồ tỉ lệ) -->
+                <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 6px;">
+                    <!-- PHẦN KHO -->
+                    <div id="barPhiKho" style="height: 12px; background: transparent; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                        <div id="subBarKhoSon" style="height: 6px !important; background: #1d4ed8; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                        <div id="subBarKhoTBVS" style="height: 6px !important; background: #93c5fd; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                    </div>
+                    <!-- PHẦN LOGISTICS -->
+                    <div id="barPhiLogistics" style="height: 12px; background: transparent; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                        <div id="subBarLogisticsSon" style="height: 6px !important; background: #c2410c; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                        <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #fa9797; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                    </div>
                 </div>
 
                 <!-- CHI TIẾT SƠN / TBVS BÊN DƯỚI -->
