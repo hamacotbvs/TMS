@@ -185,17 +185,17 @@
                         <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
                             
                             <!-- PHẦN KHO (Nền Xanh dương, chia % theo tổng Kho) -->
-                            <div id="barPhiKho" style="height: 12px; padding-left: 5px; padding-right: 5px; background: #2563eb; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                            <div id="barPhiKho" style="height: 12px; background: #2563eb; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
                                 <!-- Thanh con Sơn (Cam) và TBVS (Trắng) xếp nối tiếp nhau bên trong Kho -->
-                                <div id="subBarKhoSon" style="height: 6px !important; background: #f97316; width: 0%; position: absolute; top: 50%; left: 2px; transform: translateY(-50%); border-radius: 2px 0 0 2px; box-sizing: border-box;"></div>
-                                <div id="subBarKhoTBVS" style="height: 6px !important; background: #ffffff; width: 0%; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 0 2px 2px 0; opacity: 0.9; box-sizing: border-box;"></div>
+                                <div id="subBarKhoSon" style="height: 6px !important; background: #f97316; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 2px 0 0 2px; box-sizing: border-box;"></div>
+                                <div id="subBarKhoTBVS" style="height: 6px !important; background: #ffffff; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 0 2px 2px 0; opacity: 0.9; box-sizing: border-box;"></div>
                             </div>
 
                             <!-- PHẦN LOGISTICS (Nền Đỏ, chia % theo tổng Logistics) -->
-                            <div id="barPhiLogistics" style="height: 12px; padding-left: 5px; padding-right: 5px; background: #dc2626; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                            <div id="barPhiLogistics" style="height: 12px; background: #dc2626; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
                                 <!-- Thanh con Sơn (Cam) và TBVS (Trắng) xếp nối tiếp nhau bên trong Logistics -->
-                                <div id="subBarLogisticsSon" style="height: 6px !important; background: #f97316; width: 0%; position: absolute; top: 50%; left: 2px; transform: translateY(-50%); border-radius: 2px 0 0 2px; box-sizing: border-box;"></div>
-                                <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #ffffff; width: 0%; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 0 2px 2px 0; opacity: 0.9; box-sizing: border-box;"></div>
+                                <div id="subBarLogisticsSon" style="height: 6px !important; background: #f97316; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 2px 0 0 2px; box-sizing: border-box;"></div>
+                                <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #ffffff; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 0 2px 2px 0; opacity: 0.9; box-sizing: border-box;"></div>
                             </div>
 
                         </div>
@@ -1722,9 +1722,9 @@
                 let pctSonKho = (sonKho / tongPhiKho) * 100;
                 let pctTbvsKho = (tbvsKho / tongPhiKho) * 100;
                 // Chiều rộng mỗi thanh được phân bổ theo tỷ lệ trên không gian (100% - 4px)
-                document.getElementById('subBarKhoSon').style.width = `calc((100% - 10px) * ${pctSonKho / 100})`;
-                document.getElementById('subBarKhoTBVS').style.width = `calc((100% - 10px) * ${pctTbvsKho / 100})`;
-                document.getElementById('subBarKhoTBVS').style.left = `calc(5px + (100% - 10px) * ${pctSonKho / 100})`;      // Đặt vị trí thanh TBVS nằm sát ngay sau thanh Sơn theo chiều ngang
+                document.getElementById('subBarKhoSon').style.width = `calc((100% - 8px) * ${pctSonKho / 100})`;
+                document.getElementById('subBarKhoTBVS').style.width = `calc((100% - 8px) * ${pctTbvsKho / 100})`;
+                document.getElementById('subBarKhoTBVS').style.left = `calc(4px + (100% - 8px) * ${pctSonKho / 100})`;      // Đặt vị trí thanh TBVS nằm sát ngay sau thanh Sơn theo chiều ngang
             } else {
                 document.getElementById('subBarKhoSon').style.width = '0%';
                 document.getElementById('subBarKhoTBVS').style.width = '0%';}
@@ -1733,10 +1733,10 @@
             if (tongPhiLogistics > 0) {
                 let pctSonLog = (sonLogistics / tongPhiLogistics) * 100;
                 let pctTbvsLog = (tbvsLogistics / tongPhiLogistics) * 100;
-                document.getElementById('subBarLogisticsSon').style.width = `calc((100% - 10px) * ${pctSonLog / 100})`;
-                document.getElementById('subBarLogisticsTBVS').style.width = `calc((100% - 10px) * ${pctTbvsLog / 100})`;
+                document.getElementById('subBarLogisticsSon').style.width = `calc((100% - 8px) * ${pctSonLog / 100})`;
+                document.getElementById('subBarLogisticsTBVS').style.width = `calc((100% - 8px) * ${pctTbvsLog / 100})`;
                 // Đặt vị trí thanh TBVS nằm sát ngay sau thanh Sơn
-                document.getElementById('subBarLogisticsTBVS').style.left = `calc(5px + (100% - 10px) * ${pctSonLog / 100})`;
+                document.getElementById('subBarLogisticsTBVS').style.left = `calc(4px + (100% - 8px) * ${pctSonLog / 100})`;
             } else {
                 document.getElementById('subBarLogisticsSon').style.width = '0%';
                 document.getElementById('subBarLogisticsTBVS').style.width = '0%';
