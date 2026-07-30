@@ -1401,7 +1401,7 @@
             if (!hangMuc) { alert("Vui lòng chọn Hạng mục chi phí!"); return; }
             if (tongTien <= 0) { alert("Vui lòng nhập Số tiền phát sinh lớn hơn 0!"); return; }
             // 🌟 THÊM MỚI: Bắt buộc chọn xe nếu thuộc 2 hạng mục này
-            if ((hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") && !phuongTien) {
+            if ((hangMuc === "Đăng kiểm" || hangMuc === "Bảo hiểm xe" || hangMuc === "Giám sát hành trình" || hangMuc === "Nhiên liệu" || hangMuc === "Bảo trì, bảo dưỡng xe" || hangMuc === "Lương km tài xế" || hangMuc === "Lương sản lượng tài xế") && !phuongTien) {
                 alert("Vui lòng chọn biển số xe phương tiện!"); return;}
             // 🌟 KHÓA NÚT BẤM NGAY LẬP TỨC & THAY ĐỔI GIAO DIỆN KHÁCH HÀNG
             nutBam.disabled = true;
