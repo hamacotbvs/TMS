@@ -1329,7 +1329,7 @@
             const vungPhuongTien = document.getElementById('vungPhuongTien');
             if (!hangMuc) return;
             // --- LOGIC ẨN/HIỆN PHƯƠNG TIỆN (Dùng tên trực tiếp cho chính xác 100%) ---
-            if (hangMuc === "Chi phí giao hàng" || hangMuc === "Lương sản lượng giao nhận") {
+            if (hangMuc === "Đăng kiểm" || hangMuc === "Bảo hiểm xe" || hangMuc === "Giám sát hành trình" || hangMuc === "Nhiên liệu" || hangMuc === "Bảo trì, bảo dưỡng xe" || hangMuc === "Lương km tài xế" || hangMuc === "Lương sản lượng tài xế") {
                 vungPhuongTien.style.display = 'flex'; // Hiện ra chia đôi dòng
             } else { 
                 vungPhuongTien.style.display = 'none'; // Ẩn đi
