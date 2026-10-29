@@ -280,7 +280,27 @@
         <div class="MENU-item" data-tab="van-chuyen"> <i class="fa-solid fa-car-side"></i> <span>Vận chuyển</span> </div>
     </nav>
 
-    <!-- Liên kết file JavaScript tách rời -->
-    <script type="module" src="script.js"></script>
+<!-- Liên kết file JavaScript tách rời -->
+    <!-- Khởi tạo Firebase ở file HTML luôn -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, getAggregateFromServer, sum, addDoc, runTransaction, doc, deleteDoc, updateDoc, setDoc, orderBy, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+            
+        const firebaseConfig = { 
+            apiKey: "AIzaSyA4N3-5OhkDXZV8Yw-TEymODHuv_-QwPGU",
+            authDomain: "hamaco-tms-ac51b.firebaseapp.com",
+            projectId: "hamaco-tms-ac51b",
+            storageBucket: "hamaco-tms-ac51b.firebasestorage.app",
+            messagingSenderId: "593078964705",
+            appId: "1:593078964705:web:44302d0eb998c2c27542a0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.db = getFirestore(app); // Gán db ra window để các file khác gọi chung được
+    </script>
+
+    <!-- Nhúng 2 file module bạn vừa tách -->
+    <script type="module" src="BAOCAO-SLDT.JS"></script>
+    <script type="module" src="HOACHTOAN-CHIPHI.JS"></script>
 </body>
 </html>
