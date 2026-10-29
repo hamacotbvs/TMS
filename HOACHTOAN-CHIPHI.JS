@@ -1,4 +1,6 @@
 
+    import { collection, query, where, getDocs, runTransaction, doc, deleteDoc, updateDoc, setDoc, orderBy, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    
     const db = window.db; // Dùng chung kết nối Firestore từ file HTML
 
     // Thiết lập mặc định ngày hôm nay cho form
@@ -67,7 +69,7 @@
         // Hiển thị lên giao diện xem trước
         document.getElementById('previewSon').innerText = tienSon.toLocaleString('vi-VN') + " đ";
         document.getElementById('previewTBVS').innerText = tienTBVS.toLocaleString('vi-VN') + " đ"; };
-        
+
     // HÀM LƯU CHÍNH XÁC ĐÃ ĐƯỢC ĐƯA RA TOÀN CỤC ĐỂ HTML GỌI ONCLICK
     let dangSuaIdDoc = null; // SỬA: Biến toàn cục theo dõi ID bản ghi đang sửa
     window.luuNghiepVuVaoFirebase = async function() {
@@ -455,4 +457,4 @@
             document.getElementById('subBarLogisticsSon').style.width = '0%';
             document.getElementById('subBarLogisticsTBVS').style.width = '0%';
         }
-    } 
+    }
