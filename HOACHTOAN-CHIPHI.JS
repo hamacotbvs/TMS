@@ -455,4 +455,4 @@
             document.getElementById('subBarLogisticsSon').style.width = '0%';
             document.getElementById('subBarLogisticsTBVS').style.width = '0%';
         }
-    }
+    } 
