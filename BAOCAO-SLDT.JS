@@ -1,4 +1,6 @@
 
+    import { collection, query, where, getDocs, getAggregateFromServer, sum } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    
 // Lưu ý: Biến db dùng chung từ window.db đã khởi tạo ở HTML
     const db = window.db;
 
