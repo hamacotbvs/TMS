@@ -652,16 +652,16 @@
                         let r, g, b;
                         if (ratio >= 0.25) {
                             const p = (ratio - 0.25) / (1.0 - 0.25); 
-                            r = Math.round(90 + (10 - 90) * p); 
-                            g = Math.round(140 + (10 - 140) * p); 
-                            b = Math.round(220 + (220 - 240) * p); 
+                            r = Math.round(90 + (0 - 140) * p); 
+                            g = Math.round(140 + (80 - 180) * p); 
+                            b = Math.round(220 + (255 - 255) * p); 
                         } else if (ratio >= 0.05 && ratio < 0.25) {
                             const p = (ratio - 0.05) / (0.25 - 0.05); 
-                            r = Math.round(250 + (170 - 250) * p); 
-                            g = Math.round(160 + (70 - 160) * p); 
-                            b = Math.round(160 + (70 - 160) * p); 
+                            r = Math.round(255 + (255 - 255) * p); 
+                            g = Math.round(180 + (80 - 180) * p); 
+                            b = Math.round(180 + (80 - 180) * p); 
                         } else {
-                            r = 170; g = 70; b = 70;
+                            r = 255; g = 80; b = 80;
                         }
                         return `rgba(${r}, ${g}, ${b}, 0.85)`; 
                     },
