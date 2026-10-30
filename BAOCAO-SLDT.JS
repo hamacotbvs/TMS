@@ -657,11 +657,11 @@
                             b = Math.round(100 + (185 - 100) * p); 
                         } else if (ratio >= 0.05 && ratio < 0.25) {
                             const p = (ratio - 0.05) / (0.25 - 0.05); 
-                            r = Math.round(120 + (241 - 120) * p); 
+                            r = Math.round(150 + (241 - 150) * p); 
                             g = Math.round(80 + (220 - 80) * p); 
                             b = Math.round(40 + (100 - 40) * p); 
                         } else {
-                            r = 120; g = 80; b = 40;
+                            r = 150; g = 80; b = 40;
                         }
                         return `rgba(${r}, ${g}, ${b}, 0.85)`; 
                     },
