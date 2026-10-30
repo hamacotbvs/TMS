@@ -650,18 +650,21 @@
                         // Đổ màu theo tỷ lệ doanh thu của ô đó so với đỉnh doanh thu maxDoanhThu
                         const ratio = Math.min(value / (maxDoanhThu || 1), 1); 
                         let r, g, b;
-                        if (ratio >= 0.25) {
-                            const p = (ratio - 0.25) / (1.0 - 0.25); 
+                        if (ratio >= 0.4) {
+                            const p = (ratio - 0.4) / (1.0 - 0.4); 
                             r = Math.round(90 + (0 - 140) * p); 
                             g = Math.round(140 + (80 - 180) * p); 
                             b = Math.round(220 + (255 - 255) * p); 
-                        } else if (ratio >= 0.05 && ratio < 0.25) {
-                            const p = (ratio - 0.05) / (0.25 - 0.05); 
+                        } else if (ratio >= 0.2 && ratio < 0.4) {
+                            const p = (ratio - 0.2) / (0.4 - 0.2); 
+                            r = Math.round(255 + (255 - 255) * p); 
+                            g = Math.round(255 + (245 - 255) * p); 
+                            b = Math.round(0 + (180 - 0) * p); 
+                        } else {
+                            const p = (ratio - 0.01) / (0.2 - 0.01); 
                             r = Math.round(255 + (255 - 255) * p); 
                             g = Math.round(80 + (180 - 80) * p); 
-                            b = Math.round(80 + (180 - 80) * p); 
-                        } else {
-                            r = 255; g = 80; b = 80;
+                            b = Math.round(80 + (180 - 80) * p);
                         }
                         return `rgba(${r}, ${g}, ${b}, 0.85)`; 
                     },
