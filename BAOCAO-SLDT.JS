@@ -658,8 +658,8 @@
                         } else if (ratio >= 0.05 && ratio < 0.25) {
                             const p = (ratio - 0.05) / (0.25 - 0.05); 
                             r = Math.round(255 + (255 - 255) * p); 
-                            g = Math.round(180 + (80 - 180) * p); 
-                            b = Math.round(180 + (80 - 180) * p); 
+                            g = Math.round(80 + (180 - 80) * p); 
+                            b = Math.round(80 + (180 - 80) * p); 
                         } else {
                             r = 255; g = 80; b = 80;
                         }
