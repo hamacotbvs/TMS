@@ -663,8 +663,8 @@
                         } else {
                             const p = (ratio - 0.01) / (0.2 - 0.01); 
                             r = Math.round(255 + (255 - 255) * p); 
-                            g = Math.round(80 + (180 - 80) * p); 
-                            b = Math.round(80 + (180 - 80) * p);
+                            g = Math.round(80 + (230 - 80) * p); 
+                            b = Math.round(80 + (230 - 80) * p);
                         }
                         return `rgba(${r}, ${g}, ${b}, 0.85)`; 
                     },
