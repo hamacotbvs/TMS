@@ -658,7 +658,7 @@
                         } else if (ratio >= 0.2 && ratio < 0.4) {
                             const p = (ratio - 0.2) / (0.4 - 0.2); 
                             r = Math.round(255 + (255 - 255) * p); 
-                            g = Math.round(255 + (245 - 255) * p); 
+                            g = Math.round(180 + (245 - 180) * p); 
                             b = Math.round(0 + (180 - 0) * p); 
                         } else {
                             const p = (ratio - 0.01) / (0.2 - 0.01); 
