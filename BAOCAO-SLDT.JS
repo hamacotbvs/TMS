@@ -650,9 +650,6 @@
                         // Đổ màu theo tỷ lệ doanh thu của ô đó so với đỉnh doanh thu maxDoanhThu
                         const ratio = Math.min(value / (maxDoanhThu || 1), 1); 
                         let r, g, b;
-                        if (value === 0) {
-                            return `rgba(${r}, ${g}, ${b}, 0.85)`; // Ô trống
-                        }
                         if (ratio >= 0.25) {
                             const p = (ratio - 0.25) / (1.0 - 0.25); 
                             r = Math.round(241 + (41 - 241) * p); 
@@ -666,6 +663,7 @@
                         } else {
                             r = 245; g = 160; b = 150;
                         }
+                        return `rgba(${r}, ${g}, ${b}, 0.85)`; 
                     },
                     borderRadius: 2
                 }] 
