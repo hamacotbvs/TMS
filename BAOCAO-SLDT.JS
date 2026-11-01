@@ -528,6 +528,7 @@
         if (!canvasElement) return;
         const ctx = canvasElement.getContext('2d');
         if (bieuDoNhietVungTieuThu) {bieuDoNhietVungTieuThu.destroy(); }    // Nếu biểu đồ đã tồn tại trước đó, xóa đi để vẽ lại dữ liệu mới tránh bị đè chèn
+
         bieuDoNhietVungTieuThu = new Chart(ctx, {
             type: 'matrix',
             data: {
@@ -537,7 +538,7 @@
                     // Định hình kích thước ô vuông nhiệt
                     width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 2 : 0,
                     height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachVungY.length || 1)) - 2 : 0,
-                    // Hàm đổ màu động: Ô nào sản lượng càng cao thì màu xanh càng đậm theo tỉ lệ sản lượng / maxSanLuong
+                    // Hàm đổ màu động theo tỉ lệ sản lượng: từ 100% - 40% (càng lớn màu xanh càng đậm), 40% - 20% (càng nhỏ màu vàng càng nhạt), 20% - 0% (càng nhỏ màu đỏ càng đậm)
                     backgroundColor(context) {
                         const item = context.raw;
                         const value = item ? item.v : 0;
@@ -546,20 +547,16 @@
                         // 2. Tính tỉ lệ phần trăm sản lượng (Giá trị từ 0 đến 1)
                         const ratio = Math.min(value / (maxSanLuong || 1), 1); 
                         let r, g, b;
-                        // 3. THUẬT TOÁN PHÂN CHIA PHÂN ĐOẠN MÀU THEO MỐC % CỦA BẠN
-                        if (ratio >= 0.25) {
-                            // PHÂN ĐOẠN 1: Từ 25% (Vàng) đến 100% (Xanh đậm)
-                            // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.25 -> 1.0] thành [0.0 -> 1.0]
-                            const p = (ratio - 0.25) / (1.0 - 0.25); 
-                            // Vàng chanh nhẹ: rgb(241, 220, 100) | Xanh Navy: rgb(41, 128, 185)
-                            r = Math.round(241 + (41 - 241) * p);
-                            g = Math.round(220 + (128 - 220) * p);
-                            b = Math.round(100 + (185 - 100) * p); } 
-                        else if (ratio >= 0.05 && ratio < 0.25) {
-                            // PHÂN ĐOẠN 2: Từ 5% (Đỏ nhạt/Cam pastel) đến 25% (Vàng chanh)
-                            // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.05 -> 0.25] thành [0.0 -> 1.0]
-                            const p = (ratio - 0.05) / (0.25 - 0.05); 
-                            // Đỏ nhạt/Cam pastel dịu: rgb(240, 140, 130) | Vàng chanh: rgb(241, 220, 100)
+                        // 3. THUẬT TOÁN PHÂN CHIA PHÂN ĐOẠN MÀU THEO MỐC %
+                        if (ratio >= 0.4) {    // PHÂN ĐOẠN 1: Từ 40% (Xanh nhạt) đến 100% (Xanh đậm)
+                            const p = (ratio - 0.4) / (1.0 - 0.4);    // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.4 -> 1.0] thành [0.0 -> 1.0]
+                            // Xanh nhạt: rgb(190, 210, 255) | Xanh đậm: rgb(0, 80, 255)
+                            r = Math.round(190 + (0 - 190) * p);
+                            g = Math.round(210 + (80 - 210) * p);
+                            b = Math.round(255 + (255 - 255) * p); } 
+                        else if (ratio >= 0.2 && ratio < 0.4) {         // PHÂN ĐOẠN 2: Từ 20% (Vàng nhạt) đến 40% (Vàng đậm)
+                            const p = (ratio - 0.2) / (0.4 - 0.2);      // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.2 -> 0.4] thành [0.0 -> 1.0]
+                            // Vàng đậm: rgb(255, 140, 0) | Vàng nhạt: rgb(255, 245, 180)
                             r = Math.round(240 + (241 - 240) * p);
                             g = Math.round(140 + (220 - 140) * p);
                             b = Math.round(130 + (100 - 130) * p); } 
@@ -568,11 +565,8 @@
                             r = 245; 
                             g = 160;
                             b = 150;}
-                        // Giữ độ hiển thị màu vừa phải (Alpha 0.85 giúp màu dịu và tôn chữ số lên rõ hơn)
-                        const alpha = 0.85; 
-                        return `rgba(${r}, ${g}, ${b}, ${alpha})`; },
-                    // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
-                    borderRadius: 2 }] },
+                        return `rgba(${r}, ${g}, ${b}, 0.85)`; },       // Giữ độ hiển thị màu vừa phải (0.85 giúp màu dịu và tôn chữ số lên rõ hơn)
+                    borderRadius: 2 }] },                               // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -640,35 +634,41 @@
                 datasets: [{
                     label: 'Doanh thu theo vùng (Triệu Đan)',
                     data: dataMatrix,
+                    // Định hình kích thước ô vuông nhiệt
                     width: ({chart}) => chart.chartArea ? (chart.chartArea.width / 12) - 2 : 0,
                     height: ({chart}) => chart.chartArea ? (chart.chartArea.height / (danhSachVungY.length || 1)) - 2 : 0,
+                    // Hàm đổ màu động theo tỉ lệ sản lượng: từ 100% - 40% (càng lớn màu xanh càng đậm), 40% - 20% (càng nhỏ màu vàng càng nhạt), 20% - 0% (càng nhỏ màu đỏ càng đậm)
                     backgroundColor(context) {
                         const item = context.raw;
                         const value = item ? item.v : 0;
+                        // 1. Nếu không có sản lượng (bằng 0), trả về màu xám cực nhạt (Ô trống)
                         if (value === 0) return '#f8fafc'; 
-                        
-                        // Đổ màu theo tỷ lệ doanh thu của ô đó so với đỉnh doanh thu maxDoanhThu
+                        // 2. Tính tỉ lệ phần trăm sản lượng (Giá trị từ 0 đến 1)
                         const ratio = Math.min(value / (maxDoanhThu || 1), 1); 
                         let r, g, b;
-                        if (ratio >= 0.4) {
-                            const p = (ratio - 0.4) / (1.0 - 0.4); 
+                        // 3. THUẬT TOÁN PHÂN CHIA PHÂN ĐOẠN MÀU THEO MỐC %
+                        if (ratio >= 0.4) {     // PHÂN ĐOẠN 1: Từ 40% (Xanh nhạt) đến 100% (Xanh đậm)
+                            const p = (ratio - 0.4) / (1.0 - 0.4);      // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.4 -> 1.0] thành [0.0 -> 1.0]
+                            // Xanh nhạt: rgb(190, 210, 255) | Xanh đậm: rgb(0, 80, 255)
                             r = Math.round(190 + (0 - 190) * p); 
                             g = Math.round(210 + (80 - 210) * p); 
                             b = Math.round(255 + (255 - 255) * p); 
-                        } else if (ratio >= 0.2 && ratio < 0.4) {
-                            const p = (ratio - 0.2) / (0.4 - 0.2); 
+                        } else if (ratio >= 0.2 && ratio < 0.4) {       // PHÂN ĐOẠN 2: Từ 20% (Vàng nhạt) đến 40% (Vàng đậm)
+                            const p = (ratio - 0.2) / (0.4 - 0.2);      // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.2 -> 0.4] thành [0.0 -> 1.0]
+                            // Vàng đậm: rgb(255, 140, 0) | Vàng nhạt: rgb(255, 245, 180)
                             r = Math.round(255 + (255 - 255) * p); 
                             g = Math.round(180 + (245 - 180) * p); 
                             b = Math.round(0 + (180 - 0) * p); 
-                        } else {
-                            const p = (ratio - 0.01) / (0.2 - 0.01); 
+                        } else {                                        // PHÂN ĐOẠN 3: Từ 0% (Đỏ nhạt) đến 20% (Đỏ đậm)
+                            const p = (ratio - 0.01) / (0.2 - 0.01);    // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.01 -> 0.2] thành [0.0 -> 1.0]
+                            // Đỏ đậm: rgb(255, 80, 80) | Đỏ nhạt: rgb(255, 230, 230)
                             r = Math.round(255 + (255 - 255) * p); 
                             g = Math.round(80 + (230 - 80) * p); 
                             b = Math.round(80 + (230 - 80) * p);
                         }
-                        return `rgba(${r}, ${g}, ${b}, 0.85)`; 
+                        return `rgba(${r}, ${g}, ${b}, 0.85)`;      // Giữ độ hiển thị màu vừa phải (Alpha 0.85 giúp màu dịu và tôn chữ số lên rõ hơn)
                     },
-                    borderRadius: 2
+                    borderRadius: 2                                 // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
                 }] 
             },
             options: {
