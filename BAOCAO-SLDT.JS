@@ -446,7 +446,6 @@
                 "An Giang", 
                 "Đồng Tháp",
                 "Long An",
-                "Hậu Giang", 
                 "Sóc Trăng",
                 "Tiền Giang",
                 "Trà Vinh",
@@ -454,8 +453,7 @@
                 "Bến Tre",
                 "",
                 "Phú Quốc",
-                "Vĩnh Long",
-                "Bạc Liêu",]
+                "Vĩnh Long",]
             const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
             const cacYeuCauTinhToanNhiet = [];
             let dataMatrixSL = [];
