@@ -556,15 +556,17 @@
                             b = Math.round(255 + (255 - 255) * p); } 
                         else if (ratio >= 0.2 && ratio < 0.4) {         // PHÂN ĐOẠN 2: Từ 20% (Vàng nhạt) đến 40% (Vàng đậm)
                             const p = (ratio - 0.2) / (0.4 - 0.2);      // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.2 -> 0.4] thành [0.0 -> 1.0]
-                            // Vàng đậm: rgb(255, 140, 0) | Vàng nhạt: rgb(255, 245, 180)
-                            r = Math.round(240 + (241 - 240) * p);
-                            g = Math.round(140 + (220 - 140) * p);
-                            b = Math.round(130 + (100 - 130) * p); } 
-                        else {
-                            // PHÂN ĐOẠN YẾU: Dưới 5% sản lượng, khóa ở màu đỏ pastel nhạt (Soft Red) cho đỡ nhức mắt
-                            r = 245; 
-                            g = 160;
-                            b = 150;}
+                            // Vàng đậm: rgb(255, 180, 0) | Vàng nhạt: rgb(255, 245, 180)
+                            r = Math.round(255 + (255 - 255) * p);
+                            g = Math.round(180 + (245 - 180) * p);
+                            b = Math.round(0 + (180 - 0) * p); } 
+                        else {                                          // PHÂN ĐOẠN 3: Từ 0% (Đỏ nhạt) đến 20% (Đỏ đậm)
+                            const p = (ratio - 0.01) / (0.2 - 0.01);    // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.01 -> 0.2] thành [0.0 -> 1.0]
+                            // Đỏ đậm: rgb(255, 80, 80) | Đỏ nhạt: rgb(255, 230, 230)
+                            r = Math.round(255 + (255 - 255) * p); 
+                            g = Math.round(80 + (230 - 80) * p); 
+                            b = Math.round(80 + (230 - 80) * p);
+                        }
                         return `rgba(${r}, ${g}, ${b}, 0.85)`; },       // Giữ độ hiển thị màu vừa phải (0.85 giúp màu dịu và tôn chữ số lên rõ hơn)
                     borderRadius: 2 }] },                               // Bo góc nhẹ cho các ô nhiệt nhìn hiện đại
             options: {
@@ -655,7 +657,7 @@
                             b = Math.round(255 + (255 - 255) * p); 
                         } else if (ratio >= 0.2 && ratio < 0.4) {       // PHÂN ĐOẠN 2: Từ 20% (Vàng nhạt) đến 40% (Vàng đậm)
                             const p = (ratio - 0.2) / (0.4 - 0.2);      // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.2 -> 0.4] thành [0.0 -> 1.0]
-                            // Vàng đậm: rgb(255, 140, 0) | Vàng nhạt: rgb(255, 245, 180)
+                            // Vàng đậm: rgb(255, 180, 0) | Vàng nhạt: rgb(255, 245, 180)
                             r = Math.round(255 + (255 - 255) * p); 
                             g = Math.round(180 + (245 - 180) * p); 
                             b = Math.round(0 + (180 - 0) * p); 
