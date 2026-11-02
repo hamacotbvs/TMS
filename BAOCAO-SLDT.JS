@@ -814,14 +814,26 @@
                 '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
             function layMauNhietTheoRatio(ratio) {
                 let r, g, b;
-                if (ratio >= 0.25) {
-                    const p = (ratio - 0.25) / 0.75; 
-                    r = Math.round(241 + (41 - 241) * p); g = Math.round(220 + (128 - 220) * p); b = Math.round(100 + (185 - 100) * p); 
-                } else if (ratio >= 0.05) {
-                    const p = (ratio - 0.05) / 0.20; 
-                    r = Math.round(240 + (241 - 240) * p); g = Math.round(140 + (220 - 140) * p); b = Math.round(130 + (100 - 130) * p); 
-                } else { r = 245; g = 160; b = 150; }
-                return `rgba(${r}, ${g}, ${b}, 0.85)`; }
+                if (ratio >= 0.4) {                                 // PHÂN ĐOẠN 1: Từ 40% (Xanh nhạt) đến 100% (Xanh đậm)
+                    const p = (ratio - 0.4) / 0.6; 
+                    // Xanh nhạt: rgb(190, 210, 255) | Xanh đậm: rgb(0, 80, 255)
+                    r = Math.round(190 + (0 - 190) * p);
+                    g = Math.round(210 + (80 - 210) * p);
+                    b = Math.round(255 + (255 - 255) * p); }
+                else if (ratio >= 0.2 && ratio < 0.4) {         // PHÂN ĐOẠN 2: Từ 20% (Vàng nhạt) đến 40% (Vàng đậm)
+                    const p = (ratio - 0.2) / (0.4 - 0.2);      // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.2 -> 0.4] thành [0.0 -> 1.0]
+                    // Vàng đậm: rgb(255, 180, 0) | Vàng nhạt: rgb(255, 245, 180)
+                    r = Math.round(255 + (255 - 255) * p);
+                    g = Math.round(180 + (245 - 180) * p);
+                    b = Math.round(0 + (180 - 0) * p); } 
+                else {                                          // PHÂN ĐOẠN 3: Từ 0% (Đỏ nhạt) đến 20% (Đỏ đậm)
+                    const p = (ratio - 0.01) / (0.2 - 0.01);    // Nội suy tuyến tính tỉ lệ nằm trong khoảng [0.01 -> 0.2] thành [0.0 -> 1.0]
+                    // Đỏ đậm: rgb(255, 80, 80) | Đỏ nhạt: rgb(255, 230, 230)
+                    r = Math.round(255 + (255 - 255) * p); 
+                    g = Math.round(80 + (230 - 80) * p); 
+                    b = Math.round(80 + (230 - 80) * p);
+                }
+                return `rgba(${r}, ${g}, ${b}, 0.85)`; }            // Giữ độ hiển thị màu vừa phải (0.85 giúp màu dịu và tôn chữ số lên rõ hơn)
             bieuDoNhietKhachHangInstance = new Chart(ctx, {
                 type: 'matrix',
                 data: {
