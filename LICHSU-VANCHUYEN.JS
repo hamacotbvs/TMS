@@ -1,5 +1,5 @@
 // VANCHUYEN.JS - Quản lý lịch sử vận chuyển theo Tháng và Phương tiện
-import { collection, query, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
@@ -13,7 +13,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const thangNum = parseInt(thangChon, 10);
         const namNum = parseInt(namChon, 10);
 
-        // Lấy toàn bộ collection TUYENDUONG để lọc cực kỳ linh hoạt (tránh lỗi lệch kiểu dữ liệu số/chuỗi)
+        // Lấy toàn bộ collection TUYENDUONG[cite: 1] để lọc cực kỳ linh hoạt (tránh lệch kiểu dữ liệu số/chuỗi)
         const q = query(collection(db, "TUYENDUONG"));
         const querySnapshot = await getDocs(q);
         container.innerHTML = '';
