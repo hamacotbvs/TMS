@@ -23,7 +23,7 @@
 <body>
 
     <div class="KHUNG-CAC-TAB">
-        
+        <!--TRANG CHỦ-->
         <div id="home" class="trang-content active">
             <button onclick="moLichSuChiPhi()" class="btn-history"> <i class="fa-solid fa-clock-rotate-left"></i> Xem lịch sử chi phí </button> <!-- Nút mở lịch sử -->
             <div id="modalLichSu" class="modal-hidden">
@@ -93,6 +93,7 @@
             </div>
         </div>
 
+        <!--BÁO CÁO-->
         <div id="bao-cao" class="trang-content">
             <div class="nut-treo-ngay-thang-nam">
                 <span id="hienNgayThang" class="dong-ngay-thang">7/7</span>
@@ -146,6 +147,7 @@
             </div>
         </div>
 
+        <!--THÊM MỚI-->
         <div id="them-moi" class="trang-content">
             <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
             
@@ -256,17 +258,26 @@
             </div>
         </div>
 
-        <div id="kho" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB">
-                <h2>📦 Quản lý Kho hàng</h2>
-                <p style="margin-top: 10px; color: #666;">Theo dõi số lượng hàng hóa, vật tư tồn kho.</p>
-            </div>
-        </div>
-
+        <!--KHO-->
         <div id="van-chuyen" class="trang-content">
             <div class="KHUNG-CON-TRONG-TAB">
-                <h2>🚚 Quản lý Vận chuyển</h2>
-                <p style="margin-top: 10px; color: #666;">Điều phối xe, tài xế và trạng thái đơn vận chuyển.</p>
+                <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                    🚚 LỊCH SỬ VẬN CHUYỂN
+                </h3>
+
+                <!-- Bộ lọc Tháng và Phương tiện -->
+                <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                    <!-- Chọn tháng -->
+                    <input type="month" id="thangVanChuyen" class="form-control" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: bold; flex: 1; min-width: 140px;">
+                    
+                    <!-- Lọc theo phương tiện (Biển số xe) -->
+                    <input type="text" id="filterPhuongTien" placeholder="Nhập biển số xe (VD: 65C-...) hoặc để trống" class="form-control" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; flex: 2; min-width: 180px;">
+                </div>
+
+                <!-- Nơi chứa danh sách Card Lịch sử vận chuyển -->
+                <div id="danhSachLichSuVanChuyen">
+                    <!-- Dữ liệu sẽ tự động render vào đây -->
+                </div>
             </div>
         </div>
 
@@ -302,5 +313,6 @@
     <!-- Nhúng 2 file module bạn vừa tách -->
     <script type="module" src="BAOCAO-SLDT.JS"></script>
     <script type="module" src="HOACHTOAN-CHIPHI.JS"></script>
+    <script type="module" src="LICHSU-VANCHUYEN.JS"></script>
 </body>
 </html>
