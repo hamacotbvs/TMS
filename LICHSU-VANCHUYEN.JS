@@ -1,17 +1,28 @@
-// VANCHUYEN.JS - Lọc theo thang/nam từ DB, Gom nhóm hiển thị theo Ngày ưu tiên
+// VANCHUYEN.JS - Lọc theo tháng/năm từ DB, Gom nhóm theo Ngày (bỏ giờ)
 import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
-// Hàm lấy ngày ưu tiên để gom nhóm: batDauGiaoHang -> ketThucGiaoHang -> ngayxuatKho
+// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm, cắt bỏ hoàn toàn phần giờ phút giây
+function chuanHoaNgay(ngayStr) {
+    if (!ngayStr || typeof ngayStr !== "string") return "Chưa xác định ngày";
+    
+    // Nếu chuỗi chứa khoảng trắng (thường cách giữa ngày và giờ như "03/01/2026 08:10:21"), ta lấy phần đầu tiên
+    let phanNgay = ngayStr.trim().split(" ")[0];
+    return phanNgay;
+}
+
+// Hàm lấy ngày ưu tiên và chuẩn hóa (bỏ giờ): batDauGiaoHang -> ketThucGiaoHang -> ngayxuatKho
 function layNgayGomNhom(data) {
+    let rawDate = "";
     if (data.batDauGiaoHang && data.batDauGiaoHang.trim() !== "") {
-        return data.batDauGiaoHang;
+        rawDate = data.batDauGiaoHang;
     } else if (data.ketThucGiaoHang && data.ketThucGiaoHang.trim() !== "") {
-        return data.ketThucGiaoHang;
+        rawDate = data.ketThucGiaoHang;
     } else {
-        return data.ngayxuatKho || "Chưa xác định ngày";
+        rawDate = data.ngayxuatKho || "";
     }
+    return chuanHoaNgay(rawDate);
 }
 
 window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "") {
@@ -24,7 +35,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const thangNum = parseInt(thangChon, 10);
         const namNum = parseInt(namChon, 10);
 
-        // Lọc chuẩn xác theo trường thang và nam có sẵn trong Firestore[cite: 1]
+        // Lọc chuẩn xác theo trường thang và nam từ Database[cite: 1]
         const q = query(collection(db, "TUYENDUONG"));
         const querySnapshot = await getDocs(q);
         container.innerHTML = '';
@@ -39,7 +50,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             
-            // Ép kiểu tường minh trường thang và nam từ DB để so sánh
             const dThang = parseInt(data.thang, 10);
             const dNam = parseInt(data.nam, 10);
 
@@ -61,7 +71,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         // Sắp xếp danh sách theo ngày gom nhóm giảm dần (mới nhất lên đầu)
         listData.sort((a, b) => b._ngayGom.localeCompare(a._ngayGom));
 
-        // --- GOM NHÓM (GROUP) THEO NGÀY ƯU TIÊN ---
+        // --- GOM NHÓM (GROUP) THEO NGÀY (ĐÃ BỎ GIỜ) ---
         let groupedByDate = {};
         let countHienThi = 0;
 
@@ -98,7 +108,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             const groupWrapper = document.createElement('div');
             groupWrapper.style.cssText = 'margin-bottom: 16px;';
 
-            // Tiêu đề nhóm Ngày
+            // Tiêu đề nhóm Ngày (Đã gọn gàng, không còn giờ phút)
             const groupHeader = document.createElement('div');
             groupHeader.style.cssText = 'background: #e2e8f0; color: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
             groupHeader.innerHTML = `<span>📅 Ngày: ${ngay}</span> <span style="background: #cbd5e1; padding: 1px 6px; border-radius: 10px; font-size: 10px; color: #334155;">${danhSachChuyen.length} chuyến</span>`;
