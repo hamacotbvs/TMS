@@ -109,7 +109,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             // Tiêu đề nhóm Ngày (Đã gọn gàng, không còn giờ phút)
             const groupHeader = document.createElement('div');
             groupHeader.style.cssText = 'background: #e2e8f0; color: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
-            groupHeader.innerHTML = `<span>📅 Ngày: ${ngay}</span> <span style="background: #cbd5e1; padding: 1px 6px; border-radius: 10px; font-size: 10px; color: #334155;">${danhSachChuyen.length} chuyến</span>`;
+            groupHeader.innerHTML = `<span>📅 Ngày: ${ngay}</span> <span style="background: #cbd5e1; padding: 1px 6px; border-radius: 10px; font-size: 10px; color: #334155;">${danhSachChuyen.length} đơn</span>`;
             groupWrapper.appendChild(groupHeader);
 
             // Duyệt qua các chuyến trong ngày đó để tạo card
