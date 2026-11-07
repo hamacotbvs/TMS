@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Lọc theo tháng/năm từ DB, Gom nhóm theo Ngày (bỏ giờ)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển theo Tháng, Phương tiện và Gom nhóm theo Ngày
 import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -6,8 +6,6 @@ const db = window.db; // Dùng chung kết nối Firestore
 // Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm, cắt bỏ hoàn toàn phần giờ phút giây
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "Chưa xác định ngày";
-    
-    // Nếu chuỗi chứa khoảng trắng (thường cách giữa ngày và giờ như "03/01/2026 08:10:21"), ta lấy phần đầu tiên
     let phanNgay = ngayStr.trim().split(" ")[0];
     return phanNgay;
 }
@@ -35,7 +33,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const thangNum = parseInt(thangChon, 10);
         const namNum = parseInt(namChon, 10);
 
-        // Lọc chuẩn xác theo trường thang và nam từ Database[cite: 1]
+        // Lọc chuẩn xác theo trường thang và nam từ Database
         const q = query(collection(db, "TUYENDUONG"));
         const querySnapshot = await getDocs(q);
         container.innerHTML = '';
@@ -169,10 +167,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         <div>${badgeDuyet}</div>
                     </div>
                     
-                    <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-top: 6px; border-top: 1px solid #f1f5f9; padding-top: 4px;">
-                        <span>🚀 Bắt đầu: ${batDauGiaoHang || '---'}</span>
-                        <span>🏁 Kết thúc: ${ketThucGiaoHang || '---'}</span>
-                        <span>📅 XK: ${ngayxuatKho || '---'}</span>
+                    <div style="font-size: 11px; color: #64748b; display: flex; justify-content: space-between; margin-top: 6px; border-top: 1px solid #f1f5f9; padding-top: 5px;">
+                        <span>🚀 BĐ: <strong>${batDauGiaoHang ? batDauGiaoHang.split(" ")[1] || batDauGiaoHang : '---'}</strong></span>
+                        <span>🏁 KT: <strong>${ketThucGiaoHang ? ketThucGiaoHang.split(" ")[1] || ketThucGiaoHang : '---'}</strong></span>
+                        <span>📅 XK: <strong>${ngayxuatKho || '---'}</strong></span>
                     </div>
                 `;
 
