@@ -1,4 +1,5 @@
-* {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
+
+        * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
 
         /* NÚT RESET */
         .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
@@ -139,3 +140,25 @@
         .card-dong-2 {display: flex; justify-content: space-between; font-size: 14px; color: #1c2129; margin-bottom: 6px;}
         .card-dong-3 {display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #0f172a; padding: 2px 0px; }
         .card-dong-3 .phan-cach {display: none; }/* Màu gạch mờ phân chia Sơn và TBVS */
+
+        /* --- BỔ SUNG CHO CARD LỊCH SỬ VẬN CHUYỂN --- */
+        #danhSachLichSuVanChuyen {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .card-lich-su-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s ease;
+        }
+
+        .card-lich-su-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
+        }
