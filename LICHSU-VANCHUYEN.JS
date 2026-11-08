@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị giaoNhan ở vị trí Tài xế khi là Xe máy
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giao diện gọn gàng, Tải thủ công, Phân màu và Xe máy
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -224,7 +224,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     vehicleHeader.innerHTML = `<span>🏍️ Phương tiện: <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>`;
                     vehicleWrapper.appendChild(vehicleHeader);
 
-                    nhom.don.forEach(data => renderCardDon(data, vehicleWrapper, true)); // Đánh dấu là xe máy để thay TX bằng giaoNhan
+                    nhom.don.forEach(data => renderCardDon(data, vehicleWrapper, true)); 
                     dateWrapper.appendChild(vehicleWrapper);
                 }
             });
@@ -238,12 +238,11 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn (Thêm tham số isXeMay để điều chỉnh hiển thị TX)
+// Hàm phụ vẽ card thông tin từng đơn
 function renderCardDon(data, parentElement, isXeMay = false) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
     
-    // Nếu là xe máy, lấy dữ liệu từ trường giaoNhan; ngược lại lấy taiXe
     const nhanVienPhuTrach = isXeMay ? (data.giaoNhan || 'Chưa có tên') : (data.taiXe || 'Chưa có TX');
     const nhanVienLabel = isXeMay ? 'GN' : 'TX';
 
@@ -310,15 +309,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
 document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
     const selectPhuongTien = document.getElementById('filterPhuongTien');
-    
-    let btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
-    if (!btnTaiDuLieu && inputThangVC) {
-        btnTaiDuLieu = document.createElement('button');
-        btnTaiDuLieu.id = 'btnTaiLichSuVC';
-        btnTaiDuLieu.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Tải dữ liệu';
-        btnTaiDuLieu.style.cssText = 'background: #0284c7; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; margin-left: 8px;';
-        inputThangVC.parentNode.insertBefore(btnTaiDuLieu, inputThangVC.nextSibling);
-    }
+    const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
 
     if (inputThangVC) {
         const now = new Date();
@@ -330,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const container = document.getElementById('danhSachLichSuVanChuyen');
         if (container && container.innerHTML.trim() === "") {
-            container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
+            container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải"</b> để xem lịch sử vận chuyển.</div>';
         }
 
         if (btnTaiDuLieu) {
