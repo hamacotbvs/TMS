@@ -1,9 +1,9 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm tối ưu, Phân màu riêng biệt cho từng xe
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm tối ưu, Hỗ trợ Xe máy khi trống biển số
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
-// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm, cắt bỏ hoàn toàn phần giờ phút giây
+// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/nam, cắt bỏ hoàn toàn phần giờ phút giây
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "Chưa xác định ngày";
     let phanNgay = ngayStr.trim().split(" ")[0];
@@ -23,7 +23,7 @@ function layNgayGomNhom(data) {
     return chuanHoaNgay(rawDate);
 }
 
-// Hàm gán màu riêng biệt cho từng xe và nhóm giao nhận
+// Hàm gán màu riêng biệt cho từng xe và xe máy
 function layMauGiaoDienXe(phuongTien) {
     const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
     
@@ -45,8 +45,8 @@ function layMauGiaoDienXe(phuongTien) {
             bgHeader: '#fef2f2', border: '#fecaca', textHeader: '#991b1b', 
             badgeBg: '#fee2e2', badgeText: '#dc2626', tagColor: '#ef4444'
         };
-    } else if (!phuongTien || phuongTien.trim() === "" || phuongTien.trim() === "Chưa phân xe") {
-        // Tông Vàng (Giao nhận chưa phân xe)
+    } else if (xe === "XE MÁY" || !phuongTien || phuongTien.trim() === "") {
+        // Tông Vàng (Xe máy / Chưa phân xe)
         return {
             bgHeader: '#fffbeb', border: '#fde68a', textHeader: '#92400e', 
             badgeBg: '#fef3c7', badgeText: '#b45309', tagColor: '#d97706'
@@ -101,15 +101,15 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         // Sắp xếp danh sách theo ngày gom nhóm giảm dần (mới nhất lên đầu)
         listData.sort((a, b) => b._ngayGom.localeCompare(a._ngayGom));
 
-        // --- GOM NHÓM THEO CẤU TRÚC: NGÀY -> [XE HOẶC GIAO NHẬN] -> [CHUYẾN HOẶC ---] ---
+        // --- GOM NHÓM THEO CẤU TRÚC: NGÀY -> [XE HOẶC XE MÁY] -> [CHUYẾN HOẶC ĐƠN] ---
         let groupedData = {};
         let countHienThi = 0;
 
         listData.forEach((data) => {
             const coXe = data.phuongTien && data.phuongTien.trim() !== "";
-            const nhomKey = coXe ? data.phuongTien.trim() : (data.giaoNhan ? data.giaoNhan.trim() : "Chưa xác định");
+            const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
 
-            // Lọc theo biển số xe hoặc tên giao nhận nếu người dùng có gõ vào ô tìm kiếm
+            // Lọc theo phương tiện nếu chọn từ Dropdown
             if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
                 const tuKhoa = bienSoTimKiem.toLowerCase().trim();
                 if (!nhomKey.toLowerCase().includes(tuKhoa)) {
@@ -136,21 +136,21 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
                 groupedData[ngayKey][phuongTienKey].chuyen[soChuyen].push(data);
             } else {
-                const giaoNhanKey = `GN_${nhomKey}`;
+                const xeMayKey = `XE_MAY`;
 
-                if (!groupedData[ngayKey][giaoNhanKey]) {
-                    groupedData[ngayKey][giaoNhanKey] = { type: 'giaonhan', name: nhomKey, don: [] };
+                if (!groupedData[ngayKey][xeMayKey]) {
+                    groupedData[ngayKey][xeMayKey] = { type: 'xe_may', name: 'Xe máy', don: [] };
                 }
-                groupedData[ngayKey][giaoNhanKey].don.push(data);
+                groupedData[ngayKey][xeMayKey].don.push(data);
             }
         });
 
         if (countHienThi === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với từ khóa bạn tìm trong tháng này.</div>';
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với phương tiện bạn chọn trong tháng này.</div>';
             return;
         }
 
-        // Render ra giao diện theo thứ tự: Ngày -> Nhóm Xe/GiaoNhận
+        // Render ra giao diện theo thứ tự: Ngày -> Nhóm Xe / Xe máy
         Object.keys(groupedData).forEach((ngay) => {
             const danhSachNhom = groupedData[ngay];
 
@@ -179,7 +179,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
             });
 
-            // Tiêu đề Ngày (Hiển thị Ngày, Tổng Tải, Tổng Doanh Thu, Tổng Đơn)
+            // Tiêu đề Ngày
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
@@ -192,7 +192,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             `;
             dateWrapper.appendChild(dateHeader);
 
-            // Duyệt qua từng nhóm (Xe hoặc Giao nhận)
+            // Duyệt qua từng nhóm
             Object.values(danhSachNhom).forEach((nhom) => {
                 if (nhom.type === 'xe') {
                     const mauXe = layMauGiaoDienXe(nhom.name);
@@ -214,14 +214,14 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     });
 
                 } else {
-                    const mauGiaoNhan = layMauGiaoDienXe(""); // Lấy tông màu vàng cho nhóm giao nhận
+                    const mauXeMay = layMauGiaoDienXe("Xe máy"); 
 
                     const vehicleWrapper = document.createElement('div');
-                    vehicleWrapper.style.cssText = `background: ${mauGiaoNhan.bgHeader}; border: 1px solid ${mauGiaoNhan.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
+                    vehicleWrapper.style.cssText = `background: ${mauXeMay.bgHeader}; border: 1px solid ${mauXeMay.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
                     const vehicleHeader = document.createElement('div');
-                    vehicleHeader.style.cssText = `background: ${mauGiaoNhan.badgeBg}; color: ${mauGiaoNhan.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;`;
-                    vehicleHeader.innerHTML = `<span>📦 Giao nhận: <strong style="color: ${mauGiaoNhan.tagColor};">${nhom.name}</strong></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>`;
+                    vehicleHeader.style.cssText = `background: ${mauXeMay.badgeBg}; color: ${mauXeMay.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;`;
+                    vehicleHeader.innerHTML = `<span>🏍️ Phương tiện: <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>`;
                     vehicleWrapper.appendChild(vehicleHeader);
 
                     nhom.don.forEach(data => renderCardDon(data, vehicleWrapper));
@@ -302,10 +302,10 @@ function renderCardDon(data, parentElement) {
     parentElement.appendChild(cardItem);
 }
 
-// Khởi tạo sự kiện: Ban đầu KHÔNG TẢI GÌ, chỉ tải khi bấm nút
+// Khởi tạo sự kiện
 document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
-    const inputPhuongTien = document.getElementById('filterPhuongTien');
+    const selectPhuongTien = document.getElementById('filterPhuongTien'); // Thẻ select chọn xe / xe máy
     
     let btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     if (!btnTaiDuLieu && inputThangVC) {
@@ -333,22 +333,19 @@ document.addEventListener('DOMContentLoaded', function() {
             btnTaiDuLieu.onclick = function() {
                 if (inputThangVC.value) {
                     const [y, m] = inputThangVC.value.split('-');
-                    taiLichSuVanChuyen(m, y, inputPhuongTien ? inputPhuongTien.value : "");
+                    taiLichSuVanChuyen(m, y, selectPhuongTien ? selectPhuongTien.value : "");
                 }
             };
         }
     }
 
-    let timeoutId;
-    if (inputPhuongTien) {
-        inputPhuongTien.addEventListener('input', function() {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => {
-                if (inputThangVC && inputThangVC.value) {
-                    const [y, m] = inputThangVC.value.split('-');
-                    taiLichSuVanChuyen(m, y, this.value);
-                }
-            }, 300); 
+    // Khi thay đổi lựa chọn trên thẻ Select, tự động lọc lại danh sách ngay lập tức
+    if (selectPhuongTien) {
+        selectPhuongTien.addEventListener('change', function() {
+            if (inputThangVC && inputThangVC.value) {
+                const [y, m] = inputThangVC.value.split('-');
+                taiLichSuVanChuyen(m, y, this.value);
+            }
         });
     }
 });
