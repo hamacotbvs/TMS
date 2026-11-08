@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm Ngày -> Xe -> Chuyến, Hiển thị tổng tải theo ngày
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm Ngày -> Xe -> Chuyến, Hiển thị tổng tải và tổng doanh thu theo ngày
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -110,8 +110,9 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
 
             let tongDonTrongNgay = 0;
             let tongTaiTrongNgay = 0;
+            let tongDoanhThuTrongNgay = 0;
 
-            // Tính tổng số đơn và tổng tải trong ngày
+            // Tính tổng số đơn, tổng tải và tổng doanh thu trong ngày
             Object.values(danhSachXe).forEach(danhSachChuyenCuaXe => {
                 Object.values(danhSachChuyenCuaXe).forEach(danhSachDon => {
                     tongDonTrongNgay += danhSachDon.length;
@@ -119,18 +120,22 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         if (don.tTai) {
                             tongTaiTrongNgay += Number(don.tTai) || 0;
                         }
+                        if (don.thanhTien) {
+                            tongDoanhThuTrongNgay += Number(don.thanhTien) || 0;
+                        }
                     });
                 });
             });
 
-            // Tiêu đề Ngày (Bổ sung hiển thị Tổng tải)
+            // Tiêu đề Ngày (Bổ sung hiển thị Tổng tải, Tổng doanh thu và Số đơn)
             const dateHeader = document.createElement('div');
-            dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;';
+            dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
                 <span>📅 Ngày: ${ngay}</span> 
-                <div>
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 6px;">Tải: ${tongTaiTrongNgay.toLocaleString('vi-VN')} kg</span>
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px;">${tongDonTrongNgay} đơn</span>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">Tải: ${tongTaiTrongNgay.toLocaleString('vi-VN')} kg</span>
+                    <span style="background: rgba(16,185,129,0.3); padding: 2px 6px; border-radius: 8px; font-size: 11px;">DT: ${tongDoanhThuTrongNgay.toLocaleString('vi-VN')} đ</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonTrongNgay} đơn</span>
                 </div>
             `;
             dateWrapper.appendChild(dateHeader);
