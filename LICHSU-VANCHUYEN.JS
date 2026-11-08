@@ -325,7 +325,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // Xử lý khoảng cách: Nếu dinhVi/checkIn trống hoặc 0,0 -> hiện chữ "tắt" màu đỏ. Nếu có tọa độ -> xét < 0.2km (✓ xanh) hoặc >= 0.2km (✗ đỏ kèm số km)
+    // Xử lý khoảng cách: Nếu dinhVi/checkIn trống hoặc 0,0 -> hiện icon 📴. Nếu có tọa độ -> xét < 0.2km (✓ xanh) hoặc >= 0.2km (✗ đỏ kèm số km)
     const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
     let htmlKhoangCach = '';
     if (khoangCachKm !== null) {
@@ -335,7 +335,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
             : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
         htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm} km`;
     } else {
-        htmlKhoangCach = ` | <span style="color: #dc2626; font-weight: 600; font-size: 11px;">tắt</span>`;
+        htmlKhoangCach = ` | <span style="font-size: 12px;" title="Chưa bật định vị">📴</span>`;
     }
 
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
