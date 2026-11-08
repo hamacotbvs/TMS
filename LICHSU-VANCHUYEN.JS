@@ -1,5 +1,5 @@
-// LICHSU-VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giao diện tối ưu, Tải thủ công, Phân màu và Xe máy
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giao diện tối ưu, Tải thủ công, Phân màu và Xe máy
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
@@ -62,13 +62,7 @@ function layMauGiaoDienXe(phuongTien) {
 
 window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "") {
     const container = document.getElementById('danhSachLichSuVanChuyen');
-    const btnTai = document.getElementById('btnTaiLichSuVC');
     if (!container) return;
-
-    if (btnTai) {
-        btnTai.disabled = true;
-        btnTai.style.opacity = "0.6";
-    }
 
     container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu vận chuyển từ server...</div>';
 
@@ -76,14 +70,19 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const thangNum = parseInt(thangChon, 10);
         const namNum = parseInt(namChon, 10);
 
-        // Lấy toàn bộ dữ liệu bảng TUYENDUONG và lọc ở client để tránh lỗi Index gây đơ
+        // Lọc trực tiếp bằng where trên Server (Siêu tiết kiệm lượt đọc Reads)
         const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-        const querySnapshot = await getDocs(thamChieuTuyenDuong);
-        
+        const q = query(
+            thamChieuTuyenDuong, 
+            where("nam", "==", namNum), 
+            where("thang", "==", thangNum)
+        );
+
+        const querySnapshot = await getDocs(q);
         container.innerHTML = '';
 
         if (querySnapshot.empty) {
-            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có dữ liệu trên hệ thống.</div>`;
+            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chuyến vận chuyển nào trong Tháng ${thangNum}/${namNum}.</div>`;
             return;
         }
 
@@ -91,23 +90,13 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
 
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            const dNam = Number(data.nam);
-            const dThang = Number(data.thang);
-
-            if (dNam === namNum && dThang === thangNum) {
-                const ngayGom = layNgayGomNhom(data);
-                listData.push({ 
-                    id: docSnap.id, 
-                    ...data, 
-                    _ngayGom: ngayGom 
-                });
-            }
+            const ngayGom = layNgayGomNhom(data);
+            listData.push({ 
+                id: docSnap.id, 
+                ...data, 
+                _ngayGom: ngayGom 
+            });
         });
-
-        if (listData.length === 0) {
-            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chuyến vận chuyển nào trong Tháng ${thangNum}/${namNum}.</div>`;
-            return;
-        }
 
         // Sắp xếp danh sách theo ngày gom nhóm giảm dần (mới nhất lên đầu)
         listData.sort((a, b) => b._ngayGom.localeCompare(a._ngayGom));
@@ -190,10 +179,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
             });
 
-            // Quy đổi Doanh thu ra triệu đồng (tr.đ) cho gọn
+            // Quy đổi Doanh thu ra triệu đồng (làm tròn 1 hoặc 2 chữ số thập phân cho gọn)
             const tongDTTr = (tongDoanhThuTrongNgay / 1000000).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-            // Tiêu đề Ngày
+            // Tiêu đề Ngày hiển thị DT theo tr.đ
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
@@ -249,11 +238,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     } catch (error) {
         console.error("Lỗi tải lịch sử vận chuyển: ", error);
         container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu lịch sử vận chuyển!</div>';
-    } finally {
-        if (btnTai) {
-            btnTai.disabled = false;
-            btnTai.style.opacity = "1";
-        }
     }
 };
 
