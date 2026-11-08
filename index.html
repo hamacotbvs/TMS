@@ -271,7 +271,13 @@
                     <input type="month" id="thangVanChuyen" class="form-control" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: bold; flex: 1; min-width: 140px;">
                     
                     <!-- Lọc theo phương tiện (Biển số xe) -->
-                    <input type="text" id="filterPhuongTien" placeholder="Nhập biển số xe (VD: 65C-...) hoặc để trống" class="form-control" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; flex: 2; min-width: 180px;">
+                    <select id="filterPhuongTien" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: #fff; outline: none; cursor: pointer;">
+                        <option value="">-- Tất cả phương tiện --</option>
+                        <option value="65C-06126">65C-06126</option>
+                        <option value="65C-12290">65C-12290</option>
+                        <option value="65C-02591">65C-02591</option>
+                        <option value="Xe máy">Xe máy</option>
+                    </select>
                 </div>
 
                 <!-- Nơi chứa danh sách Card Lịch sử vận chuyển -->
