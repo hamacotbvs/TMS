@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giao diện gọn gàng, Tải thủ công, Phân màu và Xe máy
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giao diện tối ưu, Tải thủ công, Phân màu và Xe máy
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -305,19 +305,21 @@ function renderCardDon(data, parentElement, isXeMay = false) {
     parentElement.appendChild(cardItem);
 }
 
-// Khởi tạo sự kiện
+// Khởi tạo sự kiện giao diện và chọn tháng gọn gàng dạng MM/YYYY
 document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
+    const labelThangVC = document.getElementById('labelThangNamVC');
+    const boChonThangVC = document.querySelector('.bo-chon-thang-vc');
     const selectPhuongTien = document.getElementById('filterPhuongTien');
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
 
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+
     if (inputThangVC) {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        if (!inputThangVC.value) {
-            inputThangVC.value = `${year}-${month}`;
-        }
+        inputThangVC.value = `${year}-${month}`;
+        if (labelThangVC) labelThangVC.innerText = `${month}/${year}`;
 
         const container = document.getElementById('danhSachLichSuVanChuyen');
         if (container && container.innerHTML.trim() === "") {
@@ -334,12 +336,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    if (selectPhuongTien) {
-        selectPhuongTien.addEventListener('change', function() {
-            if (inputThangVC && inputThangVC.value) {
-                const [y, m] = inputThangVC.value.split('-');
-                taiLichSuVanChuyen(m, y, this.value);
-            }
-        });
-    }
-});
+    if (boChonThangVC
