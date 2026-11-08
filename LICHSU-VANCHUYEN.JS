@@ -1,155 +1,329 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Gọn gàng, tối ưu tốc độ
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-const db = window.db;
+    <title>HAMACO-TMS</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-function chuanHoaNgay(ngayStr) {
-    if (!ngayStr || typeof ngayStr !== "string") return "Chưa xác định ngày";
-    return ngayStr.trim().split(" ")[0];
-}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+    
+    <!-- Liên kết file CSS tách rời -->
+    <link rel="stylesheet" href="style.css">
 
-function layNgayGomNhom(data) {
-    let rawDate = data.batDauGiaoHang || data.ketThucGiaoHang || data.ngayxuatKho || "";
-    return chuanHoaNgay(rawDate);
-}
+</head>
 
-function layMauGiaoDienXe(phuongTien) {
-    const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
-    if (xe.includes("06126")) {
-        return { bgHeader: '#eff6ff', border: '#bfdbfe', textHeader: '#1e40af', badgeBg: '#dbeafe', tagColor: '#2563eb' };
-    } else if (xe.includes("12290")) {
-        return { bgHeader: '#f0fdf4', border: '#bbf7d0', textHeader: '#166534', badgeBg: '#dcfce7', tagColor: '#16a34a' };
-    } else if (xe.includes("02591")) {
-        return { bgHeader: '#fef2f2', border: '#fecaca', textHeader: '#991b1b', badgeBg: '#fee2e2', tagColor: '#ef4444' };
-    } else if (xe === "XE MÁY" || !phuongTien || phuongTien.trim() === "") {
-        return { bgHeader: '#fffbeb', border: '#fde68a', textHeader: '#92400e', badgeBg: '#fef3c7', tagColor: '#d97706' };
-    }
-    return { bgHeader: '#f8fafc', border: '#e2e8f0', textHeader: '#1e293b', badgeBg: '#e2e8f0', tagColor: '#0284c7' };
-}
+<body>
 
-window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "") {
-    const container = document.getElementById('danhSachLichSuVanChuyen');
-    if (!container) return;
+    <div class="KHUNG-CAC-TAB">
+        <!--TRANG CHỦ-->
+        <div id="home" class="trang-content active">
+            <button onclick="moLichSuChiPhi()" class="btn-history"> <i class="fa-solid fa-clock-rotate-left"></i> Xem lịch sử chi phí </button> <!-- Nút mở lịch sử -->
+            <div id="modalLichSu" class="modal-hidden">
+                <div class="modal-content">
+                    <div class="modal-header-custom">
+                        <button class="nut-dong-modal" onclick="dongModal()">&times;</button>
+                        <h3 class="modal-tieu-de">💸 CHI PHÍ KHO</h3>
+                        <div class="bo-chon-thang">
+                            <span id="labelThangNam">--/----</span>
+                            <input type="month" id="inputThangAn" class="o-lich-an-giao-dien">
+                        </div>
+                    </div>
+                    <!-- Khung chứa biểu đồ đặt trên cùng của Modal -->
+                    <div class="cost-comparison-container" style="margin-bottom: 1px; padding: 8px; background: #f8fafc; border-radius: 0 0 20px 20px;">
+                        <!-- Dòng 1: Tổng nằm trên -->
+                        
+                        <!-- Dòng 2: Kho và Logistics nằm dưới, căn đều 2 bên -->
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: bold;">
+                            <span style="color: #2563eb;">Kho: <span id="lblTongPhiKho">0 trđ</span></span>
+                            <div style="text-align: center; margin-bottom: 1px; font-size: 13px; font-weight: bold;">
+                                <span>TỔNG CHI PHÍ: <span id="lblTongCong">0 trđ</span></span>
+                            </div>
+                            <span style="color: #dc2626;">Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
+                        </div>
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>';
+                        <!-- THANH TỔNG CHUNG (Nền xám chung) -->
+                        <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                            
+                            <!-- PHẦN KHO -->
+                            <div id="barPhiKho" style="height: 12px; background: transparent; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                                <!-- Thanh con Sơn (Xanh dương đậm) -->
+                                <div id="subBarKhoSon" style="height: 6px !important; background: #1d4ed8; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                                <!-- Thanh con TBVS (Xanh dương nhạt) -->
+                                <div id="subBarKhoTBVS" style="height: 6px !important; background: #93c5fd; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                            </div>
 
-    try {
-        const q = query(collection(db, "TUYENDUONG"), where("nam", "==", parseInt(namChon, 10)), where("thang", "==", parseInt(thangChon, 10)));
-        const snapshot = await getDocs(q);
-        container.innerHTML = '';
+                            <!-- PHẦN LOGISTICS -->
+                            <div id="barPhiLogistics" style="height: 12px; background: transparent; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                                <!-- Thanh con Sơn (Cam cháy đậm) -->
+                                <div id="subBarLogisticsSon" style="height: 6px !important; background: #c2410c; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                                <!-- Thanh con TBVS (Cam nhạt / Vàng kem) -->
+                                <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #fa9797; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                            </div>
+                        </div>
 
-        if (snapshot.empty) {
-            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có dữ liệu tháng ${thangChon}/${namChon}.</div>`;
-            return;
-        }
+                        <!-- DÒNG HIỂN THỊ CHI TIẾT SƠN / TBVS BÊN DƯỚI -->
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 0 2px;">
+                            <!-- Chi tiết Kho -->
+                            <div>
+                                <span style="color: #1d4ed8; font-weight: 500;">Sơn: <span id="lblSonKho">0 trđ</span></span> | 
+                                <span style="color: #93c5fd; font-weight: 500;">TBVS: <span id="lblTbvsKho">0 trđ</span></span>
+                            </div>
+                            <!-- Chi tiết Logistics -->
+                            <div style="text-align: right;">
+                                <span style="color: #c2410c; font-weight: 500;">Sơn: <span id="lblSonLogistics">0 trđ</span></span> | 
+                                <span style="color: #fa9797; font-weight: 500;">TBVS: <span id="lblTbvsLogistics">0 trđ</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- TIÊU ĐỀ PHÂN TÁCH VÀ DANH SÁCH -->
+                    <div style="text-align: center; font-size: 12px; font-weight: bold; color: #64748b; margin-top: 10px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Chi tiết các khoản phát sinh
+                    </div>
+                    <!-- Danh sách card cuộn mượt phía dưới -->
+                    <div id="danhSachLichSu"></div>
+                </div>
+            </div>
+        </div>
 
-        let listData = [];
-        snapshot.forEach(docSnap => listData.push({ id: docSnap.id, ...docSnap.data(), _ngayGom: layNgayGomNhom(docSnap.data()) }));
-        listData.sort((a, b) => b._ngayGom.localeCompare(a._ngayGom));
-
-        let groupedData = {}, countHienThi = 0;
-
-        listData.forEach(data => {
-            const coXe = data.phuongTien && data.phuongTien.trim() !== "";
-            const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
-
-            if (bienSoTimKiem && !nhomKey.toLowerCase().includes(bienSoTimKiem.toLowerCase().trim())) return;
-
-            countHienThi++;
-            const ngayKey = data._ngayGom;
-            if (!groupedData[ngayKey]) groupedData[ngayKey] = {};
-
-            if (coXe) {
-                const soChuyen = data.chuyen || 1;
-                const pKey = `XE_${nhomKey}`;
-                if (!groupedData[ngayKey][pKey]) groupedData[ngayKey][pKey] = { type: 'xe', name: nhomKey, chuyen: {} };
-                if (!groupedData[ngayKey][pKey].chuyen[soChuyen]) groupedData[ngayKey][pKey].chuyen[soChuyen] = [];
-                groupedData[ngayKey][pKey].chuyen[soChuyen].push(data);
-            } else {
-                if (!groupedData[ngayKey]['XE_MAY']) groupedData[ngayKey]['XE_MAY'] = { type: 'xe_may', name: 'Xe máy', don: [] };
-                groupedData[ngayKey]['XE_MAY'].don.push(data);
-            }
-        });
-
-        if (countHienThi === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu khớp phương tiện.</div>';
-            return;
-        }
-
-        Object.keys(groupedData).forEach(ngay => {
-            const danhSachNhom = groupedData[ngay];
-            const dateWrapper = document.createElement('div');
-            dateWrapper.style.cssText = 'margin-bottom: 20px;';
-
-            let tongDon = 0, tongTai = 0, tongDT = 0;
-            Object.values(danhSachNhom).forEach(n => {
-                const items = n.type === 'xe' ? Object.values(n.chuyen).flat() : n.don;
-                tongDon += items.length;
-                items.forEach(d => {
-                    if (d.tTai) tongTai += Number(d.tTai) || 0;
-                    if (d.thanhTien) tongDT += Number(d.thanhTien) || 0;
-                });
-            });
-
-            dateWrapper.innerHTML = `
-                <div style="background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>📅 ${ngay}</span> 
-                    <div style="display: flex; gap: 6px;">
-                        <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">Tải: ${tongTai.toLocaleString('vi-VN')} kg</span>
-                        <span style="background: rgba(16,185,129,0.3); padding: 2px 6px; border-radius: 8px; font-size: 11px;">DT: ${tongDT.toLocaleString('vi-VN')} đ</span>
-                        <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDon} đơn</span>
+        <!--BÁO CÁO-->
+        <div id="bao-cao" class="trang-content">
+            <div class="nut-treo-ngay-thang-nam">
+                <span id="hienNgayThang" class="dong-ngay-thang">7/7</span>
+                <span id="hienNam" class="dong-nam">2026</span>
+                <input type="date" id="ngayHienHanh" class="o-lich-an-giao-dien">
+            </div>
+            <div class="nut-treo-loc-nganh">
+                <select id="boLocNganh">
+                    <option value="All">All</option>
+                    <option value="TBVS">TBVS</option>
+                    <option value="Sơn">Sơn</option>
+                </select>
+            </div>
+            <div class="vung-bieu-do-doi-ngang">
+                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
+                    <h2 class="tieu-de-bieu-do" id="tieuDeBieuDoSanLuongGiaoHang">Sản lượng giao hàng năm</h2>
+                    <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu từ server...</div>
+                    <div class="vung-bieu-do">
+                        <canvas id="bieuDoSanLuongGiaoHang"></canvas>
                     </div>
                 </div>
-            `;
-
-            Object.values(danhSachNhom).forEach(nhom => {
-                const isXe = nhom.type === 'xe';
-                const mau = layMauGiaoDienXe(isXe ? nhom.name : "Xe máy");
-
-                if (isXe) {
-                    Object.keys(nhom.chuyen).sort((a, b) => a - b).forEach(soChuyen => {
-                        const donList = nhom.chuyen[soChuyen];
-                        const wrap = document.createElement('div');
-                        wrap.style.cssText = `background: ${mau.bgHeader}; border: 1px solid ${mau.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
-                        wrap.innerHTML = `<div style="background: ${mau.badgeBg}; color: ${mau.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between;"><span>🚛 Xe: <strong style="color: ${mau.tagColor};">${nhom.name}</strong> — Chuyến ${soChuyen}</span><span>${donList.length} đơn</span></div>`;
-                        donList.forEach(d => renderCard(d, wrap, false));
-                        dateWrapper.appendChild(wrap);
-                    });
-                } else {
-                    const wrap = document.createElement('div');
-                    wrap.style.cssText = `background: ${mau.bgHeader}; border: 1px solid ${mau.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
-                    wrap.innerHTML = `<div style="background: ${mau.badgeBg}; color: ${mau.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between;"><span>🏍️ Phương tiện: <strong style="color: ${mau.tagColor};">${nhom.name}</strong></span><span>${nhom.don.length} đơn</span></div>`;
-                    nhom.don.forEach(d => renderCard(d, wrap, true));
-                    dateWrapper.appendChild(wrap);
-                }
-            });
-            container.appendChild(dateWrapper);
-        });
-    } catch (e) {
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu!</div>';
-    }
-};
-
-function renderCard(data, parent, isXeMay) {
-    const nhanVien = isXeMay ? (data.giaoNhan || 'Chưa có tên') : (data.taiXe || 'Chưa có TX');
-    const label = isXeMay ? 'GN' : 'TX';
-    const tien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + ' đ' : '0 đ';
-    const tai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
-
-    const card = document.createElement('div');
-    card.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px;';
-    card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
-            <strong>${data.maPhieu || data.id}</strong> <span style="font-size: 10px; color: #64748b;">${data.khoXuat || ''}</span>
+                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
+                    <h2 class="tieu-de-bieu-do" id="tieuDeBieuDoDoanhThuGiaoHang">Doanh thu giao hàng năm</h2>
+                    <div class="vung-bieu-do">
+                        <canvas id="bieuDoDoanhThuGiaoHang"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="vung-bieu-do-doi-ngang">
+                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
+                    <h2 class="tieu-de-bieu-do" id="tieuDeNhiet">Sản lượng giao hàng theo vùng năm</h2>
+                    <div class="vung-bieu-do">
+                        <canvas id="bieuDoNhietVung"></canvas>
+                    </div>
+                </div>
+                <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
+                    <h2 class="tieu-de-bieu-do" id="tieuDeNhietDT">Doanh thu giao hàng theo vùng năm</h2>
+                    <div class="vung-bieu-do">
+                        <canvas id="bieuDoNhietVungDT"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div id="khuVucBieuDoKhachHang" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: flex-start; padding: 40px 20px;">
+                <div style="background: #fff; width: 90%; max-width: 2600px; max-height: 90vh; border-radius: 8px; padding: 25px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow-y: auto;">
+                    <button onclick="document.getElementById('khuVucBieuDoKhachHang').style.display = 'none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                    <h3 id="tieuDeBieuDoKhachHang" style="text-align: center; color: #1e293b; margin-bottom: 20px; font-weight: bold;">Chi tiết Sản lượng (kg) & Doanh thu (tr.đ) theo Khách hàng</h3>
+                    <div style="width: 100%; overflow-x: auto;">
+                        <canvas id="bieuDoNhietKhachHang" style="width: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div style="font-weight: 600; font-size: 12px; color: #1e293b; margin-bottom: 3px;">🏢 ${data.doiTuong || '---'}</div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
-            <span>${label}: <strong>${nhanVien}</strong></span><span>📍 ${data.vungTieuThu || data.thanhPho || ''}</span>
+
+        <!--THÊM MỚI-->
+        <div id="them-moi" class="trang-content">
+            <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
+            
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                    📝 NHẬP NGHIỆP VỤ PHÁT SINH KHO
+                </h3>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- 1. Ngày phát sinh -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày chứng từ / phát sinh:</label>
+                        <input type="date" id="nvNgay" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
+                    </div>
+
+                    <!-- 2. Hạng mục chi phí -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Hạng mục chi phí:</label>
+                        <select id="nvHangMuc" class="Dropdown" onchange="tuDongChonTyLeTheoHangMuc(this.value); tinhPhanBoNghiepVu('thay-doi-nguyen-tac')">
+                            <option value="">-- Chọn hạng mục --</option>
+                            
+                            <optgroup label="PHÍ KHO">
+                                <option value="Thuê mặt bằng">1. Thuê mặt bằng</option>
+                                <option value="Phân bổ phí sửa kho">2. Phân bổ phí sửa kho</option>
+                                <option value="Phân bổ phí PCCC">3. Phân bổ phí PCCC</option>
+                                <option value="Phân bổ phí PCCC (bảo trì)">4. Phân bổ phí PCCC (bảo trì)</option>
+                                <option value="Bảo hiểm cháy nổ">5. Bảo hiểm cháy nổ</option>
+                                <option value="Lương vị trí, phụ cấp QL, TK, BV">6. Lương vị trí, phụ cấp QL, TK, BV</option>
+                                <option value="Trích BH, CĐ: QL, TK, BV">7. Trích BH, CĐ: QL, TK, BV</option>
+                                <option value="Tiện ích kho">8. Tiện ích kho</option>
+                                <option value="Bảo trì kho">9. Bảo trì kho</option>
+                                <option value="Lương sản lượng thủ kho">10. Lương sản lượng thủ kho</option>
+                                <option value="Lương sản lượng bốc xếp">11. Lương sản lượng bốc xếp</option>
+                                <option value="Lương ngoài giờ">12. Lương ngoài giờ</option>
+                            </optgroup>
+                            
+                            <optgroup label="PHÍ LOGISTICS">
+                                <option value="Thuê xe">13. Thuê xe</option>
+                                <option value="Đăng kiểm">14. Đăng kiểm</option>
+                                <option value="Bảo hiểm xe">15. Bảo hiểm xe</option>
+                                <option value="Giám sát hành trình">16. Giám sát hành trình</option>
+                                <option value="Lương vị trí, phụ cấp TX, GN, BX">17. Lương vị trí, phụ cấp TX, GN, BX</option>
+                                <option value="Trích BH, CĐ: TX, GN, BX">18. Trích BH, CĐ: TX, GN, BX</option>
+                                <option value="Nhiên liệu">19. Nhiên liệu</option>
+                                <option value="BOT">20. BOT</option>
+                                <option value="Bảo trì, bảo dưỡng xe">21. Bảo trì, bảo dưỡng xe</option>
+                                <option value="Chi phí giao hàng">22. Chi phí giao hàng</option>
+                                <option value="Lương km tài xế">23. Lương km tài xế</option>
+                                <option value="Lương sản lượng Tài xế">24. Lương sản lượng Tài xế</option>
+                                <option value="Lương sản lượng giao nhận">25. Lương sản lượng giao nhận</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- 3. Số tiền gốc & Phương tiện giao nhận -->
+                    <div style="display: flex; gap: 12px; width: 100%;">
+                        <!-- Ô nhập tiền gốc (Tự động co giãn) -->
+                        <div id="vungTongTien" style="flex: 6; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Tổng số tiền thực tế (VNĐ):</label>
+                            <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right; width: 100%; box-sizing: border-box;">
+                        </div>
+
+                        <!-- Ô chọn Phương tiện (Mặc định ẩn, tự động hiện bên phải ô Số tiền) -->
+                        <div id="vungPhuongTien" style="display: none; flex: 4; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
+                            <select id="nvPhuongTien" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box; height: 41px;">
+                                <option value="">-- Chọn xe --</option>
+                                <option value="65C-06126">65C-06126</option>
+                                <option value="65H-02591">65H-02591</option>
+                                <option value="65C-12290">65C-12290</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 4. Nguyên tắc phân bổ -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Nguyên tắc phân bổ:</label>
+                        <select id="nvKieuPhanBo" onchange="tinhPhanBoNghiepVu('thay-doi-nguyen-tac')" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #0082C8;">
+                            <option value="Sơn: 50 - TBVS: 50">Kho 50% / 50%</option>
+                            <option value="Sơn: 67 - TBVS: 33">Vận tải 67% / 33%</option>
+                            <option value="Sơn: 35 - TBVS: 65">Thuê kho 35% / 65%</option>
+                            <option value="tbvs-truoc">Phân bổ TBVS trước</option>
+                        </select>
+                    </div>
+
+                    <!-- 4.5 Ô nhập số tiền TBVS (Mặc định ẩn, chỉ hiện khi chọn 'tbvs-truoc') -->
+                    <div id="vungNhapTBVS" style="display: none; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #1e293b;">Số tiền TBVS tự phân bổ (VNĐ):</label>
+                        <input type="number" id="tienTBVSInput" oninput="tinhPhanBoNghiepVu('nhap-tay')" placeholder="Nhập số tiền cho TBVS..." style="padding: 10px; border: 1px solid #22c55e; border-radius: 8px; font-size: 14px; font-weight: 700; color: #22c55e; text-align: right; background: #f0fdf4;">
+                    </div>
+
+                    <!-- Xem trước kết quả phân bổ -->
+                    <div style="display: flex; gap: 10px; margin-top: 5px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">Sơn phân bổ:<br><strong id="previewSon" style="color:#ef4444; font-size: 14px;">0 đ</strong></div>
+                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">TBVS phân bổ:<br><strong id="previewTBVS" style="color:#22c55e; font-size: 14px;">0 đ</strong></div>
+                    </div>
+
+                    <!-- 5. Ghi chú thêm -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ghi chú nội dung nghiệp vụ:</label>
+                        <input type="text" id="nvGhiChu" placeholder="Ví dụ: Thanh toán tiền điện kho tháng 07..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
+                    </div>
+
+                    <button id="btnLuuNghiepVu" class="nut-gui-xac-nhan" onclick="luuNghiepVuVaoFirebase()" style="width: 100%; background: #0082C8; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 130, 200, 0.25);">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ
+                    </button>
+                </div>
+            </div>
         </div>
-        <div style="font-size: 11px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; display: flex; justify-content: space-between;">
-            <span>Tải: <strong style="color: #0284c7;">${tai}</strong> | Tiền: <strong style="color: #16a34a;">${tien}</strong></span>
-            <span style="color: ${data.duyet === 'Đã giao hàng' ? '#16a34a' : '#64748b'};">${data.duyet || ''}</span>
+
+        <!--KHO-->
+        <div id="van-chuyen" class="trang-content">
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                    🚚 LỊCH SỬ VẬN CHUYỂN
+                </h3>
+
+                <!-- Bộ lọc Tháng và Phương tiện -->
+                <div style="display: flex; align-items: center; gap: 6px; width: 100%; margin-bottom: 15px;">
+                    <!-- Ô chọn tháng chuẩn gốc hệ thống -->
+                    <input type="month" id="thangVanChuyen" style="width: 130px; flex-shrink: 0; height: 31px; padding: 0 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; outline: none; background: #fff;" />
+
+                    <!-- Dropdown lọc phương tiện -->
+                    <select id="filterPhuongTien" style="flex: 1; min-width: 0; height: 31px; padding: 0 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; background: #fff; outline: none; cursor: pointer;">
+                        <option value="">-- Tất cả phương tiện --</option>
+                        <option value="65C-06126">65C-06126</option>
+                        <option value="65C-12290">65C-12290</option>
+                        <option value="65C-02591">65C-02591</option>
+                        <option value="Xe máy">Xe máy</option>
+                    </select>
+
+                    <!-- Nút Tải dữ liệu -->
+                    <button id="btnTaiLichSuVC" style="background: #0284c7; color: white; border: none; height: 31px; padding: 0 10px; border-radius: 6px; font-weight: 600; font-size: 11px; cursor: pointer; flex-shrink: 0; white-space: nowrap;">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Tải dữ liệu
+                    </button>
+                </div>
+
+                <!-- Nơi chứa danh sách Card Lịch sử vận chuyển -->
+                <div id="danhSachLichSuVanChuyen">
+                    <!-- Dữ liệu sẽ tự động render vào đây -->
+                </div>
+            </div>
         </div>
-    `;
-    parent.appendChild(card);
-}
+
+    </div>
+
+    <nav class="MENU-DUOI">
+        <div class="MENU-item active" data-tab="home"> <i class="fa-solid fa-house"></i> <span>HOME</span> </div>
+        <div class="MENU-item" data-tab="bao-cao"> <i class="fa-solid fa-chart-pie"></i> <span>Báo cáo</span> </div>
+        <div class="MENU-item add-btn" data-tab="them-moi"> <i class="fa-solid fa-plus"></i> </div>
+        <div class="MENU-item" data-tab="kho"> <i class="fa-solid fa-boxes-stacked"></i> <span>Kho</span> </div>
+        <div class="MENU-item" data-tab="van-chuyen"> <i class="fa-solid fa-car-side"></i> <span>Vận chuyển</span> </div>
+    </nav>
+
+<!-- Liên kết file JavaScript tách rời -->
+    <!-- Khởi tạo Firebase ở file HTML luôn -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, getAggregateFromServer, sum, addDoc, runTransaction, doc, deleteDoc, updateDoc, setDoc, orderBy, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+            
+        const firebaseConfig = { 
+            apiKey: "AIzaSyA4N3-5OhkDXZV8Yw-TEymODHuv_-QwPGU",
+            authDomain: "hamaco-tms-ac51b.firebaseapp.com",
+            projectId: "hamaco-tms-ac51b",
+            storageBucket: "hamaco-tms-ac51b.firebasestorage.app",
+            messagingSenderId: "593078964705",
+            appId: "1:593078964705:web:44302d0eb998c2c27542a0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.db = getFirestore(app); // Gán db ra window để các file khác gọi chung được
+    </script>
+
+    <!-- Nhúng 2 file module bạn vừa tách -->
+    <script type="module" src="BAOCAO-SLDT.JS"></script>
+    <script type="module" src="HOACHTOAN-CHIPHI.JS"></script>
+    <script type="module" src="LICHSU-VANCHUYEN.JS"></script>
+</body>
+</html>
