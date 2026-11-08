@@ -325,7 +325,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // Kiểm tra khoảng cách: < 0.2km -> tích (✓) xanh, >= 0.2km -> chéo (✗) đỏ kèm số km
+    // Xử lý khoảng cách: < 0.2km -> dấu tick (✓), >= 0.2km -> dấu x (✗) kèm số km
     const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
     let htmlKhoangCach = '';
     if (khoangCachKm !== null) {
@@ -333,7 +333,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
         const iconCheck = kcNum < 0.2 
             ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' 
             : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
-        htmlKhoangCach = `<span style="font-weight: 500; margin-left: 6px;">(${iconCheck} ${khoangCachKm} km)</span>`;
+        htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm} km`;
     }
 
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
@@ -367,12 +367,12 @@ function renderCardDon(data, parentElement, isXeMay = false) {
 
         <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
             <span>${nhanVienLabel}: <strong>${nhanVienPhuTrach}</strong></span>
-            <span>📍 ${vungTieuThu} ${htmlKhoangCach}</span>
+            <span>📍 ${vungTieuThu}</span>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
             <span>Tải: <strong style="color: #0284c7;">${tTai}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTien}</strong></span>
-            <div>${badgeDuyet}</div>
+            <div>${badgeDuyet}${htmlKhoangCach}</div>
         </div>
         
         <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
