@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Chỉ tải dữ liệu khi người dùng bấm nút tải theo Tháng/Năm đã chọn
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm Ngày -> Xe -> Chuyến, Hiển thị tổng tải theo ngày
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -109,15 +109,30 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             dateWrapper.style.cssText = 'margin-bottom: 20px;';
 
             let tongDonTrongNgay = 0;
+            let tongTaiTrongNgay = 0;
+
+            // Tính tổng số đơn và tổng tải trong ngày
             Object.values(danhSachXe).forEach(danhSachChuyenCuaXe => {
                 Object.values(danhSachChuyenCuaXe).forEach(danhSachDon => {
                     tongDonTrongNgay += danhSachDon.length;
+                    danhSachDon.forEach(don => {
+                        if (don.tTai) {
+                            tongTaiTrongNgay += Number(don.tTai) || 0;
+                        }
+                    });
                 });
             });
 
+            // Tiêu đề Ngày (Bổ sung hiển thị Tổng tải)
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;';
-            dateHeader.innerHTML = `<span>📅 Ngày: ${ngay}</span> <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px;">Tổng: ${tongDonTrongNgay} đơn</span>`;
+            dateHeader.innerHTML = `
+                <span>📅 Ngày: ${ngay}</span> 
+                <div>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 6px;">Tải: ${tongTaiTrongNgay.toLocaleString('vi-VN')} kg</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px;">${tongDonTrongNgay} đơn</span>
+                </div>
+            `;
             dateWrapper.appendChild(dateHeader);
 
             Object.keys(danhSachXe).forEach((phuongTien) => {
@@ -216,7 +231,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
     const inputPhuongTien = document.getElementById('filterPhuongTien');
     
-    // Tìm hoặc tự động tạo nút "Tải dữ liệu" ngay cạnh ô chọn tháng nếu chưa có trên HTML
     let btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     if (!btnTaiDuLieu && inputThangVC) {
         btnTaiDuLieu = document.createElement('button');
@@ -227,7 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (inputThangVC) {
-        // Gán tháng hiện tại làm mặc định trên ô input (nhưng không gọi hàm tải tự động)
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -235,13 +248,11 @@ document.addEventListener('DOMContentLoaded', function() {
             inputThangVC.value = `${year}-${month}`;
         }
 
-        // Đặt trạng thái ban đầu cho khung danh sách
         const container = document.getElementById('danhSachLichSuVanChuyen');
         if (container && container.innerHTML.trim() === "") {
             container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
         }
 
-        // Khi bấm nút "Tải dữ liệu" mới thực hiện gọi lên Firebase
         if (btnTaiDuLieu) {
             btnTaiDuLieu.onclick = function() {
                 if (inputThangVC.value) {
@@ -252,7 +263,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Sự kiện gõ tìm kiếm theo biển số xe (chỉ lọc trên dữ liệu đang hiển thị hoặc tự load nếu đã tải)
     let timeoutId;
     if (inputPhuongTien) {
         inputPhuongTien.addEventListener('input', function() {
