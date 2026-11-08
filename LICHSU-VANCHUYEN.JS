@@ -203,6 +203,13 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     cacChuyenDaSapXep.forEach((soChuyen) => {
                         const danhSachDonTrongChuyen = nhom.chuyen[soChuyen];
 
+                        // Sắp xếp các đơn trong chuyến theo thời gian kết thúc giao hàng từ nhỏ đến lớn (tăng dần)
+                        danhSachDonTrongChuyen.sort((a, b) => {
+                            let timeA = a.ketThucGiaoHang || "";
+                            let timeB = b.ketThucGiaoHang || "";
+                            return timeA.localeCompare(timeB);
+                        });
+
                         let taiChuyen = 0;
                         let dtChuyen = 0;
                         danhSachDonTrongChuyen.forEach(don => {
@@ -231,6 +238,13 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
 
                 } else {
                     const mauXeMay = layMauGiaoDienXe("Xe máy"); 
+
+                    // Sắp xếp các đơn xe máy theo thời gian kết thúc giao hàng từ nhỏ đến lớn (tăng dần)
+                    nhom.don.sort((a, b) => {
+                        let timeA = a.ketThucGiaoHang || "";
+                        let timeB = b.ketThucGiaoHang || "";
+                        return timeA.localeCompare(timeB);
+                    });
 
                     let taiXeMay = 0;
                     let dtXeMay = 0;
