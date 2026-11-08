@@ -179,17 +179,16 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
             });
 
-            // Quy đổi Doanh thu ra triệu đồng và làm tròn số nguyên (Math.round)
+            // Quy đổi Doanh thu ra triệu đồng (làm tròn số nguyên)
             const tongDTTr = Math.round(tongDoanhThuTrongNgay / 1000000).toLocaleString('vi-VN');
 
-            // Tiêu đề Ngày hiển thị DT theo tr.đ (tròn số)
+            // Tiêu đề Ngày hiển thị dạng: 5.298 kg / 136 tr.đ
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
                 <span>📅 ${ngay}</span> 
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">Tải: ${tongTaiTrongNgay.toLocaleString('vi-VN')} kg</span>
-                    <span style="background: rgba(16,185,129,0.3); padding: 2px 6px; border-radius: 8px; font-size: 11px;">DT: ${tongDTTr} tr.đ</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiTrongNgay.toLocaleString('vi-VN')} kg / ${tongDTTr} tr.đ</span>
                     <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonTrongNgay} đơn</span>
                 </div>
             `;
@@ -220,8 +219,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         vehicleHeader.innerHTML = `
                             <span>🚛 Xe: <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> 
                             <div style="display: flex; gap: 6px; align-items: center;">
-                                <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">Tải: ${taiChuyen.toLocaleString('vi-VN')} kg</span>
-                                <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">DT: ${dtChuyenTr} tr.đ</span>
+                                <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')} kg / ${dtChuyenTr} tr.đ</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>
                             </div>
                         `;
@@ -250,8 +248,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     vehicleHeader.innerHTML = `
                         <span>🏍️ Phương tiện: <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> 
                         <div style="display: flex; gap: 6px; align-items: center;">
-                            <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">Tải: ${taiXeMay.toLocaleString('vi-VN')} kg</span>
-                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">DT: ${dtXeMayTr} tr.đ</span>
+                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${taiXeMay.toLocaleString('vi-VN')} kg / ${dtXeMayTr} tr.đ</span>
                             <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>
                         </div>
                     `;
