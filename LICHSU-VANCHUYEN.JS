@@ -327,9 +327,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
 
     // Tính khoảng cách từ dinhVi đến checkIn
     const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
-    const htmlDiaDiem = khoangCachKm 
-        ? `<span style="color: #0284c7; font-weight: 500;">📍 Cách khách: ${khoangCachKm} km</span>` 
-        : `<span>📍 ${vungTieuThu}</span>`;
+    const htmlKhoangCach = khoangCachKm ? `<span style="color: #0284c7; font-weight: 500; margin-left: 6px;">(Cách khách: ${khoangCachKm} km)</span>` : '';
 
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
     const badgeHT = isChanh 
@@ -362,7 +360,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
 
         <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
             <span>${nhanVienLabel}: <strong>${nhanVienPhuTrach}</strong></span>
-            ${htmlDiaDiem}
+            <span>📍 ${vungTieuThu} ${htmlKhoangCach}</span>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
