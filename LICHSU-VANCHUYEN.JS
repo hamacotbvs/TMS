@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Gom nhóm Ngày -> Phương Tiện (hoặc Giao Nhận nếu chưa phân xe)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Phân màu riêng biệt cho từng xe
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -21,6 +21,43 @@ function layNgayGomNhom(data) {
         rawDate = data.ngayxuatKho || "";
     }
     return chuanHoaNgay(rawDate);
+}
+
+// Hàm gán màu riêng cho từng xe và nhóm chưa phân xe
+function layMauGiaoDienXe(phuongTien) {
+    const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
+    
+    if (xe.includes("06126")) {
+        // Tông Xanh Dương (Blue)
+        return {
+            bgHeader: '#eff6ff', border: '#bfdbfe', textHeader: '#1e40af', 
+            badgeBg: '#dbeafe', badgeText: '#1d4ed8', tagColor: '#2563eb'
+        };
+    } else if (xe.includes("12290")) {
+        // Tông Xanh Lá / Xanh Ngọc (Green)
+        return {
+            bgHeader: '#f0fdf4', border: '#bbf7d0', textHeader: '#166534', 
+            badgeBg: '#dcfce7', badgeText: '#15803d', tagColor: '#16a34a'
+        };
+    } else if (xe.includes("02591")) {
+        // Tông Tím / Hồng (Purple)
+        return {
+            bgHeader: '#faf5ff', border: '#e9d5ff', textHeader: '#6b21a8', 
+            badgeBg: '#f3e8ff', badgeText: '#7e22ce', tagColor: '#9333ea'
+        };
+    } else if (!phuongTien || phuongTien.trim() === "" || phuongTien.trim() === "Chưa phân xe") {
+        // Tông Vàng (Giống nhóm Giao nhận chưa phân xe)
+        return {
+            bgHeader: '#fffbeb', border: '#fde68a', textHeader: '#92400e', 
+            badgeBg: '#fef3c7', badgeText: '#b45309', tagColor: '#d97706'
+        };
+    } else {
+        // Tông mặc định cho các xe khác (Xám / Slate)
+        return {
+            bgHeader: '#f8fafc', border: '#e2e8f0', textHeader: '#1e293b', 
+            badgeBg: '#e2e8f0', badgeText: '#334155', tagColor: '#0284c7'
+        };
+    }
 }
 
 window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "") {
@@ -64,7 +101,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         // Sắp xếp danh sách theo ngày gom nhóm giảm dần (mới nhất lên đầu)
         listData.sort((a, b) => b._ngayGom.localeCompare(a._ngayGom));
 
-        // --- GOM NHÓM THEO CẤU TRÚC: NGÀY -> [XE HOẶC GIAO NHẬN] -> [CHUYẾN HOẶC---] ---
+        // --- GOM NHÓM THEO CẤU TRÚC: NGÀY -> [XE HOẶC GIAO NHẬN] -> [CHUYẾN HOẶC ---] ---
         let groupedData = {};
         let countHienThi = 0;
 
@@ -88,7 +125,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             }
 
             if (coXe) {
-                // Nếu có xe: Gom theo Xe -> Chuyến
                 const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
                 const phuongTienKey = `XE_${nhomKey}`;
                 
@@ -100,7 +136,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
                 groupedData[ngayKey][phuongTienKey].chuyen[soChuyen].push(data);
             } else {
-                // Nếu không có xe (Chưa phân xe): Gom trực tiếp theo giaoNhan, bỏ chuyến
                 const giaoNhanKey = `GN_${nhomKey}`;
 
                 if (!groupedData[ngayKey][giaoNhanKey]) {
@@ -126,7 +161,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             let tongTaiTrongNgay = 0;
             let tongDoanhThuTrongNgay = 0;
 
-            // Tính tổng số đơn, tổng tải và tổng doanh thu trong ngày
             Object.values(danhSachNhom).forEach(nhom => {
                 if (nhom.type === 'xe') {
                     Object.values(nhom.chuyen).forEach(danhSachDon => {
@@ -161,18 +195,18 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             // Duyệt qua từng nhóm (Xe hoặc Giao nhận)
             Object.values(danhSachNhom).forEach((nhom) => {
                 if (nhom.type === 'xe') {
-                    // --- TRƯỜNG HỢP CÓ XE: GOM THEO CHUYẾN ---
+                    const mauXe = layMauGiaoDienXe(nhom.name);
                     const cacChuyenDaSapXep = Object.keys(nhom.chuyen).sort((a, b) => Number(a) - Number(b));
 
                     cacChuyenDaSapXep.forEach((soChuyen) => {
                         const danhSachDonTrongChuyen = nhom.chuyen[soChuyen];
 
                         const vehicleWrapper = document.createElement('div');
-                        vehicleWrapper.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;';
+                        vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
                         const vehicleHeader = document.createElement('div');
-                        vehicleHeader.style.cssText = 'background: #e2e8f0; color: #1e293b; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
-                        vehicleHeader.innerHTML = `<span>🚛 Xe: <strong style="color: #0284c7;">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> <span style="background: #cbd5e1; padding: 1px 6px; border-radius: 8px; font-size: 10px; color: #334155;">${danhSachDonTrongChuyen.length} đơn</span>`;
+                        vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;`;
+                        vehicleHeader.innerHTML = `<span>🚛 Xe: <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>`;
                         vehicleWrapper.appendChild(vehicleHeader);
 
                         danhSachDonTrongChuyen.forEach(data => renderCardDon(data, vehicleWrapper));
@@ -180,13 +214,14 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     });
 
                 } else {
-                    // --- TRƯỜNG HỢP KHÔNG CÓ XE: GOM THEO GIAO NHẬN (BỎ CHUYẾN) ---
+                    const mauGiaoNhan = layMauGiaoDienXe(""); // Lấy tông màu vàng cho chưa phân xe / giao nhận
+
                     const vehicleWrapper = document.createElement('div');
-                    vehicleWrapper.style.cssText = 'background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;';
+                    vehicleWrapper.style.cssText = `background: ${mauGiaoNhan.bgHeader}; border: 1px solid ${mauGiaoNhan.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
                     const vehicleHeader = document.createElement('div');
-                    vehicleHeader.style.cssText = 'background: #fef3c7; color: #92400e; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
-                    vehicleHeader.innerHTML = `<span>📦 Giao nhận: <strong style="color: #b45309;">${nhom.name}</strong></span> <span style="background: #fde68a; padding: 1px 6px; border-radius: 8px; font-size: 10px; color: #78350f;">${nhom.don.length} đơn</span>`;
+                    vehicleHeader.style.cssText = `background: ${mauGiaoNhan.badgeBg}; color: ${mauGiaoNhan.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;`;
+                    vehicleHeader.innerHTML = `<span>📦 Giao nhận: <strong style="color: ${mauGiaoNhan.tagColor};">${nhom.name}</strong></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>`;
                     vehicleWrapper.appendChild(vehicleHeader);
 
                     nhom.don.forEach(data => renderCardDon(data, vehicleWrapper));
