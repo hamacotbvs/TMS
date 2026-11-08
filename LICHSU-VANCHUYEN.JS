@@ -25,12 +25,12 @@ function layNgayGomNhom(data) {
 
 // Hàm tính khoảng cách (km) từ tọa độ dinhVi đến checkIn bằng công thức Haversine
 function tinhKhoangCach(toaDo1, toaDo2) {
-    if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
+    if (!toaDo1 || !toaDo2) return null;
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
 
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) return null;
 
         const R = 6371; // Bán kính trái đất tính bằng km
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -318,3 +318,128 @@ function renderCardDon(data, parentElement, isXeMay = false) {
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
     const tTai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
+    const thanhTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + ' đ' : '0 đ';
+    const ngayxuatKho = data.ngayxuatKho || '';
+    const batDauGiaoHang = data.batDauGiaoHang || '';
+    const ketThucGiaoHang = data.ketThucGiaoHang || '';
+    const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
+    const khoXuat = data.khoXuat || '';
+
+    // Xử lý khoảng cách: < 0.2km -> dấu tick (✓), >= 0.2km -> dấu x (✗) kèm số km
+    const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
+    let htmlKhoangCach = '';
+    if (khoangCachKm !== null) {
+        const kcNum = parseFloat(khoangCachKm);
+        const iconCheck = kcNum < 0.2 
+            ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' 
+            : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
+        htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm} km`;
+    }
+
+    const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
+    const badgeHT = isChanh 
+        ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚚 Chành</span>'
+        : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚛 Giao</span>';
+
+    let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
+    if (duyet === "Đã giao hàng") {
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao</span>`;
+    } else if (duyet === "Đã xuất kho") {
+        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất</span>`;
+    }
+
+    const cardItem = document.createElement('div');
+    cardItem.className = 'card-lich-su-item';
+    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);';
+
+    cardItem.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
+            <div>
+                <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong>
+                <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(Kho ${khoXuat})</span>
+            </div>
+            <div>${badgeHT}</div>
+        </div>
+
+        <div style="font-weight: 600; color: #1e293b; font-size: 12px; margin-bottom: 3px;">
+            🏢 ${doiTuong}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
+            <span>${nhanVienLabel}: <strong>${nhanVienPhuTrach}</strong></span>
+            <span>📍 ${vungTieuThu}</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
+            <span>Tải: <strong style="color: #0284c7;">${tTai}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTien}</strong></span>
+            <div>${badgeDuyet}${htmlKhoangCach}</div>
+        </div>
+        
+        <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
+            <span>🚀 BĐ: <strong>${batDauGiaoHang ? batDauGiaoHang.split(" ")[1] || batDauGiaoHang : '---'}</strong></span>
+            <span>🏁 KT: <strong>${ketThucGiaoHang ? ketThucGiaoHang.split(" ")[1] || ketThucGiaoHang : '---'}</strong></span>
+            <span>📅 XK: <strong>${ngayxuatKho || '---'}</strong></span>
+        </div>
+    `;
+
+    parentElement.appendChild(cardItem);
+}
+
+// Khởi tạo sự kiện giao diện và tương tác DOM hoàn chỉnh
+document.addEventListener('DOMContentLoaded', function() {
+    const inputThangVC = document.getElementById('thangVanChuyen');
+    const labelThangVC = document.getElementById('labelThangNamVC');
+    const selectPhuongTien = document.getElementById('filterPhuongTien');
+    const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
+    const container = document.getElementById('danhSachLichSuVanChuyen');
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+
+    if (inputThangVC) {
+        if (!inputThangVC.value) {
+            inputThangVC.value = `${year}-${month}`;
+        }
+        
+        const [currY, currM] = inputThangVC.value.split('-');
+        if (labelThangVC) labelThangVC.innerText = `${currM}/${currY}`;
+
+        if (container && container.innerHTML.trim() === "") {
+            container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
+        }
+
+        inputThangVC.addEventListener('change', function() {
+            if (this.value) {
+                const [y, m] = this.value.split('-');
+                if (labelThangVC) labelThangVC.innerText = `${m}/${y}`;
+            }
+        });
+    }
+
+    if (btnTaiDuLieu) {
+        btnTaiDuLieu.onclick = function() {
+            if (inputThangVC && inputThangVC.value) {
+                const [y, m] = inputThangVC.value.split('-');
+                const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
+                
+                if (typeof window.taiLichSuVanChuyen === 'function') {
+                    window.taiLichSuVanChuyen(m, y, bienSo);
+                }
+            } else {
+                alert("Vui lòng chọn tháng năm trước khi tải!");
+            }
+        };
+    }
+
+    if (selectPhuongTien) {
+        selectPhuongTien.addEventListener('change', function() {
+            if (inputThangVC && inputThangVC.value) {
+                const [y, m] = inputThangVC.value.split('-');
+                if (typeof window.taiLichSuVanChuyen === 'function') {
+                    window.taiLichSuVanChuyen(m, y, this.value);
+                }
+            }
+        });
+    }
+});
