@@ -195,7 +195,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             `;
             dateWrapper.appendChild(dateHeader);
 
-            // Duyệt qua từng nhóm
+            // Duyệt qua từng nhóm xe / xe máy
             Object.values(danhSachNhom).forEach((nhom) => {
                 if (nhom.type === 'xe') {
                     const mauXe = layMauGiaoDienXe(nhom.name);
@@ -204,12 +204,27 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     cacChuyenDaSapXep.forEach((soChuyen) => {
                         const danhSachDonTrongChuyen = nhom.chuyen[soChuyen];
 
+                        let taiChuyen = 0;
+                        let dtChuyen = 0;
+                        danhSachDonTrongChuyen.forEach(don => {
+                            if (don.tTai) taiChuyen += Number(don.tTai) || 0;
+                            if (don.thanhTien) dtChuyen += Number(don.thanhTien) || 0;
+                        });
+                        const dtChuyenTr = (dtChuyen / 1000000).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
                         const vehicleWrapper = document.createElement('div');
                         vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
                         const vehicleHeader = document.createElement('div');
-                        vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;`;
-                        vehicleHeader.innerHTML = `<span>🚛 Xe: <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>`;
+                        vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;`;
+                        vehicleHeader.innerHTML = `
+                            <span>🚛 Xe: <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> 
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">Tải: ${taiChuyen.toLocaleString('vi-VN')} kg</span>
+                                <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">DT: ${dtChuyenTr} tr.đ</span>
+                                <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>
+                            </div>
+                        `;
                         vehicleWrapper.appendChild(vehicleHeader);
 
                         danhSachDonTrongChuyen.forEach(data => renderCardDon(data, vehicleWrapper, false));
@@ -219,12 +234,27 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 } else {
                     const mauXeMay = layMauGiaoDienXe("Xe máy"); 
 
+                    let taiXeMay = 0;
+                    let dtXeMay = 0;
+                    nhom.don.forEach(don => {
+                        if (don.tTai) taiXeMay += Number(don.tTai) || 0;
+                        if (don.thanhTien) dtXeMay += Number(don.thanhTien) || 0;
+                    });
+                    const dtXeMayTr = (dtXeMay / 1000000).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
                     const vehicleWrapper = document.createElement('div');
                     vehicleWrapper.style.cssText = `background: ${mauXeMay.bgHeader}; border: 1px solid ${mauXeMay.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
                     const vehicleHeader = document.createElement('div');
-                    vehicleHeader.style.cssText = `background: ${mauXeMay.badgeBg}; color: ${mauXeMay.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;`;
-                    vehicleHeader.innerHTML = `<span>🏍️ Phương tiện: <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>`;
+                    vehicleHeader.style.cssText = `background: ${mauXeMay.badgeBg}; color: ${mauXeMay.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;`;
+                    vehicleHeader.innerHTML = `
+                        <span>🏍️ Phương tiện: <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> 
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">Tải: ${taiXeMay.toLocaleString('vi-VN')} kg</span>
+                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">DT: ${dtXeMayTr} tr.đ</span>
+                            <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>
+                        </div>
+                    `;
                     vehicleWrapper.appendChild(vehicleHeader);
 
                     nhom.don.forEach(data => renderCardDon(data, vehicleWrapper, true)); 
