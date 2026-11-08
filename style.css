@@ -162,45 +162,19 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             border-color: #cbd5e1;
         }
-        /* --- 1. CẤU HÌNH CHUNG CHO TOÀN TRANG --- */
-        * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;}
-
-        body {
-            background-color: #f5f6f8; 
-            color: #333; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; /* Căn giữa khung app trên máy tính */
-            justify-content: center;
-            min-height: 100vh;
-            min-height: 100dvh;
-            margin: 0; 
-            padding: 0;
-            overflow: hidden;
-            -webkit-text-size-adjust: 100%;
+        /* --- CHỈ ÁP DỤNG RIÊNG CHO KHUNG VẬN CHUYỂN TRÊN MÁY TÍNH --- */
+        @media (min-width: 768px) {
+            /* Ép khung chứa của tab vận chuyển co lại, nằm giữa màn hình và có độ rộng vừa phải */
+            #van-chuyen .KHUNG-CON-TRONG-TAB {
+                width: 60vw;             /* Chiếm 60% chiều ngang màn hình máy tính */
+                max-width: 900px;        /* Không bị quá bè rộng */
+                margin: 20px auto;       /* Căn giữa màn hình và tạo khoảng cách phía trên */
+                border-radius: 16px;     /* Bo góc mềm mại */
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); /* Đổ bóng nổi bật */
+            }
         }
 
-        /* --- 2. KHUNG CHÍNH CHO PHẦN VANCHUYEN (Tự động thích ứng màn hình) --- */
-        .vanchuyen-container {
-            width: 60vw;             /* Máy tính: Chiếm khoảng 60% chiều ngang màn hình */
-            max-width: 1000px;       /* Giới hạn độ rộng tối đa */
-            height: 90vh;            /* Chiều cao khung app */
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;        /* Cho phép cuộn nội dung bên trong nếu dài */
-        }
-
-        /* --- 3. THANH TRƯỢT MỊN MÀNG --- */
-        ::-webkit-scrollbar {width: 4px; height: 4px;}
-        ::-webkit-scrollbar-track {background: transparent;}
-        ::-webkit-scrollbar-thumb {background: #cbd5e1; border-radius: 2px;}
-        ::-webkit-scrollbar-thumb:hover {background: #94a3b8;}
-
-        /* --- 4. CSS RIÊNG CHO CARD LỊCH SỬ VẬN CHUYỂN --- */
+        /* --- CARD LỊCH SỬ VẬN CHUYỂN (Giữ nguyên định dạng đẹp mắt của bạn) --- */
         #danhSachLichSuVanChuyen {
             display: flex;
             flex-direction: column;
@@ -220,28 +194,4 @@
         .card-lich-su-item:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             border-color: #cbd5e1;
-        }
-
-        /* --- 5. GIAO DIỆN TRÊN ĐIỆN THOẠI (Dưới 768px) --- */
-        @media (max-width: 768px) {
-            body {
-                align-items: flex-start;
-                justify-content: flex-start;
-            }
-            
-            .vanchuyen-container {
-                width: 100vw;         /* Điện thoại: Tràn viền 100% chiều ngang */
-                height: 100vh;
-                min-height: 100dvh;
-                border-radius: 0;
-                padding: 15px;
-                box-shadow: none;
-            }
-        }
-        /* Đảm bảo khi xem trên máy tính, tab vận chuyển có độ rộng đẹp mắt và cân đối */
-        @media (min-width: 769px) {
-            #van-chuyen .KHUNG-CON-TRONG-TAB {
-                max-width: 1000px;
-                margin: 0 auto;
-            }
         }
