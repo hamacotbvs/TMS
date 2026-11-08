@@ -179,10 +179,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
             });
 
-            // Quy đổi Doanh thu ra triệu đồng (làm tròn 1 hoặc 2 chữ số thập phân cho gọn)
-            const tongDTTr = (tongDoanhThuTrongNgay / 1000000).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+            // Quy đổi Doanh thu ra triệu đồng và làm tròn số nguyên (Math.round)
+            const tongDTTr = Math.round(tongDoanhThuTrongNgay / 1000000).toLocaleString('vi-VN');
 
-            // Tiêu đề Ngày hiển thị DT theo tr.đ
+            // Tiêu đề Ngày hiển thị DT theo tr.đ (tròn số)
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
@@ -210,7 +210,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                             if (don.tTai) taiChuyen += Number(don.tTai) || 0;
                             if (don.thanhTien) dtChuyen += Number(don.thanhTien) || 0;
                         });
-                        const dtChuyenTr = (dtChuyen / 1000000).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                        const dtChuyenTr = Math.round(dtChuyen / 1000000).toLocaleString('vi-VN');
 
                         const vehicleWrapper = document.createElement('div');
                         vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
@@ -240,7 +240,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         if (don.tTai) taiXeMay += Number(don.tTai) || 0;
                         if (don.thanhTien) dtXeMay += Number(don.thanhTien) || 0;
                     });
-                    const dtXeMayTr = (dtXeMay / 1000000).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                    const dtXeMayTr = Math.round(dtXeMay / 1000000).toLocaleString('vi-VN');
 
                     const vehicleWrapper = document.createElement('div');
                     vehicleWrapper.style.cssText = `background: ${mauXeMay.bgHeader}; border: 1px solid ${mauXeMay.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
