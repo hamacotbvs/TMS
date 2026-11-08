@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Phân màu riêng biệt cho từng xe
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm tối ưu, Phân màu riêng biệt cho từng xe
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -23,7 +23,7 @@ function layNgayGomNhom(data) {
     return chuanHoaNgay(rawDate);
 }
 
-// Hàm gán màu riêng cho từng xe và nhóm chưa phân xe
+// Hàm gán màu riêng biệt cho từng xe và nhóm giao nhận
 function layMauGiaoDienXe(phuongTien) {
     const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
     
@@ -40,13 +40,13 @@ function layMauGiaoDienXe(phuongTien) {
             badgeBg: '#dcfce7', badgeText: '#15803d', tagColor: '#16a34a'
         };
     } else if (xe.includes("02591")) {
-        // Tông Tím / Hồng (Purple)
+        // Tông Đỏ / Cam mạnh mẽ (Red/Orange)
         return {
-            bgHeader: '#faf5ff', border: '#e9d5ff', textHeader: '#6b21a8', 
-            badgeBg: '#f3e8ff', badgeText: '#7e22ce', tagColor: '#9333ea'
+            bgHeader: '#fef2f2', border: '#fecaca', textHeader: '#991b1b', 
+            badgeBg: '#fee2e2', badgeText: '#dc2626', tagColor: '#ef4444'
         };
     } else if (!phuongTien || phuongTien.trim() === "" || phuongTien.trim() === "Chưa phân xe") {
-        // Tông Vàng (Giống nhóm Giao nhận chưa phân xe)
+        // Tông Vàng (Giao nhận chưa phân xe)
         return {
             bgHeader: '#fffbeb', border: '#fde68a', textHeader: '#92400e', 
             badgeBg: '#fef3c7', badgeText: '#b45309', tagColor: '#d97706'
@@ -179,7 +179,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
             });
 
-            // Tiêu đề Ngày
+            // Tiêu đề Ngày (Hiển thị Ngày, Tổng Tải, Tổng Doanh Thu, Tổng Đơn)
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
@@ -214,7 +214,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     });
 
                 } else {
-                    const mauGiaoNhan = layMauGiaoDienXe(""); // Lấy tông màu vàng cho chưa phân xe / giao nhận
+                    const mauGiaoNhan = layMauGiaoDienXe(""); // Lấy tông màu vàng cho nhóm giao nhận
 
                     const vehicleWrapper = document.createElement('div');
                     vehicleWrapper.style.cssText = `background: ${mauGiaoNhan.bgHeader}; border: 1px solid ${mauGiaoNhan.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
