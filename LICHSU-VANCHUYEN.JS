@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm Ngày -> Xe -> Chuyến, Hiển thị tổng tải và tổng doanh thu theo ngày
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm Tinh gọn (Bỏ chữ Ngày, Gọn từ "Chuyến thứ" thành "Chuyến")
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -127,11 +127,11 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 });
             });
 
-            // Tiêu đề Ngày (Bổ sung hiển thị Tổng tải, Tổng doanh thu và Số đơn)
+            // Tiêu đề Ngày (Đã bỏ chữ "Ngày" cho gọn)
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
-                <span>📅 Ngày: ${ngay}</span> 
+                <span>📅 ${ngay}</span> 
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                     <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">Tải: ${tongTaiTrongNgay.toLocaleString('vi-VN')} kg</span>
                     <span style="background: rgba(16,185,129,0.3); padding: 2px 6px; border-radius: 8px; font-size: 11px;">DT: ${tongDoanhThuTrongNgay.toLocaleString('vi-VN')} đ</span>
@@ -150,9 +150,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     const vehicleWrapper = document.createElement('div');
                     vehicleWrapper.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;';
 
+                    // Tiêu đề Xe và Chuyến (Đã rút gọn thành "Chuyến X")
                     const vehicleHeader = document.createElement('div');
                     vehicleHeader.style.cssText = 'background: #e2e8f0; color: #1e293b; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
-                    vehicleHeader.innerHTML = `<span>🚛 Xe: <strong style="color: #0284c7;">${phuongTien}</strong> — <span style="color: #d97706;">Chuyến thứ ${soChuyen}</span></span> <span style="background: #cbd5e1; padding: 1px 6px; border-radius: 8px; font-size: 10px; color: #334155;">${danhSachDonTrongChuyen.length} đơn</span>`;
+                    vehicleHeader.innerHTML = `<span>🚛 Xe: <strong style="color: #0284c7;">${phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> <span style="background: #cbd5e1; padding: 1px 6px; border-radius: 8px; font-size: 10px; color: #334155;">${danhSachDonTrongChuyen.length} đơn</span>`;
                     vehicleWrapper.appendChild(vehicleHeader);
 
                     danhSachDonTrongChuyen.forEach((data) => {
