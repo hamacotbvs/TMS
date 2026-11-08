@@ -182,7 +182,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             // Quy đổi Doanh thu ra triệu đồng (làm tròn số nguyên)
             const tongDTTr = Math.round(tongDoanhThuTrongNgay / 1000000).toLocaleString('vi-VN');
 
-            // Tiêu đề Ngày hiển thị dạng: 5.298 kg / 136 tr.đ
+            // Tiêu đề Ngày
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
@@ -217,7 +217,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         const vehicleHeader = document.createElement('div');
                         vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;`;
                         vehicleHeader.innerHTML = `
-                            <span>🚛 Xe: <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> 
+                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> 
                             <div style="display: flex; gap: 6px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')} kg / ${dtChuyenTr} tr.đ</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>
@@ -246,7 +246,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     const vehicleHeader = document.createElement('div');
                     vehicleHeader.style.cssText = `background: ${mauXeMay.badgeBg}; color: ${mauXeMay.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;`;
                     vehicleHeader.innerHTML = `
-                        <span>🏍️ Phương tiện: <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> 
+                        <span>🏍️ <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> 
                         <div style="display: flex; gap: 6px; align-items: center;">
                             <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${taiXeMay.toLocaleString('vi-VN')} kg / ${dtXeMayTr} tr.đ</span>
                             <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>
