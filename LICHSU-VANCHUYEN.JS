@@ -325,9 +325,16 @@ function renderCardDon(data, parentElement, isXeMay = false) {
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // Tính khoảng cách từ dinhVi đến checkIn
+    // Kiểm tra khoảng cách: < 0.2km -> tích (✓) xanh, >= 0.2km -> chéo (✗) đỏ kèm số km
     const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
-    const htmlKhoangCach = khoangCachKm ? `<span style="color: #0284c7; font-weight: 500; margin-left: 6px;">(Cách khách: ${khoangCachKm} km)</span>` : '';
+    let htmlKhoangCach = '';
+    if (khoangCachKm !== null) {
+        const kcNum = parseFloat(khoangCachKm);
+        const iconCheck = kcNum < 0.2 
+            ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' 
+            : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
+        htmlKhoangCach = `<span style="font-weight: 500; margin-left: 6px;">(${iconCheck} ${khoangCachKm} km)</span>`;
+    }
 
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
     const badgeHT = isChanh 
