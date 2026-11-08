@@ -266,23 +266,23 @@
                 </h3>
 
                 <!-- Bộ lọc Tháng và Phương tiện -->
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-bottom: 15px;">
-                    <!-- Ô chọn tháng/năm định dạng tháng 11/2026 -->
-                    <input type="month" id="thangVanChuyen" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; background: #fff;" />
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin-bottom: 15px;">
+                    <!-- 1. Ô chọn tháng/năm -->
+                    <input type="month" id="thangVanChuyen" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; background: #fff; -webkit-appearance: none; appearance: none;" />
 
-                    <!-- Nút Tải -->
-                    <button id="btnTaiLichSuVC" style="background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap;">
-                        Tải
-                    </button>
-
-                    <!-- Dropdown lọc phương tiện -->
-                    <select id="filterPhuongTien" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: #fff; outline: none; cursor: pointer;">
+                    <!-- 2. Dropdown lọc phương tiện nằm ở giữa -->
+                    <select id="filterPhuongTien" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: #fff; outline: none; cursor: pointer; flex: 1;">
                         <option value="">-- Tất cả phương tiện --</option>
                         <option value="65C-06126">65C-06126</option>
                         <option value="65C-12290">65C-12290</option>
                         <option value="65C-02591">65C-02591</option>
                         <option value="Xe máy">Xe máy</option>
                     </select>
+
+                    <!-- 3. Nút Tải chuyển ra nằm ở cuối -->
+                    <button id="btnTaiLichSuVC" style="background: #0284c7; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap;">
+                        Tải
+                    </button>
                 </div>
 
                 <!-- Nơi chứa danh sách Card Lịch sử vận chuyển -->
