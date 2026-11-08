@@ -25,12 +25,12 @@ function layNgayGomNhom(data) {
 
 // Hàm tính khoảng cách (km) từ tọa độ dinhVi đến checkIn bằng công thức Haversine
 function tinhKhoangCach(toaDo1, toaDo2) {
-    if (!toaDo1 || !toaDo2) return null;
+    if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
 
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
 
         const R = 6371; // Bán kính trái đất tính bằng km
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -325,7 +325,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // Xử lý khoảng cách: < 0.2km -> dấu tick (✓), >= 0.2km -> dấu x (✗) kèm số km
+    // Xử lý khoảng cách: Nếu dinhVi/checkIn trống hoặc 0,0 -> hiện chữ "tắt" màu đỏ. Nếu có tọa độ -> xét < 0.2km (✓ xanh) hoặc >= 0.2km (✗ đỏ kèm số km)
     const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
     let htmlKhoangCach = '';
     if (khoangCachKm !== null) {
@@ -334,6 +334,8 @@ function renderCardDon(data, parentElement, isXeMay = false) {
             ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' 
             : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
         htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm} km`;
+    } else {
+        htmlKhoangCach = ` | <span style="color: #dc2626; font-weight: 600; font-size: 11px;">tắt</span>`;
     }
 
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
