@@ -23,6 +23,31 @@ function layNgayGomNhom(data) {
     return chuanHoaNgay(rawDate);
 }
 
+// Hàm tính khoảng cách (km) từ tọa độ dinhVi đến checkIn bằng công thức Haversine
+function tinhKhoangCach(toaDo1, toaDo2) {
+    if (!toaDo1 || !toaDo2) return null;
+    try {
+        const [lat1, lon1] = toaDo1.split(',').map(Number);
+        const [lat2, lon2] = toaDo2.split(',').map(Number);
+
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) return null;
+
+        const R = 6371; // Bán kính trái đất tính bằng km
+        const dLat = (lat2 - lat1) * (Math.PI / 180);
+        const dLon = (lon2 - lon1) * (Math.PI / 180);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+
+        return distance.toFixed(1); // Lấy 1 chữ số thập phân
+    } catch (e) {
+        return null;
+    }
+}
+
 // Hàm gán màu riêng biệt cho từng xe và xe máy
 function layMauGiaoDienXe(phuongTien) {
     const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
@@ -300,6 +325,12 @@ function renderCardDon(data, parentElement, isXeMay = false) {
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
+    // Tính khoảng cách từ dinhVi đến checkIn
+    const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
+    const htmlDiaDiem = khoangCachKm 
+        ? `<span style="color: #0284c7; font-weight: 500;">📍 Cách khách: ${khoangCachKm} km</span>` 
+        : `<span>📍 ${vungTieuThu}</span>`;
+
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
     const badgeHT = isChanh 
         ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚚 Chành</span>'
@@ -331,7 +362,7 @@ function renderCardDon(data, parentElement, isXeMay = false) {
 
         <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
             <span>${nhanVienLabel}: <strong>${nhanVienPhuTrach}</strong></span>
-            <span>📍 ${vungTieuThu}</span>
+            ${htmlDiaDiem}
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
