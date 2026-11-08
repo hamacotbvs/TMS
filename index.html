@@ -266,12 +266,17 @@
                 </h3>
 
                 <!-- Bộ lọc Tháng và Phương tiện -->
-                <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
-                    <!-- Chọn tháng -->
-                    <input type="month" id="thangVanChuyen" class="form-control" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: bold; flex: 1; min-width: 140px;">
-                    
-                    <!-- Lọc theo phương tiện (Biển số xe) -->
-                    <select id="filterPhuongTien" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: #fff; outline: none; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-bottom: 15px;">
+                    <!-- Ô chọn tháng/năm định dạng tháng 11/2026 -->
+                    <input type="month" id="thangVanChuyen" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; background: #fff;" />
+
+                    <!-- Nút Tải -->
+                    <button id="btnTaiLichSuVC" style="background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap;">
+                        Tải
+                    </button>
+
+                    <!-- Dropdown lọc phương tiện -->
+                    <select id="filterPhuongTien" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: #fff; outline: none; cursor: pointer;">
                         <option value="">-- Tất cả phương tiện --</option>
                         <option value="65C-06126">65C-06126</option>
                         <option value="65C-12290">65C-12290</option>
