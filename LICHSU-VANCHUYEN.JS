@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm Tinh gọn (Bỏ chữ Ngày, Gọn từ "Chuyến thứ" thành "Chuyến")
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Gom nhóm Ngày -> Phương Tiện (hoặc Giao Nhận nếu chưa phân xe)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -64,46 +64,60 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         // Sắp xếp danh sách theo ngày gom nhóm giảm dần (mới nhất lên đầu)
         listData.sort((a, b) => b._ngayGom.localeCompare(a._ngayGom));
 
-        // --- GOM NHÓM THEO CẤU TRÚC: NGÀY -> PHƯƠNG TIỆN -> CHUYẾN ---
+        // --- GOM NHÓM THEO CẤU TRÚC: NGÀY -> [XE HOẶC GIAO NHẬN] -> [CHUYẾN HOẶC---] ---
         let groupedData = {};
         let countHienThi = 0;
 
         listData.forEach((data) => {
-            const phuongTien = (data.phuongTien || 'Chưa phân xe').trim();
+            const coXe = data.phuongTien && data.phuongTien.trim() !== "";
+            const nhomKey = coXe ? data.phuongTien.trim() : (data.giaoNhan ? data.giaoNhan.trim() : "Chưa xác định");
 
-            // Lọc theo biển số xe nếu người dùng có gõ vào ô tìm kiếm
+            // Lọc theo biển số xe hoặc tên giao nhận nếu người dùng có gõ vào ô tìm kiếm
             if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
                 const tuKhoa = bienSoTimKiem.toLowerCase().trim();
-                if (!phuongTien.toLowerCase().includes(tuKhoa)) {
+                if (!nhomKey.toLowerCase().includes(tuKhoa)) {
                     return; 
                 }
             }
 
             countHienThi++;
             const ngayKey = data._ngayGom;
-            const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
 
             if (!groupedData[ngayKey]) {
                 groupedData[ngayKey] = {};
             }
-            if (!groupedData[ngayKey][phuongTien]) {
-                groupedData[ngayKey][phuongTien] = {};
-            }
-            if (!groupedData[ngayKey][phuongTien][soChuyen]) {
-                groupedData[ngayKey][phuongTien][soChuyen] = [];
-            }
 
-            groupedData[ngayKey][phuongTien][soChuyen].push(data);
+            if (coXe) {
+                // Nếu có xe: Gom theo Xe -> Chuyến
+                const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
+                const phuongTienKey = `XE_${nhomKey}`;
+                
+                if (!groupedData[ngayKey][phuongTienKey]) {
+                    groupedData[ngayKey][phuongTienKey] = { type: 'xe', name: nhomKey, chuyen: {} };
+                }
+                if (!groupedData[ngayKey][phuongTienKey].chuyen[soChuyen]) {
+                    groupedData[ngayKey][phuongTienKey].chuyen[soChuyen] = [];
+                }
+                groupedData[ngayKey][phuongTienKey].chuyen[soChuyen].push(data);
+            } else {
+                // Nếu không có xe (Chưa phân xe): Gom trực tiếp theo giaoNhan, bỏ chuyến
+                const giaoNhanKey = `GN_${nhomKey}`;
+
+                if (!groupedData[ngayKey][giaoNhanKey]) {
+                    groupedData[ngayKey][giaoNhanKey] = { type: 'giaonhan', name: nhomKey, don: [] };
+                }
+                groupedData[ngayKey][giaoNhanKey].don.push(data);
+            }
         });
 
         if (countHienThi === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy chuyến xe nào khớp với biển số xe bạn nhập trong tháng này.</div>';
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với từ khóa bạn tìm trong tháng này.</div>';
             return;
         }
 
-        // Render ra giao diện theo thứ tự: Ngày -> Xe -> Chuyến
+        // Render ra giao diện theo thứ tự: Ngày -> Nhóm Xe/GiaoNhận
         Object.keys(groupedData).forEach((ngay) => {
-            const danhSachXe = groupedData[ngay];
+            const danhSachNhom = groupedData[ngay];
 
             const dateWrapper = document.createElement('div');
             dateWrapper.style.cssText = 'margin-bottom: 20px;';
@@ -113,21 +127,25 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             let tongDoanhThuTrongNgay = 0;
 
             // Tính tổng số đơn, tổng tải và tổng doanh thu trong ngày
-            Object.values(danhSachXe).forEach(danhSachChuyenCuaXe => {
-                Object.values(danhSachChuyenCuaXe).forEach(danhSachDon => {
-                    tongDonTrongNgay += danhSachDon.length;
-                    danhSachDon.forEach(don => {
-                        if (don.tTai) {
-                            tongTaiTrongNgay += Number(don.tTai) || 0;
-                        }
-                        if (don.thanhTien) {
-                            tongDoanhThuTrongNgay += Number(don.thanhTien) || 0;
-                        }
+            Object.values(danhSachNhom).forEach(nhom => {
+                if (nhom.type === 'xe') {
+                    Object.values(nhom.chuyen).forEach(danhSachDon => {
+                        tongDonTrongNgay += danhSachDon.length;
+                        danhSachDon.forEach(don => {
+                            if (don.tTai) tongTaiTrongNgay += Number(don.tTai) || 0;
+                            if (don.thanhTien) tongDoanhThuTrongNgay += Number(don.thanhTien) || 0;
+                        });
                     });
-                });
+                } else {
+                    tongDonTrongNgay += nhom.don.length;
+                    nhom.don.forEach(don => {
+                        if (don.tTai) tongTaiTrongNgay += Number(don.tTai) || 0;
+                        if (don.thanhTien) tongDoanhThuTrongNgay += Number(don.thanhTien) || 0;
+                    });
+                }
             });
 
-            // Tiêu đề Ngày (Đã bỏ chữ "Ngày" cho gọn)
+            // Tiêu đề Ngày
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
@@ -140,87 +158,40 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             `;
             dateWrapper.appendChild(dateHeader);
 
-            Object.keys(danhSachXe).forEach((phuongTien) => {
-                const danhSachChuyenCuaXe = danhSachXe[phuongTien];
-                const cacChuyenDaSapXep = Object.keys(danhSachChuyenCuaXe).sort((a, b) => Number(a) - Number(b));
+            // Duyệt qua từng nhóm (Xe hoặc Giao nhận)
+            Object.values(danhSachNhom).forEach((nhom) => {
+                if (nhom.type === 'xe') {
+                    // --- TRƯỜNG HỢP CÓ XE: GOM THEO CHUYẾN ---
+                    const cacChuyenDaSapXep = Object.keys(nhom.chuyen).sort((a, b) => Number(a) - Number(b));
 
-                cacChuyenDaSapXep.forEach((soChuyen) => {
-                    const danhSachDonTrongChuyen = danhSachChuyenCuaXe[soChuyen];
+                    cacChuyenDaSapXep.forEach((soChuyen) => {
+                        const danhSachDonTrongChuyen = nhom.chuyen[soChuyen];
 
-                    const vehicleWrapper = document.createElement('div');
-                    vehicleWrapper.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;';
+                        const vehicleWrapper = document.createElement('div');
+                        vehicleWrapper.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;';
 
-                    // Tiêu đề Xe và Chuyến (Đã rút gọn thành "Chuyến X")
-                    const vehicleHeader = document.createElement('div');
-                    vehicleHeader.style.cssText = 'background: #e2e8f0; color: #1e293b; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
-                    vehicleHeader.innerHTML = `<span>🚛 Xe: <strong style="color: #0284c7;">${phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> <span style="background: #cbd5e1; padding: 1px 6px; border-radius: 8px; font-size: 10px; color: #334155;">${danhSachDonTrongChuyen.length} đơn</span>`;
-                    vehicleWrapper.appendChild(vehicleHeader);
+                        const vehicleHeader = document.createElement('div');
+                        vehicleHeader.style.cssText = 'background: #e2e8f0; color: #1e293b; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
+                        vehicleHeader.innerHTML = `<span>🚛 Xe: <strong style="color: #0284c7;">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> <span style="background: #cbd5e1; padding: 1px 6px; border-radius: 8px; font-size: 10px; color: #334155;">${danhSachDonTrongChuyen.length} đơn</span>`;
+                        vehicleWrapper.appendChild(vehicleHeader);
 
-                    danhSachDonTrongChuyen.forEach((data) => {
-                        const maPhieu = data.maPhieu || data.id;
-                        const doiTuong = data.doiTuong || 'Chưa xác định';
-                        const taiXe = data.taiXe || 'Chưa có TX';
-                        const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
-                        const duyet = data.duyet || '';
-                        const tTai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
-                        const thanhTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + ' đ' : '0 đ';
-                        const ngayxuatKho = data.ngayxuatKho || '';
-                        const batDauGiaoHang = data.batDauGiaoHang || '';
-                        const ketThucGiaoHang = data.ketThucGiaoHang || '';
-                        const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
-                        const khoXuat = data.khoXuat || '';
-
-                        const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
-                        const badgeHT = isChanh 
-                            ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚚 Chành</span>'
-                            : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚛 Giao</span>';
-
-                        let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
-                        if (duyet === "Đã giao hàng") {
-                            badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao</span>`;
-                        } else if (duyet === "Đã xuất kho") {
-                            badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất</span>`;
-                        }
-
-                        const cardItem = document.createElement('div');
-                        cardItem.className = 'card-lich-su-item';
-                        cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);';
-
-                        cardItem.innerHTML = `
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
-                                <div>
-                                    <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong>
-                                    <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(Kho ${khoXuat})</span>
-                                </div>
-                                <div>${badgeHT}</div>
-                            </div>
-
-                            <div style="font-weight: 600; color: #1e293b; font-size: 12px; margin-bottom: 3px;">
-                                🏢 ${doiTuong}
-                            </div>
-
-                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
-                                <span>TX: <strong>${taiXe}</strong></span>
-                                <span>📍 ${vungTieuThu}</span>
-                            </div>
-
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
-                                <span>Tải: <strong style="color: #0284c7;">${tTai}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTien}</strong></span>
-                                <div>${badgeDuyet}</div>
-                            </div>
-                            
-                            <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
-                                <span>🚀 BĐ: <strong>${batDauGiaoHang ? batDauGiaoHang.split(" ")[1] || batDauGiaoHang : '---'}</strong></span>
-                                <span>🏁 KT: <strong>${ketThucGiaoHang ? ketThucGiaoHang.split(" ")[1] || ketThucGiaoHang : '---'}</strong></span>
-                                <span>📅 XK: <strong>${ngayxuatKho || '---'}</strong></span>
-                            </div>
-                        `;
-
-                        vehicleWrapper.appendChild(cardItem);
+                        danhSachDonTrongChuyen.forEach(data => renderCardDon(data, vehicleWrapper));
+                        dateWrapper.appendChild(vehicleWrapper);
                     });
 
+                } else {
+                    // --- TRƯỜNG HỢP KHÔNG CÓ XE: GOM THEO GIAO NHẬN (BỎ CHUYẾN) ---
+                    const vehicleWrapper = document.createElement('div');
+                    vehicleWrapper.style.cssText = 'background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;';
+
+                    const vehicleHeader = document.createElement('div');
+                    vehicleHeader.style.cssText = 'background: #fef3c7; color: #92400e; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
+                    vehicleHeader.innerHTML = `<span>📦 Giao nhận: <strong style="color: #b45309;">${nhom.name}</strong></span> <span style="background: #fde68a; padding: 1px 6px; border-radius: 8px; font-size: 10px; color: #78350f;">${nhom.don.length} đơn</span>`;
+                    vehicleWrapper.appendChild(vehicleHeader);
+
+                    nhom.don.forEach(data => renderCardDon(data, vehicleWrapper));
                     dateWrapper.appendChild(vehicleWrapper);
-                });
+                }
             });
 
             container.appendChild(dateWrapper);
@@ -231,6 +202,70 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu lịch sử vận chuyển!</div>';
     }
 };
+
+// Hàm phụ vẽ card thông tin từng đơn
+function renderCardDon(data, parentElement) {
+    const maPhieu = data.maPhieu || data.id;
+    const doiTuong = data.doiTuong || 'Chưa xác định';
+    const taiXe = data.taiXe || 'Chưa có TX';
+    const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
+    const duyet = data.duyet || '';
+    const tTai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
+    const thanhTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + ' đ' : '0 đ';
+    const ngayxuatKho = data.ngayxuatKho || '';
+    const batDauGiaoHang = data.batDauGiaoHang || '';
+    const ketThucGiaoHang = data.ketThucGiaoHang || '';
+    const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
+    const khoXuat = data.khoXuat || '';
+
+    const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
+    const badgeHT = isChanh 
+        ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚚 Chành</span>'
+        : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚛 Giao</span>';
+
+    let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
+    if (duyet === "Đã giao hàng") {
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao</span>`;
+    } else if (duyet === "Đã xuất kho") {
+        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất</span>`;
+    }
+
+    const cardItem = document.createElement('div');
+    cardItem.className = 'card-lich-su-item';
+    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);';
+
+    cardItem.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
+            <div>
+                <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong>
+                <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(Kho ${khoXuat})</span>
+            </div>
+            <div>${badgeHT}</div>
+        </div>
+
+        <div style="font-weight: 600; color: #1e293b; font-size: 12px; margin-bottom: 3px;">
+            🏢 ${doiTuong}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
+            <span>TX: <strong>${taiXe}</strong></span>
+            <span>📍 ${vungTieuThu}</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
+            <span>Tải: <strong style="color: #0284c7;">${tTai}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTien}</strong></span>
+            <div>${badgeDuyet}</div>
+        </div>
+        
+        <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
+            <span>🚀 BĐ: <strong>${batDauGiaoHang ? batDauGiaoHang.split(" ")[1] || batDauGiaoHang : '---'}</strong></span>
+            <span>🏁 KT: <strong>${ketThucGiaoHang ? ketThucGiaoHang.split(" ")[1] || ketThucGiaoHang : '---'}</strong></span>
+            <span>📅 XK: <strong>${ngayxuatKho || '---'}</strong></span>
+        </div>
+    `;
+
+    parentElement.appendChild(cardItem);
+}
 
 // Khởi tạo sự kiện: Ban đầu KHÔNG TẢI GÌ, chỉ tải khi bấm nút
 document.addEventListener('DOMContentLoaded', function() {
