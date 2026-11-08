@@ -1,9 +1,9 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tải thủ công, Gom nhóm tối ưu, Hỗ trợ Xe máy khi trống biển số
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị giaoNhan ở vị trí Tài xế khi là Xe máy
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
-// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/nam, cắt bỏ hoàn toàn phần giờ phút giây
+// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm, cắt bỏ hoàn toàn phần giờ phút giây
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "Chưa xác định ngày";
     let phanNgay = ngayStr.trim().split(" ")[0];
@@ -209,7 +209,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         vehicleHeader.innerHTML = `<span>🚛 Xe: <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>`;
                         vehicleWrapper.appendChild(vehicleHeader);
 
-                        danhSachDonTrongChuyen.forEach(data => renderCardDon(data, vehicleWrapper));
+                        danhSachDonTrongChuyen.forEach(data => renderCardDon(data, vehicleWrapper, false));
                         dateWrapper.appendChild(vehicleWrapper);
                     });
 
@@ -224,7 +224,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     vehicleHeader.innerHTML = `<span>🏍️ Phương tiện: <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${nhom.don.length} đơn</span>`;
                     vehicleWrapper.appendChild(vehicleHeader);
 
-                    nhom.don.forEach(data => renderCardDon(data, vehicleWrapper));
+                    nhom.don.forEach(data => renderCardDon(data, vehicleWrapper, true)); // Đánh dấu là xe máy để thay TX bằng giaoNhan
                     dateWrapper.appendChild(vehicleWrapper);
                 }
             });
@@ -238,11 +238,15 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn
-function renderCardDon(data, parentElement) {
+// Hàm phụ vẽ card thông tin từng đơn (Thêm tham số isXeMay để điều chỉnh hiển thị TX)
+function renderCardDon(data, parentElement, isXeMay = false) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
-    const taiXe = data.taiXe || 'Chưa có TX';
+    
+    // Nếu là xe máy, lấy dữ liệu từ trường giaoNhan; ngược lại lấy taiXe
+    const nhanVienPhuTrach = isXeMay ? (data.giaoNhan || 'Chưa có tên') : (data.taiXe || 'Chưa có TX');
+    const nhanVienLabel = isXeMay ? 'GN' : 'TX';
+
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
     const tTai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
@@ -283,7 +287,7 @@ function renderCardDon(data, parentElement) {
         </div>
 
         <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
-            <span>TX: <strong>${taiXe}</strong></span>
+            <span>${nhanVienLabel}: <strong>${nhanVienPhuTrach}</strong></span>
             <span>📍 ${vungTieuThu}</span>
         </div>
 
@@ -305,7 +309,7 @@ function renderCardDon(data, parentElement) {
 // Khởi tạo sự kiện
 document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
-    const selectPhuongTien = document.getElementById('filterPhuongTien'); // Thẻ select chọn xe / xe máy
+    const selectPhuongTien = document.getElementById('filterPhuongTien');
     
     let btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     if (!btnTaiDuLieu && inputThangVC) {
@@ -339,7 +343,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Khi thay đổi lựa chọn trên thẻ Select, tự động lọc lại danh sách ngay lập tức
     if (selectPhuongTien) {
         selectPhuongTien.addEventListener('change', function() {
             if (inputThangVC && inputThangVC.value) {
