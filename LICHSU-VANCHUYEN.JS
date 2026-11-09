@@ -1,15 +1,16 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Dò tìm chuyến kế tiếp xuyên ngày để tính km Về
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giữ nguyên gom nhóm theo ngày, chỉ sửa logic dò km Về xuyên ngày
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
-// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm
+// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm, cắt bỏ hoàn toàn phần giờ phút giây
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "Chưa xác định ngày";
-    return ngayStr.trim().split(" ")[0];
+    let phanNgay = ngayStr.trim().split(" ")[0];
+    return phanNgay;
 }
 
-// Hàm lấy ngày ưu tiên và chuẩn hóa (bỏ giờ)
+// Hàm lấy ngày ưu tiên và chuẩn hóa (bỏ giờ): batDauGiaoHang -> ketThucGiaoHang -> ngayxuatKho
 function layNgayGomNhom(data) {
     let rawDate = "";
     if (data.batDauGiaoHang && data.batDauGiaoHang.trim() !== "") {
@@ -39,7 +40,9 @@ function tinhKhoangCach(toaDo1, toaDo2) {
             Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return (R * c).toFixed(1);
+        const distance = R * c;
+
+        return distance.toFixed(1); // Lấy 1 chữ số thập phân
     } catch (e) {
         return null;
     }
@@ -114,17 +117,15 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             });
         });
 
-        // 1. Sắp xếp toàn bộ dữ liệu theo thời gian (tăng dần) để dễ dàng dò tìm chuyến tiếp theo xuyên ngày
+        // Sắp xếp toàn bộ dữ liệu theo thời gian tăng dần để phục vụ việc dò chuyến kế tiếp xuyên ngày chính xác
         listData.sort((a, b) => {
             let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
             let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
             return timeA.localeCompare(timeB);
         });
 
-        // --- GOM NHÓM DỮ LIỆU ĐỂ HIỂN THỊ THEO NGÀY (MỚI NHẤT LÊN ĐẦU) ---
-        // Phân rã theo cấu trúc: xeChuyenKey -> danh sách các chuyến theo thứ tự thời gian toàn tháng
-        let globalVehicleTrips = {}; // { "XE_65C-02591_1": [don1, don2,...], "XE_65C-02591_2": [...] }
-
+        // Gom nhóm toàn cục theo xe và số chuyến theo thời gian
+        let globalVehicleTrips = {}; 
         listData.forEach((data) => {
             const coXe = data.phuongTien && data.phuongTien.trim() !== "";
             const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
@@ -136,7 +137,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
 
             if (coXe) {
                 const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
-                const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}`;
+                const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
                 if (!globalVehicleTrips[tripKey]) {
                     globalVehicleTrips[tripKey] = {
                         phuongTien: nhomKey,
@@ -147,7 +148,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
                 globalVehicleTrips[tripKey].dons.push(data);
             } else {
-                // Xử lý riêng cho xe máy (nếu có)
                 const tripKey = `XE_MAY_${data._ngayGom}`;
                 if (!globalVehicleTrips[tripKey]) {
                     globalVehicleTrips[tripKey] = {
@@ -162,21 +162,20 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             }
         });
 
-        // Chuyển object thành mảng các chuyến và sắp xếp theo thời gian tăng dần toàn cục
         let allTripsArray = Object.values(globalVehicleTrips);
+        // Sắp xếp danh sách chuyến theo thời gian tăng dần toàn cục trong tháng
         allTripsArray.sort((a, b) => {
             let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || "";
             let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || "";
             return timeA.localeCompare(timeB);
         });
 
-        // Tính toán km Đi, Về cho từng chuyến bằng cách nhìn sang chuyến tiếp theo (kể cả khác ngày)
+        // Tính toán thông số cho từng chuyến và dò tìm chuyến kế tiếp xuyên ngày cho km Về
         allTripsArray.forEach((trip, idx, arr) => {
-            // Sắp xếp các đơn trong chuyến theo thời gian
             trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
 
             let kmDi = 0;
-            let textKmVe = "chờ";
+            let textKmVe = "chờ"; 
             let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0;
 
             trip.dons.forEach(don => {
@@ -204,17 +203,16 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     kmDi = kmKTCuoi - kmBDDau;
                 }
 
-                // Dò tìm chuyến tiếp theo CÙNG XE (bỏ qua xe máy) để tính km Về xuyên ngày
+                // Dò tìm chuyến kế tiếp CÙNG XE xuyên ngày để tính km Về
                 if (!trip.isXeMay) {
                     for (let nextIdx = idx + 1; nextIdx < arr.length; nextIdx++) {
                         let nextTrip = arr[nextIdx];
-                        // Kiểm tra đúng là cùng một xe không
                         if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
                             const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
                             if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
                                 textKmVe = (kmBDChuyenSau - kmKTCuoi) + "km";
                             }
-                            break; // Tìm thấy chuyến tiếp theo gần nhất thì dừng lại
+                            break;
                         }
                     }
                 }
@@ -224,7 +222,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             trip.textKmVe = textKmVe;
         });
 
-        // Gom nhóm lại theo Ngày (để hiển thị theo cấu trúc: Ngày -> Các xe trong ngày đó)
+        // --- GOM NHÓM LẠI THEO NGÀY ĐỂ HIỂN THỊ (NGÀY MỚI NHẤT LÊN ĐẦU NHƯ CŨ) ---
         let groupedByDate = {};
         allTripsArray.forEach(trip => {
             const ngay = trip.ngay;
@@ -232,15 +230,14 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             groupedByDate[ngay].push(trip);
         });
 
-        // Sắp xếp các ngày giảm dần (ngày mới nhất lên đầu)
         let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
         if (sortedDates.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu phù hợp.</div>';
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với phương tiện bạn chọn trong tháng này.</div>';
             return;
         }
 
-        // --- RENDER RA GIAO DIỆN ---
+        // Render ra giao diện theo đúng thứ tự Ngày giảm dần
         sortedDates.forEach(ngay => {
             const tripsInDay = groupedByDate[ngay];
 
@@ -269,7 +266,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             `;
             dateWrapper.appendChild(dateHeader);
 
-            // Render từng chuyến trong ngày
             tripsInDay.forEach(trip => {
                 let taiChuyen = 0, dtChuyen = 0;
                 trip.dons.forEach(don => {
