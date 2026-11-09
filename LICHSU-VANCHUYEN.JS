@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị cả TX và GN cho xe tải, rút gọn tên & địa danh
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị GN kèm tích đỏ nếu rỗng
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -346,20 +346,22 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
     
-    // Xử lý hiển thị nhân viên: Xe máy chỉ có GN, Xe tải hiển thị cả TX và GN (nếu có)
+    // Xử lý hiển thị nhân viên: 
+    // - Xe máy: Chỉ hiển thị GN (nếu rỗng hiện GN: ❌)
+    // - Xe tải: Hiển thị TX và GN (nếu GN rỗng hiện GN: ❌)
     let nhanVienHtml = '';
     if (isXeMay) {
         const tenGN = layTenRutGon(data.giaoNhan);
-        nhanVienHtml = `<span>GN: <strong>${tenGN || '---'}</strong></span>`;
+        const htmlGN = tenGN ? `<strong>${tenGN}</strong>` : `<span style="color: #dc2626;">❌</span>`;
+        nhanVienHtml = `<span>GN: ${htmlGN}</span>`;
     } else {
         const tenTX = layTenRutGon(data.taiXe);
         const tenGN = layTenRutGon(data.giaoNhan);
         
-        if (tenGN) {
-            nhanVienHtml = `<span>TX: <strong>${tenTX || '---'}</strong> | GN: <strong>${tenGN}</strong></span>`;
-        } else {
-            nhanVienHtml = `<span>TX: <strong>${tenTX || '---'}</strong></span>`;
-        }
+        const htmlTX = `<strong>${tenTX || '---'}</strong>`;
+        const htmlGN = tenGN ? `<strong>${tenGN}</strong>` : `<span style="color: #dc2626;">❌</span>`;
+        
+        nhanVienHtml = `<span>TX: ${htmlTX} | GN: ${htmlGN}</span>`;
     }
 
     // Rút gọn Tỉnh / Thành phố
