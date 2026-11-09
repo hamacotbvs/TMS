@@ -319,7 +319,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const duyet = data.duyet || '';
     const tTai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
     
-    // Đổi định dạng tiền sang đơn vị tr.đ có 1 số lẻ (VD: 1.5 tr.đ)
     let thanhTien = '0.0 tr.đ';
     if (data.thanhTien) {
         const tienNum = Number(data.thanhTien) / 1000000;
@@ -332,7 +331,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // --- TÍNH KM GIAO HÀNG THEO THỨ TỰ ---
+    // --- TÍNH KM GIAO HÀNG (Luôn hiện số km, nếu tính ra âm hoặc lỗi thì hiện 0 km) ---
     let kmGiaoText = '';
     const kmKT = Number(data.kmKetThucGiaoHang) || 0;
     
@@ -346,9 +345,10 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
         }
 
-        if (kmGiao > 0) {
-            kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(${kmGiao} km)</span>`;
-        }
+        if (kmGiao < 0) kmGiao = 0;
+        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(${kmGiao} km)</span>`;
+    } else {
+        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
     // Xử lý khoảng cách dinhVi - checkIn
@@ -369,7 +369,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚚 Chành</span>'
         : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚛 Giao</span>';
 
-    // ĐIỀN KM GIAO HÀNG PHÍA SAU ĐÃ GIAO
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng") {
         badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao${kmGiaoText}</span>`;
