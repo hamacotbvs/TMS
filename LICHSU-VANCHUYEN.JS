@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị GN kèm tích đỏ nếu rỗng
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Đổi (Kho ...) thành (PXK: ...) lấy từ trường pxk trên Firestore
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -346,6 +346,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
     
+    // Lấy thông tin PXK thay cho Kho xuất
+    const maPXK = data.pxk ? data.pxk.trim() : '---';
+
     // Xử lý hiển thị nhân viên: 
     // - Xe máy: Chỉ hiển thị GN (nếu rỗng hiện GN: ❌)
     // - Xe tải: Hiển thị TX và GN (nếu GN rỗng hiện GN: ❌)
@@ -381,7 +384,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const ngayxuatKho = data.ngayxuatKho || '';
     const batDauGiaoHang = data.batDauGiaoHang || '';
     const ketThucGiaoHang = data.ketThucGiaoHang || '';
-    const khoXuat = data.khoXuat || '';
 
     let kmGiaoText = '';
     const kmKT = Number(data.kmKetThucGiaoHang) || 0;
@@ -430,7 +432,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
             <div>
                 <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong>
-                <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(Kho ${khoXuat})</span>
+                <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span>
             </div>
             <div>${badgeHT}</div>
         </div>
