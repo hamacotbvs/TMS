@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tách group riêng cho đơn rỗng thời gian kèm nhãn "Chuẩn bị"
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Xe máy bỏ nhóm chuẩn bị, giữ nguyên gom ngày thường
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -9,8 +9,22 @@ function chuanHoaNgay(ngayStr) {
     return ngayStr.trim().split(" ")[0];
 }
 
-// Hàm lấy ngày gom nhóm: Xử lý tách riêng nhóm "Chuẩn bị" nếu rỗng cả bắt đầu lẫn kết thúc
+// Hàm lấy ngày gom nhóm: Chỉ áp dụng "Chuẩn bị" cho xe tải, xe máy lấy ngày xuất kho hoặc ngày tạo bình thường
 function layNgayGomNhom(data) {
+    const coXe = data.phuongTien && data.phuongTien.trim() !== "";
+    const isXeMay = !coXe || data.phuongTien.trim().toUpperCase() === "XE MÁY";
+
+    if (isXeMay) {
+        let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
+        let ngayBase = chuanHoaNgay(xk);
+        if (!ngayBase) {
+            let dat = data.ngayDatHang ? data.ngayDatHang.trim() : "";
+            ngayBase = chuanHoaNgay(dat);
+        }
+        return ngayBase || "Chưa xác định";
+    }
+
+    // Logic cũ cho xe tải
     let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
     let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
@@ -351,9 +365,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     // Lấy thông tin PXK thay cho Kho xuất
     const maPXK = data.pxk ? data.pxk.trim() : '---';
 
-    // Xử lý hiển thị nhân viên: 
-    // - Xe máy: Chỉ hiển thị GN (nếu rỗng hiện GN: ❌)
-    // - Xe tải: Hiển thị TX và GN (nếu GN rỗng hiện GN: ❌)
     let nhanVienHtml = '';
     if (isXeMay) {
         const tenGN = layTenRutGon(data.giaoNhan);
