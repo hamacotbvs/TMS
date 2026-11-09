@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Thu gọn tên TX (chỉ lấy tên) & Tỉnh/TP (bỏ chữ Tỉnh/Thành phố)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị cả TX và GN cho xe tải, rút gọn tên & địa danh
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -25,7 +25,7 @@ function layNgayGomNhom(data) {
 
 // Hàm rút gọn chỉ lấy Tên cuối cùng của nhân viên
 function layTenRutGon(hoTen) {
-    if (!hoTen || typeof hoTen !== "string") return "---";
+    if (!hoTen || typeof hoTen !== "string") return "";
     const arr = hoTen.trim().split(/\s+/);
     return arr[arr.length - 1]; // Lấy từ cuối cùng
 }
@@ -341,15 +341,26 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn (Đã áp dụng cắt tên TX và cắt chữ Tỉnh/Thành phố)
+// Hàm phụ vẽ card thông tin từng đơn
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
     
-    // Rút gọn chỉ lấy Tên cuối cùng của TX/GN
-    const rawNhanVien = isXeMay ? data.giaoNhan : data.taiXe;
-    const nhanVienPhuTrach = layTenRutGon(rawNhanVien);
-    const nhanVienLabel = isXeMay ? 'GN' : 'TX';
+    // Xử lý hiển thị nhân viên: Xe máy chỉ có GN, Xe tải hiển thị cả TX và GN (nếu có)
+    let nhanVienHtml = '';
+    if (isXeMay) {
+        const tenGN = layTenRutGon(data.giaoNhan);
+        nhanVienHtml = `<span>GN: <strong>${tenGN || '---'}</strong></span>`;
+    } else {
+        const tenTX = layTenRutGon(data.taiXe);
+        const tenGN = layTenRutGon(data.giaoNhan);
+        
+        if (tenGN) {
+            nhanVienHtml = `<span>TX: <strong>${tenTX || '---'}</strong> | GN: <strong>${tenGN}</strong></span>`;
+        } else {
+            nhanVienHtml = `<span>TX: <strong>${tenTX || '---'}</strong></span>`;
+        }
+    }
 
     // Rút gọn Tỉnh / Thành phố
     const rawVung = data.vungTieuThu || data.thanhPho || '';
@@ -427,7 +438,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         </div>
 
         <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
-            <span>${nhanVienLabel}: <strong>${nhanVienPhuTrach}</strong></span>
+            ${nhanVienHtml}
             <span>📍 ${vungTieuThu}</span>
         </div>
 
