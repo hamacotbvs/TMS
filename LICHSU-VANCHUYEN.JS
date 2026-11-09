@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giao diện tối ưu, Tải thủ công, Phân màu, Xe máy, km Đi & km Về
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giao diện tối ưu, Tổng hợp km Đi / Về trên tiêu đề chuyến
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -235,6 +235,34 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                             return timeA.localeCompare(timeB);
                         });
 
+                        // --- TÍNH KM ĐI VÀ VỀ CHO CẢ CHUYẾN ---
+                        let kmChuyenDi = 0;
+                        let kmChuyenVe = 0;
+
+                        if (danhSachDonTrongChuyen.length > 0) {
+                            const donDau = danhSachDonTrongChuyen[0];
+                            const donCuoi = danhSachDonTrongChuyen[danhSachDonTrongChuyen.length - 1];
+
+                            const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
+                            const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
+
+                            if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
+                                kmChuyenDi = kmKTCuoi - kmBDDau;
+                            }
+
+                            // Tìm chuyến kế tiếp trong cùng ngày để tính km Về
+                            if (cIdx + 1 < arrChuyen.length) {
+                                const nextChuyenKey = arrChuyen[cIdx + 1];
+                                const nextChuyenDons = nhom.chuyen[nextChuyenKey];
+                                if (nextChuyenDons && nextChuyenDons.length > 0) {
+                                    const kmBDChuyenSau = Number(nextChuyenDons[0].kmBatDauGiaoHang) || 0;
+                                    if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
+                                        kmChuyenVe = kmBDChuyenSau - kmKTCuoi;
+                                    }
+                                }
+                            }
+                        }
+
                         let taiChuyen = 0;
                         let dtChuyen = 0;
                         danhSachDonTrongChuyen.forEach(don => {
@@ -249,7 +277,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         const vehicleHeader = document.createElement('div');
                         vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;`;
                         vehicleHeader.innerHTML = `
-                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span></span> 
+                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span> <span style="font-weight: normal; color: #475569; font-size: 11px;">(Đi: <strong style="color: #0284c7;">${kmChuyenDi} km</strong> | Về: <strong style="color: #d97706;">${kmChuyenVe} km</strong>)</span></span> 
                             <div style="display: flex; gap: 6px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')} kg / ${dtChuyenTr} tr.đ</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>
@@ -257,17 +285,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         `;
                         vehicleWrapper.appendChild(vehicleHeader);
 
-                        // Tìm chuyến kế tiếp trong cùng ngày để tính km Về cho đơn cuối cùng của chuyến này
-                        let nextChuyenDons = null;
-                        if (cIdx + 1 < arrChuyen.length) {
-                            const nextChuyenKey = arrChuyen[cIdx + 1];
-                            nextChuyenDons = nhom.chuyen[nextChuyenKey];
-                        }
-
-                        danhSachDonTrongChuyen.forEach((data, idx) => {
-                            renderCardDon(data, vehicleWrapper, false, idx, danhSachDonTrongChuyen, nextChuyenDons);
-                        });
-
+                        danhSachDonTrongChuyen.forEach((data) => renderCardDon(data, vehicleWrapper, false));
                         dateWrapper.appendChild(vehicleWrapper);
                     });
 
@@ -303,10 +321,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     `;
                     vehicleWrapper.appendChild(vehicleHeader);
 
-                    nhom.don.forEach((data, idx) => {
-                        renderCardDon(data, vehicleWrapper, true, idx, nhom.don, null);
-                    }); 
-
+                    nhom.don.forEach((data) => renderCardDon(data, vehicleWrapper, true)); 
                     dateWrapper.appendChild(vehicleWrapper);
                 }
             });
@@ -320,8 +335,8 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn (Bổ sung tính km Đi và km Về)
-function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = [], nextChuyenDon = null) {
+// Hàm phụ vẽ card thông tin từng đơn (Đã trả phần Đã giao về nguyên bản)
+function renderCardDon(data, parentElement, isXeMay = false) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
     
@@ -344,40 +359,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // --- TÍNH KM ĐI ---
-    let kmDi = 0;
-    const kmKT = Number(data.kmKetThucGiaoHang) || 0;
-    
-    if (kmKT > 0) {
-        if (index === 0) {
-            const kmBD = Number(data.kmBatDauGiaoHang) || 0;
-            if (kmBD > 0) kmDi = kmKT - kmBD;
-        } else {
-            const kmKTTruoc = Number(danhSachDon[index - 1]?.kmKetThucGiaoHang) || 0;
-            if (kmKTTruoc > 0) kmDi = kmKT - kmKTTruoc;
-        }
-    }
-
-    // --- TÍNH KM VỀ (Chỉ tính cho đơn cuối cùng của chuyến) ---
-    let kmVeText = '';
-    const isLastInTrip = (index === danhSachDon.length - 1);
-    
-    if (isLastInTrip && kmKT > 0) {
-        let kmVe = 0;
-        if (nextChuyenDon && nextChuyenDon.length > 0) {
-            // Lấy kmBatDauGiaoHang của đơn đầu tiên trong chuyến tiếp theo trừ đi kmKetThucGiaoHang của đơn cuối chuyến này
-            const kmBatDauChuyenSau = Number(nextChuyenDon[0]?.kmBatDauGiaoHang) || 0;
-            if (kmBatDauChuyenSau > 0) {
-                kmVe = kmBatDauChuyenSau - kmKT;
-            }
-        }
-        // Hiển thị km Về nếu tồn tại chuyến sau hoặc có thể quy ước hiển thị
-        kmVeText = ` | Về: <strong style="color: #d97706;">${kmVe} km</strong>`;
-    }
-
-    const kmDiText = `Đi: <strong style="color: #0284c7;">${kmDi} km</strong>`;
-    const kmGiaoInfo = ` <span style="font-size: 10px; font-weight: 600;">(${kmDiText}${kmVeText})</span>`;
-
     // Xử lý khoảng cách dinhVi - checkIn
     const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
     let htmlKhoangCach = '';
@@ -398,9 +379,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao${kmGiaoInfo}</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao</span>`;
     } else if (duyet === "Đã xuất kho") {
-        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất${kmGiaoInfo}</span>`;
+        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất</span>`;
     }
 
     const cardItem = document.createElement('div');
