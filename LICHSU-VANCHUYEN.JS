@@ -331,7 +331,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // --- TÍNH KM GIAO HÀNG (Luôn hiện số km, nếu tính ra âm hoặc lỗi thì hiện 0 km) ---
+    // --- TÍNH KM GIAO HÀNG (Hiển thị nguyên giá trị chênh lệch kể cả âm) ---
     let kmGiaoText = '';
     const kmKT = Number(data.kmKetThucGiaoHang) || 0;
     
@@ -345,7 +345,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
         }
 
-        if (kmGiao < 0) kmGiao = 0;
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(${kmGiao} km)</span>`;
     } else {
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
