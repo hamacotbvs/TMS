@@ -318,7 +318,14 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
     const tTai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
-    const thanhTien = data.thanhTien ? Number(data.thanhTien).toLocaleString('vi-VN') + ' đ' : '0 đ';
+    
+    // Đổi định dạng tiền sang đơn vị tr.đ có 1 số lẻ (VD: 1.5 tr.đ)
+    let thanhTien = '0.0 tr.đ';
+    if (data.thanhTien) {
+        const tienNum = Number(data.thanhTien) / 1000000;
+        thanhTien = tienNum.toFixed(1) + ' tr.đ';
+    }
+
     const ngayxuatKho = data.ngayxuatKho || '';
     const batDauGiaoHang = data.batDauGiaoHang || '';
     const ketThucGiaoHang = data.ketThucGiaoHang || '';
