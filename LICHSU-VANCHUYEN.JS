@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giao diện tối ưu, km giao từng đơn & hàng Đi/Về phía dưới canh đều đẹp
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tính tổng bao bột trét (40kg/bao) hiển thị phía sau Đi | Về
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -235,9 +235,15 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                             return timeA.localeCompare(timeB);
                         });
 
-                        // --- TÍNH TỔNG KM ĐI VÀ VỀ CHO CẢ CHUYẾN ---
+                        // --- TÍNH KM ĐI, KM VỀ VÀ TỔNG SỐ BAO BỘT TRÉT (40KG/BAO) ---
                         let kmChuyenDi = 0;
                         let textKmVe = "chờ"; 
+                        let tongBotTretKg = 0;
+
+                        danhSachDonTrongChuyen.forEach(don => {
+                            if (don.botTretKg) tongBotTretKg += Number(don.botTretKg) || 0;
+                        });
+                        const tongBaoBotTret = Math.round(tongBotTretKg / 40);
 
                         if (danhSachDonTrongChuyen.length > 0) {
                             const donDau = danhSachDonTrongChuyen[0];
@@ -274,7 +280,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         const vehicleWrapper = document.createElement('div');
                         vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
-                        // Tiêu đề xe / chuyến (Chia 2 hàng gọn gàng, cân đối, đẹp mắt)
+                        // Tiêu đề xe / chuyến (Đi | Về | Bột ở hàng dưới)
                         const vehicleHeader = document.createElement('div');
                         vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;`;
                         
@@ -286,9 +292,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                                     <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>
                                 </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 12px; font-weight: normal; color: #475569; font-size: 11px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 3px;">
+                            <div style="display: flex; align-items: center; gap: 12px; font-weight: normal; color: #475569; font-size: 11px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 3px; flex-wrap: wrap;">
                                 <span>Đi: <strong style="color: #0284c7;">${kmChuyenDi} km</strong></span>
                                 <span>Về: <strong style="color: #d97706;">${textKmVe}</strong></span>
+                                <span>Bột: <strong style="color: #16a34a;">${tongBaoBotTret.toLocaleString('vi-VN')} bao</strong></span>
                             </div>
                         `;
                         vehicleWrapper.appendChild(vehicleHeader);
@@ -346,7 +353,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn (Giữ nguyên phần Đã giao kèm số km từng đơn)
+// Hàm phụ vẽ card thông tin từng đơn
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
