@@ -1,16 +1,16 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giữ nguyên gom nhóm theo ngày, chỉ sửa logic dò km Về xuyên ngày
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Thu gọn tên TX (chỉ lấy tên) & Tỉnh/TP (bỏ chữ Tỉnh/Thành phố)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
-// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm, cắt bỏ hoàn toàn phần giờ phút giây
+// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "Chưa xác định ngày";
     let phanNgay = ngayStr.trim().split(" ")[0];
     return phanNgay;
 }
 
-// Hàm lấy ngày ưu tiên và chuẩn hóa (bỏ giờ): batDauGiaoHang -> ketThucGiaoHang -> ngayxuatKho
+// Hàm lấy ngày ưu tiên và chuẩn hóa (bỏ giờ)
 function layNgayGomNhom(data) {
     let rawDate = "";
     if (data.batDauGiaoHang && data.batDauGiaoHang.trim() !== "") {
@@ -21,6 +21,21 @@ function layNgayGomNhom(data) {
         rawDate = data.ngayxuatKho || "";
     }
     return chuanHoaNgay(rawDate);
+}
+
+// Hàm rút gọn chỉ lấy Tên cuối cùng của nhân viên
+function layTenRutGon(hoTen) {
+    if (!hoTen || typeof hoTen !== "string") return "---";
+    const arr = hoTen.trim().split(/\s+/);
+    return arr[arr.length - 1]; // Lấy từ cuối cùng
+}
+
+// Hàm rút gọn Tỉnh / Thành phố (Bỏ các từ: Thành phố, Tỉnh, TP., TP)
+function layTenTinhThanhRutGon(tenTinh) {
+    if (!tenTinh || typeof tenTinh !== "string") return "---";
+    return tenTinh
+        .replace(/^(Thành phố|Tỉnh|TP\.|TP)\s+/i, "")
+        .trim();
 }
 
 // Hàm tính khoảng cách (km) từ tọa độ dinhVi đến checkIn bằng công thức Haversine
@@ -40,9 +55,7 @@ function tinhKhoangCach(toaDo1, toaDo2) {
             Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distance = R * c;
-
-        return distance.toFixed(1); // Lấy 1 chữ số thập phân
+        return (R * c).toFixed(1);
     } catch (e) {
         return null;
     }
@@ -117,14 +130,13 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             });
         });
 
-        // Sắp xếp toàn bộ dữ liệu theo thời gian tăng dần để phục vụ việc dò chuyến kế tiếp xuyên ngày chính xác
+        // Sắp xếp dữ liệu tăng dần theo thời gian để dò km Về xuyên ngày chính xác
         listData.sort((a, b) => {
             let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
             let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
             return timeA.localeCompare(timeB);
         });
 
-        // Gom nhóm toàn cục theo xe và số chuyến theo thời gian
         let globalVehicleTrips = {}; 
         listData.forEach((data) => {
             const coXe = data.phuongTien && data.phuongTien.trim() !== "";
@@ -163,14 +175,13 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         });
 
         let allTripsArray = Object.values(globalVehicleTrips);
-        // Sắp xếp danh sách chuyến theo thời gian tăng dần toàn cục trong tháng
         allTripsArray.sort((a, b) => {
             let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || "";
             let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || "";
             return timeA.localeCompare(timeB);
         });
 
-        // Tính toán thông số cho từng chuyến và dò tìm chuyến kế tiếp xuyên ngày cho km Về
+        // Tính toán thông số và km Về xuyên ngày
         allTripsArray.forEach((trip, idx, arr) => {
             trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
 
@@ -203,7 +214,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     kmDi = kmKTCuoi - kmBDDau;
                 }
 
-                // Dò tìm chuyến kế tiếp CÙNG XE xuyên ngày để tính km Về
                 if (!trip.isXeMay) {
                     for (let nextIdx = idx + 1; nextIdx < arr.length; nextIdx++) {
                         let nextTrip = arr[nextIdx];
@@ -222,7 +232,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             trip.textKmVe = textKmVe;
         });
 
-        // --- GOM NHÓM LẠI THEO NGÀY ĐỂ HIỂN THỊ (NGÀY MỚI NHẤT LÊN ĐẦU NHƯ CŨ) ---
+        // Gom nhóm theo Ngày để hiển thị (Ngày mới nhất lên đầu)
         let groupedByDate = {};
         allTripsArray.forEach(trip => {
             const ngay = trip.ngay;
@@ -237,7 +247,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             return;
         }
 
-        // Render ra giao diện theo đúng thứ tự Ngày giảm dần
+        // Render ra giao diện theo thứ tự Ngày giảm dần
         sortedDates.forEach(ngay => {
             const tripsInDay = groupedByDate[ngay];
 
@@ -331,13 +341,19 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn
+// Hàm phụ vẽ card thông tin từng đơn (Đã áp dụng cắt tên TX và cắt chữ Tỉnh/Thành phố)
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
     
-    const nhanVienPhuTrach = isXeMay ? (data.giaoNhan || 'Chưa có tên') : (data.taiXe || 'Chưa có TX');
+    // Rút gọn chỉ lấy Tên cuối cùng của TX/GN
+    const rawNhanVien = isXeMay ? data.giaoNhan : data.taiXe;
+    const nhanVienPhuTrach = layTenRutGon(rawNhanVien);
     const nhanVienLabel = isXeMay ? 'GN' : 'TX';
+
+    // Rút gọn Tỉnh / Thành phố
+    const rawVung = data.vungTieuThu || data.thanhPho || '';
+    const vungTieuThu = layTenTinhThanhRutGon(rawVung);
 
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
@@ -352,7 +368,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const ngayxuatKho = data.ngayxuatKho || '';
     const batDauGiaoHang = data.batDauGiaoHang || '';
     const ketThucGiaoHang = data.ketThucGiaoHang || '';
-    const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
     let kmGiaoText = '';
