@@ -1,25 +1,27 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Đổi (Kho ...) thành (PXK: ...) lấy từ trường pxk trên Firestore
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tách group riêng cho đơn rỗng thời gian kèm nhãn "Chuẩn bị"
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
 // Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm
 function chuanHoaNgay(ngayStr) {
-    if (!ngayStr || typeof ngayStr !== "string") return "Chưa xác định ngày";
-    let phanNgay = ngayStr.trim().split(" ")[0];
-    return phanNgay;
+    if (!ngayStr || typeof ngayStr !== "string") return "";
+    return ngayStr.trim().split(" ")[0];
 }
 
-// Hàm lấy ngày ưu tiên và chuẩn hóa (bỏ giờ)
+// Hàm lấy ngày gom nhóm: Xử lý tách riêng nhóm "Chuẩn bị" nếu rỗng cả bắt đầu lẫn kết thúc
 function layNgayGomNhom(data) {
-    let rawDate = "";
-    if (data.batDauGiaoHang && data.batDauGiaoHang.trim() !== "") {
-        rawDate = data.batDauGiaoHang;
-    } else if (data.ketThucGiaoHang && data.ketThucGiaoHang.trim() !== "") {
-        rawDate = data.ketThucGiaoHang;
-    } else {
-        rawDate = data.ngayxuatKho || "";
+    let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
+    let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
+    let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
+
+    if (!bd && !kt) {
+        let ngayBase = chuanHoaNgay(xk);
+        if (!ngayBase) ngayBase = "Chưa xác định";
+        return `${ngayBase} - Chuẩn bị`;
     }
+
+    let rawDate = bd !== "" ? bd : (kt !== "" ? kt : xk);
     return chuanHoaNgay(rawDate);
 }
 
