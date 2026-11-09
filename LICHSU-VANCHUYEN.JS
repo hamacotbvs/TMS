@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tổng km Đi và Về (Hiển thị "chờ" nếu là chuyến cuối)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tiêu đề chuyến dạng thẻ badge cực gọn
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -53,31 +53,26 @@ function layMauGiaoDienXe(phuongTien) {
     const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
     
     if (xe.includes("06126")) {
-        // Tông Xanh Dương (Blue)
         return {
             bgHeader: '#eff6ff', border: '#bfdbfe', textHeader: '#1e40af', 
             badgeBg: '#dbeafe', badgeText: '#1d4ed8', tagColor: '#2563eb'
         };
     } else if (xe.includes("12290")) {
-        // Tông Xanh Lá / Xanh Ngọc (Green)
         return {
             bgHeader: '#f0fdf4', border: '#bbf7d0', textHeader: '#166534', 
             badgeBg: '#dcfce7', badgeText: '#15803d', tagColor: '#16a34a'
         };
     } else if (xe.includes("02591")) {
-        // Tông Đỏ / Cam mạnh mẽ (Red/Orange)
         return {
             bgHeader: '#fef2f2', border: '#fecaca', textHeader: '#991b1b', 
             badgeBg: '#fee2e2', badgeText: '#dc2626', tagColor: '#ef4444'
         };
     } else if (xe === "XE MÁY" || !phuongTien || phuongTien.trim() === "") {
-        // Tông Vàng (Xe máy / Chưa phân xe)
         return {
             bgHeader: '#fffbeb', border: '#fde68a', textHeader: '#92400e', 
             badgeBg: '#fef3c7', badgeText: '#b45309', tagColor: '#d97706'
         };
     } else {
-        // Tông mặc định cho các xe khác (Xám / Slate)
         return {
             bgHeader: '#f8fafc', border: '#e2e8f0', textHeader: '#1e293b', 
             badgeBg: '#e2e8f0', badgeText: '#334155', tagColor: '#0284c7'
@@ -95,7 +90,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const thangNum = parseInt(thangChon, 10);
         const namNum = parseInt(namChon, 10);
 
-        // Lọc trực tiếp bằng where trên Server (Siêu tiết kiệm lượt đọc Reads)
         const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
         const q = query(
             thamChieuTuyenDuong, 
@@ -123,10 +117,8 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             });
         });
 
-        // Sắp xếp danh sách theo ngày gom nhóm giảm dần (mới nhất lên đầu)
         listData.sort((a, b) => b._ngayGom.localeCompare(a._ngayGom));
 
-        // --- GOM NHÓM THEO CẤU TRÚC: NGÀY -> [XE HOẶC XE MÁY] -> [CHUYẾN HOẶC ĐƠN] ---
         let groupedData = {};
         let countHienThi = 0;
 
@@ -134,7 +126,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             const coXe = data.phuongTien && data.phuongTien.trim() !== "";
             const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
 
-            // Lọc theo phương tiện nếu chọn từ Dropdown
             if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
                 const tuKhoa = bienSoTimKiem.toLowerCase().trim();
                 if (!nhomKey.toLowerCase().includes(tuKhoa)) {
@@ -175,7 +166,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             return;
         }
 
-        // Render ra giao diện theo thứ tự: Ngày -> Nhóm Xe / Xe máy
         Object.keys(groupedData).forEach((ngay) => {
             const danhSachNhom = groupedData[ngay];
 
@@ -204,10 +194,8 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
             });
 
-            // Quy đổi Doanh thu ra triệu đồng (làm tròn số nguyên)
             const tongDTTr = Math.round(tongDoanhThuTrongNgay / 1000000).toLocaleString('vi-VN');
 
-            // Tiêu đề Ngày
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
@@ -219,7 +207,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             `;
             dateWrapper.appendChild(dateHeader);
 
-            // Duyệt qua từng nhóm xe / xe máy
             Object.values(danhSachNhom).forEach((nhom) => {
                 if (nhom.type === 'xe') {
                     const mauXe = layMauGiaoDienXe(nhom.name);
@@ -228,16 +215,14 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     cacChuyenDaSapXep.forEach((soChuyen, cIdx, arrChuyen) => {
                         const danhSachDonTrongChuyen = nhom.chuyen[soChuyen];
 
-                        // Sắp xếp các đơn trong chuyến theo thời gian kết thúc giao hàng từ nhỏ đến lớn (tăng dần)
                         danhSachDonTrongChuyen.sort((a, b) => {
                             let timeA = a.ketThucGiaoHang || "";
                             let timeB = b.ketThucGiaoHang || "";
                             return timeA.localeCompare(timeB);
                         });
 
-                        // --- TÍNH TỔNG KM ĐI VÀ VỀ CHO CẢ CHUYẾN ---
                         let kmChuyenDi = 0;
-                        let textKmVe = "chờ"; // Mặc định là "chờ" nếu chưa có chuyến sau
+                        let textKmVe = "chờ"; 
 
                         if (danhSachDonTrongChuyen.length > 0) {
                             const donDau = danhSachDonTrongChuyen[0];
@@ -250,7 +235,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                                 kmChuyenDi = kmKTCuoi - kmBDDau;
                             }
 
-                            // Kiểm tra xem có chuyến kế tiếp trong cùng ngày không để tính km Về
                             if (cIdx + 1 < arrChuyen.length) {
                                 const nextChuyenKey = arrChuyen[cIdx + 1];
                                 const nextChuyenDons = nhom.chuyen[nextChuyenKey];
@@ -276,9 +260,15 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
                         const vehicleHeader = document.createElement('div');
-                        vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;`;
+                        vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;`;
+                        
                         vehicleHeader.innerHTML = `
-                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong> — <span style="color: #d97706;">Chuyến ${soChuyen}</span> <span style="font-weight: normal; color: #475569; font-size: 11px;">(Đi: <strong style="color: #0284c7;">${kmChuyenDi} km</strong> | Về: <strong style="color: #d97706;">${textKmVe}</strong>)</span></span> 
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span>🚛 <strong style="color: ${mauXe.tagColor};">${nhom.name}</strong></span>
+                                <span style="background: rgba(217,119,6,0.15); color: #d97706; padding: 1px 6px; border-radius: 4px; font-size: 10px;">Chuyến ${soChuyen}</span>
+                                <span style="background: rgba(2,132,199,0.1); color: #0284c7; padding: 1px 6px; border-radius: 4px; font-size: 10px;">Đi: ${kmChuyenDi}km</span>
+                                <span style="background: rgba(217,119,6,0.1); color: #d97706; padding: 1px 6px; border-radius: 4px; font-size: 10px;">Về: ${textKmVe}</span>
+                            </div>
                             <div style="display: flex; gap: 6px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')} kg / ${dtChuyenTr} tr.đ</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 8px; font-size: 10px;">${danhSachDonTrongChuyen.length} đơn</span>
@@ -295,7 +285,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 } else {
                     const mauXeMay = layMauGiaoDienXe("Xe máy"); 
 
-                    // Sắp xếp các đơn xe máy theo thời gian kết thúc giao hàng từ nhỏ đến lớn (tăng dần)
                     nhom.don.sort((a, b) => {
                         let timeA = a.ketThucGiaoHang || "";
                         let timeB = b.ketThucGiaoHang || "";
@@ -314,7 +303,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     vehicleWrapper.style.cssText = `background: ${mauXeMay.bgHeader}; border: 1px solid ${mauXeMay.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
                     const vehicleHeader = document.createElement('div');
-                    vehicleHeader.style.cssText = `background: ${mauXeMay.badgeBg}; color: ${mauXeMay.textHeader}; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;`;
+                    vehicleHeader.style.cssText = `background: ${mauXeMay.badgeBg}; color: ${mauXeMay.textHeader}; padding: 6px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;`;
                     vehicleHeader.innerHTML = `
                         <span>🏍️ <strong style="color: ${mauXeMay.tagColor};">${nhom.name}</strong></span> 
                         <div style="display: flex; gap: 6px; align-items: center;">
@@ -340,7 +329,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn (Hiển thị km giao của từng đơn sau chữ Đã giao)
+// Hàm phụ vẽ card thông tin từng đơn
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
@@ -364,7 +353,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // --- TÍNH KM GIAO RIÊNG CHO TỪNG ĐƠN ---
     let kmGiaoText = '';
     const kmKT = Number(data.kmKetThucGiaoHang) || 0;
     
@@ -383,7 +371,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Xử lý khoảng cách dinhVi - checkIn
     const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
     let htmlKhoangCach = '';
     if (khoangCachKm !== null) {
