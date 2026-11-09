@@ -257,7 +257,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         `;
                         vehicleWrapper.appendChild(vehicleHeader);
 
-                        danhSachDonTrongChuyen.forEach(data => renderCardDon(data, vehicleWrapper, false));
+                        danhSachDonTrongChuyen.forEach((data, idx) => renderCardDon(data, vehicleWrapper, false, idx, danhSachDonTrongChuyen));
                         dateWrapper.appendChild(vehicleWrapper);
                     });
 
@@ -293,7 +293,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     `;
                     vehicleWrapper.appendChild(vehicleHeader);
 
-                    nhom.don.forEach(data => renderCardDon(data, vehicleWrapper, true)); 
+                    nhom.don.forEach((data, idx) => renderCardDon(data, vehicleWrapper, true, idx, nhom.don)); 
                     dateWrapper.appendChild(vehicleWrapper);
                 }
             });
@@ -308,7 +308,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
 };
 
 // Hàm phụ vẽ card thông tin từng đơn
-function renderCardDon(data, parentElement, isXeMay = false) {
+function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
     
@@ -325,7 +325,26 @@ function renderCardDon(data, parentElement, isXeMay = false) {
     const vungTieuThu = data.vungTieuThu || data.thanhPho || '';
     const khoXuat = data.khoXuat || '';
 
-    // Xử lý khoảng cách: Nếu dinhVi/checkIn trống hoặc 0,0 -> hiện icon 📍❌. Nếu có tọa độ -> xét < 0.2km (✓ xanh) hoặc >= 0.2km (✗ đỏ kèm số km)
+    // --- TÍNH KM GIAO HÀNG THEO THỨ TỰ ---
+    let kmGiaoText = '';
+    const kmKT = Number(data.kmKetThucGiaoHang) || 0;
+    
+    if (kmKT > 0) {
+        let kmGiao = 0;
+        if (index === 0) {
+            const kmBD = Number(data.kmBatDauGiaoHang) || 0;
+            if (kmBD > 0) kmGiao = kmKT - kmBD;
+        } else {
+            const kmKTTruoc = Number(danhSachDon[index - 1]?.kmKetThucGiaoHang) || 0;
+            if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
+        }
+
+        if (kmGiao > 0) {
+            kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(${kmGiao} km)</span>`;
+        }
+    }
+
+    // Xử lý khoảng cách dinhVi - checkIn
     const khoangCachKm = tinhKhoangCach(data.dinhVi, data.checkIn);
     let htmlKhoangCach = '';
     if (khoangCachKm !== null) {
@@ -343,11 +362,12 @@ function renderCardDon(data, parentElement, isXeMay = false) {
         ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚚 Chành</span>'
         : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚛 Giao</span>';
 
+    // ĐIỀN KM GIAO HÀNG PHÍA SAU ĐÃ GIAO
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao${kmGiaoText}</span>`;
     } else if (duyet === "Đã xuất kho") {
-        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất</span>`;
+        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất${kmGiaoText}</span>`;
     }
 
     const cardItem = document.createElement('div');
