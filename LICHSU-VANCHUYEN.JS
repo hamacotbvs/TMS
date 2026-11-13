@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Có thêm ô tìm kiếm tự do toàn bộ trường dữ liệu
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Ô tìm kiếm thu gọn, click/focus mở rộng mượt mà
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -49,10 +49,7 @@ function layTenRutGon(hoTen) {
 function rutGonDiaChiNoiGiao(noiGiaoStr) {
     if (!noiGiaoStr || typeof noiGiaoStr !== "string") return "---";
 
-    // Cắt bỏ phần dư thừa phía sau dấu ngoặc đơn (nếu có)
     let diaChiClean = noiGiaoStr.split("(")[0].trim();
-    
-    // Tách các thành phần bằng dấu phẩy
     let parts = diaChiClean.split(",").map(p => p.trim()).filter(p => p !== "" && !p.toLowerCase().includes("việt nam"));
 
     let xaPhuong = "";
@@ -60,24 +57,18 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
 
     parts.forEach(part => {
         let lower = part.toLowerCase();
-        
-        // 1. Bắt Xã / Phường / Thị trấn
         if (lower.startsWith("xã ") || lower.startsWith("phường ") || lower.startsWith("thị trấn ")) {
             xaPhuong = part.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
-        } 
-        // 2. Bắt Tỉnh / Thành phố
-        else if (lower.startsWith("tỉnh ") || lower.startsWith("thành phố ")) {
+        } else if (lower.startsWith("tỉnh ") || lower.startsWith("thành phố ")) {
             tinhTp = part.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
         }
     });
 
-    // Nếu chưa bắt được xã/phường qua từ khóa, tìm phần tử chứa từ xã/phường/thị trấn
     if (!xaPhuong) {
         let foundXa = parts.find(p => /^(xã|phường|thị trấn)\s+/i.test(p));
         if (foundXa) xaPhuong = foundXa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
     }
 
-    // Nếu chưa bắt được tỉnh/thành phố, lấy phần tử phù hợp cuối mảng
     if (!tinhTp && parts.length > 0) {
         let foundTinh = parts.find(p => /^(tỉnh|thành phố|tp\.)\s+/i.test(p));
         if (foundTinh) {
@@ -92,7 +83,6 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
         }
     }
 
-    // Gom lại chỉ còn: Xã/Phường - Tỉnh/Thành phố
     let ketQuaArr = [];
     if (xaPhuong) ketQuaArr.push(xaPhuong);
     if (tinhTp) {
@@ -101,6 +91,16 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
     }
 
     return ketQuaArr.length > 0 ? ketQuaArr.join(" - ") : diaChiClean;
+}
+
+// Hàm loại bỏ dấu tiếng Việt để phục vụ tìm kiếm thông minh không dấu/có dấu
+function loaiBoDauTiengViet(str) {
+    if (!str || typeof str !== "string") return "";
+    return str.normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/đ/g, "d")
+              .replace(/Đ/g, "D")
+              .toLowerCase();
 }
 
 // Hàm tính khoảng cách (km) từ tọa độ dinhVi đến checkIn bằng công thức Haversine
@@ -112,7 +112,7 @@ function tinhKhoangCach(toaDo1, toaDo2) {
 
         if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
 
-        const R = 6371; // Bán kính trái đất tính bằng km
+        const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
         const dLon = (lon2 - lon1) * (Math.PI / 180);
         const a =
@@ -184,23 +184,22 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         }
 
         let listData = [];
+        const keywordKhongDau = loaiBoDauTiengViet(tuKhoaTimKiem);
 
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const ngayGom = layNgayGomNhom(data);
             
-            // Nếu có từ khóa tìm kiếm tự do, kiểm tra xem có khớp với bất kỳ trường nào không
-            if (tuKhoaTimKiem && tuKhoaTimKiem.trim() !== "") {
-                const keyword = tuKhoaTimKiem.toLowerCase().trim();
+            if (keywordKhongDau && keywordKhongDau.trim() !== "") {
                 let match = false;
-                
-                // Gom tất cả giá trị các trường thành một chuỗi lớn để quét tìm kiếm
-                const hopThanhChuoi = Object.values(data).join(" ").toLowerCase();
-                if (hopThanhChuoi.includes(keyword) || docSnap.id.toLowerCase().includes(keyword)) {
+                const hopThanhChuoi = Object.values(data).join(" ") + " " + docSnap.id;
+                const chuoiKhongDau = loaiBoDauTiengViet(hopThanhChuoi);
+
+                if (chuoiKhongDau.includes(keywordKhongDau)) {
                     match = true;
                 }
                 
-                if (!match) return; // Bỏ qua nếu không khớp từ khóa
+                if (!match) return; 
             }
 
             listData.push({ 
@@ -543,16 +542,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     const container = document.getElementById('danhSachLichSuVanChuyen');
 
-    // Tự động tạo ô input tìm kiếm tự do nếu chưa có trên giao diện HTML
     let inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
     if (!inputTimKiemTuDo && selectPhuongTien && selectPhuongTien.parentNode) {
         inputTimKiemTuDo = document.createElement('input');
         inputTimKiemTuDo.id = 'inputTimKiemTuDo';
         inputTimKiemTuDo.type = 'text';
-        inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm từ khóa bất kỳ...';
-        inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; flex: 1; min-width: 150px;';
+        inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm...';
         
-        // Chèn ô input vào ngay cạnh ô chọn phương tiện
+        // Thiết kế ban đầu: nhỏ gọn (width khoảng 100px), có hiệu ứng chuyển động mượt mà (transition)
+        inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; width: 100px; transition: width 0.3s ease, box-shadow 0.3s ease;';
+        
+        // Khi click vào (focus) hoặc khi đang gõ mà có chữ: tự động mở rộng ra rộng rãi (flex: 1 hoặc width lớn hơn)
+        inputTimKiemTuDo.addEventListener('focus', function() {
+            this.style.width = '240px';
+            this.style.boxShadow = '0 0 0 2px rgba(2, 132, 199, 0.2)';
+            this.placeholder = '🔍 Nhập từ khóa tìm kiếm...';
+        });
+
+        // Khi bấm ra ngoài (blur): nếu ô trống thì thu nhỏ lại, nếu đang có chữ thì giữ nguyên rộng
+        inputTimKiemTuDo.addEventListener('blur', function() {
+            if (!this.value) {
+                this.style.width = '100px';
+                this.style.boxShadow = 'none';
+                this.placeholder = '🔍 Tìm kiếm...';
+            }
+        });
+
         selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
     }
 
@@ -608,7 +623,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Hỗ trợ tìm kiếm tự động khi người dùng gõ phím (có độ trễ nhẹ debounce để mượt mà)
     if (inputTimKiemTuDo) {
         let timer = null;
         inputTimKiemTuDo.addEventListener('input', function() {
