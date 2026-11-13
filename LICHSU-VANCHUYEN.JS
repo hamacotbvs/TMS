@@ -1,11 +1,11 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tính toán km đường bộ thực tế quy đổi từ GPS để đối chiếu
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giữ nguyên logic cũ, chỉ bổ sung km ướt từ GPS
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
 // Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm
 function chuanHoaNgay(ngayStr) {
-    if (!ngayStr || typeof ngayStr !== "string") return "";
+    if (!ngayStr || typeof ngaysStr !== "string") return "";
     return ngayStr.trim().split(" ")[0];
 }
 
@@ -97,11 +97,11 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
-// Hàm tính khoảng cách đường bộ thực tế quy đổi từ tọa độ GPS (nhân hệ số 1.3 bù đường cua, cầu đường)
-function tinhKhoangCachDuongBoThucTe(lat1, lon1, lat2, lon2) {
+// Hàm tính quãng đường thực tế (km ướt) quy đổi từ GPS (nhân hệ số 1.3 bù đường cua, cầu đường)
+function tinhKmUotGPS(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) return 0;
     try {
-        const R = 6371; // Bán kính trái đất (km)
+        const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
         const dLon = (lon2 - lon1) * (Math.PI / 180);
         const a =
@@ -110,12 +110,31 @@ function tinhKhoangCachDuongBoThucTe(lat1, lon1, lat2, lon2) {
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const khoangCachChimBay = R * c;
-        
-        // Nhân hệ số 1.3 để quy đổi từ đường chim bay sang quãng đường chạy xe ô tô thực tế
-        const khoangCachDuongBo = khoangCachChimBay * 1.3;
-        return Number(khoangCachDuongBo.toFixed(1));
+        return Number((khoangCachChimBay * 1.3).toFixed(1));
     } catch (e) {
         return 0;
+    }
+}
+
+// Hàm tính khoảng cách check-in lệch giữa dinhVi và checkIn
+function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
+    if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
+    try {
+        const [lat1, lon1] = toaDo1.split(',').map(Number);
+        const [lat2, lon2] = toaDo2.split(',').map(Number);
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
+
+        const R = 6371; 
+        const dLat = (lat2 - lat1) * (Math.PI / 180);
+        const dLon = (lon2 - lon1) * (Math.PI / 180);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return (R * c).toFixed(1);
+    } catch (e) {
+        return null;
     }
 }
 
@@ -202,7 +221,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             });
         });
 
-        // Sắp xếp dữ liệu tăng dần theo thời gian
+        // Sắp xếp dữ liệu tăng dần theo thời gian để dò km Về xuyên ngày chính xác
         listData.sort((a, b) => {
             let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
             let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
@@ -253,18 +272,17 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             return timeA.localeCompare(timeB);
         });
 
-        // Tọa độ gốc Kho 55 Tầm Vu
         const LAT_KHO = 9.9234; 
         const LON_KHO = 105.1245;
 
-        // Tính toán thông số chuyến và số km đường bộ thực tế cho từng đơn
+        // Tính toán thông số và km ướt cho từng chuyến & từng đơn
         allTripsArray.forEach((trip, idx, arr) => {
             trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
 
             let kmDi = 0;
             let textKmVe = "chờ"; 
             let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0;
-            let tongKmDuongBoChuyen = 0;
+            let tongKmUotChuyen = 0;
 
             trip.dons.forEach((don, donIdx) => {
                 let latHienTai = 0, lonHienTai = 0;
@@ -274,9 +292,9 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     lonHienTai = parts[1];
                 }
 
-                let khoangCachNay = 0;
+                let kmUotNay = 0;
                 if (donIdx === 0) {
-                    khoangCachNay = tinhKhoangCachDuongBoThucTe(LAT_KHO, LON_KHO, latHienTai, lonHienTai);
+                    kmUotNay = tinhKmUotGPS(LAT_KHO, LON_KHO, latHienTai, lonHienTai);
                 } else {
                     const donTruoc = trip.dons[donIdx - 1];
                     let latTruoc = 0, lonTruoc = 0;
@@ -285,14 +303,14 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                         latTruoc = partsTruoc[0];
                         lonTruoc = partsTruoc[1];
                     }
-                    khoangCachNay = tinhKhoangCachDuongBoThucTe(latTruoc, lonTruoc, latHienTai, lonHienTai);
+                    kmUotNay = tinhKmUotGPS(latTruoc, lonTruoc, latHienTai, lonHienTai);
                 }
                 
-                don._kmDuongBo = khoangCachNay;
-                tongKmDuongBoChuyen += khoangCachNay;
+                don._kmUot = kmUotNay;
+                tongKmUotChuyen += kmUotNay;
             });
 
-            trip.tongKmDuongBo = Number(tongKmDuongBoChuyen.toFixed(1));
+            trip.tongKmUot = Number(tongKmUotChuyen.toFixed(1));
 
             trip.dons.forEach(don => {
                 if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
@@ -337,7 +355,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             trip.textKmVe = textKmVe;
         });
 
-        // Gom nhóm theo Ngày
+        // Gom nhóm theo Ngày để hiển thị
         let groupedByDate = {};
         allTripsArray.forEach(trip => {
             const ngay = trip.ngay;
@@ -398,7 +416,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 if (trip.isXeMay) {
                     vehicleHeader.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> (Tổng đường bộ: <strong style="color: #0284c7;">${trip.tongKmDuongBo} km</strong>)</span> 
+                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> (Km ướt: <strong style="color: #0284c7;">${trip.tongKmUot} km</strong>)</span> 
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
@@ -408,14 +426,14 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 } else {
                     vehicleHeader.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span> (Đường bộ: <strong style="color: #0284c7;">${trip.tongKmDuongBo} km</strong>)</span>
+                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span> (Km ướt: <strong style="color: #0284c7;">${trip.tongKmUot} km</strong>)</span>
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 3px; flex-wrap: wrap; gap: 2px;">
-                            <span>Công-tơ-mét Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
+                            <span>Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
                             <span style="color: #cbd5e1;">|</span>
                             <span>Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
                             <span style="color: #cbd5e1;">|</span>
@@ -445,7 +463,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn (hiển thị km đường bộ quy đổi chi tiết)
+// Hàm phụ vẽ card thông tin từng đơn (có hiển thị km ướt chi tiết từng chặng)
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
@@ -479,7 +497,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const batDauGiaoHang = data.batDauGiaoHang || '';
     const ketThucGiaoHang = data.ketThucGiaoHang || '';
 
-    // Số km công-tơ-mét thực tế của đơn này
     let kmGiaoText = '';
     const kmKT = Number(data.kmKetThucGiaoHang) || 0;
     if (kmKT > 0) {
@@ -491,27 +508,21 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             const kmKTTruoc = Number(danhSachDon[index - 1]?.kmKetThucGiaoHang) || 0;
             if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
         }
-        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(Đồng hồ: ${kmGiao} km)</span>`;
+        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(${kmGiao} km)</span>`;
     } else {
-        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(Đồng hồ: 0 km)</span>`;
+        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Quãng đường đường bộ dự kiến chặng này
-    const kmDuongBoChuyenDo = data._kmDuongBo !== undefined ? data._kmDuongBo : 0;
-    const badgeDuongBo = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Quãng đường xe chạy thực tế quy đổi từ GPS">🛣️ Đường bộ: ${kmDuongBoChuyenDo} km</span>`;
+    // Hiển thị số km ướt của chặng này
+    const kmUotChặng = data._kmUot !== undefined ? data._kmUot : 0;
+    const badgeKmUot = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Quãng đường km ướt thực tế từ GPS">💧 Km ướt: ${kmUotChặng} km</span>`;
 
-    const khoangCachCheckInKm = tinhKhoangCachDuongBoThucTe(
-        data.dinhVi ? Number(data.dinhVi.split(',')[0]) : 0,
-        data.dinhVi ? Number(data.dinhVi.split(',')[1]) : 0,
-        data.checkIn ? Number(data.checkIn.split(',')[0]) : 0,
-        data.checkIn ? Number(data.checkIn.split(',')[1]) : 0
-    ) / 1.3; // Đưa về khoảng cách thực tế để check độ lệch check-in
-    
+    const khoangCachKm = tinhKhoangCachCheckIn(data.dinhVi, data.checkIn);
     let htmlKhoangCach = '';
-    if (data.dinhVi && data.checkIn && data.dinhVi !== "0,0" && data.checkIn !== "0,0") {
-        const kcCheckInMeters = (khoangCachCheckInKm * 1.3 * 1000).toFixed(0);
-        const iconCheck = khoangCachCheckInKm < 0.2 ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
-        htmlKhoangCach = ` | ${iconCheck} Check-in lệch ${(khoangCachCheckInKm).toFixed(1)} km`;
+    if (khoangCachKm !== null) {
+        const kcNum = parseFloat(khoangCachKm);
+        const iconCheck = kcNum < 0.2 ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
+        htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm} km`;
     } else {
         htmlKhoangCach = ` | <span style="color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
     }
@@ -539,7 +550,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
                 <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span>
             </div>
             <div style="display: flex; gap: 4px; align-items: center;">
-                ${badgeDuongBo}
+                ${badgeKmUot}
                 ${badgeHT}
             </div>
         </div>
