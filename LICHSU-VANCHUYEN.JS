@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tự động tính và hiển thị tổng km đi & về cho nhóm chưa giao
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tính tỷ lệ chi phí vận chuyển / doanh thu và hiển thị 1 số lẻ
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -168,7 +168,7 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán Láng giềng gần nhất đồng thời tính tổng km Đi và Về cho nhóm chưa giao
+// Thuật toán Láng giềng gần nhất đồng thời tính tổng km Đi và Về
 function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length === 0) return { optimized: [], tongKmDi: 0, tongKmVe: 0 };
 
@@ -228,7 +228,6 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
         don._thuTu = idx + 1;
     });
 
-    // Tính km về: từ điểm giao hàng cuối cùng quay trở lại Kho 55 Tầm Vu
     let tongKmVe = 0;
     if (hasValidStop) {
         tongKmVe = tinhKhoangCachNoiBo(lastValidLat, lastValidLon, latKho, lonKho);
@@ -241,7 +240,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu và tính tuyến đường...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu và tính tỷ lệ chi phí...</div>';
 
     try {
         const thangNum = parseInt(thangChon, 10);
@@ -343,6 +342,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
 
             let kmDi = 0;
+            let kmVeNum = 0;
             let textKmVe = "chờ"; 
 
             if (laNhomChuaGiao) {
@@ -363,9 +363,9 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 let ketQuaSapXep = sapXepVaTinhKmNoiBo(donsChuaGiao, LAT_KHO, LON_KHO);
                 trip.dons = [...ketQuaSapXep.optimized, ...donsDaGiao];
                 
-                // Gán trực tiếp km đi và km về cho nhóm chưa giao theo đúng yêu cầu
                 kmDi = ketQuaSapXep.tongKmDi;
-                textKmVe = ketQuaSapXep.tongKmVe + "km";
+                kmVeNum = ketQuaSapXep.tongKmVe;
+                textKmVe = kmVeNum + "km";
             } else {
                 trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
                 trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
@@ -386,7 +386,8 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                             if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
                                 const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
                                 if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
-                                    textKmVe = (kmBDChuyenSau - kmKTCuoi) + "km";
+                                    kmVeNum = kmBDChuyenSau - kmKTCuoi;
+                                    textKmVe = kmVeNum + "km";
                                 }
                                 break;
                             }
@@ -395,9 +396,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
             }
 
-            let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0;
+            let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0, doanhThuChuyen = 0;
             trip.dons.forEach(don => {
                 if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
+                if (don.thanhTien) doanhThuChuyen += Number(don.thanhTien) || 0;
                 const nganhStr = don.nganh ? don.nganh.trim().toLowerCase() : "";
                 const kg = Number(don.sonTbvsKg) || 0;
                 if (nganhStr.includes("thiết bị vệ sinh") || nganhStr.includes("tbvs")) {
@@ -410,9 +412,16 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             trip.tongBaoBot = Math.round(tongBotKg / 40);
             trip.tongSon = tongSonKg;
             trip.tongTbvs = tongTbvsKg;
-
             trip.kmDi = kmDi;
             trip.textKmVe = textKmVe;
+
+            // TÍNH TỶ LỆ THEO YÊU CẦU: (km đi + km về) * 10,000 / doanh thu * 100% (Hiển thị 1 số lẻ)
+            let tyLePhi = 0;
+            const tongKmChuyen = kmDi + kmVeNum;
+            if (doanhThuChuyen > 0) {
+                tyLePhi = ((tongKmChuyen * 10000) / doanhThuChuyen) * 100;
+            }
+            trip._tyLePhi = tyLePhi.toFixed(1);
         }
 
         let groupedByDate = {};
@@ -471,10 +480,13 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 const vehicleHeader = document.createElement('div');
                 vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;`;
                 
+                // Badge hiển thị tỷ lệ % chi phí / doanh thu (1 số lẻ)
+                const badgeTyLePhi = `<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px;" title="Tỷ lệ: (Km Đi + Về) * 10.000đ / Doanh Thu">📊 Tỷ lệ: ${trip._tyLePhi}%</span>`;
+
                 if (trip.isXeMay) {
                     vehicleHeader.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong></span> 
+                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> ${badgeTyLePhi}</span> 
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
@@ -484,7 +496,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 } else {
                     vehicleHeader.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span></span>
+                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span> ${badgeTyLePhi}</span>
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
