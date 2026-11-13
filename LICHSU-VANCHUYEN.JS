@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Lọc địa chỉ chỉ lấy Đường - Xã - Tỉnh (bỏ số nhà và ấp)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Chỉ hiển thị Xã - Tỉnh cho gọn gàng
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -45,62 +45,44 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1]; // Lấy từ cuối cùng
 }
 
-// Hàm lọc và rút gọn địa chỉ từ trường noiGiao: Chỉ lấy Đường - Xã/Phường - Tỉnh/Thành phố (Bỏ số nhà, ấp)
+// Hàm lọc lấy đúng Xã/Phường và Tỉnh/Thành phố từ trường noiGiao
 function rutGonDiaChiNoiGiao(noiGiaoStr) {
     if (!noiGiaoStr || typeof noiGiaoStr !== "string") return "---";
 
     // Cắt bỏ phần dư thừa phía sau dấu ngoặc đơn (nếu có)
     let diaChiClean = noiGiaoStr.split("(")[0].trim();
     
-    // Tách các thành phần địa chỉ bằng dấu phẩy
+    // Tách các thành phần bằng dấu phẩy
     let parts = diaChiClean.split(",").map(p => p.trim()).filter(p => p !== "" && !p.toLowerCase().includes("việt nam"));
 
-    let duong = "";
     let xaPhuong = "";
     let tinhTp = "";
 
     parts.forEach(part => {
         let lower = part.toLowerCase();
         
-        // 1. Nhận diện Xã, Phường, Thị trấn
+        // 1. Bắt Xã / Phường / Thị trấn
         if (lower.startsWith("xã ") || lower.startsWith("phường ") || lower.startsWith("thị trấn ")) {
             xaPhuong = part.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
         } 
-        // 2. Nhận diện Tỉnh hoặc Thành phố cấp tỉnh
+        // 2. Bắt Tỉnh / Thành phố
         else if (lower.startsWith("tỉnh ") || lower.startsWith("thành phố ")) {
             tinhTp = part.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
-        } 
-        // 3. Nhận diện Đường hoặc Quốc lộ (Bỏ qua số nhà, ấp, khu phố)
-        else if (!duong && (lower.includes("ql") || lower.includes("đường") || lower.includes("đT") || lower.startsWith("quốc lộ") || lower.startsWith("đường"))) {
-            duong = part.replace(/^(Đường|Quốc lộ|QL|Đt)\s*/i, "").trim();
-            // Nếu có chứa QL kèm số (ví dụ QL 61) thì giữ lại nguyên vẹn
-            if (lower.includes("ql") || lower.includes("quốc lộ") || lower.includes("đt")) {
-                duong = part;
-            }
         }
     });
 
-    // Nếu không tìm thấy tên đường rõ ràng qua từ khóa, lọc lấy phần tử không chứa số nhà/ấp/huyện/quận
-    if (!duong) {
-        let foundDuong = parts.find(p => {
-            let l = p.toLowerCase();
-            return !l.includes("số nhà") && !l.includes("ấp") && !l.includes("khu phố") && !l.includes("huyện") && !l.includes("quận") && !l.includes("thị xã") && !l.startsWith("xã") && !l.startsWith("phường") && !l.startsWith("tỉnh");
-        });
-        if (foundDuong) duong = foundDuong;
-    }
-
-    // Nếu vẫn chưa bắt được xã/phường
+    // Nếu chưa bắt được xã/phường qua từ khóa, tìm phần tử chứa từ xã/phường/thị trấn
     if (!xaPhuong) {
         let foundXa = parts.find(p => /^(xã|phường|thị trấn)\s+/i.test(p));
         if (foundXa) xaPhuong = foundXa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
     }
 
-    // Nếu vẫn chưa bắt được tỉnh/thành phố
-    if (!tinhTp) {
+    // Nếu chưa bắt được tỉnh/thành phố, lấy phần tử phù hợp cuối mảng
+    if (!tinhTp && parts.length > 0) {
         let foundTinh = parts.find(p => /^(tỉnh|thành phố|tp\.)\s+/i.test(p));
         if (foundTinh) {
             tinhTp = foundTinh.replace(/^(Tỉnh|Thành phố|TP\.|TP)\s+/i, "").trim();
-        } else if (parts.length >= 1) {
+        } else {
             let lastPart = parts[parts.length - 1];
             if (!/huyện|quận|thị xã|xã|phường/i.test(lastPart)) {
                 tinhTp = lastPart;
@@ -110,9 +92,8 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
         }
     }
 
-    // Gom lại theo đúng định dạng: Đường - Xã/Phường - Tỉnh/Thành phố
+    // Gom lại chỉ còn: Xã/Phường - Tỉnh/Thành phố
     let ketQuaArr = [];
-    if (duong) ketQuaArr.push(duong);
     if (xaPhuong) ketQuaArr.push(xaPhuong);
     if (tinhTp) {
         let cleanTinh = tinhTp.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
