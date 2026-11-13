@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị địa chỉ rút gọn từ noiGiao theo định dạng Đường - Xã - Tỉnh
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Đã sửa lỗi chính tả biến duyang thành duong
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -69,22 +69,19 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
         else if (lower.startsWith("tỉnh ") || lower.startsWith("thành phố ")) {
             tinhTp = part.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "");
         } 
-        // Nhận diện Đường, Quốc lộ, Tỉnh lộ, Hẻm, Số nhà (coi như Đường hoặc vị trí)
-        else if (!duyang && (lower.includes("ql") || lower.includes("đường") || lower.includes("đT") || lower.includes("số nhà") || lower.includes("ấp") || lower.includes("khu phố"))) {
+        // Nhận diện Đường, Quốc lộ, Tỉnh lộ, Hẻm, Số nhà
+        else if (!duong && (lower.includes("ql") || lower.includes("đường") || lower.includes("đT") || lower.includes("số nhà") || lower.includes("ấp") || lower.includes("khu phố"))) {
             duong = part;
         }
     });
 
-    // Nếu không tìm thấy đường riêng biệt, lấy phần tử thứ 2 (thường là tên đường/quốc lộ sau số nhà)
-    if (!duyang && parts.length >= 2) {
+    if (!duong && parts.length >= 2) {
         duong = parts[1];
-    } else if (!duyang && parts.length === 1) {
+    } else if (!duong && parts.length === 1) {
         duong = parts[0];
     }
 
-    // Nếu không bắt được xã/phường hoặc tỉnh rõ ràng, lấy các mốc cuối của mảng
     if (!xaPhuong && parts.length >= 3) {
-        // Tìm phần tử nào chứa từ xã/phường/phường/thị trấn bất kỳ
         let foundXa = parts.find(p => /xã|phường|thị trấn/i.test(p));
         if (foundXa) xaPhuong = foundXa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "");
     }
@@ -94,7 +91,6 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
         if (foundTinh) {
             tinhTp = foundTinh.replace(/^(Tỉnh|Thành phố|TP\.|TP)\s+/i, "");
         } else {
-            // Lấy phần tử áp chót hoặc cuối cùng làm tỉnh/thành phố nếu mảng dài
             let lastPart = parts[parts.length - 1];
             if (!/huyện|quận|thị xã/i.test(lastPart)) {
                 tinhTp = lastPart;
@@ -104,11 +100,13 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
         }
     }
 
-    // Gom lại theo đúng định dạng yêu cầu: Đường - Xã/Phường - Tỉnh/Thành phố
     let ketQuaArr = [];
     if (duong) ketQuaArr.push(duong);
     if (xaPhuong) ketQuaArr.push(xaPhuong);
-    if (tinhTp) ketQuaArr.push(tInhTp = tinhTp.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, ""));
+    if (tinhTp) {
+        let cleanTinh = tinhTp.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
+        ketQuaArr.push(cleanTinh);
+    }
 
     return ketQuaArr.length > 0 ? ketQuaArr.join(" - ") : diaChiClean;
 }
@@ -421,7 +419,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
     
-    // Lấy thông tin PXK thay cho Kho xuất
     const maPXK = data.pxk ? data.pxk.trim() : '---';
 
     let nhanVienHtml = '';
@@ -439,7 +436,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         nhanVienHtml = `<span>TX: ${htmlTX} | GN: ${htmlGN}</span>`;
     }
 
-    // Lấy và rút gọn địa chỉ từ trường noiGiao theo định dạng: Đường - Xã/Phường - Tỉnh/Thành phố
     const vungTieuThu = rutGonDiaChiNoiGiao(data.noiGiao);
 
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
