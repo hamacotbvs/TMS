@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Có icon xe, gom chung 1 dòng với tỷ lệ %
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị đầy đủ phương tiện, chuyến và tỷ lệ size nhỏ
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -479,11 +479,11 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 const vehicleHeader = document.createElement('div');
                 vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden;`;
                 
-                // Thêm lại icon xe (🏍️ cho xe máy, 🚛 cho xe tải) trước tên phương tiện
+                // Hiển thị đầy đủ dạng: 65C-12290 Chuyến 1 (2.4%DT) với size chữ tỷ lệ nhỏ lại
                 if (trip.isXeMay) {
                     vehicleHeader.innerHTML = `
                         <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: bold; font-size: 11px;">(${trip._tyLePhi}%DT)</span>
+                            🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
                             <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
@@ -493,7 +493,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 } else {
                     vehicleHeader.innerHTML = `
                         <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} - ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: bold; font-size: 11px;">(${trip._tyLePhi}%DT)</span>
+                            🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
                             <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
