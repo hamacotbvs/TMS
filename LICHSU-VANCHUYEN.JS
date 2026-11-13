@@ -1,11 +1,11 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giữ nguyên logic cũ, chỉ bổ sung km ướt từ GPS
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Chỉ hiển thị km ướt trên từng đơn chi tiết
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
 // Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm
 function chuanHoaNgay(ngayStr) {
-    if (!ngayStr || typeof ngaysStr !== "string") return "";
+    if (!ngayStr || typeof ngayStr !== "string") return "";
     return ngayStr.trim().split(" ")[0];
 }
 
@@ -282,7 +282,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             let kmDi = 0;
             let textKmVe = "chờ"; 
             let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0;
-            let tongKmUotChuyen = 0;
 
             trip.dons.forEach((don, donIdx) => {
                 let latHienTai = 0, lonHienTai = 0;
@@ -307,10 +306,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
                 
                 don._kmUot = kmUotNay;
-                tongKmUotChuyen += kmUotNay;
             });
-
-            trip.tongKmUot = Number(tongKmUotChuyen.toFixed(1));
 
             trip.dons.forEach(don => {
                 if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
@@ -416,7 +412,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 if (trip.isXeMay) {
                     vehicleHeader.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> (Km ướt: <strong style="color: #0284c7;">${trip.tongKmUot} km</strong>)</span> 
+                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong></span> 
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
@@ -426,7 +422,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 } else {
                     vehicleHeader.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span> (Km ướt: <strong style="color: #0284c7;">${trip.tongKmUot} km</strong>)</span>
+                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span></span>
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
