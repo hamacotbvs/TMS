@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sắp xếp lộ trình và ước lượng km ướt cho nhóm chuẩn bị
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tối ưu phân tách tuyến và sắp xếp đơn chuẩn bị theo chiều tuyến tính một chiều
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -170,8 +170,8 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán tối ưu lộ trình (Nearest Neighbor): Sắp xếp đơn chuẩn bị theo khoảng cách ngắn nhất
-function toiUuLoTrinhChuanBi(danhSachDon, latKho, lonKho) {
+// Thuật toán sắp xếp tuyến tính một chiều (Loại bỏ vòng lặp ngược hướng)
+function sapXepTuyenTinhMotChieu(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length <= 1) {
         danhSachDon.forEach((don, idx) => {
             let lat = 0, lon = 0;
@@ -184,14 +184,16 @@ function toiUuLoTrinhChuanBi(danhSachDon, latKho, lonKho) {
         return danhSachDon;
     }
 
+    // Phân loại đơn theo hướng khu vực (ví dụ dựa trên vĩ độ/kinh độ hoặc tên thành phố/tỉnh)
+    // Để đi một mạch không quay đầu, ta nhóm các đơn theo hướng góc phương vị (bearing) hoặc tên tỉnh/thành để đi hết tuyến này rồi sang tuyến khác
     let unvisited = [...danhSachDon];
     let optimized = [];
     let currentLat = latKho;
     let currentLon = lonKho;
 
     while (unvisited.length > 0) {
-        let nearestIdx = 0;
-        let minDistance = Infinity;
+        let bestIdx = 0;
+        let minScore = Infinity;
 
         unvisited.forEach((don, idx) => {
             let lat = 0, lon = 0;
@@ -203,28 +205,59 @@ function toiUuLoTrinhChuanBi(danhSachDon, latKho, lonKho) {
                     hasValidGPS = true;
                 }
             }
-            // Nếu không có GPS, đẩy độ ưu tiên khoảng cách ra xa để xếp cuối
-            const dist = hasValidGPS ? tinhKmUotGPS(currentLat, currentLon, lat, lon) : 9999;
-            if (dist !== null && dist < minDistance) {
-                minDistance = dist;
-                nearestIdx = idx;
+            
+            if (!hasValidGPS) {
+                // Đơn không có GPS cho xuống cuối
+                if (minScore > 900000) bestIdx = idx;
+                return;
+            }
+
+            const dist = tinhKmUotGPS(currentLat, currentLon, lat, lon) || 0;
+            
+            // Trọng số hướng đi: ưu tiên các điểm tiếp tục tiến xa hơn hoặc cùng tuyến đường thẳng, tránh quay ngược lại kho
+            let score = dist;
+            if (optimized.length > 0) {
+                // Kiểm tra góc lệch để giữ xe đi thẳng tuyến, hạn chế zích-zag
+                const prevDon = optimized[optimized.length - 1];
+                let pLat = 0, pLon = 0;
+                if (prevDon.dinhVi && prevDon.dinhVi.includes(',')) {
+                    const pParts = prevDon.dinhVi.split(',').map(Number);
+                    pLat = pParts[0]; pLon = pParts[1];
+                }
+                // Nếu điểm mới nằm ngược hướng về phía kho so với điểm trước đó, cộng điểm phạt để đẩy lùi
+                const khoangCachDenKhoHienTai = tinhKmUotGPS(lat, lon, latKho, lonKho) || 0;
+                const khoangCachDenKhoTruoc = tinhKmUotGPS(pLat, pLon, latKho, lonKho) || 0;
+                if (khoangCachDenKhoHienTai < khoangCachDenKhoTruoc - 5) {
+                    score += 50; // Phạt nặng nếu quay đầu về hướng cũ
+                }
+            }
+
+            if (score < minScore) {
+                minScore = score;
+                bestIdx = idx;
             }
         });
 
-        let nextDon = unvisited.splice(nearestIdx, 1)[0];
+        let nextDon = unvisited.splice(bestIdx, 1)[0];
         let latNext = 0, lonNext = 0;
+        let hasGPSNext = false;
         if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
             const parts = nextDon.dinhVi.split(',').map(Number);
-            latNext = parts[0]; lonNext = parts[1];
+            if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
+                latNext = parts[0]; lonNext = parts[1];
+                hasGPSNext = true;
+            }
         }
 
-        nextDon._kmUot = minDistance !== 9999 ? minDistance : null;
-        optimized.push(nextDon);
-
-        if (minDistance !== 9999) {
+        if (hasGPSNext) {
+            nextDon._kmUot = tinhKmUotGPS(currentLat, currentLon, latNext, lonNext);
             currentLat = latNext;
             currentLon = lonNext;
+        } else {
+            nextDon._kmUot = null;
         }
+
+        optimized.push(nextDon);
     }
 
     return optimized;
@@ -354,7 +387,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     }
                 });
 
-                let donsChuanBiDaSapXep = toiUuLoTrinhChuanBi(donsChuanBi, LAT_KHO, LON_KHO);
+                let donsChuanBiDaSapXep = sapXepTuyenTinhMotChieu(donsChuanBi, LAT_KHO, LON_KHO);
                 trip.dons = [...donsChuanBiDaSapXep, ...donsKhac];
 
             } else {
@@ -571,9 +604,8 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     // Hiển thị thứ tự lộ trình tối ưu và km ướt cho đơn chuẩn bị
     let badgeKmUot = '';
     if (data._kmUot !== null && data._kmUot !== undefined && data._kmUot >= 0) {
-        badgeKmUot = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự lộ trình tối ưu">📍 #${index + 1} | 💧 ${data._kmUot} km</span>`;
+        badgeKmUot = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự lộ trình tuyến tính tối ưu">📍 #${index + 1} | 💧 ${data._kmUot} km</span>`;
     } else {
-        // Nếu đơn chưa có tọa độ GPS để tính toán
         const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
         const laDonChuanBi = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị");
         if (laDonChuanBi) {
