@@ -1,11 +1,11 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sắp xếp theo tuyến gần nhất trước (Nearest Neighbor)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giữ nguyên đơn đã giao, sắp xếp đơn chưa giao theo khoảng cách gần nhất từ kho
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
 
 // Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm
 function chuanHoaNgay(ngayStr) {
-    if (!ngayStr || typeof ngaysStr !== "string") return "";
+    if (!ngayStr || typeof ngayStr !== "string") return "";
     return ngayStr.trim().split(" ")[0];
 }
 
@@ -97,7 +97,7 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
-// Hàm tính khoảng cách giữa 2 điểm tọa độ GPS (km)
+// Hàm tính khoảng cách GPS (km)
 function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) return null;
     try {
@@ -169,19 +169,15 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán Láng giềng gần nhất (Nearest Neighbor) cho nhóm chưa giao
-function sapXepNearestNeighbor(danhSachDon, latKho, lonKho) {
+// Thuật toán sắp xếp đơn CHƯA GIAO: Ưu tiên điểm gần Kho 55 Tầm Vu nhất lên đầu, tiếp đến các điểm gần tiếp theo
+function sapXepDonChuaGiao(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length <= 1) {
-        danhSachDon.forEach((don, idx) => {
-            don._thuTu = idx + 1;
-        });
+        danhSachDon.forEach((don, idx) => { don._thuTu = idx + 1; });
         return danhSachDon;
     }
 
     let unvisited = [...danhSachDon];
     let optimized = [];
-    let currentLat = latKho;
-    let currentLon = lonKho;
 
     while (unvisited.length > 0) {
         let nearestIdx = 0;
@@ -198,8 +194,8 @@ function sapXepNearestNeighbor(danhSachDon, latKho, lonKho) {
                 }
             }
 
-            // Nếu đơn không có GPS, đẩy độ ưu tiên ra xa nhất để xếp cuối bảng
-            const dist = hasGPS ? tinhKhoangCachGPS(currentLat, currentLon, lat, lon) : 999999;
+            // Tính khoảng cách trực tiếp từ Kho 55 Tầm Vu đến điểm giao (đảm bảo đơn nào gần kho nhất đi trước)
+            const dist = hasGPS ? tinhKhoangCachGPS(latKho, lonKho, lat, lon) : 999999;
             if (dist < minDistance) {
                 minDistance = dist;
                 nearestIdx = idx;
@@ -207,20 +203,10 @@ function sapXepNearestNeighbor(danhSachDon, latKho, lonKho) {
         });
 
         let nextDon = unvisited.splice(nearestIdx, 1)[0];
-        
-        // Cập nhật điểm mốc hiện tại sang điểm vừa ghé
-        if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
-            const parts = nextDon.dinhVi.split(',').map(Number);
-            if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
-                currentLat = parts[0];
-                currentLon = parts[1];
-            }
-        }
-
         optimized.push(nextDon);
     }
 
-    // Đánh số thứ tự lộ trình từ 1 đến hết
+    // Đánh số thứ tự từ 1 đến hết
     optimized.forEach((don, idx) => {
         don._thuTu = idx + 1;
     });
@@ -333,12 +319,11 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const LAT_KHO = 9.9234; 
         const LON_KHO = 105.1245;
 
-        // Tính toán thông số và sắp xếp lộ trình
+        // Tính toán thông số chuyến
         allTripsArray.forEach((trip, idx, arr) => {
             const laNhomChuanBi = trip.ngay.includes("Chuẩn bị");
 
             if (laNhomChuanBi) {
-                // Tách riêng đơn chuẩn bị và đơn đã giao khác trong cùng cụm nếu có
                 let donsChuanBi = [];
                 let donsKhac = [];
 
@@ -352,11 +337,11 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     }
                 });
 
-                // Sắp xếp đơn chuẩn bị theo thuật toán Láng giềng gần nhất (gần nhất đi trước)
-                let donsChuanBiSapXep = sapXepNearestNeighbor(donsChuanBi, LAT_KHO, LON_KHO);
+                // Sắp xếp đơn chưa giao theo khoảng cách gần kho nhất trước
+                let donsChuanBiSapXep = sapXepDonChuaGiao(donsChuanBi, LAT_KHO, LON_KHO);
                 trip.dons = [...donsChuanBiSapXep, ...donsKhac];
             } else {
-                // Chuyến đã giao giữ nguyên thứ tự kết thúc giao hàng như cũ
+                // Chuyến đã giao: giữ nguyên thứ tự kết thúc giao hàng như cũ
                 trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
                 trip.dons.forEach((don, i) => { don._thuTu = i + 1; });
             }
@@ -566,7 +551,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Hiển thị badge thứ tự tuyến đường tối ưu (ưu tiên gần nhất trước)
+    // Hiển thị badge thứ tự tuyến cho đơn chưa giao
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
     const laDonChuanBi = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị");
@@ -574,7 +559,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     if (laDonChuanBi) {
         let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
         if (coGPS) {
-            badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự tuyến gần nhất trước">📍 #${data._thuTu}</span>`;
+            badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự gần kho nhất trước">📍 #${data._thuTu}</span>`;
         } else {
             badgeThuTu = `<span style="background: #fef2f2; color: #dc2626; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Chưa có GPS">📍 #${data._thuTu} (Chưa GPS)</span>`;
         }
@@ -685,7 +670,7 @@ document.addEventListener('DOMContentLoaded', function() {
             inputThangVC.value = `${year}-${month}`;
         }
         
-        const [currY, currM]  = inputThangVC.value.split('-');
+        const [currY, currM] = inputThangVC.value.split('-');
         if (labelThangVC) labelThangVC.innerText = `${currM}/${currY}`;
 
         if (container && container.innerHTML.trim() === "") {
