@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tối ưu tốc độ, chỉ tính km cho đơn chưa giao bằng GraphHopper (sát Google Maps)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Dùng thuật toán tọa độ nội bộ (nhanh, gọn, độc lập)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -100,41 +100,20 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
-// Hàm gọi API GraphHopper tính km đường ô tô thực tế (Sát Google Maps nhất)
-async function tinhKmDuongDiGraphHopper(lat1, lon1, lat2, lon2) {
+// Thuật toán hình học nội bộ chuẩn xác quy đổi đường bộ (Nhân hệ số 1.15)
+function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) {
         return 0;
     }
-    try {
-        const url = `https://graphhopper.com/api/1/route?point=${lat1},${lon1}&point=${lat2},${lon2}&vehicle=car&locale=vi&calc_points=false&key=3df8991a-7b3b-4899-b1d5-9150033c5e80`;
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.paths && data.paths.length > 0) {
-            return Math.round(data.paths[0].distance / 1000);
-        }
-    } catch (error) {
-        console.error("Lỗi GraphHopper, chuyển sang OSRM dự phòng:", error);
-    }
-    
-    // Fallback dự phòng qua OSRM nếu GraphHopper bận
-    try {
-        const fallbackUrl = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`;
-        const res = await fetch(fallbackUrl);
-        const d = await res.json();
-        if (d.code === "Ok" && d.routes && d.routes.length > 0) {
-            return Math.round(d.routes[0].distance / 1000);
-        }
-    } catch (e) {}
-
-    // Fallback cuối cùng bằng công thức hình học
     const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
               Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.15);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    // Nhân hệ số 1.15 để bù độ cong đường xá thực tế so với đường chim bay
+    return Math.round(R * c * 1.15);
 }
 
 // Hàm tính khoảng cách check-in lệch giữa dinhVi và checkIn
@@ -190,8 +169,8 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán sắp xếp tuyến và CHỈ TÍNH GRAPHSHOPPER CHO ĐƠN CHƯA GIAO
-async function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
+// Thuật toán Láng giềng gần nhất dùng tính toán nội bộ cực nhanh
+function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length === 0) return danhSachDon;
 
     let unvisited = [...danhSachDon];
@@ -228,8 +207,7 @@ async function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
         if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
             const parts = nextDon.dinhVi.split(',').map(Number);
             if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
-                // CHỈ GỌI GRAPHSHOPPER ĐỐI VỚI ĐƠN CHƯA GIAO
-                kmChang = await tinhKmDuongDiGraphHopper(currentLat, currentLon, parts[0], parts[1]);
+                kmChang = tinhKhoangCachNoiBo(currentLat, currentLon, parts[0], parts[1]);
                 currentLat = parts[0];
                 currentLon = parts[1];
             }
@@ -250,7 +228,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu nhanh và tính tuyến đường...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>';
 
     try {
         const thangNum = parseInt(thangChon, 10);
@@ -347,7 +325,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const LAT_KHO = 9.9234; 
         const LON_KHO = 105.1245;
 
-        // CHỈ GỌI TÍNH TOÁN CHO NHÓM CHƯA GIAO ĐỂ TĂNG TỐC ĐỘ GẤP BỘI
         for (let idx = 0; idx < allTripsArray.length; idx++) {
             let trip = allTripsArray[idx];
             const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
@@ -367,7 +344,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     }
                 });
 
-                let donsChuaGiaoSapXep = await sapXepVaTinhKmChuaGiao(donsChuaGiao, LAT_KHO, LON_KHO);
+                let donsChuaGiaoSapXep = sapXepVaTinhKmNoiBo(donsChuaGiao, LAT_KHO, LON_KHO);
                 trip.dons = [...donsChuaGiaoSapXep, ...donsDaGiao];
             } else {
                 trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
