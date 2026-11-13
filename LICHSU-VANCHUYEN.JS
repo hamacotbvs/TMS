@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Chỉ hiển thị Xã - Tỉnh cho gọn gàng
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Có thêm ô tìm kiếm tự do toàn bộ trường dữ liệu
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -158,7 +158,7 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "") {
+window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "", tuKhoaTimKiem = "") {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
@@ -188,6 +188,21 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const ngayGom = layNgayGomNhom(data);
+            
+            // Nếu có từ khóa tìm kiếm tự do, kiểm tra xem có khớp với bất kỳ trường nào không
+            if (tuKhoaTimKiem && tuKhoaTimKiem.trim() !== "") {
+                const keyword = tuKhoaTimKiem.toLowerCase().trim();
+                let match = false;
+                
+                // Gom tất cả giá trị các trường thành một chuỗi lớn để quét tìm kiếm
+                const hopThanhChuoi = Object.values(data).join(" ").toLowerCase();
+                if (hopThanhChuoi.includes(keyword) || docSnap.id.toLowerCase().includes(keyword)) {
+                    match = true;
+                }
+                
+                if (!match) return; // Bỏ qua nếu không khớp từ khóa
+            }
+
             listData.push({ 
                 id: docSnap.id, 
                 ...data, 
@@ -308,7 +323,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
         if (sortedDates.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với phương tiện bạn chọn trong tháng này.</div>';
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với từ khóa hoặc phương tiện bạn chọn.</div>';
             return;
         }
 
@@ -528,6 +543,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     const container = document.getElementById('danhSachLichSuVanChuyen');
 
+    // Tự động tạo ô input tìm kiếm tự do nếu chưa có trên giao diện HTML
+    let inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
+    if (!inputTimKiemTuDo && selectPhuongTien && selectPhuongTien.parentNode) {
+        inputTimKiemTuDo = document.createElement('input');
+        inputTimKiemTuDo.id = 'inputTimKiemTuDo';
+        inputTimKiemTuDo.type = 'text';
+        inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm từ khóa bất kỳ...';
+        inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; flex: 1; min-width: 150px;';
+        
+        // Chèn ô input vào ngay cạnh ô chọn phương tiện
+        selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
+    }
+
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -557,9 +585,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (inputThangVC && inputThangVC.value) {
                 const [y, m] = inputThangVC.value.split('-');
                 const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
+                const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
                 
                 if (typeof window.taiLichSuVanChuyen === 'function') {
-                    window.taiLichSuVanChuyen(m, y, bienSo);
+                    window.taiLichSuVanChuyen(m, y, bienSo, tuKhoa);
                 }
             } else {
                 alert("Vui lòng chọn tháng năm trước khi tải!");
@@ -571,10 +600,28 @@ document.addEventListener('DOMContentLoaded', function() {
         selectPhuongTien.addEventListener('change', function() {
             if (inputThangVC && inputThangVC.value) {
                 const [y, m] = inputThangVC.value.split('-');
+                const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
                 if (typeof window.taiLichSuVanChuyen === 'function') {
-                    window.taiLichSuVanChuyen(m, y, this.value);
+                    window.taiLichSuVanChuyen(m, y, this.value, tuKhoa);
                 }
             }
+        });
+    }
+
+    // Hỗ trợ tìm kiếm tự động khi người dùng gõ phím (có độ trễ nhẹ debounce để mượt mà)
+    if (inputTimKiemTuDo) {
+        let timer = null;
+        inputTimKiemTuDo.addEventListener('input', function() {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                if (inputThangVC && inputThangVC.value) {
+                    const [y, m] = inputThangVC.value.split('-');
+                    const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
+                    if (typeof window.taiLichSuVanChuyen === 'function') {
+                        window.taiLichSuVanChuyen(m, y, bienSo, this.value);
+                    }
+                }
+            }, 300);
         });
     }
 });
