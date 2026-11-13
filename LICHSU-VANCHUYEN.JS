@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Lấy xã từ phuongXa, tỉnh từ thanhPho
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Cần Thơ lấy thêm đường, các tỉnh khác lấy Xã - Tỉnh
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -45,15 +45,46 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1]; // Lấy từ cuối cùng
 }
 
-// Hàm lấy Xã từ trường phuongXa và Tỉnh từ thanhPho (Đã lược bỏ tiền tố Xã/Phường/Tỉnh/Thành phố cho gọn)
+// Hàm xử lý vùng tiêu thụ: Cần Thơ lấy thêm Đường, các tỉnh khác lấy Xã - Tỉnh
 function layVungTieuThu(data) {
     let xa = data.phuongXa ? data.phuongXa.trim() : "";
     let tinh = data.thanhPho ? data.thanhPho.trim() : "";
 
-    // Bỏ các từ khóa dư thừa nếu có trong dữ liệu
+    // Bỏ tiền tố rườm rà
     xa = xa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
     tinh = tinh.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
 
+    // Kiểm tra nếu là Cần Thơ thì bóc thêm tên Đường từ trường noiGiao
+    if (tinh.toLowerCase().includes("cần thơ")) {
+        let duong = "";
+        if (data.noiGiao && typeof data.noiGiao === "string") {
+            let diaChiClean = data.noiGiao.split("(")[0].trim();
+            let parts = diaChiClean.split(",").map(p => p.trim()).filter(p => p !== "");
+            
+            // Tìm phần tử chứa từ khóa đường, QL hoặc không chứa số nhà/ấp/quận/xã/tỉnh
+            let foundDuong = parts.find(p => {
+                let l = p.toLowerCase();
+                return l.includes("đường") || l.includes("ql") || l.includes("đt") || l.includes("quốc lộ") || l.includes("3/2") || l.includes("30/4") || l.includes("cách mạng tháng");
+            });
+
+            if (!foundDuong) {
+                foundDuong = parts.find(p => {
+                    let l = p.toLowerCase();
+                    return !l.includes("số nhà") && !l.includes("ấp") && !l.includes("khu phố") && !l.includes("huyện") && !l.includes("quận") && !l.includes("thị xã") && !l.startsWith("xã") && !l.startsWith("phường") && !l.startsWith("tỉnh") && !l.includes("việt nam");
+                });
+            }
+
+            if (foundDuong) duong = foundDuong;
+        }
+
+        let arr = [];
+        if (duong) arr.push(duong);
+        if (xa) arr.push(xa);
+        if (tinh) arr.push(tinh);
+        return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
+    } 
+    
+    // Các tỉnh thành khác chỉ lấy: Xã - Tỉnh
     let arr = [];
     if (xa) arr.push(xa);
     if (tinh) arr.push(tinh);
@@ -517,10 +548,10 @@ document.addEventListener('DOMContentLoaded', function() {
         inputTimKiemTuDo.type = 'text';
         inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm...';
         
-        // Thiết kế ban đầu: nhỏ gọn, có hiệu ứng chuyển động mượt mà
+        // Thiết kế ban đầu: nhỏ gọn, hiệu ứng chuyển động mượt mà
         inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; width: 100px; transition: width 0.3s ease, box-shadow 0.3s ease;';
         
-        // Khi click vào (focus) hoặc khi đang gõ: tự động mở rộng ra
+        // Khi click vào (focus) hoặc đang gõ: tự động mở rộng ra
         inputTimKiemTuDo.addEventListener('focus', function() {
             this.style.width = '240px';
             this.style.boxShadow = '0 0 0 2px rgba(2, 132, 199, 0.2)';
