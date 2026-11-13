@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển (Phiên bản chuẩn ban đầu)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giữ nguyên thứ tự đơn đã giao, tối ưu lộ trình tuyến tính cho đơn chưa giao
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -97,6 +97,24 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
+// Hàm tính quãng đường chim bay quy đổi GPS
+function tinhKmUotGPS(lat1, lon1, lat2, lon2) {
+    if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) return null;
+    try {
+        const R = 6371; 
+        const dLat = (lat2 - lat1) * (Math.PI / 180);
+        const dLon = (lon2 - lon1) * (Math.PI / 180);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    } catch (e) {
+        return null;
+    }
+}
+
 // Hàm tính khoảng cách check-in lệch giữa dinhVi và checkIn
 function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
@@ -151,6 +169,73 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
+// Thuật toán sắp xếp tuyến tính một chiều cho đơn chưa giao (chưa bị lặp vòng ngược)
+function toiUuTuyenDuongChuaGiao(danhSachDon, latKho, lonKho) {
+    if (!danhSachDon || danhSachDon.length <= 1) return danhSachDon;
+
+    let unvisited = [...danhSachDon];
+    let optimized = [];
+    let currentLat = latKho;
+    let currentLon = lonKho;
+
+    while (unvisited.length > 0) {
+        let bestIdx = 0;
+        let minScore = Infinity;
+
+        unvisited.forEach((don, idx) => {
+            let lat = 0, lon = 0;
+            let hasValidGPS = false;
+            if (don.dinhVi && typeof don.dinhVi === 'string' && don.dinhVi.includes(',')) {
+                const parts = don.dinhVi.split(',').map(Number);
+                if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
+                    lat = parts[0]; lon = parts[1];
+                    hasValidGPS = true;
+                }
+            }
+            
+            if (!hasValidGPS) {
+                if (minScore > 900000) bestIdx = idx;
+                return;
+            }
+
+            const dist = tinhKmUotGPS(currentLat, currentLon, lat, lon) || 0;
+            let score = dist;
+
+            // Chặn quay đầu: nếu điểm tiếp theo nằm hướng ngược về kho so với điểm hiện tại, cộng điểm phạt
+            if (optimized.length > 0) {
+                const prevDon = optimized[optimized.length - 1];
+                let pLat = 0, pLon = 0;
+                if (prevDon.dinhVi && prevDon.dinhVi.includes(',')) {
+                    const pParts = prevDon.dinhVi.split(',').map(Number);
+                    pLat = pParts[0]; pLon = pParts[1];
+                }
+                const khoangCachKhoHienTai = tinhKmUotGPS(lat, lon, latKho, lonKho) || 0;
+                const khoangCachKhoTruoc = tinhKmUotGPS(pLat, pLon, latKho, lonKho) || 0;
+                if (khoangCachKhoHienTai < khoangCachKhoTruoc - 3) {
+                    score += 50; // Tránh quay đầu vòng lại
+                }
+            }
+
+            if (score < minScore) {
+                minScore = score;
+                bestIdx = idx;
+            }
+        });
+
+        let nextDon = unvisited.splice(bestIdx, 1)[0];
+        if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
+            const parts = nextDon.dinhVi.split(',').map(Number);
+            if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
+                currentLat = parts[0];
+                currentLon = parts[1];
+            }
+        }
+        optimized.push(nextDon);
+    }
+
+    return optimized;
+}
+
 window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "", tuKhoaTimKiem = "") {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -202,7 +287,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             });
         });
 
-        // Sắp xếp dữ liệu tăng dần theo thời gian để dò km Về xuyên ngày chính xác
+        // Sắp xếp dữ liệu tăng dần theo thời gian
         listData.sort((a, b) => {
             let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
             let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
@@ -253,9 +338,34 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             return timeA.localeCompare(timeB);
         });
 
-        // Tính toán thông số chuyến
+        const LAT_KHO = 9.9234; 
+        const LON_KHO = 105.1245;
+
+        // Xử lý thứ tự đơn: Đã giao giữ nguyên, Chưa giao tối ưu tuyến đường
         allTripsArray.forEach((trip, idx, arr) => {
-            trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
+            const laNhomChuanBi = trip.ngay.includes("Chuẩn bị");
+
+            if (laNhomChuanBi) {
+                let donsChuanBi = [];
+                let donsKhac = [];
+
+                trip.dons.forEach(don => {
+                    const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
+                    const laDonChuanBiItem = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị");
+                    if (laDonChuanBiItem) {
+                        donsChuanBi.push(don);
+                    } else {
+                        donsKhac.push(don);
+                    }
+                });
+
+                // Tối ưu tuyến đường cho nhóm chưa giao
+                let donsChuanBiDaSapXep = toiUuTuyenDuongChuaGiao(donsChuanBi, LAT_KHO, LON_KHO);
+                trip.dons = [...donsChuanBiDaSapXep, ...donsKhac];
+            } else {
+                // Giữ nguyên thứ tự theo kết thúc giao hàng như cũ đối với chuyến đã giao
+                trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
+            }
 
             let kmDi = 0;
             let textKmVe = "chờ"; 
