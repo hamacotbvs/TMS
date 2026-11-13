@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sắp xếp tuyến tối ưu và tính km đường ô tô thực tế bằng mã nguồn mở OSRM
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Chỉ tính km OSRM cho đơn chưa giao giúp tăng tốc độ tối đa
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -100,7 +100,7 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
-// Hàm gọi API mã nguồn mở OSRM để tính số km đường ô tô thực tế (Miễn phí 100%)
+// Hàm gọi API OSRM tính km đường ô tô thực tế
 async function tinhKmDuongDiOSRM(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) {
         return 0;
@@ -111,22 +111,20 @@ async function tinhKmDuongDiOSRM(lat1, lon1, lat2, lon2) {
         const data = await response.json();
         
         if (data.code === "Ok" && data.routes && data.routes.length > 0) {
-            const distanceMeters = data.routes[0].distance;
-            return Math.round(distanceMeters / 1000);
+            return Math.round(data.routes[0].distance / 1000);
         }
     } catch (error) {
-        console.error("Lỗi kết nối OSRM, dùng tạm tính toán hình học:", error);
+        console.error("Lỗi OSRM:", error);
     }
     
-    // Fallback phòng hờ khi mất mạng: dùng tạm công thức hình học nhân hệ số 1.15
+    // Fallback dự phòng nhanh bằng công thức hình học
     const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
               Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 1.15);
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.15);
 }
 
 // Hàm tính khoảng cách check-in lệch giữa dinhVi và checkIn
@@ -144,8 +142,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return (R * c).toFixed(1);
+        return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
     } catch (e) {
         return null;
     }
@@ -183,7 +180,7 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán Láng giềng gần nhất kết hợp OSRM tính số km đường ô tô thực tế liên tiếp
+// Thuật toán sắp xếp và CHỈ TÍNH OSRM CHO ĐƠN CHƯA GIAO
 async function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length === 0) return danhSachDon;
 
@@ -196,7 +193,6 @@ async function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
         let nearestIdx = 0;
         let minDistance = Infinity;
 
-        // Tìm điểm gần nhất trước mắt
         for (let i = 0; i < unvisited.length; i++) {
             let don = unvisited[i];
             let lat = 0, lon = 0;
@@ -209,7 +205,6 @@ async function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
                 }
             }
 
-            // Ước lượng khoảng cách nhanh để tìm index gần nhất
             let estDist = hasGPS ? Math.abs(currentLat - lat) + Math.abs(currentLon - lon) : 999999;
             if (estDist < minDistance) {
                 minDistance = estDist;
@@ -223,7 +218,7 @@ async function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
         if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
             const parts = nextDon.dinhVi.split(',').map(Number);
             if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
-                // Gọi OSRM lấy km đường ô tô thực tế
+                // CHỈ GỌI OSRM ĐỐI VỚI ĐƠN CHƯA GIAO
                 kmChang = await tinhKmDuongDiOSRM(currentLat, currentLon, parts[0], parts[1]);
                 currentLat = parts[0];
                 currentLon = parts[1];
@@ -245,7 +240,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu và tính tuyến đường ô tô...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu nhanh...</div>';
 
     try {
         const thangNum = parseInt(thangChon, 10);
@@ -278,10 +273,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 const hopThanhChuoi = Object.values(data).join(" ") + " " + docSnap.id;
                 const chuoiKhongDau = loaiBoDauTiengViet(hopThanhChuoi);
 
-                if (chuoiKhongDau.includes(keywordKhongDau)) {
-                    match = true;
-                }
-                
+                if (chuoiKhongDau.includes(keywordKhongDau)) match = true;
                 if (!match) return; 
             }
 
@@ -292,7 +284,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             });
         });
 
-        // Sắp xếp dữ liệu tăng dần theo thời gian
         listData.sort((a, b) => {
             let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
             let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
@@ -346,7 +337,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const LAT_KHO = 9.9234; 
         const LON_KHO = 105.1245;
 
-        // Xử lý tính toán bất đồng bộ cho từng chuyến
+        // CHỈ GỌI OSRM XỬ LÝ NHÓM CHƯA GIAO, BỎ QUA NHÓM ĐÃ GIAO ĐỂ TĂNG TỐC ĐỘ GẤP BỘI
         for (let idx = 0; idx < allTripsArray.length; idx++) {
             let trip = allTripsArray[idx];
             const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
@@ -366,7 +357,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     }
                 });
 
-                // Sắp xếp đơn chưa giao và tính km đường ô tô thực tế từ kho qua OSRM
+                // Chỉ tính toán cho các đơn chưa giao
                 let donsChuaGiaoSapXep = await sapXepVaTinhKmChuaGiao(donsChuaGiao, LAT_KHO, LON_KHO);
                 trip.dons = [...donsChuaGiaoSapXep, ...donsDaGiao];
             } else {
@@ -421,7 +412,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             trip.textKmVe = textKmVe;
         }
 
-        // Gom nhóm theo Ngày để hiển thị
         let groupedByDate = {};
         allTripsArray.forEach(trip => {
             const ngay = trip.ngay;
@@ -436,7 +426,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             return;
         }
 
-        // Render ra giao diện
         sortedDates.forEach(ngay => {
             const tripsInDay = groupedByDate[ngay];
 
@@ -529,7 +518,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
@@ -579,7 +567,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Badge thứ tự tuyến và điền thẳng số km OSRM vào nhãn Đã xuất / Chưa giao
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
     const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
@@ -659,7 +646,6 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     parentElement.appendChild(cardItem);
 }
 
-// Khởi tạo sự kiện giao diện và tương tác DOM hoàn chỉnh
 document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
     const labelThangVC = document.getElementById('labelThangNamVC');
@@ -673,7 +659,6 @@ document.addEventListener('DOMContentLoaded', function() {
         inputTimKiemTuDo.id = 'inputTimKiemTuDo';
         inputTimKiemTuDo.type = 'text';
         inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm...';
-        
         inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; width: 100px; transition: width 0.3s ease, box-shadow 0.3s ease;';
         
         inputTimKiemTuDo.addEventListener('focus', function() {
@@ -698,10 +683,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const month = String(now.getMonth() + 1).padStart(2, '0');
 
     if (inputThangVC) {
-        if (!inputThangVC.value) {
-            inputThangVC.value = `${year}-${month}`;
-        }
-        
+        if (!inputThangVC.value) inputThangVC.value = `${year}-${month}`;
         const [currY, currM] = inputThangVC.value.split('-');
         if (labelThangVC) labelThangVC.innerText = `${currM}/${currY}`;
 
@@ -723,7 +705,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const [y, m] = inputThangVC.value.split('-');
                 const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
                 const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
-                
                 if (typeof window.taiLichSuVanChuyen === 'function') {
                     window.taiLichSuVanChuyen(m, y, bienSo, tuKhoa);
                 }
