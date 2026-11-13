@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sắp xếp theo tuyến gần nhất cho cả đơn "Chuẩn bị" và "Đã xuất kho"
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sắp xếp tuyến tối ưu và điền thẳng số km thực tế vào nhãn Đã xuất
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -90,7 +90,7 @@ function layVungTieuThu(data) {
     return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
 }
 
-// Hàm loại bỏ dấu tiếng Việt để phục vụ tìm kiếm thông minh không dấu/có dấu
+// Hàm loại bỏ dấu tiếng Việt để phục vụ tìm kiếm thông minh
 function loaiBoDauTiengViet(str) {
     if (!str || typeof str !== "string") return "";
     return str.normalize("NFD")
@@ -100,7 +100,7 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
-// Hàm tính khoảng cách GPS (km)
+// Hàm tính khoảng cách GPS (km) quy đổi hệ số đường bộ thực tế (+15% quãng đường cong)
 function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) return null;
     try {
@@ -112,7 +112,8 @@ function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
             Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
+        // Nhân hệ số 1.15 để xấp xỉ quãng đường đường bộ thực tế chạy xe
+        return (R * c) * 1.15;
     } catch (e) {
         return null;
     }
@@ -172,15 +173,14 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán sắp xếp đơn CHƯA GIAO HOÀN TOÀN (Chuẩn bị + Đã xuất kho): Sắp xếp điểm gần kho nhất lên đầu
-function sapXepDonChuaGiao(danhSachDon, latKho, lonKho) {
-    if (!danhSachDon || danhSachDon.length <= 1) {
-        danhSachDon.forEach((don, idx) => { don._thuTu = idx + 1; });
-        return danhSachDon;
-    }
+// Thuật toán Láng giềng gần nhất tính số km liên tiếp từ Kho -> Điểm 1 -> Điểm 2 -> ...
+function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
+    if (!danhSachDon || danhSachDon.length === 0) return danhSachDon;
 
     let unvisited = [...danhSachDon];
     let optimized = [];
+    let currentLat = latKho;
+    let currentLon = lonKho;
 
     while (unvisited.length > 0) {
         let nearestIdx = 0;
@@ -197,7 +197,7 @@ function sapXepDonChuaGiao(danhSachDon, latKho, lonKho) {
                 }
             }
 
-            const dist = hasGPS ? tinhKhoangCachGPS(latKho, lonKho, lat, lon) : 999999;
+            const dist = hasGPS ? tinhKhoangCachGPS(currentLat, currentLon, lat, lon) : 999999;
             if (dist < minDistance) {
                 minDistance = dist;
                 nearestIdx = idx;
@@ -205,6 +205,22 @@ function sapXepDonChuaGiao(danhSachDon, latKho, lonKho) {
         });
 
         let nextDon = unvisited.splice(nearestIdx, 1)[0];
+        
+        // Tính số km chặng từ mốc hiện tại đến đơn này
+        let kmChang = 0;
+        if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
+            const parts = nextDon.dinhVi.split(',').map(Number);
+            if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
+                const calculated = tinhKhoangCachGPS(currentLat, currentLon, parts[0], parts[1]);
+                if (calculated !== null) {
+                    kmChang = Math.round(calculated);
+                    currentLat = parts[0];
+                    currentLon = parts[1];
+                }
+            }
+        }
+
+        nextDon._kmTinhToan = kmChang;
         optimized.push(nextDon);
     }
 
@@ -339,13 +355,13 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     }
                 });
 
-                // Sắp xếp các đơn chưa giao / đã xuất kho theo khoảng cách gần kho nhất trước
-                let donsChuaGiaoSapXep = sapXepDonChuaGiao(donsChuaGiao, LAT_KHO, LON_KHO);
+                // Sắp xếp đơn chưa giao và tính km chặng liên tiếp từ kho
+                let donsChuaGiaoSapXep = sapXepVaTinhKmChuaGiao(donsChuaGiao, LAT_KHO, LON_KHO);
                 trip.dons = [...donsChuaGiaoSapXep, ...donsDaGiao];
             } else {
                 // Chuyến đã giao hoàn toàn: giữ nguyên thứ tự kết thúc giao hàng như cũ
                 trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
-                trip.dons.forEach((don, i) => { don._thuTu = i + 1; });
+                trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
             }
 
             let kmDi = 0;
@@ -553,7 +569,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Hiển thị badge thứ tự tuyến cho đơn chưa giao / đã xuất kho
+    // Badge thứ tự tuyến và điền thẳng số km tính toán vào nhãn Đã xuất / Chưa giao
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
     const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
@@ -561,7 +577,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     if (laChuaGiaoHoanToan) {
         let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
         if (coGPS) {
-            badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự gần kho nhất trước">📍 #${data._thuTu}</span>`;
+            badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự tuyến ưu tiên">📍 #${data._thuTu}</span>`;
         } else {
             badgeThuTu = `<span style="background: #fef2f2; color: #dc2626; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Chưa có GPS">📍 #${data._thuTu} (Chưa GPS)</span>`;
         }
@@ -586,7 +602,11 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     if (duyet === "Đã giao hàng") {
         badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao${kmGiaoText}</span>`;
     } else if (duyet === "Đã xuất kho") {
-        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất${kmGiaoText}</span>`;
+        let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
+        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi} km)</span>`;
+    } else if (laChuaGiaoHoanToan) {
+        let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
+        badgeDuyet = `<span style="color: #9333ea; font-size: 11px; font-weight: 600;">⏳ Chưa giao (${kmHienThi} km)</span>`;
     }
 
     const cardItem = document.createElement('div');
