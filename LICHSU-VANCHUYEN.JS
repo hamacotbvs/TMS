@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị ngắn gọn tỷ lệ chi phí dạng Chuyến X (X.X%DT)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Thu gọn dòng tiêu đề chuyến nằm trọn trên 1 dòng duy nhất
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -477,42 +477,47 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
 
                 const vehicleHeader = document.createElement('div');
-                vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;`;
+                vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden;`;
                 
-                // Hiển thị ngắn gọn dạng (X.X%DT) dính liền trực tiếp ngay sau số chuyến
+                // Dùng flexbox với nowrap để thông tin nằm trọn trên 1 dòng duy nhất
                 if (trip.isXeMay) {
                     vehicleHeader.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 11px;">(${trip._tyLePhi}%DT)</span></span> 
-                            <div style="display: flex; gap: 4px; align-items: center;">
-                                <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
-                                <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
-                            </div>
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 11px;">(${trip._tyLePhi}%DT)</span>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
+                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
+                            <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
                         </div>
                     `;
                 } else {
                     vehicleHeader.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span> <span style="color: #0369a1; font-weight: normal; font-size: 11px;">(${trip._tyLePhi}%DT)</span></span>
-                            <div style="display: flex; gap: 4px; align-items: center;">
-                                <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
-                                <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
-                            </div>
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — C${trip.soChuyen} <span style="color: #0369a1; font-weight: normal; font-size: 11px;">(${trip._tyLePhi}%DT)</span>
                         </div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 3px; flex-wrap: wrap; gap: 2px;">
-                            <span>Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
-                            <span style="color: #cbd5e1;">|</span>
-                            <span>Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
-                            <span style="color: #cbd5e1;">|</span>
-                            <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong></span>
-                            <span style="color: #cbd5e1;">|</span>
-                            <span>Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong></span>
-                            <span style="color: #cbd5e1;">|</span>
-                            <span>TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
+                        <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
+                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
+                            <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
                         </div>
                     `;
                 }
                 vehicleWrapper.appendChild(vehicleHeader);
+
+                // Dòng phụ hiển thị thông số chi tiết (Đi, Về, Bột, Sơn, TBVS)
+                const vehicleSubHeader = document.createElement('div');
+                vehicleSubHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; flex-wrap: wrap; gap: 2px;';
+                vehicleSubHeader.innerHTML = `
+                    <span>Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
+                    <span style="color: #cbd5e1;">|</span>
+                    <span>Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
+                    <span style="color: #cbd5e1;">|</span>
+                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong></span>
+                    <span style="color: #cbd5e1;">|</span>
+                    <span>Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong></span>
+                    <span style="color: #cbd5e1;">|</span>
+                    <span>TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
+                `;
+                vehicleWrapper.appendChild(vehicleSubHeader);
 
                 trip.dons.forEach((data, idx) => {
                     renderCardDon(data, vehicleWrapper, trip.isXeMay, idx, trip.dons);
