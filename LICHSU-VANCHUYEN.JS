@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Xe máy bỏ nhóm chuẩn bị, giữ nguyên gom ngày thường
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị địa chỉ rút gọn từ noiGiao theo định dạng Đường - Xã - Tỉnh
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -24,7 +24,6 @@ function layNgayGomNhom(data) {
         return ngayBase || "Chưa xác định";
     }
 
-    // Logic cũ cho xe tải
     let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
     let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
@@ -46,12 +45,72 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1]; // Lấy từ cuối cùng
 }
 
-// Hàm rút gọn Tỉnh / Thành phố (Bỏ các từ: Thành phố, Tỉnh, TP., TP)
-function layTenTinhThanhRutGon(tenTinh) {
-    if (!tenTinh || typeof tenTinh !== "string") return "---";
-    return tenTinh
-        .replace(/^(Thành phố|Tỉnh|TP\.|TP)\s+/i, "")
-        .trim();
+// Hàm lọc và rút gọn địa chỉ từ trường noiGiao theo định dạng: Đường - Xã/Phường - Tỉnh/Thành phố
+function rutGonDiaChiNoiGiao(noiGiaoStr) {
+    if (!noiGiaoStr || typeof noiGiaoStr !== "string") return "---";
+
+    // Cắt bỏ phần dư thừa phía sau dấu ngoặc đơn (nếu có) như (Giao hàng)+97.50K...
+    let diaChiClean = noiGiaoStr.split("(")[0].trim();
+    
+    // Tách các thành phần địa chỉ bằng dấu phẩy
+    let parts = diaChiClean.split(",").map(p => p.trim()).filter(p => p !== "" && !p.toLowerCase().includes("việt nam"));
+
+    let duong = "";
+    let xaPhuong = "";
+    let tinhTp = "";
+
+    parts.forEach(part => {
+        let lower = part.toLowerCase();
+        // Nhận diện Xã, Phường, Thị trấn
+        if (lower.startsWith("xã ") || lower.startsWith("phường ") || lower.startsWith("thị trấn ")) {
+            xaPhuong = part.replace(/^(Xã|Phường|Thị trấn)\s+/i, "");
+        } 
+        // Nhận diện Tỉnh hoặc Thành phố cấp tỉnh
+        else if (lower.startsWith("tỉnh ") || lower.startsWith("thành phố ")) {
+            tinhTp = part.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "");
+        } 
+        // Nhận diện Đường, Quốc lộ, Tỉnh lộ, Hẻm, Số nhà (coi như Đường hoặc vị trí)
+        else if (!duyang && (lower.includes("ql") || lower.includes("đường") || lower.includes("đT") || lower.includes("số nhà") || lower.includes("ấp") || lower.includes("khu phố"))) {
+            duong = part;
+        }
+    });
+
+    // Nếu không tìm thấy đường riêng biệt, lấy phần tử thứ 2 (thường là tên đường/quốc lộ sau số nhà)
+    if (!duyang && parts.length >= 2) {
+        duong = parts[1];
+    } else if (!duyang && parts.length === 1) {
+        duong = parts[0];
+    }
+
+    // Nếu không bắt được xã/phường hoặc tỉnh rõ ràng, lấy các mốc cuối của mảng
+    if (!xaPhuong && parts.length >= 3) {
+        // Tìm phần tử nào chứa từ xã/phường/phường/thị trấn bất kỳ
+        let foundXa = parts.find(p => /xã|phường|thị trấn/i.test(p));
+        if (foundXa) xaPhuong = foundXa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "");
+    }
+
+    if (!tinhTp && parts.length >= 1) {
+        let foundTinh = parts.find(p => /tỉnh|thành phố/i.test(p));
+        if (foundTinh) {
+            tinhTp = foundTinh.replace(/^(Tỉnh|Thành phố|TP\.|TP)\s+/i, "");
+        } else {
+            // Lấy phần tử áp chót hoặc cuối cùng làm tỉnh/thành phố nếu mảng dài
+            let lastPart = parts[parts.length - 1];
+            if (!/huyện|quận|thị xã/i.test(lastPart)) {
+                tinhTp = lastPart;
+            } else if (parts.length >= 2) {
+                tinhTp = parts[parts.length - 2];
+            }
+        }
+    }
+
+    // Gom lại theo đúng định dạng yêu cầu: Đường - Xã/Phường - Tỉnh/Thành phố
+    let ketQuaArr = [];
+    if (duong) ketQuaArr.push(duong);
+    if (xaPhuong) ketQuaArr.push(xaPhuong);
+    if (tinhTp) ketQuaArr.push(tInhTp = tinhTp.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, ""));
+
+    return ketQuaArr.length > 0 ? ketQuaArr.join(" - ") : diaChiClean;
 }
 
 // Hàm tính khoảng cách (km) từ tọa độ dinhVi đến checkIn bằng công thức Haversine
@@ -380,9 +439,8 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         nhanVienHtml = `<span>TX: ${htmlTX} | GN: ${htmlGN}</span>`;
     }
 
-    // Rút gọn Tỉnh / Thành phố
-    const rawVung = data.vungTieuThu || data.thanhPho || '';
-    const vungTieuThu = layTenTinhThanhRutGon(rawVung);
+    // Lấy và rút gọn địa chỉ từ trường noiGiao theo định dạng: Đường - Xã/Phường - Tỉnh/Thành phố
+    const vungTieuThu = rutGonDiaChiNoiGiao(data.noiGiao);
 
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
