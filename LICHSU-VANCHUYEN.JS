@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tính tỷ lệ chi phí vận chuyển / doanh thu và hiển thị 1 số lẻ
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị ngắn gọn tỷ lệ chi phí dạng (X.X%DT)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -240,7 +240,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu và tính tỷ lệ chi phí...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>';
 
     try {
         const thangNum = parseInt(thangChon, 10);
@@ -415,7 +415,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             trip.kmDi = kmDi;
             trip.textKmVe = textKmVe;
 
-            // TÍNH TỶ LỆ THEO YÊU CẦU: (km đi + km về) * 10,000 / doanh thu * 100% (Hiển thị 1 số lẻ)
+            // Tính tỷ lệ: (km đi + km về) * 10000 / doanhthu * 100% -> hiển thị dạng (1.7%DT)
             let tyLePhi = 0;
             const tongKmChuyen = kmDi + kmVeNum;
             if (doanhThuChuyen > 0) {
@@ -480,13 +480,13 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 const vehicleHeader = document.createElement('div');
                 vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;`;
                 
-                // Badge hiển thị tỷ lệ % chi phí / doanh thu (1 số lẻ)
-                const badgeTyLePhi = `<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px;" title="Tỷ lệ: (Km Đi + Về) * 10.000đ / Doanh Thu">📊 Tỷ lệ: ${trip._tyLePhi}%</span>`;
+                // Hiển thị ngắn gọn dạng (1.7%DT) ngay sau tên chuyến
+                const textNganGOnDT = `<span style="color: #0369a1; font-weight: bold; margin-left: 6px;">(${trip._tyLePhi}%DT)</span>`;
 
                 if (trip.isXeMay) {
                     vehicleHeader.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> ${badgeTyLePhi}</span> 
+                            <span>🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> ${textNganGOnDT}</span> 
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
@@ -496,7 +496,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 } else {
                     vehicleHeader.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span> ${badgeTyLePhi}</span>
+                            <span>🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> — <span style="color: #d97706;">Chuyến ${trip.soChuyen}</span> ${textNganGOnDT}</span>
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
                                 <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
