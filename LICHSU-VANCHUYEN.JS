@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Chỉ hiển thị km ướt trên từng đơn chi tiết
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Chỉ ước lượng km ướt cho đơn hàng chuẩn bị, đơn đã giao/đã xuất bỏ qua
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -97,7 +97,7 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
-// Hàm tính quãng đường thực tế (km ướt) quy đổi từ GPS (nhân hệ số 1.3 bù đường cua, cầu đường)
+// Hàm tính quãng đường thực tế (km ướt) quy đổi từ GPS (nhân hệ số 1.3)
 function tinhKmUotGPS(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) return 0;
     try {
@@ -275,7 +275,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const LAT_KHO = 9.9234; 
         const LON_KHO = 105.1245;
 
-        // Tính toán thông số và km ướt cho từng chuyến & từng đơn
+        // Tính toán thông số chuyến
         allTripsArray.forEach((trip, idx, arr) => {
             trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
 
@@ -283,29 +283,36 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             let textKmVe = "chờ"; 
             let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0;
 
+            // Chỉ tính km ướt cho các đơn đang ở trạng thái chuẩn bị (chưa giao hàng hoặc chưa xuất kho)
             trip.dons.forEach((don, donIdx) => {
-                let latHienTai = 0, lonHienTai = 0;
-                if (don.dinhVi && don.dinhVi.includes(',')) {
-                    const parts = don.dinhVi.split(',').map(Number);
-                    latHienTai = parts[0];
-                    lonHienTai = parts[1];
-                }
+                const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
+                const laDonChuanBi = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị");
 
-                let kmUotNay = 0;
-                if (donIdx === 0) {
-                    kmUotNay = tinhKmUotGPS(LAT_KHO, LON_KHO, latHienTai, lonHienTai);
-                } else {
-                    const donTruoc = trip.dons[donIdx - 1];
-                    let latTruoc = 0, lonTruoc = 0;
-                    if (donTruoc.dinhVi && donTruoc.dinhVi.includes(',')) {
-                        const partsTruoc = donTruoc.dinhVi.split(',').map(Number);
-                        latTruoc = partsTruoc[0];
-                        lonTruoc = partsTruoc[1];
+                if (laDonChuanBi) {
+                    let latHienTai = 0, lonHienTai = 0;
+                    if (don.dinhVi && don.dinhVi.includes(',')) {
+                        const parts = don.dinhVi.split(',').map(Number);
+                        latHienTai = parts[0];
+                        lonHienTai = parts[1];
                     }
-                    kmUotNay = tinhKmUotGPS(latTruoc, lonTruoc, latHienTai, lonHienTai);
+
+                    let kmUotNay = 0;
+                    if (donIdx === 0) {
+                        kmUotNay = tinhKmUotGPS(LAT_KHO, LON_KHO, latHienTai, lonHienTai);
+                    } else {
+                        const donTruoc = trip.dons[donIdx - 1];
+                        let latTruoc = 0, lonTruoc = 0;
+                        if (donTruoc.dinhVi && donTruoc.dinhVi.includes(',')) {
+                            const partsTruoc = donTruoc.dinhVi.split(',').map(Number);
+                            latTruoc = partsTruoc[0];
+                            lonTruoc = partsTruoc[1];
+                        }
+                        kmUotNay = tinhKmUotGPS(latTruoc, lonTruoc, latHienTai, lonHienTai);
+                    }
+                    don._kmUot = kmUotNay;
+                } else {
+                    don._kmUot = null; // Đã giao hoặc đã xuất thì không ước lượng km ướt
                 }
-                
-                don._kmUot = kmUotNay;
             });
 
             trip.dons.forEach(don => {
@@ -459,7 +466,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// Hàm phụ vẽ card thông tin từng đơn (có hiển thị km ướt chi tiết từng chặng)
+// Hàm phụ vẽ card thông tin từng đơn
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
@@ -509,9 +516,11 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Hiển thị số km ướt của chặng này
-    const kmUotChặng = data._kmUot !== undefined ? data._kmUot : 0;
-    const badgeKmUot = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Quãng đường km ướt thực tế từ GPS">💧 Km ướt: ${kmUotChặng} km</span>`;
+    // Chỉ hiển thị badge km ướt nếu đơn hàng đang có _kmUot (tức là đơn chuẩn bị)
+    let badgeKmUot = '';
+    if (data._kmUot !== null && data._kmUot !== undefined && data._kmUot > 0) {
+        badgeKmUot = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Quãng đường km ướt dự kiến từ GPS">💧 Km ướt: ${data._kmUot} km</span>`;
+    }
 
     const khoangCachKm = tinhKhoangCachCheckIn(data.dinhVi, data.checkIn);
     let htmlKhoangCach = '';
