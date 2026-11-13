@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Ô tìm kiếm thu gọn, click/focus mở rộng mượt mà
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Lấy xã từ phuongXa, tỉnh từ thanhPho
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -45,52 +45,20 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1]; // Lấy từ cuối cùng
 }
 
-// Hàm lọc lấy đúng Xã/Phường và Tỉnh/Thành phố từ trường noiGiao
-function rutGonDiaChiNoiGiao(noiGiaoStr) {
-    if (!noiGiaoStr || typeof noiGiaoStr !== "string") return "---";
+// Hàm lấy Xã từ trường phuongXa và Tỉnh từ thanhPho (Đã lược bỏ tiền tố Xã/Phường/Tỉnh/Thành phố cho gọn)
+function layVungTieuThu(data) {
+    let xa = data.phuongXa ? data.phuongXa.trim() : "";
+    let tinh = data.thanhPho ? data.thanhPho.trim() : "";
 
-    let diaChiClean = noiGiaoStr.split("(")[0].trim();
-    let parts = diaChiClean.split(",").map(p => p.trim()).filter(p => p !== "" && !p.toLowerCase().includes("việt nam"));
+    // Bỏ các từ khóa dư thừa nếu có trong dữ liệu
+    xa = xa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
+    tinh = tinh.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
 
-    let xaPhuong = "";
-    let tinhTp = "";
+    let arr = [];
+    if (xa) arr.push(xa);
+    if (tinh) arr.push(tinh);
 
-    parts.forEach(part => {
-        let lower = part.toLowerCase();
-        if (lower.startsWith("xã ") || lower.startsWith("phường ") || lower.startsWith("thị trấn ")) {
-            xaPhuong = part.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
-        } else if (lower.startsWith("tỉnh ") || lower.startsWith("thành phố ")) {
-            tinhTp = part.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
-        }
-    });
-
-    if (!xaPhuong) {
-        let foundXa = parts.find(p => /^(xã|phường|thị trấn)\s+/i.test(p));
-        if (foundXa) xaPhuong = foundXa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
-    }
-
-    if (!tinhTp && parts.length > 0) {
-        let foundTinh = parts.find(p => /^(tỉnh|thành phố|tp\.)\s+/i.test(p));
-        if (foundTinh) {
-            tinhTp = foundTinh.replace(/^(Tỉnh|Thành phố|TP\.|TP)\s+/i, "").trim();
-        } else {
-            let lastPart = parts[parts.length - 1];
-            if (!/huyện|quận|thị xã|xã|phường/i.test(lastPart)) {
-                tinhTp = lastPart;
-            } else if (parts.length >= 2) {
-                tinhTp = parts[parts.length - 2];
-            }
-        }
-    }
-
-    let ketQuaArr = [];
-    if (xaPhuong) ketQuaArr.push(xaPhuong);
-    if (tinhTp) {
-        let cleanTinh = tinhTp.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
-        ketQuaArr.push(cleanTinh);
-    }
-
-    return ketQuaArr.length > 0 ? ketQuaArr.join(" - ") : diaChiClean;
+    return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
 }
 
 // Hàm loại bỏ dấu tiếng Việt để phục vụ tìm kiếm thông minh không dấu/có dấu
@@ -442,7 +410,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         nhanVienHtml = `<span>TX: ${htmlTX} | GN: ${htmlGN}</span>`;
     }
 
-    const vungTieuThu = rutGonDiaChiNoiGiao(data.noiGiao);
+    const vungTieuThu = layVungTieuThu(data);
 
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
@@ -549,17 +517,17 @@ document.addEventListener('DOMContentLoaded', function() {
         inputTimKiemTuDo.type = 'text';
         inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm...';
         
-        // Thiết kế ban đầu: nhỏ gọn (width khoảng 100px), có hiệu ứng chuyển động mượt mà (transition)
+        // Thiết kế ban đầu: nhỏ gọn, có hiệu ứng chuyển động mượt mà
         inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; width: 100px; transition: width 0.3s ease, box-shadow 0.3s ease;';
         
-        // Khi click vào (focus) hoặc khi đang gõ mà có chữ: tự động mở rộng ra rộng rãi (flex: 1 hoặc width lớn hơn)
+        // Khi click vào (focus) hoặc khi đang gõ: tự động mở rộng ra
         inputTimKiemTuDo.addEventListener('focus', function() {
             this.style.width = '240px';
             this.style.boxShadow = '0 0 0 2px rgba(2, 132, 199, 0.2)';
             this.placeholder = '🔍 Nhập từ khóa tìm kiếm...';
         });
 
-        // Khi bấm ra ngoài (blur): nếu ô trống thì thu nhỏ lại, nếu đang có chữ thì giữ nguyên rộng
+        // Khi bấm ra ngoài (blur): nếu ô trống thì thu nhỏ lại
         inputTimKiemTuDo.addEventListener('blur', function() {
             if (!this.value) {
                 this.style.width = '100px';
