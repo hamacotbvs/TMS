@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Dùng thuật toán tọa độ nội bộ (nhanh, gọn, độc lập)
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Tự động tính và hiển thị tổng km đi & về cho nhóm chưa giao
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -112,7 +112,6 @@ function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
               Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    // Nhân hệ số 1.15 để bù độ cong đường xá thực tế so với đường chim bay
     return Math.round(R * c * 1.15);
 }
 
@@ -169,14 +168,18 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán Láng giềng gần nhất dùng tính toán nội bộ cực nhanh
+// Thuật toán Láng giềng gần nhất đồng thời tính tổng km Đi và Về cho nhóm chưa giao
 function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
-    if (!danhSachDon || danhSachDon.length === 0) return danhSachDon;
+    if (!danhSachDon || danhSachDon.length === 0) return { optimized: [], tongKmDi: 0, tongKmVe: 0 };
 
     let unvisited = [...danhSachDon];
     let optimized = [];
     let currentLat = latKho;
     let currentLon = lonKho;
+    let tongKmDi = 0;
+    let lastValidLat = latKho;
+    let lastValidLon = lonKho;
+    let hasValidStop = false;
 
     while (unvisited.length > 0) {
         let nearestIdx = 0;
@@ -208,8 +211,12 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
             const parts = nextDon.dinhVi.split(',').map(Number);
             if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
                 kmChang = tinhKhoangCachNoiBo(currentLat, currentLon, parts[0], parts[1]);
+                tongKmDi += kmChang;
                 currentLat = parts[0];
                 currentLon = parts[1];
+                lastValidLat = parts[0];
+                lastValidLon = parts[1];
+                hasValidStop = true;
             }
         }
 
@@ -221,14 +228,20 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
         don._thuTu = idx + 1;
     });
 
-    return optimized;
+    // Tính km về: từ điểm giao hàng cuối cùng quay trở lại Kho 55 Tầm Vu
+    let tongKmVe = 0;
+    if (hasValidStop) {
+        tongKmVe = tinhKhoangCachNoiBo(lastValidLat, lastValidLon, latKho, lonKho);
+    }
+
+    return { optimized, tongKmDi, tongKmVe };
 }
 
 window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "", tuKhoaTimKiem = "") {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu và tính tuyến đường...</div>';
 
     try {
         const thangNum = parseInt(thangChon, 10);
@@ -329,6 +342,9 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             let trip = allTripsArray[idx];
             const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
 
+            let kmDi = 0;
+            let textKmVe = "chờ"; 
+
             if (laNhomChuaGiao) {
                 let donsChuaGiao = [];
                 let donsDaGiao = [];
@@ -344,17 +360,42 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     }
                 });
 
-                let donsChuaGiaoSapXep = sapXepVaTinhKmNoiBo(donsChuaGiao, LAT_KHO, LON_KHO);
-                trip.dons = [...donsChuaGiaoSapXep, ...donsDaGiao];
+                let ketQuaSapXep = sapXepVaTinhKmNoiBo(donsChuaGiao, LAT_KHO, LON_KHO);
+                trip.dons = [...ketQuaSapXep.optimized, ...donsDaGiao];
+                
+                // Gán trực tiếp km đi và km về cho nhóm chưa giao theo đúng yêu cầu
+                kmDi = ketQuaSapXep.tongKmDi;
+                textKmVe = ketQuaSapXep.tongKmVe + "km";
             } else {
                 trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
                 trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
+
+                if (trip.dons.length > 0) {
+                    const donDau = trip.dons[0];
+                    const donCuoi = trip.dons[trip.dons.length - 1];
+                    const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
+                    const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
+
+                    if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
+                        kmDi = kmKTCuoi - kmBDDau;
+                    }
+
+                    if (!trip.isXeMay) {
+                        for (let nextIdx = idx + 1; nextIdx < allTripsArray.length; nextIdx++) {
+                            let nextTrip = allTripsArray[nextIdx];
+                            if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
+                                const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
+                                if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
+                                    textKmVe = (kmBDChuyenSau - kmKTCuoi) + "km";
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
-            let kmDi = 0;
-            let textKmVe = "chờ"; 
             let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0;
-
             trip.dons.forEach(don => {
                 if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
                 const nganhStr = don.nganh ? don.nganh.trim().toLowerCase() : "";
@@ -369,30 +410,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             trip.tongBaoBot = Math.round(tongBotKg / 40);
             trip.tongSon = tongSonKg;
             trip.tongTbvs = tongTbvsKg;
-
-            if (trip.dons.length > 0) {
-                const donDau = trip.dons[0];
-                const donCuoi = trip.dons[trip.dons.length - 1];
-                const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
-                const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
-
-                if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
-                    kmDi = kmKTCuoi - kmBDDau;
-                }
-
-                if (!trip.isXeMay) {
-                    for (let nextIdx = idx + 1; nextIdx < allTripsArray.length; nextIdx++) {
-                        let nextTrip = allTripsArray[nextIdx];
-                        if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
-                            const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
-                            if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
-                                textKmVe = (kmBDChuyenSau - kmKTCuoi) + "km";
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
 
             trip.kmDi = kmDi;
             trip.textKmVe = textKmVe;
