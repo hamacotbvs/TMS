@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sắp xếp tuyến tối ưu và điền thẳng số km thực tế vào nhãn Đã xuất
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sắp xếp tuyến tối ưu và tính km đường ô tô thực tế bằng mã nguồn mở OSRM
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -100,23 +100,33 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
-// Hàm tính khoảng cách GPS (km) quy đổi hệ số đường bộ thực tế (+15% quãng đường cong)
-function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
-    if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) return null;
-    try {
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * (Math.PI / 180);
-        const dLon = (lon2 - lon1) * (Math.PI / 180);
-        const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        // Nhân hệ số 1.15 để xấp xỉ quãng đường đường bộ thực tế chạy xe
-        return (R * c) * 1.15;
-    } catch (e) {
-        return null;
+// Hàm gọi API mã nguồn mở OSRM để tính số km đường ô tô thực tế (Miễn phí 100%)
+async function tinhKmDuongDiOSRM(lat1, lon1, lat2, lon2) {
+    if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) {
+        return 0;
     }
+    try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.code === "Ok" && data.routes && data.routes.length > 0) {
+            const distanceMeters = data.routes[0].distance;
+            return Math.round(distanceMeters / 1000);
+        }
+    } catch (error) {
+        console.error("Lỗi kết nối OSRM, dùng tạm tính toán hình học:", error);
+    }
+    
+    // Fallback phòng hờ khi mất mạng: dùng tạm công thức hình học nhân hệ số 1.15
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 1.15);
 }
 
 // Hàm tính khoảng cách check-in lệch giữa dinhVi và checkIn
@@ -173,8 +183,8 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán Láng giềng gần nhất tính số km liên tiếp từ Kho -> Điểm 1 -> Điểm 2 -> ...
-function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
+// Thuật toán Láng giềng gần nhất kết hợp OSRM tính số km đường ô tô thực tế liên tiếp
+async function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length === 0) return danhSachDon;
 
     let unvisited = [...danhSachDon];
@@ -186,7 +196,9 @@ function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
         let nearestIdx = 0;
         let minDistance = Infinity;
 
-        unvisited.forEach((don, idx) => {
+        // Tìm điểm gần nhất trước mắt
+        for (let i = 0; i < unvisited.length; i++) {
+            let don = unvisited[i];
             let lat = 0, lon = 0;
             let hasGPS = false;
             if (don.dinhVi && typeof don.dinhVi === 'string' && don.dinhVi.includes(',')) {
@@ -197,26 +209,24 @@ function sapXepVaTinhKmChuaGiao(danhSachDon, latKho, lonKho) {
                 }
             }
 
-            const dist = hasGPS ? tinhKhoangCachGPS(currentLat, currentLon, lat, lon) : 999999;
-            if (dist < minDistance) {
-                minDistance = dist;
-                nearestIdx = idx;
+            // Ước lượng khoảng cách nhanh để tìm index gần nhất
+            let estDist = hasGPS ? Math.abs(currentLat - lat) + Math.abs(currentLon - lon) : 999999;
+            if (estDist < minDistance) {
+                minDistance = estDist;
+                nearestIdx = i;
             }
-        });
+        }
 
         let nextDon = unvisited.splice(nearestIdx, 1)[0];
         
-        // Tính số km chặng từ mốc hiện tại đến đơn này
         let kmChang = 0;
         if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
             const parts = nextDon.dinhVi.split(',').map(Number);
             if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
-                const calculated = tinhKhoangCachGPS(currentLat, currentLon, parts[0], parts[1]);
-                if (calculated !== null) {
-                    kmChang = Math.round(calculated);
-                    currentLat = parts[0];
-                    currentLon = parts[1];
-                }
+                // Gọi OSRM lấy km đường ô tô thực tế
+                kmChang = await tinhKmDuongDiOSRM(currentLat, currentLon, parts[0], parts[1]);
+                currentLat = parts[0];
+                currentLon = parts[1];
             }
         }
 
@@ -235,7 +245,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu vận chuyển từ server...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu và tính tuyến đường ô tô...</div>';
 
     try {
         const thangNum = parseInt(thangChon, 10);
@@ -336,8 +346,9 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const LAT_KHO = 9.9234; 
         const LON_KHO = 105.1245;
 
-        // Tính toán thông số và sắp xếp tuyến đường
-        allTripsArray.forEach((trip, idx, arr) => {
+        // Xử lý tính toán bất đồng bộ cho từng chuyến
+        for (let idx = 0; idx < allTripsArray.length; idx++) {
+            let trip = allTripsArray[idx];
             const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
 
             if (laNhomChuaGiao) {
@@ -355,11 +366,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     }
                 });
 
-                // Sắp xếp đơn chưa giao và tính km chặng liên tiếp từ kho
-                let donsChuaGiaoSapXep = sapXepVaTinhKmChuaGiao(donsChuaGiao, LAT_KHO, LON_KHO);
+                // Sắp xếp đơn chưa giao và tính km đường ô tô thực tế từ kho qua OSRM
+                let donsChuaGiaoSapXep = await sapXepVaTinhKmChuaGiao(donsChuaGiao, LAT_KHO, LON_KHO);
                 trip.dons = [...donsChuaGiaoSapXep, ...donsDaGiao];
             } else {
-                // Chuyến đã giao hoàn toàn: giữ nguyên thứ tự kết thúc giao hàng như cũ
                 trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
                 trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
             }
@@ -394,8 +404,8 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
 
                 if (!trip.isXeMay) {
-                    for (let nextIdx = idx + 1; nextIdx < arr.length; nextIdx++) {
-                        let nextTrip = arr[nextIdx];
+                    for (let nextIdx = idx + 1; nextIdx < allTripsArray.length; nextIdx++) {
+                        let nextTrip = allTripsArray[nextIdx];
                         if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
                             const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
                             if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
@@ -409,7 +419,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
 
             trip.kmDi = kmDi;
             trip.textKmVe = textKmVe;
-        });
+        }
 
         // Gom nhóm theo Ngày để hiển thị
         let groupedByDate = {};
@@ -569,7 +579,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Badge thứ tự tuyến và điền thẳng số km tính toán vào nhãn Đã xuất / Chưa giao
+    // Badge thứ tự tuyến và điền thẳng số km OSRM vào nhãn Đã xuất / Chưa giao
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
     const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
