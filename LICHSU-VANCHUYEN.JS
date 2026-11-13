@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Chỉ ước lượng km ướt cho đơn hàng chuẩn bị, đơn đã giao/đã xuất bỏ qua
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sửa lỗi ước lượng km ướt cho đơn nhóm Chuẩn bị
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -9,7 +9,7 @@ function chuanHoaNgay(ngayStr) {
     return ngayStr.trim().split(" ")[0];
 }
 
-// Hàm lấy ngày gom nhóm: Chỉ áp dụng "Chuẩn bị" cho xe tải, xe máy lấy ngày xuất kho hoặc ngày tạo bình thường
+// Hàm lấy ngày gom nhóm: Áp dụng chữ "Chuẩn bị" cho đơn chưa giao/chưa có giờ giao
 function layNgayGomNhom(data) {
     const coXe = data.phuongTien && data.phuongTien.trim() !== "";
     const isXeMay = !coXe || data.phuongTien.trim().toUpperCase() === "XE MÁY";
@@ -275,7 +275,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const LAT_KHO = 9.9234; 
         const LON_KHO = 105.1245;
 
-        // Tính toán thông số chuyến
+        // Tính toán thông số chuyến và ước lượng km ướt cho các đơn Chuẩn bị
         allTripsArray.forEach((trip, idx, arr) => {
             trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
 
@@ -283,10 +283,9 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             let textKmVe = "chờ"; 
             let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0;
 
-            // Chỉ tính km ướt cho các đơn đang ở trạng thái chuẩn bị (chưa giao hàng hoặc chưa xuất kho)
             trip.dons.forEach((don, donIdx) => {
                 const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
-                const laDonChuanBi = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị");
+                const laDonChuanBi = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trip.ngay.includes("Chuẩn bị");
 
                 if (laDonChuanBi) {
                     let latHienTai = 0, lonHienTai = 0;
@@ -516,7 +515,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Chỉ hiển thị badge km ướt nếu đơn hàng đang có _kmUot (tức là đơn chuẩn bị)
+    // Hiển thị badge km ướt nếu đơn hàng có _kmUot (dành cho đơn chuẩn bị)
     let badgeKmUot = '';
     if (data._kmUot !== null && data._kmUot !== undefined && data._kmUot > 0) {
         badgeKmUot = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Quãng đường km ướt dự kiến từ GPS">💧 Km ướt: ${data._kmUot} km</span>`;
