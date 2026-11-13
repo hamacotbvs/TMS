@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Đã sửa lỗi chính tả biến duyang thành duong
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Lọc địa chỉ chỉ lấy Đường - Xã - Tỉnh (bỏ số nhà và ấp)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -45,11 +45,11 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1]; // Lấy từ cuối cùng
 }
 
-// Hàm lọc và rút gọn địa chỉ từ trường noiGiao theo định dạng: Đường - Xã/Phường - Tỉnh/Thành phố
+// Hàm lọc và rút gọn địa chỉ từ trường noiGiao: Chỉ lấy Đường - Xã/Phường - Tỉnh/Thành phố (Bỏ số nhà, ấp)
 function rutGonDiaChiNoiGiao(noiGiaoStr) {
     if (!noiGiaoStr || typeof noiGiaoStr !== "string") return "---";
 
-    // Cắt bỏ phần dư thừa phía sau dấu ngoặc đơn (nếu có) như (Giao hàng)+97.50K...
+    // Cắt bỏ phần dư thừa phía sau dấu ngoặc đơn (nếu có)
     let diaChiClean = noiGiaoStr.split("(")[0].trim();
     
     // Tách các thành phần địa chỉ bằng dấu phẩy
@@ -61,38 +61,48 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
 
     parts.forEach(part => {
         let lower = part.toLowerCase();
-        // Nhận diện Xã, Phường, Thị trấn
+        
+        // 1. Nhận diện Xã, Phường, Thị trấn
         if (lower.startsWith("xã ") || lower.startsWith("phường ") || lower.startsWith("thị trấn ")) {
-            xaPhuong = part.replace(/^(Xã|Phường|Thị trấn)\s+/i, "");
+            xaPhuong = part.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
         } 
-        // Nhận diện Tỉnh hoặc Thành phố cấp tỉnh
+        // 2. Nhận diện Tỉnh hoặc Thành phố cấp tỉnh
         else if (lower.startsWith("tỉnh ") || lower.startsWith("thành phố ")) {
-            tinhTp = part.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "");
+            tinhTp = part.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
         } 
-        // Nhận diện Đường, Quốc lộ, Tỉnh lộ, Hẻm, Số nhà
-        else if (!duong && (lower.includes("ql") || lower.includes("đường") || lower.includes("đT") || lower.includes("số nhà") || lower.includes("ấp") || lower.includes("khu phố"))) {
-            duong = part;
+        // 3. Nhận diện Đường hoặc Quốc lộ (Bỏ qua số nhà, ấp, khu phố)
+        else if (!duong && (lower.includes("ql") || lower.includes("đường") || lower.includes("đT") || lower.startsWith("quốc lộ") || lower.startsWith("đường"))) {
+            duong = part.replace(/^(Đường|Quốc lộ|QL|Đt)\s*/i, "").trim();
+            // Nếu có chứa QL kèm số (ví dụ QL 61) thì giữ lại nguyên vẹn
+            if (lower.includes("ql") || lower.includes("quốc lộ") || lower.includes("đt")) {
+                duong = part;
+            }
         }
     });
 
-    if (!duong && parts.length >= 2) {
-        duong = parts[1];
-    } else if (!duong && parts.length === 1) {
-        duong = parts[0];
+    // Nếu không tìm thấy tên đường rõ ràng qua từ khóa, lọc lấy phần tử không chứa số nhà/ấp/huyện/quận
+    if (!duong) {
+        let foundDuong = parts.find(p => {
+            let l = p.toLowerCase();
+            return !l.includes("số nhà") && !l.includes("ấp") && !l.includes("khu phố") && !l.includes("huyện") && !l.includes("quận") && !l.includes("thị xã") && !l.startsWith("xã") && !l.startsWith("phường") && !l.startsWith("tỉnh");
+        });
+        if (foundDuong) duong = foundDuong;
     }
 
-    if (!xaPhuong && parts.length >= 3) {
-        let foundXa = parts.find(p => /xã|phường|thị trấn/i.test(p));
-        if (foundXa) xaPhuong = foundXa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "");
+    // Nếu vẫn chưa bắt được xã/phường
+    if (!xaPhuong) {
+        let foundXa = parts.find(p => /^(xã|phường|thị trấn)\s+/i.test(p));
+        if (foundXa) xaPhuong = foundXa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
     }
 
-    if (!tinhTp && parts.length >= 1) {
-        let foundTinh = parts.find(p => /tỉnh|thành phố/i.test(p));
+    // Nếu vẫn chưa bắt được tỉnh/thành phố
+    if (!tinhTp) {
+        let foundTinh = parts.find(p => /^(tỉnh|thành phố|tp\.)\s+/i.test(p));
         if (foundTinh) {
-            tinhTp = foundTinh.replace(/^(Tỉnh|Thành phố|TP\.|TP)\s+/i, "");
-        } else {
+            tinhTp = foundTinh.replace(/^(Tỉnh|Thành phố|TP\.|TP)\s+/i, "").trim();
+        } else if (parts.length >= 1) {
             let lastPart = parts[parts.length - 1];
-            if (!/huyện|quận|thị xã/i.test(lastPart)) {
+            if (!/huyện|quận|thị xã|xã|phường/i.test(lastPart)) {
                 tinhTp = lastPart;
             } else if (parts.length >= 2) {
                 tinhTp = parts[parts.length - 2];
@@ -100,6 +110,7 @@ function rutGonDiaChiNoiGiao(noiGiaoStr) {
         }
     }
 
+    // Gom lại theo đúng định dạng: Đường - Xã/Phường - Tỉnh/Thành phố
     let ketQuaArr = [];
     if (duong) ketQuaArr.push(duong);
     if (xaPhuong) ketQuaArr.push(xaPhuong);
