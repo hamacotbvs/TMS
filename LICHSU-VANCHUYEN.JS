@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Giữ nguyên đơn đã giao, sắp xếp đơn chưa giao theo khoảng cách gần nhất từ kho
+// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Sắp xếp theo tuyến gần nhất cho cả đơn "Chuẩn bị" và "Đã xuất kho"
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db; // Dùng chung kết nối Firestore
@@ -9,7 +9,7 @@ function chuanHoaNgay(ngayStr) {
     return ngayStr.trim().split(" ")[0];
 }
 
-// Hàm lấy ngày gom nhóm: Áp dụng chữ "Chuẩn bị" cho đơn chưa giao/chưa có giờ giao
+// Hàm lấy ngày gom nhóm
 function layNgayGomNhom(data) {
     const coXe = data.phuongTien && data.phuongTien.trim() !== "";
     const isXeMay = !coXe || data.phuongTien.trim().toUpperCase() === "XE MÁY";
@@ -28,10 +28,13 @@ function layNgayGomNhom(data) {
     let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
 
-    if (!bd && !kt) {
+    const duyet = data.duyet ? data.duyet.trim() : "";
+    const laChuaGiaoHoanToan = !duyet || duyet === "" || duyet.toLowerCase().includes("chuẩn bị") || duyet.toLowerCase().includes("đã xuất");
+
+    if (laChuaGiaoHoanToan && !bd && !kt) {
         let ngayBase = chuanHoaNgay(xk);
         if (!ngayBase) ngayBase = "Chưa xác định";
-        return `${ngayBase} - Chuẩn bị`;
+        return `${ngayBase} - Chưa giao`;
     }
 
     let rawDate = bd !== "" ? bd : (kt !== "" ? kt : xk);
@@ -169,7 +172,7 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán sắp xếp đơn CHƯA GIAO: Ưu tiên điểm gần Kho 55 Tầm Vu nhất lên đầu, tiếp đến các điểm gần tiếp theo
+// Thuật toán sắp xếp đơn CHƯA GIAO HOÀN TOÀN (Chuẩn bị + Đã xuất kho): Sắp xếp điểm gần kho nhất lên đầu
 function sapXepDonChuaGiao(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length <= 1) {
         danhSachDon.forEach((don, idx) => { don._thuTu = idx + 1; });
@@ -194,7 +197,6 @@ function sapXepDonChuaGiao(danhSachDon, latKho, lonKho) {
                 }
             }
 
-            // Tính khoảng cách trực tiếp từ Kho 55 Tầm Vu đến điểm giao (đảm bảo đơn nào gần kho nhất đi trước)
             const dist = hasGPS ? tinhKhoangCachGPS(latKho, lonKho, lat, lon) : 999999;
             if (dist < minDistance) {
                 minDistance = dist;
@@ -206,7 +208,6 @@ function sapXepDonChuaGiao(danhSachDon, latKho, lonKho) {
         optimized.push(nextDon);
     }
 
-    // Đánh số thứ tự từ 1 đến hết
     optimized.forEach((don, idx) => {
         don._thuTu = idx + 1;
     });
@@ -265,7 +266,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             });
         });
 
-        // Sắp xếp dữ liệu tăng dần theo thời gian để dò km Về xuyên ngày chính xác
+        // Sắp xếp dữ liệu tăng dần theo thời gian
         listData.sort((a, b) => {
             let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
             let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
@@ -319,29 +320,30 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         const LAT_KHO = 9.9234; 
         const LON_KHO = 105.1245;
 
-        // Tính toán thông số chuyến
+        // Tính toán thông số và sắp xếp tuyến đường
         allTripsArray.forEach((trip, idx, arr) => {
-            const laNhomChuanBi = trip.ngay.includes("Chuẩn bị");
+            const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
 
-            if (laNhomChuanBi) {
-                let donsChuanBi = [];
-                let donsKhac = [];
+            if (laNhomChuaGiao) {
+                let donsChuaGiao = [];
+                let donsDaGiao = [];
 
                 trip.dons.forEach(don => {
                     const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
-                    const laDonChuanBiItem = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị");
-                    if (laDonChuanBiItem) {
-                        donsChuanBi.push(don);
+                    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
+                    
+                    if (laChuaGiaoHoanToan) {
+                        donsChuaGiao.push(don);
                     } else {
-                        donsKhac.push(don);
+                        donsDaGiao.push(don);
                     }
                 });
 
-                // Sắp xếp đơn chưa giao theo khoảng cách gần kho nhất trước
-                let donsChuanBiSapXep = sapXepDonChuaGiao(donsChuanBi, LAT_KHO, LON_KHO);
-                trip.dons = [...donsChuanBiSapXep, ...donsKhac];
+                // Sắp xếp các đơn chưa giao / đã xuất kho theo khoảng cách gần kho nhất trước
+                let donsChuaGiaoSapXep = sapXepDonChuaGiao(donsChuaGiao, LAT_KHO, LON_KHO);
+                trip.dons = [...donsChuaGiaoSapXep, ...donsDaGiao];
             } else {
-                // Chuyến đã giao: giữ nguyên thứ tự kết thúc giao hàng như cũ
+                // Chuyến đã giao hoàn toàn: giữ nguyên thứ tự kết thúc giao hàng như cũ
                 trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
                 trip.dons.forEach((don, i) => { don._thuTu = i + 1; });
             }
@@ -551,12 +553,12 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
     }
 
-    // Hiển thị badge thứ tự tuyến cho đơn chưa giao
+    // Hiển thị badge thứ tự tuyến cho đơn chưa giao / đã xuất kho
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
-    const laDonChuanBi = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị");
+    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
     
-    if (laDonChuanBi) {
+    if (laChuaGiaoHoanToan) {
         let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
         if (coGPS) {
             badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự gần kho nhất trước">📍 #${data._thuTu}</span>`;
