@@ -53,7 +53,7 @@ async function downloadFileBuffer(drive, fileId) {
   return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));
 }
 
-// 📡 HÀM CHUẨN HÓA NGÀY THÁNG ĐỂ TRA CỨU V-TRACKING (Bỏ số 0 đệm: 03/11/2026 -> 3/11/2026)
+// 📡 HÀM CHUẨN HÓA NGÀY THÁNG ĐỂ TRA CỨU V-TRACKING
 function normalizeDateForSearch(dateInput) {
   if (!dateInput) return "";
   let str = dateInput.toString().trim().split(" ")[0]; 
@@ -67,6 +67,20 @@ function normalizeDateForSearch(dateInput) {
   return str;
 }
 
+// Chuyển đổi chuỗi thời gian "DD/MM/YYYY HH:mm:ss" sang timestamp để so sánh
+function parseTimestamp(dateTimeStr) {
+  if (!dateTimeStr) return 0;
+  try {
+    const parts = dateTimeStr.split(" ");
+    const dateParts = parts[0].split("/");
+    const timeParts = (parts[1] || "00:00:00").split(":");
+    const d = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    return d.getTime();
+  } catch (e) {
+    return 0;
+  }
+}
+
 // 📡 HÀM ĐỊNH DẠNG GỐC GIỮ NGUYÊN ĐỂ ĐẨY LÊN FIRESTORE
 function formatExcelDateOriginal(cellValue) {
   if (cellValue === undefined || cellValue === null || cellValue === "") return "";
@@ -78,7 +92,7 @@ function formatExcelDateOriginal(cellValue) {
     return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;
   }
   const strVal = cellValue.toString().trim();
-  if (strVal.includes('/') || strVal.includes('-')) return strVal; // Giữ nguyên chuỗi gốc trong file
+  if (strVal.includes('/') || strVal.includes('-')) return strVal; 
   if (!isNaN(strVal) && !isNaN(parseFloat(strVal))) {
     const numVal = parseFloat(strVal);
     if (numVal > 30000) {
@@ -220,10 +234,13 @@ function parseVTrackingToMap(buffer) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
     
-    const ngay = normalizeDateForSearch(row[1]); // Cột B: Ngày tra cứu
+    const ngay = normalizeDateForSearch(row[1]); // Cột B: Ngày
     const bienSo = row[2] ? row[2].toString().trim().toUpperCase() : ""; // Cột C: Biển số[cite: 5]
     const laiXeVt = row[3] ? row[3].toString().trim() : ""; // Cột D: Lái xe[cite: 5]
     
+    const thoiGianBatDauStr = formatExcelDateOriginal(row[5]); // Cột F: Thời gian bắt đầu chặng
+    const thoiGianKetThucStr = formatExcelDateOriginal(row[6]); // Cột G: Thời gian kết thúc chặng
+
     let latKetThuc = 0;
     let lonKetThuc = 0;
     const toaDoKetThucStr = row[10] ? row[10].toString().trim() : ""; // Cột K[cite: 5]
@@ -240,6 +257,8 @@ function parseVTrackingToMap(buffer) {
         ngay, 
         bienSo,
         laiXe: laiXeVt,
+        startTime: parseTimestamp(`${ngay} ${thoiGianBatDauStr.split(" ")[1] || "00:00:00"}`),
+        endTime: parseTimestamp(`${ngay} ${thoiGianKetThucStr.split(" ")[1] || "23:59:59"}`),
         latKetThuc,
         lonKetThuc,
         quangDuong
@@ -261,7 +280,7 @@ function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
   return R * c; 
 }
 
-// HÀM ƯU TIÊN LẤY NGÀY CHỨNG TỪ (Dùng định dạng gốc)
+// HÀM ƯU TIÊN LẤY NGÀY CHỨNG TỪ
 function layNgayChungTuUuTien(row, getOrigDateByIdx) {
   let ngay = getOrigDateByIdx(row, 31); // Cột AE: Kết thúc giao hàng[cite: 1]
   if (!ngay || ngay === "---") {
@@ -273,7 +292,7 @@ function layNgayChungTuUuTien(row, getOrigDateByIdx) {
   return ngay;
 }
 
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG VÀ CỘNG DỒN TỔNG QUÃNG ĐƯỜNG TỪ KHO
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG VÀ CỘNG DỒN QUÃNG ĐƯỜNG THEO ĐÚNG CHUYẾN
 function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -303,9 +322,7 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
     const maPhieu = getTxtByIdx(row, 3);
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
 
-    // Lấy ngày định dạng gốc để đẩy lên Firestore
     const ngayChonOriginal = layNgayChungTuUuTien(row, getOrigDateByIdx);
-    
     let thang = "";
     if (ngayChonOriginal && ngayChonOriginal.includes("/")) {
       const parts = ngayChonOriginal.split("/");
@@ -313,20 +330,22 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
     }
 
     const phuongTien = getTxtByIdx(row, 20).toUpperCase(); 
-    const chuyen = getNumByIdx(row, 22) || 1; 
+    const chuyen = getNumByIdx(row, 22) || 1; // Số chuyến (Cột W)
     let lat = row[24] ? parseFloat(row[24]) : 0; 
     let lon = row[25] ? parseFloat(row[25]) : 0; 
+    const thoiGianKetThuc = getOrigDateByIdx(row, 31); // Thời gian kết thúc giao hàng để sắp xếp thứ tự trong chuyến
 
     tempRows.push({
-      row, khoXuatVal, maPhieu, ngayChonOriginal, thang, phuongTien, chuyen, lat, lon
+      row, khoXuatVal, maPhieu, ngayChonOriginal, thang, phuongTien, chuyen, lat, lon,
+      timeVal: parseTimestamp(thoiGianKetThuc)
     });
   }
 
-  // Gom nhóm các đơn theo chuyến (Biển số + Ngày gốc + Số chuyến)
+  // 🌟 GOM NHÓM CHÍNH XÁC THEO CHUYẾN: Biển số + Ngày tra cứu + Số chuyến
   const groupTrips = {};
   tempRows.forEach((item) => {
     if (!item.phuongTien || !item.ngayChonOriginal) return;
-    const ngayDonSearch = normalizeDateForSearch(item.ngayChonOriginal); // Dùng để nhóm và tra cứu
+    const ngayDonSearch = normalizeDateForSearch(item.ngayChonOriginal);
     const tripKey = `${item.phuongTien}_${ngayDonSearch}_C${item.chuyen}`;
     if (!groupTrips[tripKey]) {
       groupTrips[tripKey] = [];
@@ -336,9 +355,10 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
 
   const computedResults = {};
 
-  // Tính toán cộng dồn quãng đường cho từng chuyến xe
+  // Sắp xếp các đơn trong cùng chuyến theo đúng thời gian kết thúc giao hàng tăng dần
   Object.keys(groupTrips).forEach(tripKey => {
     const tripItems = groupTrips[tripKey];
+    tripItems.sort((a, b) => a.timeVal - b.timeVal);
 
     tripItems.forEach((item, idx) => {
       const { row, khoXuatVal, maPhieu, ngayChonOriginal, thang, phuongTien, chuyen, lat, lon } = item;
@@ -350,6 +370,7 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
         const vTrackingList = vTrackingCacheByMonth[thang] || [];
         const ngayDonSearch = normalizeDateForSearch(ngayChonOriginal); 
 
+        // Lọc chặng V-Tracking theo xe và ngày
         const chặngCuaXeTrongNgay = vTrackingList.filter(vt => 
           vt.bienSo === phuongTien && vt.ngay === ngayDonSearch
         );
@@ -371,6 +392,7 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
           });
 
           if (matchedIndex !== -1) {
+            // Cộng dồn từ đầu chuyến đến điểm giao hiện tại
             for (let k = 0; k <= matchedIndex; k++) {
               kmVtracking += chặngCuaXeTrongNgay[k].quangDuong;
             }
@@ -380,7 +402,7 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
         }
       }
 
-      // Bổ sung đơn đầu tiên tính từ Kho Tầm Vu
+      // Bổ sung đơn đầu tiên của chuyến tính từ Kho Tầm Vu ra
       if (idx === 0 && lat !== 0 && lon !== 0) {
         const khoangCachTuKho = tinhKhoangCachGPS(KHO_TAM_VU.lat, KHO_TAM_VU.lon, lat, lon);
         if (kmVtracking < khoangCachTuKho) {
@@ -388,7 +410,7 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
         }
       }
 
-      // Bổ sung đơn cuối cùng tính về Kho Tầm Vu
+      // Bổ sung đơn cuối cùng của chuyến tính chiều về Kho Tầm Vu
       if (idx === tripItems.length - 1 && lat !== 0 && lon !== 0) {
         const khoangCachVeKho = tinhKhoangCachGPS(lat, lon, KHO_TAM_VU.lat, KHO_TAM_VU.lon);
         kmVtracking += khoangCachVeKho;
@@ -412,7 +434,6 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       let nganh = khoXuatVal === "41" ? "Sơn" : "TBVS";
       const vungTieuThu = ycghMap[maPhieu]?.vungTieuThu || ""; 
       
-      // Các trường ngày tháng giữ nguyên định dạng gốc của file Tuyến Đường
       const ngayDatHangOrig = getOrigDateByIdx(row, 5);
       const ngayXuLyOrig = getOrigDateByIdx(row, 6);
       const ngayDuyetOrig = getOrigDateByIdx(row, 7);
