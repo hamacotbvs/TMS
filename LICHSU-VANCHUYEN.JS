@@ -1,15 +1,13 @@
-// VANCHUYEN.JS - Quản lý lịch sử vận chuyển: Hiển thị đầy đủ phương tiện, chuyến và tỷ lệ size nhỏ
+// VANCHUYEN.JS - Cập nhật rút gọn hiển thị tiền thành "tr" và hệ số 1.15 quen thuộc
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const db = window.db; // Dùng chung kết nối Firestore
+const db = window.db;
 
-// Hàm chuẩn hóa chuỗi ngày: Chỉ lấy phần ngày/tháng/năm
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "";
     return ngayStr.trim().split(" ")[0];
 }
 
-// Hàm lấy ngày gom nhóm
 function layNgayGomNhom(data) {
     const coXe = data.phuongTien && data.phuongTien.trim() !== "";
     const isXeMay = !coXe || data.phuongTien.trim().toUpperCase() === "XE MÁY";
@@ -41,14 +39,12 @@ function layNgayGomNhom(data) {
     return chuanHoaNgay(rawDate);
 }
 
-// Hàm rút gọn chỉ lấy Tên cuối cùng của nhân viên
 function layTenRutGon(hoTen) {
     if (!hoTen || typeof hoTen !== "string") return "";
     const arr = hoTen.trim().split(/\s+/);
-    return arr[arr.length - 1]; // Lấy từ cuối cùng
+    return arr[arr.length - 1];
 }
 
-// Hàm xử lý vùng tiêu thụ: Cần Thơ hiển thị Đường - Xã, tỉnh khác hiển thị Xã - Tỉnh
 function layVungTieuThu(data) {
     let xa = data.phuongXa ? data.phuongXa.trim() : "";
     let tinh = data.thanhPho ? data.thanhPho.trim() : "";
@@ -90,7 +86,6 @@ function layVungTieuThu(data) {
     return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
 }
 
-// Hàm loại bỏ dấu tiếng Việt để phục vụ tìm kiếm thông minh
 function loaiBoDauTiengViet(str) {
     if (!str || typeof str !== "string") return "";
     return str.normalize("NFD")
@@ -100,7 +95,6 @@ function loaiBoDauTiengViet(str) {
               .toLowerCase();
 }
 
-// Thuật toán hình học nội bộ chuẩn xác quy đổi đường bộ (Nhân hệ số 1.15)
 function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) {
         return 0;
@@ -112,10 +106,10 @@ function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
               Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    // Quay lại hệ số 1.15 quen thuộc
     return Math.round(R * c * 1.15);
 }
 
-// Hàm tính khoảng cách check-in lệch giữa dinhVi và checkIn
 function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
     try {
@@ -136,7 +130,6 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     }
 }
 
-// Hàm gán màu riêng biệt cho từng xe và xe máy
 function layMauGiaoDienXe(phuongTien) {
     const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
     
@@ -168,7 +161,6 @@ function layMauGiaoDienXe(phuongTien) {
     }
 }
 
-// Thuật toán Láng giềng gần nhất đồng thời tính tổng km Đi và Về
 function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length === 0) return { optimized: [], tongKmDi: 0, tongKmVe: 0 };
 
@@ -458,7 +450,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             dateHeader.innerHTML = `
                 <span>📅 ${ngay}</span> 
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')} kg / ${tongDTTrNgay} tr.đ</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')} kg / ${tongDTTrNgay}tr</span>
                     <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonNgay} đơn</span>
                 </div>
             `;
@@ -479,7 +471,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 const vehicleHeader = document.createElement('div');
                 vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden;`;
                 
-                // Hiển thị đầy đủ dạng: 65C-12290 Chuyến 1 (2.4%DT) với size chữ tỷ lệ nhỏ lại
                 if (trip.isXeMay) {
                     vehicleHeader.innerHTML = `
                         <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -503,7 +494,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 }
                 vehicleWrapper.appendChild(vehicleHeader);
 
-                // Dòng phụ hiển thị thông số chi tiết (Đi, Về, Bột, Sơn, TBVS)
                 const vehicleSubHeader = document.createElement('div');
                 vehicleSubHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; flex-wrap: wrap; gap: 2px;';
                 vehicleSubHeader.innerHTML = `
@@ -558,10 +548,11 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const duyet = data.duyet || '';
     const tTai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
     
-    let thanhTien = '0.0 tr.đ';
+    // Đã thay đổi thành "tr" thay vì "tr.đ"
+    let thanhTien = '0.0 tr';
     if (data.thanhTien) {
         const tienNum = Number(data.thanhTien) / 1000000;
-        thanhTien = tienNum.toFixed(1) + ' tr.đ';
+        thanhTien = tienNum.toFixed(1) + ' tr';
     }
 
     const ngayxuatKho = data.ngayxuatKho || '';
