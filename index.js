@@ -261,7 +261,7 @@ function layNgayChungTuUuTien(row, getDateByIdx) {
   return ngay;
 }
 
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG VÀ TRA CỨU CHÉO (CÓ TÍNH BÙ KHOẢNG CÁCH TỪ KHO RA & VỀ KHO)
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG VÀ CỘNG DỒN TỔNG QUÃNG ĐƯỜNG TỪ KHO
 function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -282,7 +282,6 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
   const getDateByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? formatExcelDate(row[idx]) : "";
   const getNumByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? (parseFloat(row[idx]) || 0) : 0;
   
-  // Bước 1: Trích xuất danh sách tất cả các dòng đơn hàng hợp lệ
   const tempRows = [];
   for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
     const row = jsonData[i];
@@ -299,36 +298,33 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       if (parts[1]) thang = parseInt(parts[1], 10); 
     }
 
-    const phuongTien = getTxtByIdx(row, 20).toUpperCase(); // Biển số xe[cite: 1]
-    const chuyen = getNumByIdx(row, 22) || 1; // Số chuyến[cite: 5]
-    let lat = row[24] ? parseFloat(row[24]) : 0; // Cột Y[cite: 1]
-    let lon = row[25] ? parseFloat(row[25]) : 0; // Cột Z[cite: 1]
+    const phuongTien = getTxtByIdx(row, 20).toUpperCase(); 
+    const chuyen = getNumByIdx(row, 22) || 1; 
+    let lat = row[24] ? parseFloat(row[24]) : 0; 
+    let lon = row[25] ? parseFloat(row[25]) : 0; 
 
     tempRows.push({
       row, khoXuatVal, maPhieu, ngayChonTxt, thang, phuongTien, chuyen, lat, lon
     });
   }
 
-  // Bước 2: Gom nhóm các đơn theo (Biển số xe + Ngày + Chuyến) để nhận diện đơn đầu và đơn cuối
+  // Gom nhóm các đơn theo chuyến (Biển số + Ngày + Số chuyến)
   const groupTrips = {};
-  tempRows.forEach((item, index) => {
+  tempRows.forEach((item) => {
     if (!item.phuongTien || !item.ngayChonTxt) return;
     const ngayDon = normalizeDateStr(item.ngayChonTxt);
     const tripKey = `${item.phuongTien}_${ngayDon}_C${item.chuyen}`;
     if (!groupTrips[tripKey]) {
       groupTrips[tripKey] = [];
     }
-    groupTrips[tripKey].push({ ...item, originalIndex: index });
+    groupTrips[tripKey].push(item);
   });
 
-  // Lưu trữ kết quả sau khi tính toán cho từng mã phiếu
   const computedResults = {};
 
-  // Bước 3: Duyệt từng chuyến xe để tính toán quãng đường V-Tracking kèm bù khoảng cách Kho
+  // Tính toán cộng dồn quãng đường cho từng chuyến xe
   Object.keys(groupTrips).forEach(tripKey => {
     const tripItems = groupTrips[tripKey];
-    const firstItem = tripItems[0];
-    const lastItem = tripItems[tripItems.length - 1];
 
     tripItems.forEach((item, idx) => {
       const { row, khoXuatVal, maPhieu, ngayChonTxt, thang, phuongTien, chuyen, lat, lon } = item;
@@ -345,11 +341,10 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
         );
 
         if (chặngCuaXeTrongNgay.length > 0) {
-          // Lái xe lấy trực tiếp
           laiXeFromVtracking = chặngCuaXeTrongNgay[0].laiXe;
 
-          // Đối chiếu tọa độ GPS tìm km chặng
-          let matchedChangIndex = -1;
+          // 🌟 CỘNG DỒN TỔNG QUÃNG ĐƯỜNG TỪ ĐẦU ĐẾN ĐIỂM GIAO NÀY (CỘNG HỒ DỒN TỪNG CHẶNG V-TRACKING)
+          let matchedIndex = -1;
           let minKC = Infinity;
 
           chặngCuaXeTrongNgay.forEach((vt, index) => {
@@ -357,29 +352,32 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
               const kc = tinhKhoangCachGPS(lat, lon, vt.latKetThuc, vt.lonKetThuc);
               if (kc < 0.5 && kc < minKC) {
                 minKC = kc;
-                matchedChangIndex = index;
+                matchedIndex = index;
               }
             }
           });
 
-          if (matchedChangIndex !== -1) {
-            kmVtracking = chặngCuaXeTrongNgay[matchedChangIndex].quangDuong;
+          if (matchedIndex !== -1) {
+            // Cộng dồn tất cả các chặng từ đầu tiên cho đến chặng khớp với điểm giao này
+            for (let k = 0; k <= matchedIndex; k++) {
+              kmVtracking += chặngCuaXeTrongNgay[k].quangDuong;
+            }
           } else {
-            kmVtracking = chặngCuaXeTrongNgay[0].quangDuong;
+            // Nếu không khớp tọa độ chặt, cộng dồn toàn bộ quãng đường trong ngày của xe đó
+            kmVtracking = chặngCuaXeTrongNgay.reduce((sum, vt) => sum + vt.quangDuong, 0);
           }
         }
       }
 
-      // 🌟 BỔ SUNG LỚP 1: ĐƠN ĐẦU TIÊN TRONG CHUYẾN TÍNH THÊM KHOẢNG CÁCH TỪ KHO TẦM VU ĐẾN ĐIỂM GIAO
+      // 🌟 BỔ SUNG ĐƠN ĐẦU TIÊN: Cộng thêm khoảng cách thực tế từ Kho Tầm Vu ra điểm giao đầu tiên nếu chưa có
       if (idx === 0 && lat !== 0 && lon !== 0) {
         const khoangCachTuKho = tinhKhoangCachGPS(KHO_TAM_VU.lat, KHO_TAM_VU.lon, lat, lon);
-        // Nếu kmVtracking hiện tại nhỏ hơn khoảng cách từ kho tới điểm, cộng bù thêm phần từ kho ra
         if (kmVtracking < khoangCachTuKho) {
           kmVtracking += khoangCachTuKho;
         }
       }
 
-      // 🌟 BỔ SUNG LỚP 2: ĐƠN CUỐI CÙNG TRONG CHUYẾN TÍNH THÊM KHOẢNG CÁCH TỪ ĐIỂM GIAO VỀ KHO TẦM VU
+      // 🌟 BỔ SUNG ĐƠN CUỐI CÙNG: Cộng thêm chiều về từ điểm giao cuối cùng về Kho Tầm Vu
       if (idx === tripItems.length - 1 && lat !== 0 && lon !== 0) {
         const khoangCachVeKho = tinhKhoangCachGPS(lat, lon, KHO_TAM_VU.lat, KHO_TAM_VU.lon);
         kmVtracking += khoangCachVeKho;
@@ -579,7 +577,7 @@ async function mainSync() {
     const totalRecords = Object.keys(routeDataMap).length;
     
     if (totalRecords > 0) {
-      console.log(`📡 Đang đẩy dữ liệu ${totalRecords} mã phiếu kèm trường laiXe và kmVtracking (đã bù khoảng cách Kho) vào collection 'TUYENDUONG'...`);
+      console.log(`📡 Đang đẩy dữ liệu ${totalRecords} mã phiếu kèm kmVtracking cộng dồn vào collection 'TUYENDUONG'...`);
       let batch = db.batch();
       let count = 0;
       for (const [maPhieu, data] of Object.entries(routeDataMap)) {
