@@ -17,7 +17,7 @@ const ID_SANPHAM = {
 };
 const ID_YCGH = "152fW_bkRwUki4Gpz5qQ3_kaHruOnfbAb";
 
-// 🌟 DANH SÁCH ID 12 FILE V-TRACKING THEO THÁNG (Anh thay ID Google Drive thực tế vào đây)
+// 🌟 DANH SÁCH ID 12 FILE V-TRACKING THEO THÁNG (Đã tích hợp ID chính xác của anh)
 const ID_VTRACKING_MONTHS = {
   1: "1sqIs2aBJom_u-Oj0IB1Z2LI2f9heToHP",
   2: "1Yv144AWuT9iU-EwptWrrfk_79yKrvRB6",
@@ -193,7 +193,7 @@ function parseYcghToMap(buffer) {
   return ycghMap;
 }
 
-// 🌟 HÀM ĐỌC FILE V-TRACKING (Đọc theo cấu trúc hình chụp mẫu của bạn)
+// HÀM ĐỌC FILE V-TRACKING
 function parseVTrackingToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -204,8 +204,8 @@ function parseVTrackingToMap(buffer) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
     
-    const ngay = formatExcelDate(row[1]); // Cột B: Ngày (VD: 3/11/2026)
-    const bienSo = row[2] ? row[2].toString().trim() : ""; // Cột C: Biển số (VD: 65C-06126)
+    const ngay = formatExcelDate(row[1]); // Cột B: Ngày
+    const bienSo = row[2] ? row[2].toString().trim() : ""; // Cột C: Biển số
     
     let latKetThuc = 0;
     let lonKetThuc = 0;
@@ -243,7 +243,19 @@ function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
   return R * c; 
 }
 
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG VÀ TRA CỨU CHÉO V-TRACKING
+// HÀM ƯU TIÊN LẤY NGÀY CHỨNG TỪ (Kết thúc giao hàng -> Bắt đầu giao hàng -> Ngày xuất kho)
+function layNgayChungTuUuTien(row, getDateByIdx) {
+  let ngay = getDateByIdx(row, 31); // Cột AE: Kết thúc giao hàng
+  if (!ngay || ngay === "---") {
+    ngay = getDateByIdx(row, 30); // Cột AD: Bắt đầu giao hàng
+  }
+  if (!ngay || ngay === "---") {
+    ngay = getDateByIdx(row, 27); // Cột AB: Ngày xuất kho
+  }
+  return ngay;
+}
+
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG VÀ TRA CỨU CHÉO
 function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -281,15 +293,16 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
     let theoDoi = "";
     if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
     
+    // 📅 LẤY NGÀY ƯU TIÊN VÀ TÁCH THÁNG/NĂM
+    let ngayChonTxt = layNgayChungTuUuTien(row, getDateByIdx);
     let thang = "";
     let nam = "";
-    const ngayXuatKhoTxt = getDateByIdx(row, 27);
-    if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("/")) {
-      const parts = ngayXuatKhoTxt.split("/");
+    if (ngayChonTxt && ngayChonTxt.includes("/")) {
+      const parts = ngayChonTxt.split("/");
       if (parts[1]) thang = parseInt(parts[1], 10); 
       if (parts[2]) nam = parseInt(parts[2].split(" ")[0], 10); 
-    } else if (ngayXuatKhoTxt && ngayXuatKhoTxt.includes("-")) {
-      const parts = ngayXuatKhoTxt.split("-");
+    } else if (ngayChonTxt && ngayChonTxt.includes("-")) {
+      const parts = ngayChonTxt.split("-");
       if (parts[1]) thang = parseInt(parts[1], 10); 
       if (parts[0] && parts[0].length === 4) nam = parseInt(parts[0], 10); 
     }
@@ -304,11 +317,11 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
     const vungTieuThu = ycghMap[maPhieu]?.vungTieuThu || ""; 
     const phuongTien = getTxtByIdx(row, 20); // Biển số xe
 
-    // 🌟 THUẬT TOÁN TRA CỨU CHÉO `kmVtracking` THEO THÁNG TƯƠNG ỨNG CỦA CHỨNG TỪ
+    // 🌟 TRA CỨU CHÉO `kmVtracking` TỪ FILE V-TRACKING THEO THÁNG TƯƠNG ỨNG
     let kmVtracking = 0;
-    if (phuongTien && ngayXuatKhoTxt && thang >= 1 && thang <= 12) {
+    if (phuongTien && ngayChonTxt && thang >= 1 && thang <= 12) {
       const vTrackingList = vTrackingCacheByMonth[thang] || [];
-      const ngayDon = ngayXuatKhoTxt.split(" ")[0]; 
+      const ngayDon = ngayChonTxt.split(" ")[0]; 
       const latDon = row[24] ? parseFloat(row[24]) : 0;
       const lonDon = row[25] ? parseFloat(row[25]) : 0;
 
@@ -334,6 +347,8 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
         kmVtracking = chặngCuaXe[0].quangDuong;
       }
     }
+
+    const ngayXuatKhoTxt = getDateByIdx(row, 27);
 
     routeMap[maPhieu] = {
       phuongXa:        getTxtByIdx(row, 0),   
@@ -376,13 +391,13 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       nam:             nam,
       nganh:           nganh,
       vungTieuThu:     vungTieuThu,     
-      kmVtracking:     kmVtracking     // 🌟 TRƯỜNG kmVtracking TRA CỨU CHÉO TỰ ĐỘNG
+      kmVtracking:     kmVtracking     // 🌟 KẾT QUẢ TRA CỨU CHÉO V-TRACKING
     }; 
   } 
   return routeMap; 
 }
 
-// 📊 HÀM GOM NHÓM TẠO BẢNG KHACHHANGVUNG
+// 📊 GOM NHÓM DỮ LIỆU BÁO CÁO KHACHHANGVUNG
 function generateKhachHangVungReport(routeDataMap) {
   const groupMap = {};
   const addToGroup = (doiTuong, vung, htGiaoNhan, nganh, nam, thang, tl, dt) => {
@@ -484,7 +499,7 @@ async function mainSync() {
   const vTrackingCacheByMonth = {};
   for (let m = 1; m <= 12; m++) {
     const fileIdVt = ID_VTRACKING_MONTHS[m];
-    if (fileIdVt && fileIdVt !== `ID_FILE_VTRACKING_THANG_${String(m).padStart(2, '0')}`) {
+    if (fileIdVt) {
       try {
         console.log(`📦 Đang tải V-Tracking Tháng ${m}...`);
         const vtBuffer = await downloadFileBuffer(drive, fileIdVt);
