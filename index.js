@@ -232,35 +232,61 @@ function parseYcghToMap(buffer) {
   return ycghMap;
 }
 
-// HÀM ĐỌC FILE V-TRACKING
+// HÀM ĐỌC FILE V-TRACKING VÀ CHUẨN HÓA NGÀY VỀ DD/MM/YYYY
 function parseVTrackingToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
   const vTrackingList = [];
 
+  const pad = (n) => String(n).padStart(2, '0');
+
   for (let i = 1; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
     
-    const ngay = chuanHoaNgay(row[1]); // Cột B: Ngày[cite: 5]
-    const bienSo = row[2] ? row[2].toString().trim().toUpperCase() : ""; // Cột C: Biển số[cite: 5]
-    const laiXeVt = row[3] ? row[3].toString().trim() : ""; // Cột D: Lái xe[cite: 5]
+    let rawNgay = row[1]; // Cột B: Ngày
+    let ngayFormatted = "";
+
+    if (rawNgay instanceof Date) {
+      ngayFormatted = `${pad(rawNgay.getDate())}/${pad(rawNgay.getMonth() + 1)}/${rawNgay.getFullYear()}`;
+    } else if (!isNaN(rawNgay) && !isNaN(parseFloat(rawNgay))) {
+      try {
+        const dateObj = XLSX.SSF.parse_date_code(parseFloat(rawNgay));
+        ngayFormatted = `${pad(dateObj.d)}/${pad(dateObj.m)}/${dateObj.y}`;
+      } catch (e) {
+        ngayFormatted = chuanHoaNgay(rawNgay);
+      }
+    } else {
+      let strDate = chuanHoaNgay(rawNgay);
+      let parts = strDate.split(/[\/\-]/);
+      if (parts.length === 3) {
+        let d = parts[0].length === 4 ? parts[2] : parts[0];
+        let m = parts[1];
+        let y = parts[0].length === 4 ? parts[0] : parts[2];
+        ngayFormatted = `${pad(d)}/${pad(m)}/${y}`;
+      } else {
+        ngayFormatted = strDate;
+      }
+    }
+
+    const bienSo = row[2] ? row[2].toString().trim().toUpperCase() : ""; // Cột C: Biển số
+    const laiXeVt = row[3] ? row[3].toString().trim() : ""; // Cột D: Lái xe
     
     let latKetThuc = 0;
     let lonKetThuc = 0;
-    const toaDoKetThucStr = row[10] ? row[10].toString().trim() : ""; // Cột K[cite: 5]
+    const toaDoKetThucStr = row[10] ? row[10].toString().trim() : ""; // Cột K
     if (toaDoKetThucStr.includes(',')) {
       const parts = toaDoKetThucStr.split(',');
       latKetThuc = parseFloat(parts[0]) || 0;
       lonKetThuc = parseFloat(parts[1]) || 0;
     }
 
-    const quangDuong = parseFloat(row[11]) || 0; // Cột L: Quãng đường[cite: 5]
+    const quangDuong = parseFloat(row[11]) || 0; // Cột L: Quãng đường
 
-    if (bienSo && ngay) {
+    if (bienSo && ngayFormatted) {
       vTrackingList.push({
-        ngay, 
+        ngay: ngayFormatted, 
         bienSo,
         laiXe: laiXeVt,
         latKetThuc,
@@ -318,7 +344,6 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
     let lat = row[24] ? parseFloat(row[24]) : 0; 
     let lon = row[25] ? parseFloat(row[25]) : 0; 
 
-    // Tạo tạm object để chạy hàm layNgayGomNhom y hệt app
     const dummyDataForDate = {
       phuongTien: phuongTien,
       ngayxuatKho: getOrigDateByIdx(row, 27),
@@ -374,11 +399,10 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
 
   const computedResults = {};
 
-  // Tiến hành dò V-Tracking và tính toán cho từng nhóm chuyến đã gom chuẩn
   Object.values(globalVehicleTrips).forEach(trip => {
     const sampleItem = trip.dons[0];
     const thangNum = sampleItem.thang;
-    const ngayDonSearch = sampleItem._ngayGom.replace("Chưa giao", ""); // Làm sạch ngày nếu có đuôi chưa giao
+    const ngayDonSearch = sampleItem._ngayGom.replace("Chưa giao", ""); 
 
     const vTrackingList = (thangNum >= 1 && thangNum <= 12) ? (vTrackingCacheByMonth[thangNum] || []) : [];
     const chặngCuaXeTrongNgay = vTrackingList.filter(vt => vt.bienSo === trip.phuongTien && vt.ngay === ngayDonSearch);
@@ -421,7 +445,6 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
         }
       }
 
-      // Cộng khoảng cách từ kho ra điểm giao đầu tiên và từ điểm giao cuối về kho
       if (idx === 0 && lat !== 0 && lon !== 0) {
         const khoangCachTuKho = tinhKhoangCachGPS(KHO_TAM_VU.lat, KHO_TAM_VU.lon, lat, lon);
         if (kmVtracking < khoangCachTuKho) {
