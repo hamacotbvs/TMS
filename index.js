@@ -253,7 +253,7 @@ function parseYcghToMap(buffer) {
   return ycghMap;
 }
 
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG & TÍNH KM VTRACKING THEO ĐÚNG YÊU CẦU MỚI
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG & TRÁNH HOÀN TOÀN GIÁ TRỊ UNDEFINED
 function parseRoutesToMap(buffer, ycghMap = {}, vtrackingCache = {}) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -290,26 +290,24 @@ function parseRoutesToMap(buffer, ycghMap = {}, vtrackingCache = {}) {
     if (row[34] && row[35]) checkIn = `${row[34].toString().trim()},${row[35].toString().trim()}`;
     
     const saiLechKm = getNumByIdx(row, 36); 
-    let theoDoi = "";
-    if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
+    let theoDoi = saiLechKm > 0.5 ? "Cần kiểm tra" : "";
     
     const batDauGiaoTxt = getDateByIdx(row, 30);
     const ketThucGiaoTxt = getDateByIdx(row, 31);
     const ngayXuatKhoTxt = getDateByIdx(row, 27);
 
-    // 🌟 Ưu tiên Kết thúc giao hàng, nếu rỗng thì lấy Bắt đầu giao hàng
     const refDateStr = ketThucGiaoTxt || batDauGiaoTxt || ngayXuatKhoTxt;
-    let thang = "";
-    let nam = "";
+    let thang = 0;
+    let nam = 0;
     let monthNum = 0;
     
     if (refDateStr && refDateStr.includes("/")) {
       const parts = refDateStr.split("/");
       if (parts[1]) {
-        monthNum = parseInt(parts[1], 10);
+        monthNum = parseInt(parts[1], 10) || 0;
         thang = monthNum;
       }
-      if (parts[2]) nam = parseInt(parts[2].split(" ")[0], 10);
+      if (parts[2]) nam = parseInt(parts[2].split(" ")[0], 10) || 0;
     }
 
     const phuongTien = getTxtByIdx(row, 20);
@@ -319,7 +317,6 @@ function parseRoutesToMap(buffer, ycghMap = {}, vtrackingCache = {}) {
     const lat = getNumByIdx(row, 24); 
     const lng = getNumByIdx(row, 25); 
     
-    // Sắp xếp đơn trước sau dựa vào Kết thúc giao hàng, nếu rỗng lấy Bắt đầu giao hàng
     const timeValStr = ketThucGiaoTxt || batDauGiaoTxt;
     const sortTimeMs = timeValStr ? new Date(timeValStr.split('/').reverse().join('-')).getTime() || 0 : 0;
 
@@ -335,7 +332,6 @@ function parseRoutesToMap(buffer, ycghMap = {}, vtrackingCache = {}) {
   }
 
   Object.values(tripGroups).forEach(group => {
-    // Sắp xếp đơn trước sau trong nhóm dựa vào Kết thúc giao hàng (hoặc Bắt đầu nếu rỗng)
     group.sort((a, b) => a.sortTimeMs - b.sortTimeMs);
 
     const monthNum = group[0].monthNum;
@@ -364,10 +360,16 @@ function parseRoutesToMap(buffer, ycghMap = {}, vtrackingCache = {}) {
 
         vtRows.forEach((vt, idx) => {
           const dStart = haversineKm(targetStartLat, targetStartLng, vt.startLat, vt.startLng);
-          if (dStart < minStartDist) { minStartDist = dStart; bestStartIdx = idx; }
+          if (dStart < minStartDist) { 
+            minStartDist = dStart; 
+            bestStartIdx = idx; 
+          }
 
           const dEnd = haversineKm(current.lat, current.lng, vt.endLat, vt.endLng);
-          if (dEnd < minEndDist) { minEndDist = dEnd; bestEndIdx = idx; }
+          if (dEnd < minEndDist) { 
+            minEndDist = dEnd; 
+            bestEndIdx = idx; 
+          }
         });
 
         const fromIdx = Math.min(bestStartIdx, bestEndIdx);
@@ -381,11 +383,12 @@ function parseRoutesToMap(buffer, ycghMap = {}, vtrackingCache = {}) {
       const nganh = current.khoXuatVal === "41" ? "Sơn" : "TBVS";
       const vungTieuThu = ycghMap[current.maPhieu]?.vungTieuThu || "";
 
+      // 🌟 AN TOÀN TUYỆT ĐỐI: Đảm bảo không có trường nào bị undefined
       routeMap[current.maPhieu] = {
         phuongXa:        getTxtByIdx(r, 0),   
-        khoXuat:          current.khoXuatVal,            
+        khoXuat:          current.khoXuatVal || "",            
         tuyenDuong:       getTxtByIdx(r, 2),   
-        maPhieu:          current.maPhieu,               
+        maPhieu:          current.maPhieu || "",               
         doiTuong:         getTxtByIdx(r, 4),   
         ngayDatHang:      getDateByIdx(r, 5),  
         ngayXuLy:         getDateByIdx(r, 6),  
@@ -407,22 +410,22 @@ function parseRoutesToMap(buffer, ycghMap = {}, vtrackingCache = {}) {
         chuyen:           getNumByIdx(r, 22),  
         giaoNhan:         getTxtByIdx(r, 23),  
         pxk:              getTxtByIdx(r, 26),  
-        dinhVi:           current.dinhVi,
-        ngayxuatKho:      current.ngayxuatKhoTxt,        
+        dinhVi:           current.dinhVi || "",
+        ngayxuatKho:      current.ngayxuatKhoTxt || "",        
         thoiGianLamViec:  getTxtByIdx(r, 28),  
         thanhPho:         getTxtByIdx(r, 29),  
-        batDauGiaoHang:   current.batDauGiaoTxt, 
-        ketThucGiaoHang:  current.ketThucGiaoTxt, 
+        batDauGiaoHang:   current.batDauGiaoTxt || "", 
+        ketThucGiaoHang:  current.ketThucGiaoTxt || "", 
         kmBatDauGiaoHang: getNumByIdx(r, 32),  
         kmKetThucGiaoHang:getNumByIdx(r, 33),  
-        kmVtracking:      Number(calculatedKm.toFixed(2)), // 🌟 TRƯỜNG MỚI LƯU KM VTRACKING TÍNH TOÁN
-        checkIn:          current.checkIn,
-        saiLechKm:        current.saiLechKm,
-        theoDoi:          current.theoDoi,
-        thang:            current.thang,
-        nam:              current.nam,
-        nganh:            nganh,
-        vungTieuThu:      vungTieuThu     
+        kmVtracking:      Number(calculatedKm.toFixed(2)), // 🌟 ĐÃ CÓ KM VTRACKING CHUẨN XÁC
+        checkIn:          current.checkIn || "",
+        saiLechKm:        current.saiLechKm || 0,
+        theoDoi:          current.theoDoi || "",
+        thang:            current.thang || 0,
+        nam:              current.nam || 0,
+        nganh:            nganh || "",
+        vungTieuThu:      vungTieuThu || ""     
       };
     }
   });
@@ -565,7 +568,7 @@ async function mainSync() {
         } 
       } 
       if (count % 400 !== 0) await batch.commit();
-      console.log(`🎉 HOÀN TẤT TUYENDUONG kèm trường kmVtracking mới!`); 
+      console.log(`🎉 HOÀN TẤT TUYENDUONG thành công 100% kèm trường kmVtracking!`); 
       
       console.log(`📊 Đang tạo bảng tổng hợp KHACHHANGVUNG...`);
       const reportRows = generateKhachHangVungReport(routeDataMap);
