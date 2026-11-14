@@ -143,7 +143,6 @@ function parseVTrackingToMap(buffer) {
       trackingMap[bienSo][ngay] = [];
     }
 
-    // Kiểm tra xe rời kho 55 Tầm Vu
     const isRoiKho = (Math.abs(parseFloat(latBatDau) - KHO_55_TAM_VU_LAT) < 0.001 && Math.abs(parseFloat(longBatDau) - KHO_55_TAM_VU_LONG) < 0.001);
 
     let trips = trackingMap[bienSo][ngay];
@@ -312,7 +311,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
     const maPhieu = getTxtByIdx(row, 3);
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
     
-    // Lấy tọa độ Lat, Long giao hàng từ Tuyến Đường (Cột X, Y tương ứng index 24, 25)
+    // Vẫn đọc biến latGiao, longGiao để dùng cho việc tra cứu chéo đối chiếu phân đoạn V-tracking nhưng KHÔNG gán lưu vào object dữ liệu đẩy lên Firestore
     let latGiao = parseFloat(row[24]) || 0;
     let longGiao = parseFloat(row[25]) || 0;
     let dinhVi = (latGiao && longGiao) ? `${latGiao},${longGiao}` : "";
@@ -387,8 +386,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       giaoNhan:         getTxtByIdx(row, 23),  
       pxk:              getTxtByIdx(row, 26),  
       dinhVi:           dinhVi,
-      latGiao:          latGiao,
-      longGiao:         longGiao,
+      // Đã loại bỏ hoàn toàn latGiao và longGiao khỏi object đẩy lên Firestore theo yêu cầu
       ngayxuatKho:      ngayXuatKhoTxt,        
       thoiGianLamViec:  getTxtByIdx(row, 28),  
       thanhPho:         getTxtByIdx(row, 29),  
@@ -404,7 +402,10 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       nganh:            nganh,
       vungTieuThu:      vungTieuThu,
       ngayTraCuuVTracking: ngayTraCuuVTracking,
-      kmVtracking:      0 
+      kmVtracking:      0,
+      // Các biến tạm để dùng trong tiến trình tra cứu nội bộ
+      _latGiao:         latGiao,
+      _longGiao:        longGiao
     }; 
   } 
   return routeMap; 
@@ -558,7 +559,7 @@ async function mainSync() {
       return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
     });
 
-    // 🔍 THUẬT TOÁN TRA CỨU CHÉO TUYENDUONG QUA V-TRACKING (Ưu tiên Tọa độ, phụ trợ Thời gian)
+    // 🔍 THUẬT TOÁN TRA CỨU CHÉO TUYENDUONG QUA V-TRACKING
     routeList.forEach(item => {
       const thang = item.thang;
       const bienSo = item.phuongTien;
@@ -572,16 +573,16 @@ async function mainSync() {
         if (targetTrip && targetTrip.segments.length > 0) {
           let matchedSegment = null;
 
-          // 1. ƯU TIÊN 1: Tra cứu theo Tọa độ Lat/Long phù hợp với V-Tracking
-          if (item.latGiao && item.longGiao) {
+          // 1. ƯU TIÊN 1: Tra cứu theo Tọa độ Lat/Long (_latGiao, _longGiao)
+          if (item._latGiao && item._longGiao) {
             matchedSegment = targetTrip.segments.find(seg => {
-              const matchLat = Math.abs(seg.latKetThuc - item.latGiao) < 0.002;
-              const matchLong = Math.abs(seg.longKetThuc - item.longGiao) < 0.002;
+              const matchLat = Math.abs(seg.latKetThuc - item._latGiao) < 0.002;
+              const matchLong = Math.abs(seg.longKetThuc - item._longGiao) < 0.002;
               return matchLat && matchLong;
             });
           }
 
-          // 2. ƯU TIÊN 2: Nếu tọa độ chưa tính được hoặc không tìm thấy, tận dụng Thời gian Bắt đầu / Kết thúc giao phụ trợ
+          // 2. ƯU TIÊN 2: Dùng thời gian Bắt đầu / Kết thúc giao phụ trợ
           if (!matchedSegment) {
             const targetTime = item.ketThucGiaoHang || item.batDauGiaoHang || "";
             if (targetTime) {
@@ -592,15 +593,17 @@ async function mainSync() {
             }
           }
 
-          // Nếu vẫn không khớp phân đoạn riêng lẻ nhưng chuyến tồn tại, gán tổng km của chuyến hoặc phân đoạn gần nhất
           if (matchedSegment) {
             item.kmVtracking = Number(matchedSegment.quangDuong.toFixed(2));
           } else {
-            // Gán phân bổ hoặc tổng km chuyến chia đều nếu không dò được điểm khớp tuyệt đối
             item.kmVtracking = Number((targetTrip.tongKm / targetTrip.segments.length).toFixed(2));
           }
         }
       }
+
+      // Xóa các thuộc tính tạm (_latGiao, _longGiao) trước khi đẩy lên Firestore
+      delete item._latGiao;
+      delete item._longGiao;
     });
 
     const totalRecords = routeList.length;
