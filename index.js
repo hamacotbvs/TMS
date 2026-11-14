@@ -47,32 +47,35 @@ async function downloadFileBuffer(drive, fileId) {
   return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));
 }
 
-// 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN ĐẸP (DD/MM/YYYY HH:mm:ss)
+// 📡 HÀM CHUẨN HÓA NGÀY THÁNG ĐỂ SO KHỚP CHÍNH XÁC TUYỆT ĐỐI
+function normalizeDateStr(dateInput) {
+  if (!dateInput) return "";
+  let str = dateInput.toString().trim().split(" ")[0]; // Lấy phần ngày DD/MM/YYYY
+  let parts = str.split(/[\/\-]/);
+  if (parts.length === 3) {
+    let d = parseInt(parts[0], 10);
+    let m = parseInt(parts[1], 10);
+    let y = parseInt(parts[2], 10);
+    return `${d}/${m}/${y}`; // Chuẩn hóa bỏ số 0 dư thừa (VD: 02/11/2026 thành 2/11/2026)
+  }
+  return str;
+}
+
 function formatExcelDate(cellValue) {
   if (cellValue === undefined || cellValue === null || cellValue === "") return "";
   const pad = (n) => String(n).padStart(2, '0');
   if (cellValue instanceof Date) {
     const d = cellValue;
-    const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   }
   const strVal = cellValue.toString().trim();
-  if (strVal.includes('/') || strVal.includes('-')) return strVal;
+  if (strVal.includes('/') || strVal.includes('-')) return normalizeDateStr(strVal);
   if (!isNaN(strVal) && !isNaN(parseFloat(strVal))) {
     const numVal = parseFloat(strVal);
     if (numVal > 30000) {
       try {
         const dateObj = XLSX.SSF.parse_date_code(numVal);
-        const y = dateObj.y;
-        const m = pad(dateObj.m);
-        const d = pad(dateObj.d);
-        const hh = pad(dateObj.H);
-        const mm = pad(dateObj.M);
-        const ss = pad(dateObj.S);
-        const dateStr = `${d}/${m}/${y}`;
-        if (dateObj.H === 0 && dateObj.M === 0 && dateObj.S === 0) { return dateStr; }
-        return `${dateStr} ${hh}:${mm}:${ss}`;
+        return `${dateObj.d}/${dateObj.m}/${dateObj.y}`;
       } catch (e) { return strVal; } 
     } 
   } 
@@ -127,11 +130,7 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
     if (nsxTxt && nsxTxt.includes("/")) {
       const parts = nsxTxt.split("/");
       if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
-      if (parts[2]) nam = parts[2].split(" ")[0]; 
-    } else if (nsxTxt && nsxTxt.includes("-")) {
-      const parts = nsxTxt.split("-");
-      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
-      if (parts[0] && parts[0].length === 4) nam = parts[0];
+      if (parts[2]) nam = parts[2]; 
     }
     
     let boSung_maCatalo = "";
@@ -204,25 +203,25 @@ function parseVTrackingToMap(buffer) {
     const row = jsonData[i];
     if (!row || row.length < 5) continue;
     
-    const ngay = formatExcelDate(row[1]); // Cột B: Ngày
-    const bienSo = row[2] ? row[2].toString().trim() : ""; // Cột C: Biển số
-    const laiXeVt = row[3] ? row[3].toString().trim() : ""; // Cột D: Lái xe
+    const ngay = normalizeDateStr(row[1]); // Cột B: Ngày
+    const bienSo = row[2] ? row[2].toString().trim().toUpperCase() : ""; // Cột C: Biển số
+    const laiXeVt = row[3] ? row[3].toString().trim() : ""; // Cột D: Lái xe[cite: 8]
     
     let latKetThuc = 0;
     let lonKetThuc = 0;
-    const toaDoKetThucStr = row[10] ? row[10].toString().trim() : ""; // Cột K: Tọa độ kết thúc
+    const toaDoKetThucStr = row[10] ? row[10].toString().trim() : ""; // Cột K[cite: 8]
     if (toaDoKetThucStr.includes(',')) {
       const parts = toaDoKetThucStr.split(',');
       latKetThuc = parseFloat(parts[0]) || 0;
       lonKetThuc = parseFloat(parts[1]) || 0;
     }
 
-    const quangDuong = parseFloat(row[11]) || 0; // Cột L: Quãng đường
+    const quangDuong = parseFloat(row[11]) || 0; // Cột L: Quãng đường[cite: 8]
 
     if (bienSo && ngay) {
       vTrackingList.push({
-        ngay: ngay.split(" ")[0], 
-        bienSo: bienSo.toUpperCase(),
+        ngay, 
+        bienSo,
         laiXe: laiXeVt,
         latKetThuc,
         lonKetThuc,
@@ -247,12 +246,12 @@ function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
 
 // HÀM ƯU TIÊN LẤY NGÀY CHỨNG TỪ
 function layNgayChungTuUuTien(row, getDateByIdx) {
-  let ngay = getDateByIdx(row, 31); // Cột AE: Kết thúc giao hàng[cite: 1]
+  let ngay = getDateByIdx(row, 31); // Cột AE: Kết thúc giao hàng[cite: 7]
   if (!ngay || ngay === "---") {
-    ngay = getDateByIdx(row, 30); // Cột AD: Bắt đầu giao hàng[cite: 1]
+    ngay = getDateByIdx(row, 30); // Cột AD: Bắt đầu giao hàng[cite: 7]
   }
   if (!ngay || ngay === "---") {
-    ngay = getDateByIdx(row, 27); // Cột AB: Ngày xuất kho[cite: 1]
+    ngay = getDateByIdx(row, 27); // Cột AB: Ngày xuất kho[cite: 7]
   }
   return ngay;
 }
@@ -291,34 +290,30 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
     if (ngayChonTxt && ngayChonTxt.includes("/")) {
       const parts = ngayChonTxt.split("/");
       if (parts[1]) thang = parseInt(parts[1], 10); 
-    } else if (ngayChonTxt && ngayChonTxt.includes("-")) {
-      const parts = ngayChonTxt.split("-");
-      if (parts[1]) thang = parseInt(parts[1], 10); 
     }
 
-    const phuongTien = getTxtByIdx(row, 20); // Biển số xe (Cột U)[cite: 1]
-    const chuyen = getNumByIdx(row, 22) || 1; // Số chuyến (Cột W)[cite: 5]
-    
-    let lat = row[24] ? parseFloat(row[24]) : 0; // Cột Y[cite: 1]
-    let lon = row[25] ? parseFloat(row[25]) : 0; // Cột Z[cite: 1]
+    const phuongTien = getTxtByIdx(row, 20).toUpperCase(); // Biển số xe[cite: 7]
+    const chuyen = getNumByIdx(row, 22) || 1; // Số chuyến[cite: 7]
+    let lat = row[24] ? parseFloat(row[24]) : 0; // Cột Y[cite: 7]
+    let lon = row[25] ? parseFloat(row[25]) : 0; // Cột Z[cite: 7]
 
     let kmVtracking = 0;
     let laiXeFromVtracking = ""; 
 
     if (phuongTien && ngayChonTxt && thang >= 1 && thang <= 12) {
       const vTrackingList = vTrackingCacheByMonth[thang] || [];
-      const ngayDon = ngayChonTxt.split(" ")[0]; 
+      const ngayDon = normalizeDateStr(ngayChonTxt); 
 
-      // Lọc các chặng V-Tracking theo Biển số xe và Ngày
+      // Lọc chuẩn xác danh sách chặng V-Tracking theo Biển số và Ngày
       const chặngCuaXeTrongNgay = vTrackingList.filter(vt => 
-        vt.bienSo === phuongTien.toUpperCase() && vt.ngay === ngayDon
+        vt.bienSo === phuongTien && vt.ngay === ngayDon
       );
 
       if (chặngCuaXeTrongNgay.length > 0) {
-        // 🌟 LÁI XE: Chỉ cần tra cứu số xe và ngày là lấy được ngay
+        // 🌟 LẤY LÁI XE: Chỉ cần khớp xe và ngày là lấy được trực tiếp
         laiXeFromVtracking = chặngCuaXeTrongNgay[0].laiXe;
 
-        // 🌟 KM V-TRACKING: Vẫn giữ nguyên cơ chế cũ (đối chiếu tọa độ GPS < 0.5km)
+        // 🌟 LẤY KM V-TRACKING: Dùng tọa độ GPS đối chiếu như cũ
         let matchedChangIndex = -1;
         let minKC = Infinity;
 
@@ -335,7 +330,6 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
         if (matchedChangIndex !== -1) {
           kmVtracking = chặngCuaXeTrongNgay[matchedChangIndex].quangDuong;
         } else {
-          // Fallback lấy chặng đầu tiên nếu GPS không khớp chặt
           kmVtracking = chặngCuaXeTrongNgay[0].quangDuong;
         }
       }
@@ -382,8 +376,8 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       htGiaoNhan:      getTxtByIdx(row, 18),  
       ngayGiao:        getDateByIdx(row, 19), 
       phuongTien:      phuongTien,  
-      taiXe:           getTxtByIdx(row, 21),  // Tài xế gốc từ Tuyến Đường[cite: 1]
-      laiXe:           laiXeFromVtracking,    // 🌟 Lái xe mới tra cứu đơn giản theo Biển số và Ngày
+      taiXe:           getTxtByIdx(row, 21),  // Tài xế gốc từ Tuyến Đường[cite: 7]
+      laiXe:           laiXeFromVtracking,    // 🌟 Lái xe chuẩn hóa tra cứu chéo từ V-Tracking
       chuyen:          chuyen,  
       giaoNhan:        getTxtByIdx(row, 23),  
       pxk:             getTxtByIdx(row, 26),  
