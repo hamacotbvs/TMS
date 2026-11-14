@@ -193,7 +193,7 @@ function parseYcghToMap(buffer) {
   return ycghMap;
 }
 
-// HÀM ĐỌC FILE V-TRACKING (Đọc cột D - Lái xe, index = 3)
+// HÀM ĐỌC FILE V-TRACKING
 function parseVTrackingToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -206,7 +206,7 @@ function parseVTrackingToMap(buffer) {
     
     const ngay = formatExcelDate(row[1]); // Cột B: Ngày
     const bienSo = row[2] ? row[2].toString().trim() : ""; // Cột C: Biển số
-    const laiXeVt = row[3] ? row[3].toString().trim() : ""; // Cột D: Lái xe từ Vtracking
+    const laiXeVt = row[3] ? row[3].toString().trim() : ""; // Cột D: Lái xe
     
     let latBatDau = 0;
     let lonBatDau = 0;
@@ -226,13 +226,13 @@ function parseVTrackingToMap(buffer) {
       lonKetThuc = parseFloat(parts[1]) || 0;
     }
 
-    const quangDuong = parseFloat(row[11]) || 0; // Cột L: Quãng đường (km)
+    const quangDuong = parseFloat(row[11]) || 0; // Cột L: Quãng đường
 
     if (bienSo && ngay) {
       vTrackingList.push({
         ngay: ngay.split(" ")[0], 
         bienSo: bienSo.toUpperCase(),
-        laiXe: laiXeVt, // 🌟 Lưu thông tin lái xe từ V-tracking
+        laiXe: laiXeVt,
         latBatDau,
         lonBatDau,
         latKetThuc,
@@ -258,12 +258,12 @@ function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
 
 // HÀM ƯU TIÊN LẤY NGÀY CHỨNG TỪ
 function layNgayChungTuUuTien(row, getDateByIdx) {
-  let ngay = getDateByIdx(row, 31); // Cột AE: Kết thúc giao hàng[cite: 1]
+  let ngay = getDateByIdx(row, 31); // Cột AE: Kết thúc giao hàng
   if (!ngay || ngay === "---") {
-    ngay = getDateByIdx(row, 30); // Cột AD: Bắt đầu giao hàng[cite: 1]
+    ngay = getDateByIdx(row, 30); // Cột AD: Bắt đầu giao hàng
   }
   if (!ngay || ngay === "---") {
-    ngay = getDateByIdx(row, 27); // Cột AB: Ngày xuất kho[cite: 1]
+    ngay = getDateByIdx(row, 27); // Cột AB: Ngày xuất kho
   }
   return ngay;
 }
@@ -308,13 +308,13 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       if (parts[1]) thang = parseInt(parts[1], 10); 
     }
 
-    const phuongTien = getTxtByIdx(row, 20); // Biển số xe (Cột U)[cite: 1]
-    const chuyen = getNumByIdx(row, 22) || 1; // Số chuyến (Cột W)[cite: 5]
+    const phuongTien = getTxtByIdx(row, 20); // Biển số xe (Cột U)
+    const chuyen = getNumByIdx(row, 22) || 1; // Số chuyến (Cột W)
 
     tempRows.push({
       row, khoXuatVal, maPhieu, ngayChonTxt, thang, phuongTien, chuyen,
-      lat: row[24] ? parseFloat(row[24]) : 0, // Cột Y[cite: 1]
-      lon: row[25] ? parseFloat(row[25]) : 0  // Cột Z[cite: 1]
+      lat: row[24] ? parseFloat(row[24]) : 0, // Cột Y
+      lon: row[25] ? parseFloat(row[25]) : 0  // Cột Z
     });
   }
 
@@ -322,15 +322,20 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
     const { row, khoXuatVal, maPhieu, ngayChonTxt, thang, phuongTien, chuyen, lat, lon } = item;
     
     let kmVtracking = 0;
-    let laiXeFromVtracking = ""; // 🌟 Biến lưu tên lái xe tra cứu từ V-Tracking
+    let laiXeFromVtracking = ""; 
 
     if (phuongTien && ngayChonTxt && thang >= 1 && thang <= 12) {
       const vTrackingList = vTrackingCacheByMonth[thang] || [];
       const ngayDon = ngayChonTxt.split(" ")[0]; 
 
+      // 🔍 DEBUG: In kiểm tra xem tìm được chặng V-Tracking nào khớp xe & ngày không
       const chặngCuaXeTrongNgay = vTrackingList.filter(vt => 
         vt.bienSo === phuongTien.toUpperCase() && vt.ngay === ngayDon
       );
+
+      if (chặngCuaXeTrongNgay.length === 0) {
+        console.log(`⚠️ [Debug] Không tìm thấy dữ liệu V-Tracking cho xe [${phuongTien}] vào ngày [${ngayDon}] (Tháng ${thang}) của mã phiếu ${maPhieu}`);
+      }
 
       let matchedChangIndex = -1;
       let minKC = Infinity;
@@ -348,7 +353,9 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       if (matchedChangIndex !== -1) {
         kmVtracking = chặngCuaXeTrongNgay[matchedChangIndex].quangDuong;
         laiXeFromVtracking = chặngCuaXeTrongNgay[matchedChangIndex].laiXe;
+        console.log(`✅ [Debug] Khớp tọa độ thành công đơn ${maPhieu}: ${kmVtracking} km, Lái xe: ${laiXeFromVtracking}`);
       } else if (chặngCuaXeTrongNgay.length > 0) {
+        // Fallback lấy chặng đầu tiên trong ngày nếu lệch GPS > 500m
         kmVtracking = chặngCuaXeTrongNgay[0].quangDuong;
         laiXeFromVtracking = chặngCuaXeTrongNgay[0].laiXe;
       }
@@ -395,8 +402,8 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       htGiaoNhan:      getTxtByIdx(row, 18),  
       ngayGiao:        getDateByIdx(row, 19), 
       phuongTien:      phuongTien,  
-      taiXe:           getTxtByIdx(row, 21),  // Giữ nguyên trường tài xế cũ (Cột V từ file Tuyến Đường)[cite: 1]
-      laiXe:           laiXeFromVtracking,    // 🌟 TRƯỜNG LÁI XE MỚI ĐƯỢC BỔ SUNG TỪ V-TRACKING
+      taiXe:           getTxtByIdx(row, 21),  // Tài xế gốc từ Tuyến Đường
+      laiXe:           laiXeFromVtracking,    // 🌟 Lái xe mới tra cứu từ V-Tracking
       chuyen:          chuyen,  
       giaoNhan:        getTxtByIdx(row, 23),  
       pxk:             getTxtByIdx(row, 26),  
@@ -529,6 +536,7 @@ async function mainSync() {
         console.log(`📦 Đang tải V-Tracking Tháng ${m}...`);
         const vtBuffer = await downloadFileBuffer(drive, fileIdVt);
         vTrackingCacheByMonth[m] = parseVTrackingToMap(vtBuffer);
+        console.log(`   -> Tháng ${m} đã đọc thành công ${vTrackingCacheByMonth[m].length} dòng.`);
       } catch (err) {
         console.error(`⚠️ Không thể tải V-Tracking tháng ${m}:`, err.message);
         vTrackingCacheByMonth[m] = [];
@@ -562,7 +570,7 @@ async function mainSync() {
       if (count % 400 !== 0) {
         await batch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm trường laiXe mới!`); 
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm trường laiXe!`); 
       
       // --- XỬ LÝ VÀ ĐẨY DỮ LIỆU LÊN KHACHHANGVUNG ---
       console.log(`📊 Đang khởi tạo bảng tổng hợp KHACHHANGVUNG...`);
