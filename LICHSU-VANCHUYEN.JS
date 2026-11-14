@@ -1,10 +1,10 @@
-// VANCHUYEN.JS - Gom sát phần Tải và Tiền thành liền số (Khớp hoàn toàn 100%)
+// VANCHUYEN.JS - Gom sát phần Tải và Tiền thành liền số
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
 
 function chuanHoaNgay(ngayStr) {
-    if (!ngayStr || typeof ngaysStr !== "string") return "";
+    if (!ngayStr || typeof ngayStr !== "string") return "";
     return ngayStr.trim().split(" ")[0];
 }
 
@@ -546,9 +546,11 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
     
+    // Tải liền số (kg)
     const tTaiVal = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') : '0';
     const tTaiText = `${tTaiVal}kg`;
     
+    // Tiền liền số (tr)
     let thanhTienText = '0.0tr';
     if (data.thanhTien) {
         const tienNum = Number(data.thanhTien) / 1000000;
