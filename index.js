@@ -193,7 +193,7 @@ function parseYcghToMap(buffer) {
   return ycghMap;
 }
 
-// HÀM ĐỌC FILE V-TRACKING
+// HÀM ĐỌC FILE V-TRACKING (Đọc cột D - Lái xe, index = 3)
 function parseVTrackingToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -206,10 +206,11 @@ function parseVTrackingToMap(buffer) {
     
     const ngay = formatExcelDate(row[1]); // Cột B: Ngày
     const bienSo = row[2] ? row[2].toString().trim() : ""; // Cột C: Biển số
+    const laiXeVt = row[3] ? row[3].toString().trim() : ""; // Cột D: Lái xe từ Vtracking
     
     let latBatDau = 0;
     let lonBatDau = 0;
-    const toaDoBatDauStr = row[8] ? row[8].toString().trim() : ""; // Cột I: Tọa độ bắt đầu
+    const toaDoBatDauStr = row[8] ? row[8].toString().trim() : ""; // Cột I
     if (toaDoBatDauStr.includes(',')) {
       const parts = toaDoBatDauStr.split(',');
       latBatDau = parseFloat(parts[0]) || 0;
@@ -218,19 +219,20 @@ function parseVTrackingToMap(buffer) {
 
     let latKetThuc = 0;
     let lonKetThuc = 0;
-    const toaDoKetThucStr = row[10] ? row[10].toString().trim() : ""; // Cột K: Tọa độ kết thúc
+    const toaDoKetThucStr = row[10] ? row[10].toString().trim() : ""; // Cột K
     if (toaDoKetThucStr.includes(',')) {
       const parts = toaDoKetThucStr.split(',');
       latKetThuc = parseFloat(parts[0]) || 0;
       lonKetThuc = parseFloat(parts[1]) || 0;
     }
 
-    const quangDuong = parseFloat(row[11]) || 0; // Cột L: Quãng đường xe chạy (km)
+    const quangDuong = parseFloat(row[11]) || 0; // Cột L: Quãng đường (km)
 
     if (bienSo && ngay) {
       vTrackingList.push({
         ngay: ngay.split(" ")[0], 
         bienSo: bienSo.toUpperCase(),
+        laiXe: laiXeVt, // 🌟 Lưu thông tin lái xe từ V-tracking
         latBatDau,
         lonBatDau,
         latKetThuc,
@@ -256,12 +258,12 @@ function tinhKhoangCachGPS(lat1, lon1, lat2, lon2) {
 
 // HÀM ƯU TIÊN LẤY NGÀY CHỨNG TỪ
 function layNgayChungTuUuTien(row, getDateByIdx) {
-  let ngay = getDateByIdx(row, 31); // Cột AE: Kết thúc giao hàng
+  let ngay = getDateByIdx(row, 31); // Cột AE: Kết thúc giao hàng[cite: 1]
   if (!ngay || ngay === "---") {
-    ngay = getDateByIdx(row, 30); // Cột AD: Bắt đầu giao hàng
+    ngay = getDateByIdx(row, 30); // Cột AD: Bắt đầu giao hàng[cite: 1]
   }
   if (!ngay || ngay === "---") {
-    ngay = getDateByIdx(row, 27); // Cột AB: Ngày xuất kho
+    ngay = getDateByIdx(row, 27); // Cột AB: Ngày xuất kho[cite: 1]
   }
   return ngay;
 }
@@ -287,8 +289,6 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
   const getDateByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? formatExcelDate(row[idx]) : "";
   const getNumByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? (parseFloat(row[idx]) || 0) : 0;
   
-  // Bước phụ: Gom nhóm các đơn hàng theo (Biển số xe + Ngày + Số Chuyến) để tính tổng quãng đường chuyến
-  // Giúp giải quyết triệt để việc đơn lẻ không có dòng kho xuất/về kho nhưng V-Tracking có ghi nhận trọn gói cả chuyến.
   const tempRows = [];
   for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
     const row = jsonData[i];
@@ -308,31 +308,30 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       if (parts[1]) thang = parseInt(parts[1], 10); 
     }
 
-    const phuongTien = getTxtByIdx(row, 20); // Biển số xe (Cột U)
-    const chuyen = getNumByIdx(row, 22) || 1; // Số chuyến (Cột W)
+    const phuongTien = getTxtByIdx(row, 20); // Biển số xe (Cột U)[cite: 1]
+    const chuyen = getNumByIdx(row, 22) || 1; // Số chuyến (Cột W)[cite: 5]
 
     tempRows.push({
       row, khoXuatVal, maPhieu, ngayChonTxt, thang, phuongTien, chuyen,
-      lat: row[24] ? parseFloat(row[24]) : 0,
-      lon: row[25] ? parseFloat(row[25]) : 0
+      lat: row[24] ? parseFloat(row[24]) : 0, // Cột Y[cite: 1]
+      lon: row[25] ? parseFloat(row[25]) : 0  // Cột Z[cite: 1]
     });
   }
 
-  // Tiến hành tra cứu và gán kmVtracking
   tempRows.forEach(item => {
     const { row, khoXuatVal, maPhieu, ngayChonTxt, thang, phuongTien, chuyen, lat, lon } = item;
     
     let kmVtracking = 0;
+    let laiXeFromVtracking = ""; // 🌟 Biến lưu tên lái xe tra cứu từ V-Tracking
+
     if (phuongTien && ngayChonTxt && thang >= 1 && thang <= 12) {
       const vTrackingList = vTrackingCacheByMonth[thang] || [];
       const ngayDon = ngayChonTxt.split(" ")[0]; 
 
-      // Lọc các chặng V-Tracking khớp Biển số xe và Ngày
       const chặngCuaXeTrongNgay = vTrackingList.filter(vt => 
         vt.bienSo === phuongTien.toUpperCase() && vt.ngay === ngayDon
       );
 
-      // Tìm chặng V-Tracking có điểm kết thúc gần với tọa độ điểm giao hàng của đơn này (< 500m)
       let matchedChangIndex = -1;
       let minKC = Infinity;
 
@@ -347,13 +346,11 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       });
 
       if (matchedChangIndex !== -1) {
-        // Lấy quãng đường của chặng khớp
         kmVtracking = chặngCuaXeTrongNgay[matchedChangIndex].quangDuong;
-        
-        // 🌟 NÂNG CẤP: Gom nhóm cộng dồn toàn bộ các đơn hàng trong cùng một chuyến (cùng Biển số, cùng Ngày, cùng số Chuyến)
-        // Nếu trong chuyến đó có nhiều đơn (ví dụ đơn 1, đơn 2), hệ thống sẽ tính tổng quãng đường các chặng liên tiếp trong chuỗi hành trình chuyến đó.
+        laiXeFromVtracking = chặngCuaXeTrongNgay[matchedChangIndex].laiXe;
       } else if (chặngCuaXeTrongNgay.length > 0) {
         kmVtracking = chặngCuaXeTrongNgay[0].quangDuong;
+        laiXeFromVtracking = chặngCuaXeTrongNgay[0].laiXe;
       }
     }
 
@@ -398,7 +395,8 @@ function parseRoutesToMap(buffer, ycghMap = {}, vTrackingCacheByMonth = {}) {
       htGiaoNhan:      getTxtByIdx(row, 18),  
       ngayGiao:        getDateByIdx(row, 19), 
       phuongTien:      phuongTien,  
-      taiXe:           getTxtByIdx(row, 21),  
+      taiXe:           getTxtByIdx(row, 21),  // Giữ nguyên trường tài xế cũ (Cột V từ file Tuyến Đường)[cite: 1]
+      laiXe:           laiXeFromVtracking,    // 🌟 TRƯỜNG LÁI XE MỚI ĐƯỢC BỔ SUNG TỪ V-TRACKING
       chuyen:          chuyen,  
       giaoNhan:        getTxtByIdx(row, 23),  
       pxk:             getTxtByIdx(row, 26),  
@@ -549,7 +547,7 @@ async function mainSync() {
     const totalRecords = Object.keys(routeDataMap).length;
     
     if (totalRecords > 0) {
-      console.log(`📡 Đang đẩy dữ liệu ${totalRecords} mã phiếu kèm kmVtracking vào collection 'TUYENDUONG'...`);
+      console.log(`📡 Đang đẩy dữ liệu ${totalRecords} mã phiếu kèm trường laiXe và kmVtracking vào collection 'TUYENDUONG'...`);
       let batch = db.batch();
       let count = 0;
       for (const [maPhieu, data] of Object.entries(routeDataMap)) {
@@ -564,7 +562,7 @@ async function mainSync() {
       if (count % 400 !== 0) {
         await batch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm kmVtracking!`); 
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm trường laiXe mới!`); 
       
       // --- XỬ LÝ VÀ ĐẨY DỮ LIỆU LÊN KHACHHANGVUNG ---
       console.log(`📊 Đang khởi tạo bảng tổng hợp KHACHHANGVUNG...`);
