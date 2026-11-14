@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Cập nhật rút gọn hiển thị tiền thành "tr" và hệ số 1.15 quen thuộc
+// VANCHUYEN.JS - Gom sát phần Tải và Tiền thành liền số
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -106,7 +106,6 @@ function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
               Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    // Quay lại hệ số 1.15 quen thuộc
     return Math.round(R * c * 1.15);
 }
 
@@ -443,14 +442,14 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     if (don.thanhTien) tongDoanhThuNgay += Number(don.thanhTien) || 0;
                 });
             });
-            const tongDTTrNgay = Math.round(tongDoanhThuNgay / 1000000).toLocaleString('vi-VN');
+            const tongDTTrNgay = Math.round(tongDoanhThuNgay / 1000000);
 
             const dateHeader = document.createElement('div');
             dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
             dateHeader.innerHTML = `
                 <span>📅 ${ngay}</span> 
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')} kg / ${tongDTTrNgay}tr</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')}kg/${tongDTTrNgay}tr</span>
                     <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonNgay} đơn</span>
                 </div>
             `;
@@ -462,7 +461,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                     if (don.tTai) taiChuyen += Number(don.tTai) || 0;
                     if (don.thanhTien) dtChuyen += Number(don.thanhTien) || 0;
                 });
-                const dtChuyenTr = Math.round(dtChuyen / 1000000).toLocaleString('vi-VN');
+                const dtChuyenTr = Math.round(dtChuyen / 1000000);
 
                 const mauXe = layMauGiaoDienXe(trip.phuongTien);
                 const vehicleWrapper = document.createElement('div');
@@ -477,7 +476,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                             🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
+                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
                             <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
                         </div>
                     `;
@@ -487,7 +486,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                             🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg / ${dtChuyenTr}tr</span>
+                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
                             <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
                         </div>
                     `;
@@ -546,13 +545,16 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const vungTieuThu = layVungTieuThu(data);
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
-    const tTai = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') + ' kg' : '0 kg';
     
-    // Đã thay đổi thành "tr" thay vì "tr.đ"
-    let thanhTien = '0.0 tr';
+    // Tải liền số (kg)
+    const tTaiVal = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') : '0';
+    const tTaiText = `${tTaiVal}kg`;
+    
+    // Tiền liền số (tr)
+    let thanhTienText = '0.0tr';
     if (data.thanhTien) {
         const tienNum = Number(data.thanhTien) / 1000000;
-        thanhTien = tienNum.toFixed(1) + ' tr';
+        thanhTienText = `${tienNum.toFixed(1)}tr`;
     }
 
     const ngayxuatKho = data.ngayxuatKho || '';
@@ -640,7 +642,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
-            <span>Tải: <strong style="color: #0284c7;">${tTai}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTien}</strong></span>
+            <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
             <div>${badgeDuyet}${htmlKhoangCach}</div>
         </div>
         
