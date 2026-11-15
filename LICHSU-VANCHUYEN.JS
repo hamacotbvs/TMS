@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Full màn hình trên điện thoại và giữ nguyên khung trên máy tính
+// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km, định dạng kmVtracking 1 số lẻ, check-in sau vùng tiêu thụ và dùng gạch nhạt ngăn cách km
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -230,33 +230,6 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
 window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "", tuKhoaTimKiem = "") {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
-
-    // Inject CSS tự động co giãn full màn hình trên điện thoại
-    if (!document.getElementById('mobile-fullscreen-vc-style')) {
-        const styleEl = document.createElement('style');
-        styleEl.id = 'mobile-fullscreen-vc-style';
-        styleEl.innerHTML = `
-            @media (max-width: 768px) {
-                #danhSachLichSuVanChuyen {
-                    width: 100vw !important;
-                    position: relative !important;
-                    left: 50% !important;
-                    right: 50% !important;
-                    margin-left: -50vw !important;
-                    margin-right: -50vw !important;
-                    padding-left: 8px !important;
-                    padding-right: 8px !important;
-                    box-sizing: border-box !important;
-                }
-                .card-lich-su-item, div[style*="background: #fff"] {
-                    border-radius: 0 !important;
-                    border-left: none !important;
-                    border-right: none !important;
-                }
-            }
-        `;
-        document.head.appendChild(styleEl);
-    }
 
     container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>';
 
