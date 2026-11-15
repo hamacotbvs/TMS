@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Gom sát phần Tải và Tiền thành liền số
+// VANCHUYEN.JS - Gom sát phần Tải và Tiền thành liền số và viết liền đơn vị km
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -572,9 +572,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             const kmKTTruoc = Number(danhSachDon[index - 1]?.kmKetThucGiaoHang) || 0;
             if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
         }
-        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(${kmGiao} km)</span>`;
+        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(${kmGiao}km)</span>`;
     } else {
-        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0 km)</span>`;
+        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0km)</span>`;
     }
 
     let badgeThuTu = '';
@@ -595,7 +595,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     if (khoangCachKm !== null) {
         const kcNum = parseFloat(khoangCachKm);
         const iconCheck = kcNum < 0.2 ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
-        htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm} km`;
+        htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm}km`;
     } else {
         htmlKhoangCach = ` | <span style="color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
     }
@@ -610,10 +610,10 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao${kmGiaoText}</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
-        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi} km)</span>`;
+        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
     } else if (laChuaGiaoHoanToan) {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
-        badgeDuyet = `<span style="color: #9333ea; font-size: 11px; font-weight: 600;">⏳ Chưa giao (${kmHienThi} km)</span>`;
+        badgeDuyet = `<span style="color: #9333ea; font-size: 11px; font-weight: 600;">⏳ Chưa giao (${kmHienThi}km)</span>`;
     }
 
     const cardItem = document.createElement('div');
