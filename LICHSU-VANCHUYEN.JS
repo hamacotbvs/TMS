@@ -1,757 +1,197 @@
-// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km, định dạng kmVtracking 1 số lẻ, check-in sau vùng tiêu thụ và dùng gạch nhạt ngăn cách km
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const db = window.db;
+        * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
 
-function chuanHoaNgay(ngayStr) {
-    if (!ngayStr || typeof ngayStr !== "string") return "";
-    return ngayStr.trim().split(" ")[0];
-}
+        /* NÚT RESET */
+        .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
+            background-color: #ffffff; border: 1px solid #edf2f4; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Đổ bóng mịn màng */transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s; padding: 0; -webkit-tap-highlight-color: transparent;}
+        .nut-reset-treo svg {width: 20px; height: 20px; fill: none; stroke: #0082C8; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;}
+        .nut-reset-treo:active {transform: scale(0.92); /* Hiệu ứng lún nút khi nhấn */background-color: #f8fafc; /* Nền xám nhẹ khi chạm ngón tay */box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);}
 
-function layNgayGomNhom(data) {
-    const coXe = data.phuongTien && data.phuongTien.trim() !== "";
-    const isXeMay = !coXe || data.phuongTien.trim().toUpperCase() === "XE MÁY";
+        /* ĐỊNH DẠNG CHUNG */
+        body {background-color: #f5f6f8; color: #333; display: flex; flex-direction: column; height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important; /* cao app = 100% màn hình + home ảo iphone */; overflow: hidden /* khóa không cho thanh menu dưới cuộn */;-webkit-text-size-adjust: 100% /* tránh cho iphone tay thỏ phóng to khi xoay ngang*/} /* cấu trúc nền cho toàn app */
+        .KHUNG-CAC-TAB {flex: 1 /* giản nở chím trọn màn hình đã trừ menu dưới*/; overflow-y: auto /* Tự động tạo thanh cuộn dọc */; padding: 5px 12px 0px 12px; padding-bottom: 100px; /* Tránh bị che bởi menu dưới */ transition: padding-bottom 0.3s ease; /* co giãn mượt khi xoay */} /* Cấu hình cho vùng chứa nội dung các tab */
+        .trang-content {display: none;} /* ẩn tất cả các tab */
+        .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
+        .KHUNG-CON-TRONG-TAB {background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;}
 
-    if (isXeMay) {
-        let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
-        let ngayBase = chuanHoaNgay(xk);
-        if (!ngayBase) {
-            let dat = data.ngayDatHang ? data.ngayDatHang.trim() : "";
-            ngayBase = chuanHoaNgay(dat);
+        /* THANH MENU DƯỚI */
+        .MENU-DUOI {position: fixed; bottom: 10px; left: 5%; right: 5%; height: 60px; background-color: #0082C8; /* Màu xanh chủ đạo */ border-radius: 30px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 8px 24px rgba(0, 122, 204, 0.3); z-index: 1000; padding: 0 10px; transition: all 0.3s ease; /* co giãn mượt khi xoay */} /* định dạng khung menu */
+        .MENU-item {display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; flex: 1; height: 100%;} /* thiết kế kiểu dáng nút */
+        .MENU-item i {font-size: 20px; margin-bottom: 4px; transition: all 0.3s ease; /* co giãn mượt khi xoay */}
+        .MENU-item.active {color: #ffffff; font-weight: 700;} /* Tab đang được chọn */
+        .MENU-item.add-btn {flex: none; width: 50px; height: 50px; background-color: #ffffff; color: #0082C8; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-bottom: px; /* Hơi nổi lên trên một chút */} /* Nút dấu cộng (+) đặc biệt ở giữa */
+        .MENU-item.add-btn i {margin-bottom: 0; font-size: 24px;}
+        .MENU-item.add-btn.active {background-color: #6b6b6c; color: #ffffff;}
+
+        /* CẤU HÌNH KHI XOAY NGANG MÀN HÌNH */
+        @media (orientation: landscape) {
+            .KHUNG-CAC-TAB {padding: 8px 12px; padding-bottom: 65px;} /* Thu hẹp khoảng đệm nội dung */
+            .KHUNG-CON-TRONG-TAB {padding: 12px 16px;    /* Giảm từ 20px xuống còn 12px */ margin-bottom: 10px;   /* Giảm khoảng cách giữa các card */}
+            .nut-reset-treo {top: 8px; right: 12px; width: 35px; height: 35px;} /* Đẩy nút reset sát lên góc hơn để không chiếm diện tích */
+            .nut-treo-ngay-thang-nam {top: 8px; right: 12px; padding: 1px 6px;} 
+            .nut-treo-loc-nganh {top: 8px; left: 12px; padding: 1px 6px;}
+            .MENU-DUOI {height: 45px; bottom: 8px; border-radius: 22px; box-shadow: 0 4px 15px rgba(0, 122, 204, 0.25);} /* Hạ chiều cao menu xuống 45px và ép sát đáy */
+            .MENU-item {flex-direction: row; font-size: 10px; gap: 6px; } /* Đổi bố cục nút sang hàng ngang (icon nằm trước chữ) */
+            .MENU-item i {font-size: 15px; margin-bottom: 0;} /* Thu nhỏ kích thước icon */
+            .MENU-item.add-btn {width: 35px; height: 35px; margin-bottom: 0; font-size: 16px;} /* Thu nhỏ nút dấu cộng (+) ép dẹp bằng menu, không nổi lên nữa */
+            .MENU-item.add-btn i {font-size: 16px;} }
+
+        /* KHUNG CHỌN NGÀY HIỆN HÀNH */
+        .nut-treo-ngay-thang-nam {position: absolute; top: 15px; right: 15px; z-index: 1000; background: #ffffff; padding: 2px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; min-width: 40px; user-select: none;}
+            .dong-ngay-thang {font-size: 11px; font-weight: 700; color: #0082C8; line-height: 1.2;} /* Dòng ngày/tháng ở trên */
+            .dong-nam {font-size: 9px; font-weight: 500; color: #64748b; line-height: 1.2;} /* Dòng năm ở dưới */
+            .o-lich-an-giao-dien {position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;} /* Ẩn giấu ô nhập lịch gốc đi nhưng vẫn để nó nằm đè lên để hứng click chạm */
+
+        /* KHUNG CHỌN LỌC NGÀNH */
+        .nut-treo-loc-nganh {position: absolute; top: 15px; left: 15px; z-index: 10;}
+        /* Định dạng cho ô chọn (Select) giống phom nút cũ */
+        .nut-treo-loc-nganh select {
+            background-color: #ffffff; color: #333; border: 1px solid #e2e8f0; padding: 2px 8px; font-size: 11px; font-weight: bold; border-radius: 8px; cursor: pointer; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-family: inherit;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none; text-align: center;} /* Loại bỏ mũi tên mặc định của trình duyệt để nhìn gọn hơn (tùy chọn) */
+
+        /* ĐỊNH DẠNG BIỂU ĐỒ */
+        .tieu-de-bieu-do {font-size: 18px; font-weight: 700; color: #1e293b; text-align: center; margin-bottom: 8px;}
+        .vung-bieu-do { position: relative; width: 100%; height: 340px; }
+        /* HIỆU ỨNG NÚT XOAY ĐANG TẢI DỮ LIỆU BIỂU ĐỒ */
+        .loading-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; width: 90%; text-align: center; justify-content: center;}
+        .loading-box i { animation: spin 1s linear infinite; color: #3498db; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* VÙNG BIỂU ĐỒ NGANG TRÊN DESKTOP*/
+        .vung-bieu-do-doi-ngang {display: flex; flex-direction: column; gap: 15px; width: 100%; padding-bottom: 80px}
+        .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: 1; width: 100%;}
+        @media (min-width: 850px) {.vung-bieu-do-doi-ngang {flex-direction: row; /* Xếp nằm ngang */ gap: 20px; /* Khoảng cách giữa 2 biểu đồ */ padding-bottom: 20px;} }
+        /* VÙNG BIỂU ĐỒ DỌC TRÊN ĐIỆN THOẠI */
+        @media (max-width: 767px) and (orientation: portrait) {
+            /* 1. Khống chế trang không cho cuộn tràn lan */
+            .trang-content.active {
+                overflow-y: auto !important;
+                height: calc(100vh - env(safe-area-inset-bottom, 0px)) !important;   /* Trừ đi chiều cao menu dưới - CHỈNH BIỂU ĐỒ NẰM TRÊN MENU Ở ĐÂY*/
+                -webkit-overflow-scrolling: touch; }
+            /* 2. Cấu hình vùng chứa 2 biểu đồ */
+            .vung-bieu-do-doi-ngang {display: flex !important; flex-direction: column !important; justify-content: flex-start !important; height: auto !important; gap: 10px !important; padding-bottom: 30px !important;}
+            /* 3. Chia đều chiều cao cho từng biểu đồ */
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {flex: none !important; height: 38vh !important; padding: 8px 6px !important; margin-bottom: 0px !important; border-radius: 12px !important; }
+            /* 4. Thu nhỏ tiêu đề biểu đồ một chút cho đỡ chiếm diện tích dọc */
+            .vung-bieu-do-doi-ngang .tieu-de-bieu-do {font-size: 14px !important; margin-bottom: 3px !important;}
+            /* 5. Ép canvas của biểu đồ co giãn theo khung bọc */
+            .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 25px) !important;} }
+        /* VÙNG BIỂU ĐỒ NGANG TRÊN ĐIỆN THOẠI */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .KHUNG-CAC-TAB {
+                padding-right: 60px !important; padding-top: 0px !important; padding-bottom: 0px !important;
+                scroll-snap-type: y mandatory !important; overflow-y: scroll !important;
+                height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
+                box-sizing: border-box;}
+            .trang-content.active {height: auto !important; overflow: visible !important;}
+            nav.MENU-DUOI {top: 0 !important; bottom: 0 !important; left: auto !important; right: 0 !important; width: 55px !important; height: 100vh !important; flex-direction: column !important; justify-content: center !important;
+                gap: 15px !important; border-radius: 0 !important; padding: 10px 0 !important; z-index: 9999 !important;}
+            nav.MENU-DUOI .MENU-item {flex-direction: column !important; gap: 2px !important; font-size: 10px !important;}
+            .vung-bieu-do-doi-ngang {display: flex !important; flex-direction: column !important; gap: 4px !important; margin-right: 0 !important; padding-bottom: 0 !important;}
+            .vung-bieu-do-doi-ngang .KHUNG-CON-TRONG-TAB {
+                min-height: auto !important;
+                height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important;
+                box-sizing: border-box;
+                scroll-snap-align: start !important;
+                margin-bottom: 0 !important;
+                padding: 10px 10px 10px 10px !important;} 
+            .vung-bieu-do-doi-ngang .vung-bieu-do {height: calc(100% - 50px) !important; width: 100% !important;}}
+
+        /* TAB NHẬP LIỆU */
+        .nut-gui-xac-nhan:active { transform: scale(0.98); background-color: #006fa3 !important; }
+        @media (max-width: 767px) and (orientation: portrait) {#them-moi { padding-bottom: 120px !important; } }   /* Khống chế khoảng cách cuộn trên Mobile để không bị MENU DƯỚI che khuất nút */
+        #nvHangMuc, #nvKieuPhanBo {-webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 24 24'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px !important;}
+        body {margin: 0; padding: 0;
+              padding-bottom: env(safe-area-inset-bottom);    /* Dùng env() để iOS tự tính khoảng cách tai thỏ và thanh home dưới */
+              min-height: 100dvh;}
+        .container {padding-bottom: constant(safe-area-inset-bottom); /* Cho iOS cũ */
+                    padding-bottom: env(safe-area-inset-bottom); }    /* Cho iOS mới */
+        .Dropdown {width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #fff; font-size: 14px; color: #475569; -webkit-appearance: none; appearance: none;
+            /* Thêm icon mũi tên nhỏ bên phải cho đẹp */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 5px center; background-size: 16px;}
+
+        /* CSS CHO LỊCH SỬ CHI PHÍ */
+        /* Thu nhỏ thanh trượt cho toàn bộ modal */
+        ::-webkit-scrollbar {width: 2px; height: 2px; } /* bộ bự thanh trượt đứng và ngang */
+        ::-webkit-scrollbar-track {background: transparent; }   /* Nền của thanh trượt trong suốt */
+        ::-webkit-scrollbar-thumb {background: #eceff1; border-radius: 1px; } /* Màu của thanh trượt (Xám nhạt hiện đại) */
+        ::-webkit-scrollbar-thumb:hover {background: #94a3b8; } /* Màu khi di chuột vào thanh trượt */
+        .modal-hidden { display: none; position: fixed; top: 0; left: 0; width: 100%; height: calc(100vh + env(safe-area-inset-bottom, 0px)) !important; background-color: #f5f6f8 } /* khung nền modal */
+        .modal-content { background: #ffffff; margin: 0.5vh auto; padding: 0px 0px 10px 0px; width: 96%; max-width: 500px;
+            border-radius: 20px; height: calc(100vh - 130px) !important; overflow-y: auto;
+            display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);}
+        @media (min-width: 850px) {
+            .modal-content {background: #ffffff; margin: 0.5vh auto; padding: 10px; max-width: 500px; border-radius: 20px;
+            height: calc(100vh - 70px) !important; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);; } }
+        .modal-header-custom {display: flex; flex-direction: column; align-items: center; position: relative; padding: 2px 5px; border-bottom: 1px solid #e2e8f0; 
+            background-color: #e6eaee; border-top-left-radius: 20px; border-top-right-radius: 20px;}
+        .nut-dong-modal {position: absolute; right: 5px; top: 2px; border: none; background: none; font-size: 24px; color: #94a3b8; cursor: pointer; line-height: 1;}
+        .modal-tieu-de {margin: 0 0 2px 0; font-size: 16px; color: #0082C8; font-weight: 700;}
+        .bo-chon-thang {position: relative; display: inline-flex; align-items: center; justify-content: center; background-color: #f1f2f6; border-radius: 12px; padding: 3px 12px 5px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; overflow: hidden; margin: 0 0 2px 0}
+        .bo-chon-thang:active {transform: scale(0.95);}
+        #danhSachLichSu {height: calc(100vh - 70px) !important; overflow-y: auto; padding: 10px;}
+        .card-lich-su-item {background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8); } /* Tạo đường gạch mờ phân cách giữa các phát sinh */
+        .card-dong-1 {display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px;}
+        .ngay-phat-sinh {font-size: 12px; color: #64748b; font-weight: 500;}
+        .card-dong-2 {display: flex; justify-content: space-between; font-size: 14px; color: #1c2129; margin-bottom: 6px;}
+        .card-dong-3 {display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #0f172a; padding: 2px 0px; }
+        .card-dong-3 .phan-cach {display: none; }/* Màu gạch mờ phân chia Sơn và TBVS */
+
+        /* --- BỔ SUNG CHO CARD LỊCH SỬ VẬN CHUYỂN --- */
+        #danhSachLichSuVanChuyen {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
         }
-        return ngayBase || "Chưa xác định";
-    }
 
-    let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
-    let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
-    let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
-
-    const duyet = data.duyet ? data.duyet.trim() : "";
-    const laChuaGiaoHoanToan = !duyet || duyet === "" || duyet.toLowerCase().includes("chuẩn bị") || duyet.toLowerCase().includes("đã xuất");
-
-    if (laChuaGiaoHoanToan && !bd && !kt) {
-        let ngayBase = chuanHoaNgay(xk);
-        if (!ngayBase) ngayBase = "Chưa xác định";
-        return `${ngayBase}Chưa giao`;
-    }
-
-    let rawDate = bd !== "" ? bd : (kt !== "" ? kt : xk);
-    return chuanHoaNgay(rawDate);
-}
-
-function layTenRutGon(hoTen) {
-    if (!hoTen || typeof hoTen !== "string") return "";
-    const arr = hoTen.trim().split(/\s+/);
-    return arr[arr.length - 1];
-}
-
-function layVungTieuThu(data) {
-    let xa = data.phuongXa ? data.phuongXa.trim() : "";
-    let tinh = data.thanhPho ? data.thanhPho.trim() : "";
-
-    xa = xa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
-    tinh = tinh.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
-
-    if (tinh.toLowerCase().includes("cần thơ")) {
-        let duong = "";
-        if (data.noiGiao && typeof data.noiGiao === "string") {
-            let diaChiClean = data.noiGiao.split("(")[0].trim();
-            let parts = diaChiClean.split(",").map(p => p.trim()).filter(p => p !== "");
-            
-            let foundDuong = parts.find(p => {
-                let l = p.toLowerCase();
-                return l.includes("đường") || l.includes("ql") || l.includes("đt") || l.includes("quốc lộ") || l.includes("3/2") || l.includes("30/4") || l.includes("cách mạng tháng");
-            });
-
-            if (!foundDuong) {
-                foundDuong = parts.find(p => {
-                    let l = p.toLowerCase();
-                    return !l.includes("số nhà") && !l.includes("ấp") && !l.includes("khu phố") && !l.includes("huyện") && !l.includes("quận") && !l.includes("thị xã") && !l.startsWith("xã") && !l.startsWith("phường") && !l.startsWith("tỉnh") && !l.includes("việt nam");
-                });
-            }
-
-            if (foundDuong) duong = foundDuong;
+        .card-lich-su-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 5px 7px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s ease;
         }
 
-        let arr = [];
-        if (duong) arr.push(duong);
-        if (xa) arr.push(xa);
-        return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
-    } 
-    
-    let arr = [];
-    if (xa) arr.push(xa);
-    if (tinh) arr.push(tinh);
-
-    return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
-}
-
-function loaiBoDauTiengViet(str) {
-    if (!str || typeof str !== "string") return "";
-    return str.normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .replace(/đ/g, "d")
-              .replace(/Đ/g, "D")
-              .toLowerCase();
-}
-
-function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
-    if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) {
-        return 0;
-    }
-    const R = 6371;
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 1.15);
-}
-
-function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
-    if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
-    try {
-        const [lat1, lon1] = toaDo1.split(',').map(Number);
-        const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
-
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * (Math.PI / 180);
-        const dLon = (lon2 - lon1) * (Math.PI / 180);
-        const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
-    } catch (e) {
-        return null;
-    }
-}
-
-function layMauGiaoDienXe(phuongTien) {
-    const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
-    
-    if (xe.includes("06126")) {
-        return {
-            bgHeader: '#eff6ff', border: '#bfdbfe', textHeader: '#1e40af', 
-            badgeBg: '#dbeafe', badgeText: '#1d4ed8', tagColor: '#2563eb'
-        };
-    } else if (xe.includes("12290")) {
-        return {
-            bgHeader: '#f0fdf4', border: '#bbf7d0', textHeader: '#166534', 
-            badgeBg: '#dcfce7', badgeText: '#15803d', tagColor: '#16a34a'
-        };
-    } else if (xe.includes("02591")) {
-        return {
-            bgHeader: '#fef2f2', border: '#fecaca', textHeader: '#991b1b', 
-            badgeBg: '#fee2e2', badgeText: '#dc2626', tagColor: '#ef4444'
-        };
-    } else if (xe === "XE MÁY" || !phuongTien || phuongTien.trim() === "") {
-        return {
-            bgHeader: '#fffbeb', border: '#fde68a', textHeader: '#92400e', 
-            badgeBg: '#fef3c7', badgeText: '#b45309', tagColor: '#d97706'
-        };
-    } else {
-        return {
-            bgHeader: '#f8fafc', border: '#e2e8f0', textHeader: '#1e293b', 
-            badgeBg: '#e2e8f0', badgeText: '#334155', tagColor: '#0284c7'
-        };
-    }
-}
-
-function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
-    if (!danhSachDon || danhSachDon.length === 0) return { optimized: [], tongKmDi: 0, tongKmVe: 0 };
-
-    let unvisited = [...danhSachDon];
-    let optimized = [];
-    let currentLat = latKho;
-    let currentLon = lonKho;
-    let tongKmDi = 0;
-    let lastValidLat = latKho;
-    let lastValidLon = lonKho;
-    let hasValidStop = false;
-
-    while (unvisited.length > 0) {
-        let nearestIdx = 0;
-        let minDistance = Infinity;
-
-        for (let i = 0; i < unvisited.length; i++) {
-            let don = unvisited[i];
-            let lat = 0, lon = 0;
-            let hasGPS = false;
-            if (don.dinhVi && typeof don.dinhVi === 'string' && don.dinhVi.includes(',')) {
-                const parts = don.dinhVi.split(',').map(Number);
-                if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
-                    lat = parts[0]; lon = parts[1];
-                    hasGPS = true;
-                }
-            }
-
-            let estDist = hasGPS ? Math.abs(currentLat - lat) + Math.abs(currentLon - lon) : 999999;
-            if (estDist < minDistance) {
-                minDistance = estDist;
-                nearestIdx = i;
+        .card-lich-su-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
+        }
+        /* --- CHỈ ÁP DỤNG RIÊNG CHO KHUNG VẬN CHUYỂN TRÊN MÁY TÍNH --- */
+        @media (min-width: 768px) {
+            /* Ép khung chứa của tab vận chuyển co lại, nằm giữa màn hình và có độ rộng vừa phải */
+            #van-chuyen .KHUNG-CON-TRONG-TAB {
+                width: 60vw;             /* Chiếm 60% chiều ngang màn hình máy tính */
+                max-width: 900px;        /* Không bị quá bè rộng */
+                margin: 20px auto;       /* Căn giữa màn hình và tạo khoảng cách phía trên */
+                border-radius: 16px;     /* Bo góc mềm mại */
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); /* Đổ bóng nổi bật */
             }
         }
 
-        let nextDon = unvisited.splice(nearestIdx, 1)[0];
-        
-        let kmChang = 0;
-        if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
-            const parts = nextDon.dinhVi.split(',').map(Number);
-            if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
-                kmChang = tinhKhoangCachNoiBo(currentLat, currentLon, parts[0], parts[1]);
-                tongKmDi += kmChang;
-                currentLat = parts[0];
-                currentLon = parts[1];
-                lastValidLat = parts[0];
-                lastValidLon = parts[1];
-                hasValidStop = true;
-            }
+        /* --- CARD LỊCH SỬ VẬN CHUYỂN (Giữ nguyên định dạng đẹp mắt của bạn) --- */
+        #danhSachLichSuVanChuyen {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
         }
 
-        nextDon._kmTinhToan = kmChang;
-        optimized.push(nextDon);
-    }
-
-    optimized.forEach((don, idx) => {
-        don._thuTu = idx + 1;
-    });
-
-    let tongKmVe = 0;
-    if (hasValidStop) {
-        tongKmVe = tinhKhoangCachNoiBo(lastValidLat, lastValidLon, latKho, lonKho);
-    }
-
-    return { optimized, tongKmDi, tongKmVe };
-}
-
-window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "", tuKhoaTimKiem = "") {
-    const container = document.getElementById('danhSachLichSuVanChuyen');
-    if (!container) return;
-
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>';
-
-    try {
-        const thangNum = parseInt(thangChon, 10);
-        const namNum = parseInt(namChon, 10);
-
-        const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-        const q = query(
-            thamChieuTuyenDuong, 
-            where("nam", "==", namNum), 
-            where("thang", "==", thangNum)
-        );
-
-        const querySnapshot = await getDocs(q);
-        container.innerHTML = '';
-
-        if (querySnapshot.empty) {
-            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chuyến vận chuyển nào trong Tháng ${thangNum}/${namNum}.</div>`;
-            return;
+        .card-lich-su-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s ease;
         }
 
-        let listData = [];
-        const keywordKhongDau = loaiBoDauTiengViet(tuKhoaTimKiem);
-
-        querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const ngayGom = layNgayGomNhom(data);
-            
-            if (keywordKhongDau && keywordKhongDau.trim() !== "") {
-                let match = false;
-                const hopThanhChuoi = Object.values(data).join(" ") + " " + docSnap.id;
-                const chuoiKhongDau = loaiBoDauTiengViet(hopThanhChuoi);
-
-                if (chuoiKhongDau.includes(keywordKhongDau)) match = true;
-                if (!match) return; 
-            }
-
-            listData.push({ 
-                id: docSnap.id, 
-                ...data, 
-                _ngayGom: ngayGom 
-            });
-        });
-
-        listData.sort((a, b) => {
-            let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
-            let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
-            return timeA.localeCompare(timeB);
-        });
-
-        let globalVehicleTrips = {}; 
-        listData.forEach((data) => {
-            const coXe = data.phuongTien && data.phuongTien.trim() !== "";
-            const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
-
-            if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
-                const tuKhoa = bienSoTimKiem.toLowerCase().trim();
-                if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
-            }
-
-            if (coXe) {
-                const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
-                const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
-                if (!globalVehicleTrips[tripKey]) {
-                    globalVehicleTrips[tripKey] = {
-                        phuongTien: nhomKey,
-                        soChuyen: soChuyen,
-                        ngay: data._ngayGom,
-                        dons: []
-                    };
-                }
-                globalVehicleTrips[tripKey].dons.push(data);
-            } else {
-                const tripKey = `XE_MAY_${data._ngayGom}`;
-                if (!globalVehicleTrips[tripKey]) {
-                    globalVehicleTrips[tripKey] = {
-                        phuongTien: "Xe máy",
-                        soChuyen: 1,
-                        ngay: data._ngayGom,
-                        isXeMay: true,
-                        dons: []
-                    };
-                }
-                globalVehicleTrips[tripKey].dons.push(data);
-            }
-        });
-
-        let allTripsArray = Object.values(globalVehicleTrips);
-        allTripsArray.sort((a, b) => {
-            let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || "";
-            let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || "";
-            return timeA.localeCompare(timeB);
-        });
-
-        const LAT_KHO = 9.9234; 
-        const LON_KHO = 105.1245;
-
-        for (let idx = 0; idx < allTripsArray.length; idx++) {
-            let trip = allTripsArray[idx];
-            const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
-
-            let kmDi = 0;
-            let kmVeNum = 0;
-            let textKmVe = "chờ"; 
-
-            if (laNhomChuaGiao) {
-                let donsChuaGiao = [];
-                let donsDaGiao = [];
-
-                trip.dons.forEach(don => {
-                    const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
-                    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
-                    
-                    if (laChuaGiaoHoanToan) {
-                        donsChuaGiao.push(don);
-                    } else {
-                        donsDaGiao.push(don);
-                    }
-                });
-
-                let ketQuaSapXep = sapXepVaTinhKmNoiBo(donsChuaGiao, LAT_KHO, LON_KHO);
-                trip.dons = [...ketQuaSapXep.optimized, ...donsDaGiao];
-                
-                kmDi = ketQuaSapXep.tongKmDi;
-                kmVeNum = ketQuaSapXep.tongKmVe;
-                textKmVe = kmVeNum + "km";
-            } else {
-                trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
-                trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
-
-                if (trip.dons.length > 0) {
-                    const donDau = trip.dons[0];
-                    const donCuoi = trip.dons[trip.dons.length - 1];
-                    const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
-                    const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
-
-                    if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
-                        kmDi = kmKTCuoi - kmBDDau;
-                    }
-
-                    if (!trip.isXeMay) {
-                        for (let nextIdx = idx + 1; nextIdx < allTripsArray.length; nextIdx++) {
-                            let nextTrip = allTripsArray[nextIdx];
-                            if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
-                                const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
-                                if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
-                                    kmVeNum = kmBDChuyenSau - kmKTCuoi;
-                                    textKmVe = kmVeNum + "km";
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0, doanhThuChuyen = 0;
-            trip.dons.forEach(don => {
-                if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
-                if (don.thanhTien) doanhThuChuyen += Number(don.thanhTien) || 0;
-                const nganhStr = don.nganh ? don.nganh.trim().toLowerCase() : "";
-                const kg = Number(don.sonTbvsKg) || 0;
-                if (nganhStr.includes("thiết bị vệ sinh") || nganhStr.includes("tbvs")) {
-                    tongTbvsKg += kg;
-                } else {
-                    tongSonKg += kg;
-                }
-            });
-
-            trip.tongBaoBot = Math.round(tongBotKg / 40);
-            trip.tongSon = tongSonKg;
-            trip.tongTbvs = tongTbvsKg;
-            trip.kmDi = kmDi;
-            trip.textKmVe = textKmVe;
-
-            let tyLePhi = 0;
-            const tongKmChuyen = kmDi + kmVeNum;
-            if (doanhThuChuyen > 0) {
-                tyLePhi = ((tongKmChuyen * 10000) / doanhThuChuyen) * 100;
-            }
-            trip._tyLePhi = tyLePhi.toFixed(1);
+        .card-lich-su-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
         }
-
-        let groupedByDate = {};
-        allTripsArray.forEach(trip => {
-            const ngay = trip.ngay;
-            if (!groupedByDate[ngay]) groupedByDate[ngay] = [];
-            groupedByDate[ngay].push(trip);
-        });
-
-        let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
-
-        if (sortedDates.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với từ khóa hoặc phương tiện bạn chọn.</div>';
-            return;
-        }
-
-        sortedDates.forEach(ngay => {
-            const tripsInDay = groupedByDate[ngay];
-
-            const dateWrapper = document.createElement('div');
-            dateWrapper.style.cssText = 'margin-bottom: 20px; width: 100%; box-sizing: border-box;';
-
-            let tongDonNgay = 0, tongTaiNgay = 0, tongDoanhThuNgay = 0;
-            tripsInDay.forEach(trip => {
-                tongDonNgay += trip.dons.length;
-                trip.dons.forEach(don => {
-                    if (don.tTai) tongTaiNgay += Number(don.tTai) || 0;
-                    if (don.thanhTien) tongDoanhThuNgay += Number(don.thanhTien) || 0;
-                });
-            });
-            const tongDTTrNgay = Math.round(tongDoanhThuNgay / 1000000);
-
-            const dateHeader = document.createElement('div');
-            dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; box-sizing: border-box;';
-            dateHeader.innerHTML = `
-                <span>📅 ${ngay}</span> 
-                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')}kg/${tongDTTrNgay}tr</span>
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonNgay} đơn</span>
-                </div>
-            `;
-            dateWrapper.appendChild(dateHeader);
-
-            tripsInDay.forEach(trip => {
-                let taiChuyen = 0, dtChuyen = 0;
-                trip.dons.forEach(don => {
-                    if (don.tTai) taiChuyen += Number(don.tTai) || 0;
-                    if (don.thanhTien) dtChuyen += Number(don.thanhTien) || 0;
-                });
-                const dtChuyenTr = Math.round(dtChuyen / 1000000);
-
-                const mauXe = layMauGiaoDienXe(trip.phuongTien);
-                const vehicleWrapper = document.createElement('div');
-                vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 0; width: 100%; box-sizing: border-box;`;
-
-                const vehicleHeader = document.createElement('div');
-                vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
-                
-                if (trip.isXeMay) {
-                    vehicleHeader.innerHTML = `
-                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
-                        </div>
-                        <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
-                            <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
-                        </div>
-                    `;
-                } else {
-                    vehicleHeader.innerHTML = `
-                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
-                        </div>
-                        <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
-                            <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
-                        </div>
-                    `;
-                }
-                vehicleWrapper.appendChild(vehicleHeader);
-
-                const vehicleSubHeader = document.createElement('div');
-                vehicleSubHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; flex-wrap: wrap; gap: 2px; width: 100%; box-sizing: border-box;';
-                vehicleSubHeader.innerHTML = `
-                    <span>Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span>Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong></span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span>Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong></span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span>TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
-                `;
-                vehicleWrapper.appendChild(vehicleSubHeader);
-
-                trip.dons.forEach((data, idx) => {
-                    renderCardDon(data, vehicleWrapper, trip.isXeMay, idx, trip.dons);
-                });
-
-                dateWrapper.appendChild(vehicleWrapper);
-            });
-
-            container.appendChild(dateWrapper);
-        });
-
-    } catch (error) {
-        console.error("Lỗi tải lịch sử vận chuyển: ", error);
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu lịch sử vận chuyển!</div>';
-    }
-};
-
-function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
-    const maPhieu = data.maPhieu || data.id;
-    const doiTuong = data.doiTuong || 'Chưa xác định';
-    const maPXK = data.pxk ? data.pxk.trim() : '---';
-
-    let nhanVienHtml = '';
-    if (isXeMay) {
-        const tenGN = layTenRutGon(data.giaoNhan);
-        const htmlGN = tenGN ? `<strong>${tenGN}</strong>` : `<span style="color: #dc2626;">❌</span>`;
-        nhanVienHtml = `<span>GN: ${htmlGN}</span>`;
-    } else {
-        const tenTX = layTenRutGon(data.taiXe);
-        const tenGN = layTenRutGon(data.giaoNhan);
-        const htmlTX = `<strong>${tenTX || '---'}</strong>`;
-        const htmlGN = tenGN ? `<strong>${tenGN}</strong>` : `<span style="color: #dc2626;">❌</span>`;
-        nhanVienHtml = `<span>TX: ${htmlTX} | GN: ${htmlGN}</span>`;
-    }
-
-    const vungTieuThu = layVungTieuThu(data);
-    const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
-    const duyet = data.duyet || '';
-    
-    // Tải liền số (kg)
-    const tTaiVal = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') : '0';
-    const tTaiText = `${tTaiVal}kg`;
-    
-    // Tiền liền số (tr)
-    let thanhTienText = '0.0tr';
-    if (data.thanhTien) {
-        const tienNum = Number(data.thanhTien) / 1000000;
-        thanhTienText = `${tienNum.toFixed(1)}tr`;
-    }
-
-    const ngayxuatKho = data.ngayxuatKho || '';
-    const batDauGiaoHang = data.batDauGiaoHang || '';
-    const ketThucGiaoHang = data.ketThucGiaoHang || '';
-
-    let kmGiaoText = '';
-    const kmKT = Number(data.kmKetThucGiaoHang) || 0;
-    if (kmKT > 0) {
-        let kmGiao = 0;
-        if (index === 0) {
-            const kmBD = Number(data.kmBatDauGiaoHang) || 0;
-            if (kmBD > 0) kmGiao = kmKT - kmBD;
-        } else {
-            const kmKTTruoc = Number(danhSachDon[index - 1]?.kmKetThucGiaoHang) || 0;
-            if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
-        }
-        kmGiaoText = `⏱️ ${kmGiao}km`;
-    } else {
-        kmGiaoText = `⏱️ 0km`;
-    }
-
-    let kmVtrackingNum = data.kmVtracking !== undefined ? Number(data.kmVtracking) : 0;
-    let kmVtrackingText = `📍 ${kmVtrackingNum.toFixed(1)}km`;
-
-    let badgeThuTu = '';
-    const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
-    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
-    
-    if (laChuaGiaoHoanToan) {
-        let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
-        if (coGPS) {
-            badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự tuyến ưu tiên">📍 #${data._thuTu}</span>`;
-        } else {
-            badgeThuTu = `<span style="background: #fef2f2; color: #dc2626; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Chưa có GPS">📍 #${data._thuTu} (Chưa GPS)</span>`;
-        }
-    }
-
-    const khoangCachKm = tinhKhoangCachCheckIn(data.dinhVi, data.checkIn);
-    let htmlKhoangCach = '';
-    if (khoangCachKm !== null) {
-        const kcNum = parseFloat(khoangCachKm);
-        const iconCheck = kcNum < 0.2 ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
-        htmlKhoangCach = ` <span style="font-size: 10.5px;">${iconCheck} ${khoangCachKm}km</span>`;
-    } else {
-        htmlKhoangCach = ` <span style="font-size: 10.5px; color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
-    }
-
-    const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
-    const badgeHT = isChanh 
-        ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚚 Chành</span>'
-        : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚛 Giao</span>';
-
-    let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
-    if (duyet === "Đã giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmVtrackingText}</span>)</span>`;
-    } else if (duyet === "Đã xuất kho") {
-        let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
-        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
-    } else if (laChuaGiaoHoanToan) {
-        let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
-        badgeDuyet = `<span style="color: #9333ea; font-size: 11px; font-weight: 600;">⏳ Chưa giao (${kmHienThi}km)</span>`;
-    }
-
-    const cardItem = document.createElement('div');
-    cardItem.className = 'card-lich-su-item';
-    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;';
-
-    cardItem.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
-            <div>
-                <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong>
-                <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span>
-            </div>
-            <div style="display: flex; gap: 4px; align-items: center;">
-                ${badgeThuTu}
-                ${badgeHT}
-            </div>
-        </div>
-
-        <div style="font-weight: 600; color: #1e293b; font-size: 12px; margin-bottom: 3px;">
-            🏢 ${doiTuong}
-        </div>
-
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px; align-items: baseline;">
-            <div style="line-height: 1.4;">${nhanVienHtml}</div>
-            <div style="text-align: right; line-height: 1.4;">📍 ${vungTieuThu}${htmlKhoangCach}</div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
-            <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
-            <div>${badgeDuyet}</div>
-        </div>
-        
-        <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
-            <span>🚀 BĐ: <strong>${batDauGiaoHang ? batDauGiaoHang.split(" ")[1] || batDauGiaoHang : '---'}</strong></span>
-            <span>🏁 KT: <strong>${ketThucGiaoHang ? ketThucGiaoHang.split(" ")[1] || ketThucGiaoHang : '---'}</strong></span>
-            <span>📅 XK: <strong>${ngayxuatKho || '---'}</strong></span>
-        </div>
-    `;
-
-    parentElement.appendChild(cardItem);
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const inputThangVC = document.getElementById('thangVanChuyen');
-    const labelThangVC = document.getElementById('labelThangNamVC');
-    const selectPhuongTien = document.getElementById('filterPhuongTien');
-    const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
-    const container = document.getElementById('danhSachLichSuVanChuyen');
-
-    let inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
-    if (!inputTimKiemTuDo && selectPhuongTien && selectPhuongTien.parentNode) {
-        inputTimKiemTuDo = document.createElement('input');
-        inputTimKiemTuDo.id = 'inputTimKiemTuDo';
-        inputTimKiemTuDo.type = 'text';
-        inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm...';
-        inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; width: 100px; transition: width 0.3s ease, box-shadow 0.3s ease;';
-        
-        inputTimKiemTuDo.addEventListener('focus', function() {
-            this.style.width = '240px';
-            this.style.boxShadow = '0 0 0 2px rgba(2, 132, 199, 0.2)';
-            this.placeholder = '🔍 Nhập từ khóa tìm kiếm...';
-        });
-
-        inputTimKiemTuDo.addEventListener('blur', function() {
-            if (!this.value) {
-                this.style.width = '100px';
-                this.style.boxShadow = 'none';
-                this.placeholder = '🔍 Tìm kiếm...';
-            }
-        });
-
-        selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
-    }
-
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-
-    if (inputThangVC) {
-        if (!inputThangVC.value) inputThangVC.value = `${year}-${month}`;
-        const [currY, currM] = inputThangVC.value.split('-');
-        if (labelThangVC) labelThangVC.innerText = `${currM}/${currY}`;
-
-        if (container && container.innerHTML.trim() === "") {
-            container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
-        }
-
-        inputThangVC.addEventListener('change', function() {
-            if (this.value) {
-                const [y, m] = this.value.split('-');
-                if (labelThangVC) labelThangVC.innerText = `${m}/${y}`;
-            }
-        });
-    }
-
-    if (btnTaiDuLieu) {
-        btnTaiDuLieu.onclick = function() {
-            if (inputThangVC && inputThangVC.value) {
-                const [y, m] = inputThangVC.value.split('-');
-                const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
-                const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
-                if (typeof window.taiLichSuVanChuyen === 'function') {
-                    window.taiLichSuVanChuyen(m, y, bienSo, tuKhoa);
-                }
-            } else {
-                alert("Vui lòng chọn tháng năm trước khi tải!");
-            }
-        };
-    }
-
-    if (selectPhuongTien) {
-        selectPhuongTien.addEventListener('change', function() {
-            if (inputThangVC && inputThangVC.value) {
-                const [y, m] = inputThangVC.value.split('-');
-                const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
-                if (typeof window.taiLichSuVanChuyen === 'function') {
-                    window.taiLichSuVanChuyen(m, y, this.value, tuKhoa);
-                }
-            }
-        });
-    }
-
-    if (inputTimKiemTuDo) {
-        let timer = null;
-        inputTimKiemTuDo.addEventListener('input', function() {
-            clearTimeout(timer);
-            timer = setTimeout(() => {
-                if (inputThangVC && inputThangVC.value) {
-                    const [y, m] = inputThangVC.value.split('-');
-                    const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
-                    if (typeof window.taiLichSuVanChuyen === 'function') {
-                        window.taiLichSuVanChuyen(m, y, bienSo, this.value);
-                    }
-                }
-            }, 300);
-        });
-    }
-});
