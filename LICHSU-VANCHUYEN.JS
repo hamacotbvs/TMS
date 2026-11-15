@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Khắc phục lỗi thụt lề, canh khung đơn hàng rộng bằng khung tổng ngày
+// VANCHUYEN.JS - Khôi phục định dạng bên trong nguyên bản và giữ nguyên khung ngày tháng
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -644,7 +644,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             <span>📍 ${vungTieuThu}${htmlKhoangCach}</span>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 6px 10px; border-radius: 4px; width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
             <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
             <div>${badgeDuyet}</div>
         </div>
