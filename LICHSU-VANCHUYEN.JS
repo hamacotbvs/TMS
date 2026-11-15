@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km và định dạng kmVtracking 1 số lẻ
+// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km và định dạng kmVtracking 1 số lẻ (bỏ chữ I)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -610,7 +610,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} | ${kmVtrackingText}</span>)</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} ${kmVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
         badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
