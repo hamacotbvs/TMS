@@ -14,6 +14,7 @@
         /* Chỉ áp dụng riêng cho khung .KHUNG-CAC-TAB bên trong tab Vận chuyển */
         #van-chuyen .KHUNG-CAC-TAB {
             padding: 5px 0px 0px 0px !important; 
+            margin: 0px 0px 0px 0px !important; /* Tạo khoảng cách hai bên với mép màn hình điện thoại */
         }
         .trang-content {display: none;} /* ẩn tất cả các tab */
         .trang-content.active {display: block;} /* chỉ định tab nào hiển thị */
