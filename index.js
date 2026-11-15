@@ -311,6 +311,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
     const maPhieu = getTxtByIdx(row, 3);
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
     
+    // Vẫn đọc biến latGiao, longGiao để dùng cho việc tra cứu chéo đối chiếu phân đoạn V-tracking nhưng KHÔNG gán lưu vào object dữ liệu đẩy lên Firestore
     let latGiao = parseFloat(row[24]) || 0;
     let longGiao = parseFloat(row[25]) || 0;
     let dinhVi = (latGiao && longGiao) ? `${latGiao},${longGiao}` : "";
@@ -385,6 +386,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       giaoNhan:         getTxtByIdx(row, 23),  
       pxk:              getTxtByIdx(row, 26),  
       dinhVi:           dinhVi,
+      // Đã loại bỏ hoàn toàn latGiao và longGiao khỏi object đẩy lên Firestore theo yêu cầu
       ngayxuatKho:      ngayXuatKhoTxt,        
       thoiGianLamViec:  getTxtByIdx(row, 28),  
       thanhPho:         getTxtByIdx(row, 29),  
@@ -401,7 +403,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       vungTieuThu:      vungTieuThu,
       ngayTraCuuVTracking: ngayTraCuuVTracking,
       kmVtracking:      0,
-      // Biến tạm phục vụ thuật toán tích lũy đoạn đường (không đẩy lên Firestore)
+      // Các biến tạm để dùng trong tiến trình tra cứu nội bộ
       _latGiao:         latGiao,
       _longGiao:        longGiao
     }; 
@@ -516,7 +518,7 @@ async function mainSync() {
   }
 
   console.log('\n--------------------------------------------------\n');
-  console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường & Tra cứu Chéo V-Tracking tích lũy hành trình...');
+  console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường & Tra cứu Chéo V-Tracking thông minh...');
   
   try {
     console.log(`📦 Đang tải file YCGH từ Drive (ID: ${ID_YCGH})...`);
@@ -557,81 +559,51 @@ async function mainSync() {
       return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
     });
 
-    // 🔍 THUẬT TOÁN TRA CỨU CHÉO TÍCH LŨY THEO CHUỖI HÀNH TRÌNH TỪNG ĐƠN TRONG CHUYẾN
-    // Gom nhóm theo xe + ngày + chuyến để theo dõi điểm xuất phát liên tục
-    const groupedByTrip = {};
+    // 🔍 THUẬT TOÁN TRA CỨU CHÉO TUYENDUONG QUA V-TRACKING
     routeList.forEach(item => {
-      const key = `${item.phuongTien}_${item.ngayTraCuuVTracking}_${item.chuyen}`;
-      if (!groupedByTrip[key]) groupedByTrip[key] = [];
-      groupedByTrip[key].push(item);
-    });
+      const thang = item.thang;
+      const bienSo = item.phuongTien;
+      const ngay = item.ngayTraCuuVTracking;
+      const chuyenNum = item.chuyen;
 
-    Object.values(groupedByTrip).forEach(tripItems => {
-      // Khởi hành từ Kho 55 Tầm Vu cho đơn đầu tiên trong chuyến
-      let diemXuatPhatLat = KHO_55_TAM_VU_LAT;
-      let diemXuatPhatLong = KHO_55_TAM_VU_LONG;
+      if (thang && vtrackingCache[thang] && vtrackingCache[thang][bienSo] && vtrackingCache[thang][bienSo][ngay]) {
+        const trips = vtrackingCache[thang][bienSo][ngay];
+        const targetTrip = trips.find(t => t.chuyen === chuyenNum);
 
-      tripItems.forEach(item => {
-        const thang = item.thang;
-        const bienSo = item.phuongTien;
-        const ngay = item.ngayTraCuuVTracking;
-        const chuyenNum = item.chuyen;
+        if (targetTrip && targetTrip.segments.length > 0) {
+          let matchedSegment = null;
 
-        let tongKmDon = 0;
+          // 1. ƯU TIÊN 1: Tra cứu theo Tọa độ Lat/Long (_latGiao, _longGiao)
+          if (item._latGiao && item._longGiao) {
+            matchedSegment = targetTrip.segments.find(seg => {
+              const matchLat = Math.abs(seg.latKetThuc - item._latGiao) < 0.002;
+              const matchLong = Math.abs(seg.longKetThuc - item._longGiao) < 0.002;
+              return matchLat && matchLong;
+            });
+          }
 
-        if (thang && vtrackingCache[thang] && vtrackingCache[thang][bienSo] && vtrackingCache[thang][bienSo][ngay]) {
-          const trips = vtrackingCache[thang][bienSo][ngay];
-          const targetTrip = trips.find(t => t.chuyen === chuyenNum);
-
-          if (targetTrip && targetTrip.segments.length > 0) {
-            const diemDichLat = item._latGiao;
-            const diemDichLong = item._longGiao;
-
-            if (diemDichLat && diemDichLong) {
-              let isCollecting = false;
-
-              // Quét qua các phân đoạn V-Tracking để cộng dồn quãng đường từ điểm xuất phát đến điểm đích
-              targetTrip.segments.forEach(seg => {
-                const matchStartLat = Math.abs(seg.latBatDau - diemXuatPhatLat) < 0.002;
-                const matchStartLong = Math.abs(seg.longBatDau - diemXuatPhatLong) < 0.002;
-                
-                if (matchStartLat && matchStartLong) {
-                  isCollecting = true;
-                }
-
-                if (isCollecting) {
-                  tongKmDon += seg.quangDuong;
-                }
-
-                const matchEndLat = Math.abs(seg.latKetThuc - diemDichLat) < 0.002;
-                const matchEndLong = Math.abs(seg.longKetThuc - diemDichLong) < 0.002;
-
-                if (matchEndLat && matchEndLong) {
-                  isCollecting = false;
-                }
+          // 2. ƯU TIÊN 2: Dùng thời gian Bắt đầu / Kết thúc giao phụ trợ
+          if (!matchedSegment) {
+            const targetTime = item.ketThucGiaoHang || item.batDauGiaoHang || "";
+            if (targetTime) {
+              const timeOnly = targetTime.split(" ")[1] || targetTime;
+              matchedSegment = targetTrip.segments.find(seg => {
+                return seg.thoiGianKetThuc === timeOnly || seg.thoiGianBatDau === timeOnly;
               });
-
-              // Cập nhật điểm xuất phát mới cho đơn kế tiếp trong chuyến (chính là điểm đích đơn hiện tại)
-              diemXuatPhatLat = diemDichLat;
-              diemXuatPhatLong = diemDichLong;
-            } else {
-              // Phụ trợ thời gian nếu không có tọa độ
-              const targetTime = item.ketThucGiaoHang || item.batDauGiaoHang || "";
-              if (targetTime) {
-                const timeOnly = targetTime.split(" ")[1] || targetTime;
-                const matchedSeg = targetTrip.segments.find(seg => seg.thoiGianKetThuc === timeOnly || seg.thoiGianBatDau === timeOnly);
-                if (matchedSeg) tongKmDon = matchedSeg.quangDuong;
-              }
             }
           }
+
+          if (matchedSegment) {
+            item.kmVtracking = Number(matchedSegment.quangDuong.toFixed(2));
+          } else {
+            item.kmVtracking = Number((targetTrip.tongKm / targetTrip.segments.length).toFixed(2));
+          }
         }
+      }
 
-        item.kmVtracking = Number(tongKmDon.toFixed(2));
-
-        // Xóa thuộc tính tạm trước khi đẩy lên Firestore
-        delete item._latGiao;
-        delete item._longGiao;
-      });
+      // Xóa các thuộc tính tạm (_latGiao, _longGiao) trước khi đẩy lên Firestore
+      delete item._latGiao;
+      delete item._longGiao;
     });
 
     const totalRecords = routeList.length;
@@ -652,7 +624,7 @@ async function mainSync() {
       if (count % 400 !== 0) {
         await batch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm kmVtracking tích lũy ${totalRecords} chứng từ lên Firestore!`); 
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm kmVtracking ${totalRecords} chứng từ lên Firestore!`); 
       
       console.log(`📊 Đang khởi tạo bảng tổng hợp KHACHHANGVUNG...`);
       const reportRows = generateKhachHangVungReport(routeList);
