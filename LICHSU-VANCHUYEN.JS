@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km và định dạng kmVtracking 1 số lẻ
+// VANCHUYEN.JS - Canh lề thẳng hàng khung chi tiết xe rộng bằng khung ngày tổng
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -432,7 +432,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             const tripsInDay = groupedByDate[ngay];
 
             const dateWrapper = document.createElement('div');
-            dateWrapper.style.cssText = 'margin-bottom: 20px;';
+            dateWrapper.style.cssText = 'margin-bottom: 20px; width: 100%; box-sizing: border-box;';
 
             let tongDonNgay = 0, tongTaiNgay = 0, tongDoanhThuNgay = 0;
             tripsInDay.forEach(trip => {
@@ -445,7 +445,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             const tongDTTrNgay = Math.round(tongDoanhThuNgay / 1000000);
 
             const dateHeader = document.createElement('div');
-            dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;';
+            dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; box-sizing: border-box;';
             dateHeader.innerHTML = `
                 <span>📅 ${ngay}</span> 
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
@@ -465,10 +465,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
 
                 const mauXe = layMauGiaoDienXe(trip.phuongTien);
                 const vehicleWrapper = document.createElement('div');
-                vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 8px;`;
+                vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 0; width: 100%; box-sizing: border-box;`;
 
                 const vehicleHeader = document.createElement('div');
-                vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden;`;
+                vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
                 
                 if (trip.isXeMay) {
                     vehicleHeader.innerHTML = `
@@ -494,7 +494,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
                 vehicleWrapper.appendChild(vehicleHeader);
 
                 const vehicleSubHeader = document.createElement('div');
-                vehicleSubHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; flex-wrap: wrap; gap: 2px;';
+                vehicleSubHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; flex-wrap: wrap; gap: 2px; width: 100%; box-sizing: border-box;';
                 vehicleSubHeader.innerHTML = `
                     <span>Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
                     <span style="color: #cbd5e1;">|</span>
@@ -598,9 +598,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     if (khoangCachKm !== null) {
         const kcNum = parseFloat(khoangCachKm);
         const iconCheck = kcNum < 0.2 ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
-        htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm}km`;
+        htmlKhoangCach = ` <span style="font-size: 10.5px;">${iconCheck} ${khoangCachKm}km</span>`;
     } else {
-        htmlKhoangCach = ` | <span style="color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
+        htmlKhoangCach = ` <span style="font-size: 10.5px; color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
     }
 
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
@@ -610,7 +610,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} | ${kmVtrackingText}</span>)</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
         badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
@@ -621,7 +621,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     const cardItem = document.createElement('div');
     cardItem.className = 'card-lich-su-item';
-    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);';
+    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;';
 
     cardItem.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
@@ -641,12 +641,12 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
         <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
             ${nhanVienHtml}
-            <span>📍 ${vungTieuThu}</span>
+            <span>📍 ${vungTieuThu}${htmlKhoangCach}</span>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
             <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
-            <div>${badgeDuyet}${htmlKhoangCach}</div>
+            <div>${badgeDuyet}</div>
         </div>
         
         <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
