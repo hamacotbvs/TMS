@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km, định dạng kmVtracking 1 số lẻ và chuyển check-in lên sau vùng tiêu thụ
+// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km, định dạng kmVtracking 1 số lẻ, check-in sau vùng tiêu thụ và dùng gạch nhạt ngăn cách km
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -114,7 +114,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lat1 === 0)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
 
         const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -610,7 +610,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} I ${kmVtrackingText}</span>)</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
         badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
