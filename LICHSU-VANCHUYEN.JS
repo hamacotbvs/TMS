@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km và định dạng kmVtracking 1 số lẻ (bỏ chữ I)
+// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km, định dạng kmVtracking 1 số lẻ và chuyển check-in lên sau vùng tiêu thụ
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -114,7 +114,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lat1 === 0)) return null;
 
         const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -598,9 +598,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     if (khoangCachKm !== null) {
         const kcNum = parseFloat(khoangCachKm);
         const iconCheck = kcNum < 0.2 ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
-        htmlKhoangCach = ` | ${iconCheck} ${khoangCachKm}km`;
+        htmlKhoangCach = ` <span style="font-size: 10.5px;">${iconCheck} ${khoangCachKm}km</span>`;
     } else {
-        htmlKhoangCach = ` | <span style="color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
+        htmlKhoangCach = ` <span style="font-size: 10.5px; color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
     }
 
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
@@ -610,7 +610,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} ${kmVtrackingText}</span>)</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} I ${kmVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
         badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
@@ -641,12 +641,12 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
         <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
             ${nhanVienHtml}
-            <span>📍 ${vungTieuThu}</span>
+            <span>📍 ${vungTieuThu}${htmlKhoangCach}</span>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
             <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
-            <div>${badgeDuyet}${htmlKhoangCach}</div>
+            <div>${badgeDuyet}</div>
         </div>
         
         <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
