@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km và hiển thị chi tiết trạng thái Đã giao
+// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km và định dạng kmVtracking 1 số lẻ
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -577,8 +577,8 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = `⏱️ 0km`;
     }
 
-    let kmVtrackingVal = data.kmVtracking !== undefined ? data.kmVtracking : 0;
-    let kmVtrackingText = `📍 ${kmVtrackingVal}km`;
+    let kmVtrackingNum = data.kmVtracking !== undefined ? Number(data.kmVtracking) : 0;
+    let kmVtrackingText = `📍 ${kmVtrackingNum.toFixed(1)}km`;
 
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
