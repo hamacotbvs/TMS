@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Gom sát phần Tải và Tiền thành liền số và viết liền đơn vị km
+// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km và hiển thị chi tiết trạng thái Đã giao
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -572,10 +572,13 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             const kmKTTruoc = Number(danhSachDon[index - 1]?.kmKetThucGiaoHang) || 0;
             if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
         }
-        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(${kmGiao}km)</span>`;
+        kmGiaoText = `⏱️ ${kmGiao}km`;
     } else {
-        kmGiaoText = ` <span style="color: #0284c7; font-size: 10px; font-weight: 600;">(0km)</span>`;
+        kmGiaoText = `⏱️ 0km`;
     }
+
+    let kmVtrackingVal = data.kmVtracking !== undefined ? data.kmVtracking : 0;
+    let kmVtrackingText = `📍 ${kmVtrackingVal}km`;
 
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
@@ -607,7 +610,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao${kmGiaoText}</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} | ${kmVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
         badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
