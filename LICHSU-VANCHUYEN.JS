@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km, định dạng kmVtracking 1 số lẻ, check-in sau vùng tiêu thụ và dùng gạch nhạt ngăn cách km
+// VANCHUYEN.JS - Mở rộng khung chi tiết xe rộng bằng khung ngày
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -644,7 +644,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             <span>📍 ${vungTieuThu}${htmlKhoangCach}</span>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 6px 10px; border-radius: 4px; width: 100%; box-sizing: border-box;">
             <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
             <div>${badgeDuyet}</div>
         </div>
