@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Canh lề thẳng hàng khung chi tiết xe rộng bằng khung ngày tổng
+// VANCHUYEN.JS - Hoàn thiện canh lề, đồng bộ chiều cao dòng và định dạng chi tiết
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -639,9 +639,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             🏢 ${doiTuong}
         </div>
 
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px;">
-            ${nhanVienHtml}
-            <span>📍 ${vungTieuThu}${htmlKhoangCach}</span>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px; align-items: baseline;">
+            <div style="line-height: 1.4;">${nhanVienHtml}</div>
+            <div style="text-align: right; line-height: 1.4;">📍 ${vungTieuThu}${htmlKhoangCach}</div>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
