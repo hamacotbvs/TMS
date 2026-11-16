@@ -1,4 +1,4 @@
-// VANCHUYEN.JS - Lưu cache bộ nhớ tạm khi tải dữ liệu, lọc phương tiện, tìm kiếm tức thì và hỗ trợ trạng thái "Đang giao hàng"
+// VANCHUYEN.JS - Lưu cache bộ nhớ tạm khi tải dữ liệu, lọc phương tiện và tìm kiếm tức thì
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
@@ -29,8 +29,8 @@ function layNgayGomNhom(data) {
     let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
 
-    const duyet = data.duyet ? data.duyet.trim().toLowerCase() : "";
-    const laChuaGiaoHoanToan = (!duyet || duyet === "" || duyet.includes("chuẩn bị") || duyet.includes("đã xuất")) && !duyet.includes("đang giao");
+    const duyet = data.duyet ? data.duyet.trim() : "";
+    const laChuaGiaoHoanToan = !duyet || duyet === "" || duyet.toLowerCase().includes("chuẩn bị") || duyet.toLowerCase().includes("đã xuất");
 
     if (laChuaGiaoHoanToan && !bd && !kt) {
         let ngayBase = chuanHoaNgay(xk);
@@ -117,7 +117,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lat1 === 0)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
 
         const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -230,6 +230,7 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     return { optimized, tongKmDi, tongKmVe };
 }
 
+// Hàm tải dữ liệu từ Firebase và lưu vào bộ nhớ tạm
 window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -266,7 +267,10 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
             });
         });
 
+        // Lưu toàn bộ dữ liệu thô vào bộ nhớ tạm
         window._cachedVanChuyenData = listData;
+
+        // Tiến hành hiển thị dữ liệu dựa theo bộ lọc hiện tại (Phương tiện & Tìm kiếm)
         hienThiDanhSachVanChuyen();
 
     } catch (error) {
@@ -275,6 +279,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     }
 };
 
+// Hàm hiển thị danh sách đã xử lý lọc theo phương tiện và từ khóa tìm kiếm
 function hienThiDanhSachVanChuyen() {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -293,6 +298,7 @@ function hienThiDanhSachVanChuyen() {
 
     let listData = [...window._cachedVanChuyenData];
 
+    // Lọc theo từ khóa tìm kiếm tự do
     if (keywordKhongDau && keywordKhongDau.trim() !== "") {
         listData = listData.filter(data => {
             const hopThanhChuoi = Object.values(data).join(" ") + " " + data.id;
@@ -312,6 +318,7 @@ function hienThiDanhSachVanChuyen() {
         const coXe = data.phuongTien && data.phuongTien.trim() !== "";
         const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
 
+        // Lọc theo phương tiện được chọn
         if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
             const tuKhoa = bienSoTimKiem.toLowerCase().trim();
             if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
@@ -367,8 +374,8 @@ function hienThiDanhSachVanChuyen() {
             let donsDaGiao = [];
 
             trip.dons.forEach(don => {
-                const trangThaiDuyet = don.duyet ? don.duyet.trim().toLowerCase() : "";
-                const laChuaGiaoHoanToan = (!trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.includes("chuẩn bị") || trangThaiDuyet.includes("đã xuất")) && !trangThaiDuyet.includes("đang giao");
+                const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
+                const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
                 
                 if (laChuaGiaoHoanToan) {
                     donsChuaGiao.push(don);
@@ -601,8 +608,8 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     let kmVtrackingText = `📍 ${kmVtrackingNum.toFixed(1)}km`;
 
     let badgeThuTu = '';
-    const trangThaiDuyet = data.duyet ? data.duyet.trim().toLowerCase() : "";
-    const laChuaGiaoHoanToan = (!trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.includes("chuẩn bị") || trangThaiDuyet.includes("đã xuất")) && !trangThaiDuyet.includes("đang giao");
+    const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
+    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
     
     if (laChuaGiaoHoanToan) {
         let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
@@ -629,7 +636,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚛 Giao</span>';
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
-    if (duyet === "Đã giao hàng") {
+    if (duyet === "Đã giao hàng" || duyet === "Đang giao hàng") {
         badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
@@ -732,6 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Khi bấm nút tải dữ liệu, lấy tháng năm và gọi hàm tải từ Firebase để lưu vào bộ nhớ tạm
     if (btnTaiDuLieu) {
         btnTaiDuLieu.onclick = function() {
             if (inputThangVC && inputThangVC.value) {
@@ -745,6 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    // Khi thay đổi phương tiện trong ô chọn -> lọc ngay trên bộ nhớ tạm
     if (selectPhuongTien) {
         selectPhuongTien.addEventListener('change', function() {
             if (window._cachedVanChuyenData) {
@@ -756,6 +765,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Khi gõ vào ô tìm kiếm tự do -> lọc ngay trên bộ nhớ tạm với độ trễ (debounce) nhẹ
     if (inputTimKiemTuDo) {
         let timer = null;
         inputTimKiemTuDo.addEventListener('input', function() {
