@@ -5,29 +5,27 @@ window._cachedVanChuyenData = null;        // Biến lưu trữ bộ nhớ tạm
 window._currentTabVanChuyen = 'da-giao';    // Biến lưu tab hiện tại ('da-giao', 'chuan-bi', 'cho')
 
 // PHẦN 2: CÁC HÀM TIỆN ÍCH XỬ LÝ NGÀY THÁNG, TÊN VÀ ĐỊA BÀN
-// Làm sạch chuỗi ngày tháng, cắt bỏ phần giờ phút phía sau (chỉ lấy YYYY-MM-DD)
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "";
     return ngayStr.trim().split(" ")[0];
 }
-// Gom nhóm ngày cơ sở theo thứ tự ưu tiên: Bắt đầu giao -> Kết thúc giao -> Ngày xuất kho -> Ngày xử lý
+
 function layNgayGomNhom(data) {
     let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
     let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
     let xl = data.ngayXuLy ? data.ngayXuLy.trim() : "";
-    // Ưu tiên: batDauGiaoHang -> ketThucGiaoHang -> ngayxuatKho -> ngayXuLy
     let rawDate = bd !== "" ? bd : (kt !== "" ? kt : (xk !== "" ? xk : xl));
     let ngayBase = chuanHoaNgay(rawDate);
     return ngayBase || "Chưa xác định";
 }
-// Tách họ tên nhân viên (tài xế, giao nhận), chỉ lấy từ cuối cùng (tên chính) để hiển thị gọn
+
 function layTenRutGon(hoTen) {
     if (!hoTen || typeof hoTen !== "string") return "";
     const arr = hoTen.trim().split(/\s+/);
     return arr[arr.length - 1];
 }
-// Xử lý thông tin vùng tiêu thụ, xã, thành phố. Riêng Cần Thơ có logic bóc tách tên đường thông minh từ địa chỉ giao
+
 function layVungTieuThu(data) {
     let xa = data.phuongXa ? data.phuongXa.trim() : "";
     let tinh = data.thanhPho ? data.thanhPho.trim() : "";
@@ -68,7 +66,7 @@ function layVungTieuThu(data) {
 
     return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
 }
-// Chuyển đổi tiếng Việt có dấu thành không dấu (viết thường) để phục vụ tìm kiếm tự do
+
 function loaiBoDauTiengViet(str) {
     if (!str || typeof str !== "string") return "";
     return str.normalize("NFD")
@@ -77,6 +75,7 @@ function loaiBoDauTiengViet(str) {
               .replace(/Đ/g, "D")
               .toLowerCase();
 }
+
 // PHẦN 3: TÍNH TOÁN KHOẢNG CÁCH GPS VÀ GIAO DIỆN XE
 function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) {
@@ -91,7 +90,7 @@ function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return Math.round(R * c * 1.15);
 }
-// So sánh tọa độ điểm giao hàng và tọa độ Check-in thực tế của nhân viên
+
 function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
     try {
@@ -111,7 +110,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
         return null;
     }
 }
-// Nhận diện biển số xe để trả về bộ màu sắc, khung viền, nhãn hiển thị tương ứng trên giao diện
+
 function layMauGiaoDienXe(phuongTien) {
     const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
     
@@ -142,7 +141,7 @@ function layMauGiaoDienXe(phuongTien) {
         };
     }
 }
-// Thuật toán tối ưu hóa tuyến đường giao hàng (Sắp xếp các điểm dừng gần nhau nhất)
+
 function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length === 0) return { optimized: [], tongKmDi: 0, tongKmVe: 0 };
 
@@ -209,8 +208,8 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
 
     return { optimized, tongKmDi, tongKmVe };
 }
-// PHẦN 4: TẢI DỮ LIỆU TỪ FIREBASE VÀ XỬ LÝ HIỂN THỊ (PHÂN TAB, LỌC, GOM NHÓM)
-// Tải lịch sử vận chuyển từ Firebase theo tháng/năm và lưu vào bộ nhớ tạm (cache)
+
+// PHẦN 4: TẢI DỮ LIỆU TỪ FIREBASE VÀ XỬ LÝ HIỂN THỊ
 window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -238,9 +237,8 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
             const ngayGom = layNgayGomNhom(data);
             listData.push({ id: docSnap.id, ...data, _ngayGom: ngayGom });
         });
-        // Lưu toàn bộ dữ liệu thô vào bộ nhớ tạm
+        
         window._cachedVanChuyenData = listData;
-        // Hiển thị danh sách theo tab, phương tiện và từ khóa tìm kiếm hiện tại
         hienThiDanhSachVanChuyen();
 
     } catch (error) {
@@ -249,7 +247,6 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     }
 };
 
-// Hiển thị danh sách đã xử lý lọc theo Tab, phương tiện, từ khóa tìm kiếm và gom nhóm theo ngày/chuyến
 function hienThiDanhSachVanChuyen() {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -281,7 +278,6 @@ function hienThiDanhSachVanChuyen() {
         return true;
     });
 
-    // Lọc theo từ khóa tìm kiếm tự do
     if (keywordKhongDau && keywordKhongDau.trim() !== "") {
         listData = listData.filter(data => {
             const hopThanhChuoi = Object.values(data).join(" ") + " " + data.id;
@@ -301,7 +297,6 @@ function hienThiDanhSachVanChuyen() {
         const coXe = data.phuongTien && data.phuongTien.trim() !== "";
         const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
 
-        // Lọc theo phương tiện được chọn
         if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
             const tuKhoa = bienSoTimKiem.toLowerCase().trim();
             if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
@@ -440,36 +435,6 @@ function hienThiDanhSachVanChuyen() {
     let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
     container.innerHTML = '';
-    
-    // THANH TAB ĐIỀU HƯỚNG ĐÃ ĐƯỢC CHUYỂN LÊN ĐẦU TIÊN (NGAY DƯỚI TIÊU ĐỀ KHU VỰC)
-    const tabNavWrapper = document.createElement('div');
-    tabNavWrapper.style.cssText = 'display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; width: 100%; box-sizing: border-box;';
-    
-    const tabsConfig = [
-        { id: 'da-giao', label: 'Đã giao' },
-        { id: 'chuan-bi', label: 'Chuẩn bị' },
-        { id: 'cho', label: 'Chờ' }
-    ];
-
-    tabsConfig.forEach(tab => {
-        const isActive = window._currentTabVanChuyen === tab.id;
-        const tabBtn = document.createElement('button');
-        tabBtn.type = 'button';
-        tabBtn.innerText = tab.label;
-        tabBtn.style.cssText = `
-            flex: 1; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: ${isActive ? '700' : '500'};
-            cursor: pointer; border: 1px solid ${isActive ? '#0284c7' : '#cbd5e1'};
-            background: ${isActive ? '#0284c7' : '#f8fafc'};
-            color: ${isActive ? '#ffffff' : '#475569'};
-            transition: all 0.2s ease;
-        `;
-        tabBtn.onclick = function() {
-            window._currentTabVanChuyen = tab.id;
-            hienThiDanhSachVanChuyen();
-        };
-        tabNavWrapper.appendChild(tabBtn);
-    });
-    container.appendChild(tabNavWrapper);
 
     if (sortedDates.length === 0) {
         const emptyMsg = document.createElement('div');
@@ -478,6 +443,7 @@ function hienThiDanhSachVanChuyen() {
         container.appendChild(emptyMsg);
         return;
     }
+
     // RENDER CÁC NHÓM NGÀY VÀ CHUYẾN XE
     sortedDates.forEach(ngay => {
         const tripsInDay = groupedByDate[ngay];
@@ -703,13 +669,60 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     parentElement.appendChild(cardItem);
 }
-// PHẦN 6: LẮNG NGHE SỰ KIỆN GIAO DIỆN (DOM LOADED & EVENT LISTENERS)
+
+// PHẦN 6: LẮNG NGHE SỰ KIỆN GIAO DIỆN & TỰ ĐỘNG TẠO THANH TAB Ở TRÊN CÙNG
 document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
     const labelThangVC = document.getElementById('labelThangNamVC');
     const selectPhuongTien = document.getElementById('filterPhuongTien');
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     const container = document.getElementById('danhSachLichSuVanChuyen');
+
+    // Tự động tạo thanh Tab điều hướng đặt ở phía trên các bộ lọc (lọc ngày, phương tiện)
+    if (container && container.parentNode) {
+        let existingTabNav = document.getElementById('tabNavVanChuyenContainer');
+        if (!existingTabNav) {
+            const tabNavWrapper = document.createElement('div');
+            tabNavWrapper.id = 'tabNavVanChuyenContainer';
+            tabNavWrapper.style.cssText = 'display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; width: 100%; box-sizing: border-box;';
+            
+            const tabsConfig = [
+                { id: 'da-giao', label: 'Đã giao' },
+                { id: 'chuan-bi', label: 'Chuẩn bị' },
+                { id: 'cho', label: 'Chờ' }
+            ];
+
+            tabsConfig.forEach(tab => {
+                const isActive = window._currentTabVanChuyen === tab.id;
+                const tabBtn = document.createElement('button');
+                tabBtn.type = 'button';
+                tabBtn.innerText = tab.label;
+                tabBtn.style.cssText = `
+                    flex: 1; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: ${isActive ? '700' : '500'};
+                    cursor: pointer; border: 1px solid ${isActive ? '#0284c7' : '#cbd5e1'};
+                    background: ${isActive ? '#0284c7' : '#f8fafc'};
+                    color: ${isActive ? '#ffffff' : '#475569'};
+                    transition: all 0.2s ease;
+                `;
+                tabBtn.onclick = function() {
+                    window._currentTabVanChuyen = tab.id;
+                    // Cập nhật lại màu sắc active của các nút tab ngay lập tức
+                    document.querySelectorAll('#tabNavVanChuyenContainer button').forEach(btn => {
+                        const isThisActive = btn.innerText === tab.label;
+                        btn.style.fontWeight = isThisActive ? '700' : '500';
+                        btn.style.borderColor = isThisActive ? '#0284c7' : '#cbd5e1';
+                        btn.style.background = isThisActive ? '#0284c7' : '#f8fafc';
+                        btn.style.color = isThisActive ? '#ffffff' : '#475569';
+                    });
+                    hienThiDanhSachVanChuyen();
+                };
+                tabNavWrapper.appendChild(tabBtn);
+            });
+
+            // Chèn thanh tab vào ngay trước container danh sách (hoặc ngay trên phần bộ lọc)
+            container.parentNode.insertBefore(tabNavWrapper, container);
+        }
+    }
 
     let inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
     if (!inputTimKiemTuDo && selectPhuongTien && selectPhuongTien.parentNode) {
