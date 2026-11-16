@@ -96,7 +96,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lat1 === 0)) return null;
 
         const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -302,35 +302,53 @@ function hienThiDanhSachVanChuyen() {
             if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
         }
 
-        if (coXe) {
-            const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
-            const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
+        // ĐẶC BIỆT CHO TAB CHỜ: Gom nhóm theo Vùng tiêu thụ thay vì theo Ngày/Phương tiện
+        if (window._currentTabVanChuyen === 'cho') {
+            const vungKey = layVungTieuThu(data);
+            const tripKey = `VUNG_${vungKey}`;
             if (!globalVehicleTrips[tripKey]) {
                 globalVehicleTrips[tripKey] = {
-                    phuongTien: nhomKey,
-                    soChuyen: soChuyen,
-                    ngay: data._ngayGom,
+                    phuongTien: vungKey, // Dùng field này để hiển thị tiêu đề vùng
+                    isVungGroup: true,
+                    ngay: vungKey,
                     dons: []
                 };
             }
             globalVehicleTrips[tripKey].dons.push(data);
         } else {
-            const tripKey = `XE_MAY_${data._ngayGom}`;
-            if (!globalVehicleTrips[tripKey]) {
-                globalVehicleTrips[tripKey] = {
-                    phuongTien: "Xe máy",
-                    soChuyen: 1,
-                    ngay: data._ngayGom,
-                    isXeMay: true,
-                    dons: []
-                };
+            if (coXe) {
+                const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
+                const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
+                if (!globalVehicleTrips[tripKey]) {
+                    globalVehicleTrips[tripKey] = {
+                        phuongTien: nhomKey,
+                        soChuyen: soChuyen,
+                        ngay: data._ngayGom,
+                        dons: []
+                    };
+                }
+                globalVehicleTrips[tripKey].dons.push(data);
+            } else {
+                const tripKey = `XE_MAY_${data._ngayGom}`;
+                if (!globalVehicleTrips[tripKey]) {
+                    globalVehicleTrips[tripKey] = {
+                        phuongTien: "Xe máy",
+                        soChuyen: 1,
+                        ngay: data._ngayGom,
+                        isXeMay: true,
+                        dons: []
+                    };
+                }
+                globalVehicleTrips[tripKey].dons.push(data);
             }
-            globalVehicleTrips[tripKey].dons.push(data);
         }
     });
 
     let allTripsArray = Object.values(globalVehicleTrips);
     allTripsArray.sort((a, b) => {
+        if (window._currentTabVanChuyen === 'cho') {
+            return a.phuongTien.localeCompare(b.phuongTien);
+        }
         let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || a.dons[0]?.ngayXuLy || "";
         let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || b.dons[0]?.ngayXuLy || "";
         return timeA.localeCompare(timeB);
@@ -347,7 +365,10 @@ function hienThiDanhSachVanChuyen() {
         let kmVeNum = 0;
         let textKmVe = "chờ"; 
 
-        if (laNhomChuaGiao) {
+        if (window._currentTabVanChuyen === 'cho') {
+            trip.dons.sort((a, b) => (a.maPhieu || "").localeCompare(b.maPhieu || ""));
+            trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
+        } else if (laNhomChuaGiao) {
             let donsChuaGiao = [];
             let donsDaGiao = [];
 
@@ -425,6 +446,50 @@ function hienThiDanhSachVanChuyen() {
         trip._tyLePhi = tyLePhi.toFixed(1);
     }
 
+    container.innerHTML = '';
+
+    if (allTripsArray.length === 0) {
+        const emptyMsg = document.createElement('div');
+        emptyMsg.style.cssText = 'text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;';
+        emptyMsg.innerText = 'Không tìm thấy dữ liệu nào ở tab này khớp với từ khóa hoặc phương tiện bạn chọn.';
+        container.appendChild(emptyMsg);
+        return;
+    }
+
+    // NẾU LÀ TAB CHỜ: HIỂN THỊ GOM NHÓM THEO VÙNG TIÊU THỤ
+    if (window._currentTabVanChuyen === 'cho') {
+        allTripsArray.forEach(trip => {
+            let taiVung = 0, dtVung = 0;
+            trip.dons.forEach(don => {
+                if (don.tTai) taiVung += Number(don.tTai) || 0;
+                if (don.thanhTien) dtVung += Number(don.thanhTien) || 0;
+            });
+            const dtVungTr = Math.round(dtVung / 1000000);
+
+            const vungWrapper = document.createElement('div');
+            vungWrapper.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 12px; width: 100%; box-sizing: border-box;';
+
+            const vungHeader = document.createElement('div');
+            vungHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; box-sizing: border-box;';
+            vungHeader.innerHTML = `
+                <span>📍 ${trip.phuongTien}</span> 
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${taiVung.toLocaleString('vi-VN')}kg/${dtVungTr}tr</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${trip.dons.length} đơn</span>
+                </div>
+            `;
+            vungWrapper.appendChild(vungHeader);
+
+            trip.dons.forEach((data, idx) => {
+                renderCardDon(data, vungWrapper, true, idx, trip.dons);
+            });
+
+            container.appendChild(vungWrapper);
+        });
+        return;
+    }
+
+    // GOM NHÓM THEO NGÀY CHO 2 TAB CÒN LẠI (ĐÃ GIAO & CHUẨN BỊ)
     let groupedByDate = {};
     allTripsArray.forEach(trip => {
         const ngay = trip.ngay;
@@ -434,17 +499,6 @@ function hienThiDanhSachVanChuyen() {
 
     let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
-    container.innerHTML = '';
-
-    if (sortedDates.length === 0) {
-        const emptyMsg = document.createElement('div');
-        emptyMsg.style.cssText = 'text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;';
-        emptyMsg.innerText = 'Không tìm thấy dữ liệu nào ở tab này khớp với từ khóa hoặc phương tiện bạn chọn.';
-        container.appendChild(emptyMsg);
-        return;
-    }
-
-    // RENDER CÁC NHÓM NGÀY VÀ CHUYẾN XE
     sortedDates.forEach(ngay => {
         const tripsInDay = groupedByDate[ngay];
 
@@ -678,7 +732,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     const container = document.getElementById('danhSachLichSuVanChuyen');
 
-    // Tự động tìm tiêu đề (thường có chữ LỊCH SỬ VẬN CHUYỂN hoặc tương đương) để ghép các tab ngang hàng
     const possibleTitles = document.querySelectorAll('h1, h2, h3, h4, .header-title, .title, span, div');
     let titleElement = null;
     for (let el of possibleTitles) {
@@ -689,15 +742,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (titleElement) {
-        // Gom tiêu đề và thanh tab vào một hàng ngang (Flexbox) ngay tại vị trí của tiêu đề cũ
         let parentRow = document.createElement('div');
         parentRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; width: 100%; box-sizing: border-box;';
         
         titleElement.parentNode.insertBefore(parentRow, titleElement);
         parentRow.appendChild(titleElement);
-        titleElement.style.margin = '0'; // Bỏ khoảng trắng thừa
+        titleElement.style.margin = '0';
 
-        // Tạo thanh tab gọn gàng nằm cạnh tiêu đề
         const tabNavWrapper = document.createElement('div');
         tabNavWrapper.id = 'tabNavVanChuyenContainer';
         tabNavWrapper.style.cssText = 'display: flex; gap: 4px;';
@@ -783,7 +834,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Sự kiện bấm nút tải dữ liệu từ Firebase
     if (btnTaiDuLieu) {
         btnTaiDuLieu.onclick = function() {
             if (inputThangVC && inputThangVC.value) {
@@ -797,7 +847,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Khi thay đổi phương tiện trong ô chọn -> lọc ngay trên bộ nhớ tạm
     if (selectPhuongTien) {
         selectPhuongTien.addEventListener('change', function() {
             if (window._cachedVanChuyenData) {
@@ -809,7 +858,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Khi gõ vào ô tìm kiếm tự do -> lọc ngay trên bộ nhớ tạm với độ trễ (debounce) nhẹ
     if (inputTimKiemTuDo) {
         let timer = null;
         inputTimKiemTuDo.addEventListener('input', function() {
