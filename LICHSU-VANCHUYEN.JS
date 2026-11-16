@@ -26,7 +26,6 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1];
 }
 
-// Xử lý thông tin vùng tiêu thụ, xã, thành phố. Riêng Cần Thơ có logic bóc tách tên đường thông minh từ địa chỉ giao
 function layVungTieuThu(data) {
     let xa = data.phuongXa ? data.phuongXa.trim() : "";
     let tinh = data.thanhPho ? data.thanhPho.trim() : "";
@@ -303,9 +302,16 @@ function hienThiDanhSachVanChuyen() {
             if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
         }
 
-        // ĐẶC BIỆT CHO TAB CHỜ: Lấy trực tiếp trường vungTieuThu của bảng TUYENDUONG để gom nhóm
+        // ĐẶC BIỆT CHO TAB CHỜ: Lấy trực tiếp trường vungTieuThu. Nếu là gửi chành thì gộp chung vào "Cần Thơ"
         if (window._currentTabVanChuyen === 'cho') {
-            const vungKey = (data.vungTieuThu && data.vungTieuThu.trim() !== "") ? data.vungTieuThu.trim() : "---";
+            let vungGoc = (data.vungTieuThu && data.vungTieuThu.trim() !== "") ? data.vungTieuThu.trim() : "---";
+            const htGiaoNhan = data.htGiaoNhan ? data.htGiaoNhan.toLowerCase() : "";
+            
+            let vungKey = vungGoc;
+            if (htGiaoNhan.includes("chành") || htGiaoNhan.includes("gửi chành")) {
+                vungKey = "Cần Thơ"; // Gộp chung vào nhóm Cần Thơ khi là gửi chành
+            }
+
             const tripKey = `VUNG_${vungKey}`;
             if (!globalVehicleTrips[tripKey]) {
                 globalVehicleTrips[tripKey] = {
