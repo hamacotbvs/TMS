@@ -17,10 +17,10 @@ function layNgayGomNhom(data) {
     let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
     let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
-    let dat = data.ngayDatHang ? data.ngayDatHang.trim() : "";
+    let xl = data.ngayXuLy ? data.ngayXuLy.trim() : "";
 
-    // Đã bỏ bớt điều kiện rườm rà, ưu tiên lấy ngày theo thứ tự
-    let rawDate = bd !== "" ? bd : (kt !== "" ? kt : (xk !== "" ? xk : dat));
+    // Ưu tiên: batDauGiaoHang -> ketThucGiaoHang -> ngayxuatKho -> ngayXuLy
+    let rawDate = bd !== "" ? bd : (kt !== "" ? kt : (xk !== "" ? xk : xl));
     let ngayBase = chuanHoaNgay(rawDate);
 
     return ngayBase || "Chưa xác định";
@@ -101,7 +101,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lat1 === 0)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
 
         const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -305,8 +305,8 @@ function hienThiDanhSachVanChuyen() {
     }
 
     listData.sort((a, b) => {
-        let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
-        let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
+        let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || a.ngayXuLy || "";
+        let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || a.ngayXuLy || "";
         return timeA.localeCompare(timeB);
     });
 
@@ -350,8 +350,8 @@ function hienThiDanhSachVanChuyen() {
 
     let allTripsArray = Object.values(globalVehicleTrips);
     allTripsArray.sort((a, b) => {
-        let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || "";
-        let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || "";
+        let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || a.dons[0]?.ngayXuLy || "";
+        let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || b.dons[0]?.ngayXuLy || "";
         return timeA.localeCompare(timeB);
     });
 
