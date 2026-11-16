@@ -1,9 +1,11 @@
-// VANCHUYEN.JS - Tải từ Firebase 1 lần khi bấm nút, các thao tác lọc xe/tìm kiếm lọc trực tiếp trên bộ nhớ tạm
+// ==========================================
+// VANCHUYEN.JS - Lịch sử vận chuyển (Tải 1 lần, lọc cục bộ)
+// ==========================================
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
 
-// Biến toàn cục lưu trữ danh sách dữ liệu gốc sau khi tải từ Firebase về
+// Biến toàn cục lưu trữ dữ liệu sau khi tải từ Firebase về
 let cachedListData = [];
 
 function chuanHoaNgay(ngayStr) {
@@ -230,7 +232,7 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     return { optimized, tongKmDi, tongKmVe };
 }
 
-// 1. Hàm TẢI DỮ LIỆU TỪ FIREBASE (Chỉ chạy khi bấm nút "Tải dữ liệu")
+// 1. Hàm TẢI DỮ LIỆU TỪ FIREBASE (Chỉ gọi khi bấm nút "Tải dữ liệu")
 window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "", tuKhoaTimKiem = "") {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -249,7 +251,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         );
 
         const querySnapshot = await getDocs(q);
-        cachedListData = []; // Lưu vào biến bộ nhớ tạm
+        cachedListData = []; // Reset bộ nhớ tạm
 
         if (querySnapshot.empty) {
             container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chuyến vận chuyển nào trong Tháng ${thangNum}/${namNum}.</div>`;
@@ -266,7 +268,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
             });
         });
 
-        // Sau khi tải xong, gọi hàm hiển thị để lọc và vẽ dữ liệu
+        // Tải xong thì gọi hàm hiển thị danh sách
         hienThiDanhSachVanChuyen(bienSoTimKiem, tuKhoaTimKiem);
 
     } catch (error) {
@@ -275,7 +277,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// 2. Hàm XỬ LÝ & HIỂN THỊ DỮ LIỆU (Lọc trên bộ nhớ tạm, không gọi lại Firebase)
+// 2. Hàm XỬ LÝ & HIỂN THỊ (Lọc trên dữ liệu cachedListData có sẵn, không gọi lại Firebase)
 function hienThiDanhSachVanChuyen(bienSoTimKiem = "", tuKhoaTimKiem = "") {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -288,7 +290,6 @@ function hienThiDanhSachVanChuyen(bienSoTimKiem = "", tuKhoaTimKiem = "") {
     let listData = [...cachedListData];
     const keywordKhongDau = loaiBoDauTiengViet(tuKhoaTimKiem);
 
-    // Lọc theo từ khóa tìm kiếm tự do
     if (keywordKhongDau && keywordKhongDau.trim() !== "") {
         listData = listData.filter(item => {
             const hopThanhChuoi = Object.values(item).join(" ") + " " + item.id;
@@ -681,6 +682,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     const container = document.getElementById('danhSachLichSuVanChuyen');
 
+    // Tự động tạo ô nhập tìm kiếm tự do nếu chưa có
     let inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
     if (!inputTimKiemTuDo && selectPhuongTien && selectPhuongTien.parentNode) {
         inputTimKiemTuDo = document.createElement('input');
@@ -727,7 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Nút Tải dữ liệu: Mới thực sự kết nối Firebase tải dữ liệu về
+    // Bấm nút "Tải dữ liệu": Thực sự kết nối Firebase tải dữ liệu về
     if (btnTaiDuLieu) {
         btnTaiDuLieu.onclick = function() {
             if (inputThangVC && inputThangVC.value) {
@@ -743,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Chọn phương tiện: Chỉ lọc trên dữ liệu đã tải sẵn trong bộ nhớ tạm (không gọi lại Firebase)
+    // Chọn phương tiện: Lọc trực tiếp trên dữ liệu có sẵn (Không gọi lại Firebase)
     if (selectPhuongTien) {
         selectPhuongTien.addEventListener('change', function() {
             const bienSo = this.value;
@@ -752,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Nhập tìm kiếm: Chỉ lọc trên dữ liệu đã tải sẵn trong bộ nhớ tạm (không gọi lại Firebase)
+    // Nhập từ khóa tìm kiếm: Lọc trực tiếp trên dữ liệu có sẵn (Không gọi lại Firebase)
     if (inputTimKiemTuDo) {
         let timer = null;
         inputTimKiemTuDo.addEventListener('input', function() {
