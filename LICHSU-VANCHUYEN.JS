@@ -12,34 +12,28 @@ function chuanHoaNgay(ngayStr) {
 }
 
 function layNgayGomNhom(data) {
-    const coXe = data.phuongTien && data.phuongTien.trim() !== "";
-    const isXeMay = !coXe || data.phuongTien.trim().toUpperCase() === "XE MÁY";
-
-    if (isXeMay) {
-        let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
-        let ngayBase = chuanHoaNgay(xk);
-        if (!ngayBase) {
-            let dat = data.ngayDatHang ? data.ngayDatHang.trim() : "";
-            ngayBase = chuanHoaNgay(dat);
-        }
-        return ngayBase || "Chưa xác định";
-    }
-
     let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
     let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
+    let dat = data.ngayDatHang ? data.ngayDatHang.trim() : "";
+
+    // Ưu tiên 1: batDauGiaoHang -> Ưu tiên 2: ketThucGiaoHang -> Ưu tiên 3: ngayxuatKho -> Ưu tiên 4: ngayDatHang
+    let rawDate = bd !== "" ? bd : (kt !== "" ? kt : (xk !== "" ? xk : dat));
+    let ngayBase = chuanHoaNgay(rawDate);
+
+    if (!ngayBase) {
+        return "Chưa xác định";
+    }
 
     const duyet = data.duyet ? data.duyet.trim() : "";
     const laChuaGiaoHoanToan = !duyet || duyet === "" || duyet.toLowerCase().includes("chuẩn bị") || duyet.toLowerCase().includes("đã xuất");
 
+    // Nếu là đơn chưa giao hoàn toàn và không có cả bắt đầu lẫn kết thúc giao hàng thì gắn thêm nhãn nhận diện
     if (laChuaGiaoHoanToan && !bd && !kt) {
-        let ngayBase = chuanHoaNgay(xk);
-        if (!ngayBase) ngayBase = "Chưa xác định";
         return `${ngayBase}Chưa giao`;
     }
 
-    let rawDate = bd !== "" ? bd : (kt !== "" ? kt : xk);
-    return chuanHoaNgay(rawDate);
+    return ngayBase;
 }
 
 function layTenRutGon(hoTen) {
