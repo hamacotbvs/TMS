@@ -1,42 +1,38 @@
-// VANCHUYEN.JS - Lưu cache bộ nhớ tạm khi tải dữ liệu, lọc phương tiện, tìm kiếm tức thì và phân tab giao diện
+// PHẦN 1: KHỞI TẠO, IMPORT VÀ BIẾN TOÀN CỤC (CACHE & TAB)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
 const db = window.db;
+window._cachedVanChuyenData = null;         // Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
+window._currentTabVanChuyen = 'da-giao';    // Biến lưu tab hiện tại ('da-giao', 'chuan-bi', 'cho')
 
-// Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
-window._cachedVanChuyenData = null;
-// Biến lưu tab hiện tại ('da-giao', 'chuan-bi', 'cho')
-window._currentTabVanChuyen = 'da-giao';
-
+// PHẦN 2: CÁC HÀM TIỆN ÍCH XỬ LÝ NGÀY THÁNG, TÊN VÀ ĐỊA BÀN
+// Làm sạch chuỗi ngày tháng, cắt bỏ phần giờ phút phía sau (chỉ lấy YYYY-MM-DD)
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "";
     return ngayStr.trim().split(" ")[0];
 }
-
+// Gom nhóm ngày cơ sở theo thứ tự ưu tiên: Bắt đầu giao -> Kết thúc giao -> Ngày xuất kho -> Ngày xử lý
 function layNgayGomNhom(data) {
     let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
     let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
     let xl = data.ngayXuLy ? data.ngayXuLy.trim() : "";
-
     // Ưu tiên: batDauGiaoHang -> ketThucGiaoHang -> ngayxuatKho -> ngayXuLy
     let rawDate = bd !== "" ? bd : (kt !== "" ? kt : (xk !== "" ? xk : xl));
     let ngayBase = chuanHoaNgay(rawDate);
-
     return ngayBase || "Chưa xác định";
 }
-
+// Tách họ tên nhân viên (tài xế, giao nhận), chỉ lấy từ cuối cùng (tên chính) để hiển thị gọn
 function layTenRutGon(hoTen) {
     if (!hoTen || typeof hoTen !== "string") return "";
     const arr = hoTen.trim().split(/\s+/);
     return arr[arr.length - 1];
 }
-
+// Xử lý thông tin vùng tiêu thụ, xã, thành phố. Riêng Cần Thơ có logic bóc tách tên đường thông minh từ địa chỉ giao
 function layVungTieuThu(data) {
     let xa = data.phuongXa ? data.phuongXa.trim() : "";
     let tinh = data.thanhPho ? data.thanhPho.trim() : "";
 
-    xa = xa.replace(/^(Xã|Phường|Thị trấn)\s+/i, "").trim();
+    xa = xa.replace(/^(Xã|Phường|Thị trấn|P)\s+/i, "").trim();
     tinh = tinh.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
 
     if (tinh.toLowerCase().includes("cần thơ")) {
@@ -72,7 +68,7 @@ function layVungTieuThu(data) {
 
     return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
 }
-
+// Chuyển đổi tiếng Việt có dấu thành không dấu (viết thường) để phục vụ tìm kiếm tự do
 function loaiBoDauTiengViet(str) {
     if (!str || typeof str !== "string") return "";
     return str.normalize("NFD")
@@ -81,7 +77,7 @@ function loaiBoDauTiengViet(str) {
               .replace(/Đ/g, "D")
               .toLowerCase();
 }
-
+// PHẦN 3: TÍNH TOÁN KHOẢNG CÁCH GPS VÀ GIAO DIỆN XE
 function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
     if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) {
         return 0;
@@ -95,7 +91,7 @@ function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return Math.round(R * c * 1.15);
 }
-
+// So sánh tọa độ điểm giao hàng và tọa độ Check-in thực tế của nhân viên
 function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
     try {
@@ -115,7 +111,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
         return null;
     }
 }
-
+// Nhận diện biển số xe để trả về bộ màu sắc, khung viền, nhãn hiển thị tương ứng trên giao diện
 function layMauGiaoDienXe(phuongTien) {
     const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
     
@@ -146,7 +142,7 @@ function layMauGiaoDienXe(phuongTien) {
         };
     }
 }
-
+// Thuật toán tối ưu hóa tuyến đường giao hàng (Sắp xếp các điểm dừng gần nhau nhất)
 function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     if (!danhSachDon || danhSachDon.length === 0) return { optimized: [], tongKmDi: 0, tongKmVe: 0 };
 
@@ -213,8 +209,8 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
 
     return { optimized, tongKmDi, tongKmVe };
 }
-
-// Hàm tải dữ liệu từ Firebase và lưu vào bộ nhớ tạm
+// PHẦN 4: TẢI DỮ LIỆU TỪ FIREBASE VÀ XỬ LÝ HIỂN THỊ (PHÂN TAB, LỌC, GOM NHÓM)
+// Tải lịch sử vận chuyển từ Firebase theo tháng/năm và lưu vào bộ nhớ tạm (cache)
 window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -226,11 +222,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
         const namNum = parseInt(namChon, 10);
 
         const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-        const q = query(
-            thamChieuTuyenDuong, 
-            where("nam", "==", namNum), 
-            where("thang", "==", thangNum)
-        );
+        const q = query(thamChieuTuyenDuong, where("nam", "==", namNum), where("thang", "==", thangNum));
 
         const querySnapshot = await getDocs(q);
 
@@ -244,17 +236,11 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const ngayGom = layNgayGomNhom(data);
-            listData.push({ 
-                id: docSnap.id, 
-                ...data, 
-                _ngayGom: ngayGom 
-            });
+            listData.push({ id: docSnap.id, ...data, _ngayGom: ngayGom });
         });
-
         // Lưu toàn bộ dữ liệu thô vào bộ nhớ tạm
         window._cachedVanChuyenData = listData;
-
-        // Tiến hành hiển thị dữ liệu dựa theo tab, phương tiện và tìm kiếm hiện tại
+        // Hiển thị danh sách theo tab, phương tiện và từ khóa tìm kiếm hiện tại
         hienThiDanhSachVanChuyen();
 
     } catch (error) {
@@ -263,7 +249,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     }
 };
 
-// Hàm hiển thị danh sách đã xử lý lọc theo Tab, phương tiện và từ khóa tìm kiếm
+// Hiển thị danh sách đã xử lý lọc theo Tab, phương tiện, từ khóa tìm kiếm và gom nhóm theo ngày/chuyến
 function hienThiDanhSachVanChuyen() {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -306,7 +292,7 @@ function hienThiDanhSachVanChuyen() {
 
     listData.sort((a, b) => {
         let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || a.ngayXuLy || "";
-        let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || a.ngayXuLy || "";
+        let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || b.ngayXuLy || "";
         return timeA.localeCompare(timeB);
     });
 
@@ -492,7 +478,7 @@ function hienThiDanhSachVanChuyen() {
         container.appendChild(emptyMsg);
         return;
     }
-
+    // RENDER CÁC NHÓM NGÀY VÀ CHUYẾN XE
     sortedDates.forEach(ngay => {
         const tripsInDay = groupedByDate[ngay];
 
@@ -584,6 +570,7 @@ function hienThiDanhSachVanChuyen() {
     });
 };
 
+// PHẦN 5: RENDER THẺ HIỂN THỊ CHI TIẾT TỪNG ĐƠN HÀNG (CARD ITEM)
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const doiTuong = data.doiTuong || 'Chưa xác định';
@@ -716,7 +703,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     parentElement.appendChild(cardItem);
 }
-
+// PHẦN 6: LẮNG NGHE SỰ KIỆN GIAO DIỆN (DOM LOADED & EVENT LISTENERS)
 document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
     const labelThangVC = document.getElementById('labelThangNamVC');
@@ -770,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Khi bấm nút tải dữ liệu, lấy tháng năm và gọi hàm tải từ Firebase để lưu vào bộ nhớ tạm
+    // Sự kiện bấm nút tải dữ liệu từ Firebase
     if (btnTaiDuLieu) {
         btnTaiDuLieu.onclick = function() {
             if (inputThangVC && inputThangVC.value) {
