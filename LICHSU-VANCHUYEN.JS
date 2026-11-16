@@ -1,7 +1,7 @@
 // PHẦN 1: KHỞI TẠO, IMPORT VÀ BIẾN TOÀN CỤC (CACHE & TAB)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 const db = window.db;
-window._cachedVanChuyenData = null;         // Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
+window._cachedVanChuyenData = null;        // Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
 window._currentTabVanChuyen = 'da-giao';    // Biến lưu tab hiện tại ('da-giao', 'chuan-bi', 'cho')
 
 // PHẦN 2: CÁC HÀM TIỆN ÍCH XỬ LÝ NGÀY THÁNG, TÊN VÀ ĐỊA BÀN
@@ -441,7 +441,7 @@ function hienThiDanhSachVanChuyen() {
 
     container.innerHTML = '';
     
-    // Tạo thanh Tab điều hướng phía trên danh sách
+    // THANH TAB ĐIỀU HƯỚNG ĐÃ ĐƯỢC CHUYỂN LÊN ĐẦU TIÊN (NGAY DƯỚI TIÊU ĐỀ KHU VỰC)
     const tabNavWrapper = document.createElement('div');
     tabNavWrapper.style.cssText = 'display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; width: 100%; box-sizing: border-box;';
     
