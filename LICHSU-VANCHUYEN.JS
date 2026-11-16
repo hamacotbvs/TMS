@@ -26,9 +26,46 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1];
 }
 
-// Lấy trực tiếp trường vungTieuThu của bảng TUYENDUONG
+// Xử lý thông tin vùng tiêu thụ, xã, thành phố. Riêng Cần Thơ có logic bóc tách tên đường thông minh từ địa chỉ giao
 function layVungTieuThu(data) {
-    return (data.vungTieuThu && data.vungTieuThu.trim() !== "") ? data.vungTieuThu.trim() : "---";
+    let xa = data.phuongXa ? data.phuongXa.trim() : "";
+    let tinh = data.thanhPho ? data.thanhPho.trim() : "";
+
+    xa = xa.replace(/^(Xã|Phường|Thị trấn|P)\s+/i, "").trim();
+    tinh = tinh.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
+
+    if (tinh.toLowerCase().includes("cần thơ")) {
+        let duong = "";
+        if (data.noiGiao && typeof data.noiGiao === "string") {
+            let diaChiClean = data.noiGiao.split("(")[0].trim();
+            let parts = diaChiClean.split(",").map(p => p.trim()).filter(p => p !== "");
+            
+            let foundDuong = parts.find(p => {
+                let l = p.toLowerCase();
+                return l.includes("đường") || l.includes("ql") || l.includes("đt") || l.includes("quốc lộ") || l.includes("3/2") || l.includes("30/4") || l.includes("cách mạng tháng");
+            });
+
+            if (!foundDuong) {
+                foundDuong = parts.find(p => {
+                    let l = p.toLowerCase();
+                    return !l.includes("số nhà") && !l.includes("ấp") && !l.includes("khu phố") && !l.includes("huyện") && !l.includes("quận") && !l.includes("thị xã") && !l.startsWith("xã") && !l.startsWith("phường") && !l.startsWith("tỉnh") && !l.includes("việt nam");
+                });
+            }
+
+            if (foundDuong) duong = foundDuong;
+        }
+
+        let arr = [];
+        if (duong) arr.push(duong);
+        if (xa) arr.push(xa);
+        return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
+    } 
+    
+    let arr = [];
+    if (xa) arr.push(xa);
+    if (tinh) arr.push(tinh);
+
+    return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
 }
 
 function loaiBoDauTiengViet(str) {
@@ -266,9 +303,9 @@ function hienThiDanhSachVanChuyen() {
             if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
         }
 
-        // ĐẶC BIỆT CHO TAB CHỜ: Gom nhóm theo Vùng tiêu thụ trực tiếp từ trường vungTieuThu
+        // ĐẶC BIỆT CHO TAB CHỜ: Lấy trực tiếp trường vungTieuThu của bảng TUYENDUONG để gom nhóm
         if (window._currentTabVanChuyen === 'cho') {
-            const vungKey = layVungTieuThu(data);
+            const vungKey = (data.vungTieuThu && data.vungTieuThu.trim() !== "") ? data.vungTieuThu.trim() : "---";
             const tripKey = `VUNG_${vungKey}`;
             if (!globalVehicleTrips[tripKey]) {
                 globalVehicleTrips[tripKey] = {
