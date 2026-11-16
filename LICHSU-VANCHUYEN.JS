@@ -1,12 +1,10 @@
-// ==========================================
-// VANCHUYEN.JS - Lịch sử vận chuyển (Tải 1 lần, lọc cục bộ)
-// ==========================================
+// VANCHUYEN.JS - Lưu cache bộ nhớ tạm khi tải dữ liệu, lọc phương tiện và tìm kiếm tức thì
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
 
-// Biến toàn cục lưu trữ dữ liệu sau khi tải từ Firebase về
-let cachedListData = [];
+// Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
+window._cachedVanChuyenData = null;
 
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "";
@@ -232,12 +230,12 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     return { optimized, tongKmDi, tongKmVe };
 }
 
-// 1. Hàm TẢI DỮ LIỆU TỪ FIREBASE (Chỉ gọi khi bấm nút "Tải dữ liệu")
-window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "", tuKhoaTimKiem = "") {
+// Hàm tải dữ liệu từ Firebase và lưu vào bộ nhớ tạm
+window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ máy chủ...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ hệ thống...</div>';
 
     try {
         const thangNum = parseInt(thangChon, 10);
@@ -251,25 +249,29 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         );
 
         const querySnapshot = await getDocs(q);
-        cachedListData = []; // Reset bộ nhớ tạm
 
         if (querySnapshot.empty) {
+            window._cachedVanChuyenData = [];
             container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chuyến vận chuyển nào trong Tháng ${thangNum}/${namNum}.</div>`;
             return;
         }
 
+        let listData = [];
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const ngayGom = layNgayGomNhom(data);
-            cachedListData.push({ 
+            listData.push({ 
                 id: docSnap.id, 
                 ...data, 
                 _ngayGom: ngayGom 
             });
         });
 
-        // Tải xong thì gọi hàm hiển thị danh sách
-        hienThiDanhSachVanChuyen(bienSoTimKiem, tuKhoaTimKiem);
+        // Lưu toàn bộ dữ liệu thô vào bộ nhớ tạm
+        window._cachedVanChuyenData = listData;
+
+        // Tiến hành hiển thị dữ liệu dựa theo bộ lọc hiện tại (Phương tiện & Tìm kiếm)
+        hienThiDanhSachVanChuyen();
 
     } catch (error) {
         console.error("Lỗi tải lịch sử vận chuyển: ", error);
@@ -277,23 +279,31 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
     }
 };
 
-// 2. Hàm XỬ LÝ & HIỂN THỊ (Lọc trên dữ liệu cachedListData có sẵn, không gọi lại Firebase)
-function hienThiDanhSachVanChuyen(bienSoTimKiem = "", tuKhoaTimKiem = "") {
+// Hàm hiển thị danh sách đã xử lý lọc theo phương tiện và từ khóa tìm kiếm
+function hienThiDanhSachVanChuyen() {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    if (!cachedListData || cachedListData.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Chưa có dữ liệu. Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b>.</div>';
+    if (!window._cachedVanChuyenData) {
+        container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
         return;
     }
 
-    let listData = [...cachedListData];
+    const selectPhuongTien = document.getElementById('filterPhuongTien');
+    const inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
+
+    const bienSoTimKiem = selectPhuongTien ? selectPhuongTien.value : "";
+    const tuKhoaTimKiem = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
     const keywordKhongDau = loaiBoDauTiengViet(tuKhoaTimKiem);
 
+    let listData = [...window._cachedVanChuyenData];
+
+    // Lọc theo từ khóa tìm kiếm tự do
     if (keywordKhongDau && keywordKhongDau.trim() !== "") {
-        listData = listData.filter(item => {
-            const hopThanhChuoi = Object.values(item).join(" ") + " " + item.id;
-            return loaiBoDauTiengViet(hopThanhChuoi).includes(keywordKhongDau);
+        listData = listData.filter(data => {
+            const hopThanhChuoi = Object.values(data).join(" ") + " " + data.id;
+            const chuoiKhongDau = loaiBoDauTiengViet(hopThanhChuoi);
+            return chuoiKhongDau.includes(keywordKhongDau);
         });
     }
 
@@ -308,6 +318,7 @@ function hienThiDanhSachVanChuyen(bienSoTimKiem = "", tuKhoaTimKiem = "") {
         const coXe = data.phuongTien && data.phuongTien.trim() !== "";
         const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
 
+        // Lọc theo phương tiện được chọn
         if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
             const tuKhoa = bienSoTimKiem.toLowerCase().trim();
             if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
@@ -444,10 +455,10 @@ function hienThiDanhSachVanChuyen(bienSoTimKiem = "", tuKhoaTimKiem = "") {
     });
 
     let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
-    container.innerHTML = '';
 
+    container.innerHTML = '';
     if (sortedDates.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với phương tiện hoặc từ khóa bạn chọn.</div>';
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với từ khóa hoặc phương tiện bạn chọn.</div>';
         return;
     }
 
@@ -539,8 +550,8 @@ function hienThiDanhSachVanChuyen(bienSoTimKiem = "", tuKhoaTimKiem = "") {
         });
 
         container.appendChild(dateWrapper);
-    }
-}
+    });
+};
 
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
@@ -682,7 +693,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     const container = document.getElementById('danhSachLichSuVanChuyen');
 
-    // Tự động tạo ô nhập tìm kiếm tự do nếu chưa có
     let inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
     if (!inputTimKiemTuDo && selectPhuongTien && selectPhuongTien.parentNode) {
         inputTimKiemTuDo = document.createElement('input');
@@ -729,15 +739,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Bấm nút "Tải dữ liệu": Thực sự kết nối Firebase tải dữ liệu về
+    // Khi bấm nút tải dữ liệu, lấy tháng năm và gọi hàm tải từ Firebase để lưu vào bộ nhớ tạm
     if (btnTaiDuLieu) {
         btnTaiDuLieu.onclick = function() {
             if (inputThangVC && inputThangVC.value) {
                 const [y, m] = inputThangVC.value.split('-');
-                const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
-                const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
                 if (typeof window.taiLichSuVanChuyen === 'function') {
-                    window.taiLichSuVanChuyen(m, y, bienSo, tuKhoa);
+                    window.taiLichSuVanChuyen(m, y);
                 }
             } else {
                 alert("Vui lòng chọn tháng năm trước khi tải!");
@@ -745,24 +753,30 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Chọn phương tiện: Lọc trực tiếp trên dữ liệu có sẵn (Không gọi lại Firebase)
+    // Khi thay đổi phương tiện trong ô chọn -> lọc ngay trên bộ nhớ tạm
     if (selectPhuongTien) {
         selectPhuongTien.addEventListener('change', function() {
-            const bienSo = this.value;
-            const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
-            hienThiDanhSachVanChuyen(bienSo, tuKhoa);
+            if (window._cachedVanChuyenData) {
+                hienThiDanhSachVanChuyen();
+            } else if (inputThangVC && inputThangVC.value) {
+                const [y, m] = inputThangVC.value.split('-');
+                window.taiLichSuVanChuyen(m, y);
+            }
         });
     }
 
-    // Nhập từ khóa tìm kiếm: Lọc trực tiếp trên dữ liệu có sẵn (Không gọi lại Firebase)
+    // Khi gõ vào ô tìm kiếm tự do -> lọc ngay trên bộ nhớ tạm với độ trễ (debounce) nhẹ
     if (inputTimKiemTuDo) {
         let timer = null;
         inputTimKiemTuDo.addEventListener('input', function() {
             clearTimeout(timer);
             timer = setTimeout(() => {
-                const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
-                const tuKhoa = this.value;
-                hienThiDanhSachVanChuyen(bienSo, tuKhoa);
+                if (window._cachedVanChuyenData) {
+                    hienThiDanhSachVanChuyen();
+                } else if (inputThangVC && inputThangVC.value) {
+                    const [y, m] = inputThangVC.value.split('-');
+                    window.taiLichSuVanChuyen(m, y);
+                }
             }, 300);
         });
     }
