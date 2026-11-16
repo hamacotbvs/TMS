@@ -1,5 +1,4 @@
-
-        * {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
+* {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif;} /* Xóa bỏ khoảng cách thừa mặc định của các trình duyệt để đồng nhất form của app*/
 
         /* NÚT RESET */
         .nut-reset-treo {position: absolute; top: 15px; right: 15px; z-index: 1000;
@@ -143,45 +142,74 @@
         .card-dong-3 {display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #0f172a; padding: 2px 0px; }
         .card-dong-3 .phan-cach {display: none; }/* Màu gạch mờ phân chia Sơn và TBVS */
 
-        /* --- BỔ SUNG CHO CARD LỊCH SỬ VẬN CHUYỂN --- */
-        #danhSachLichSuVanChuyen {
+        /* --- CHỈNH SỬA TAB VẬN CHUYỂN: CỐ ĐỊNH TIÊU ĐỀ + THANH CÔNG CỤ VÀ CUỘN DANH SÁCH --- */
+        #van-chuyen .KHUNG-CON-TRONG-TAB {
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 2px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            margin-top: 10px;
+            height: calc(100vh - 65px);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 16px;
         }
 
-        .card-lich-su-item {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 5px 7px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-            transition: all 0.2s ease;
-        }
-
-        .card-lich-su-item:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border-color: #cbd5e1;
-        }
-        /* --- CHỈ ÁP DỤNG RIÊNG CHO KHUNG VẬN CHUYỂN TRÊN MÁY TÍNH --- */
         @media (min-width: 768px) {
-            /* Ép khung chứa của tab vận chuyển co lại, nằm giữa màn hình và có độ rộng vừa phải */
             #van-chuyen .KHUNG-CON-TRONG-TAB {
-                width: 60vw;             /* Chiếm 60% chiều ngang màn hình máy tính */
-                max-width: 900px;        /* Không bị quá bè rộng */
-                margin: 20px auto;       /* Căn giữa màn hình và tạo khoảng cách phía trên */
-                border-radius: 16px;     /* Bo góc mềm mại */
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); /* Đổ bóng nổi bật */
+                width: 60vw;
+                max-width: 900px;
+                margin: 20px auto;
+                height: calc(100vh - 100px);
             }
         }
 
-        /* --- CARD LỊCH SỬ VẬN CHUYỂN (Giữ nguyên định dạng đẹp mắt của bạn) --- */
+        /* 1. Phần cố định ở trên (Tiêu đề + Bộ lọc tháng/phương tiện/tải dữ liệu) */
+        #van-chuyen .KHUNG-CON-TRONG-TAB > div:first-of-type,
+        #van-chuyen .KHUNG-CON-TRONG-TAB > h3,
+        #van-chuyen .KHUNG-CON-TRONG-TAB > div:nth-of-type(1) {
+            /* Gom nhóm phần trên thành vùng sticky */
+        }
+
+        /* Thêm lớp định nghĩa cấu trúc nội bộ của Tab Vận chuyển để đảm bảo Sticky chuẩn xác */
+        #van-chuyen .KHUNG-CON-TRONG-TAB {
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Tách khối Header cố định phía trên */
+        #van-chuyen .KHUNG-CON-TRONG-TAB h3 {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #ffffff;
+            margin: 0;
+            padding-bottom: 8px;
+        }
+
+        /* Thanh chứa bộ lọc tháng, phương tiện, nút tải */
+        #van-chuyen .KHUNG-CON-TRONG-TAB div:has(#thangVanChuyen) {
+            position: sticky;
+            top: 40px; /* Nằm ngay dưới tiêu đề h3 */
+            z-index: 100;
+            background: #ffffff;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* 2. Khung danh sách vận chuyển cuộn độc lập bên dưới */
         #danhSachLichSuVanChuyen {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 5px;
+            flex: 1;
+            overflow-y: auto;
+            box-sizing: border-box;
+            padding-right: 2px;
         }
 
         .card-lich-su-item {
