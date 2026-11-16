@@ -1,10 +1,12 @@
-// VANCHUYEN.JS - Lưu cache bộ nhớ tạm khi tải dữ liệu, lọc phương tiện và tìm kiếm tức thì
+// VANCHUYEN.JS - Lưu cache bộ nhớ tạm khi tải dữ liệu, lọc phương tiện, tìm kiếm tức thì và phân tab giao diện
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
 
 // Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
 window._cachedVanChuyenData = null;
+// Biến lưu tab hiện tại ('da-giao', 'chuan-bi', 'cho')
+window._currentTabVanChuyen = 'da-giao';
 
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "";
@@ -17,7 +19,6 @@ function layNgayGomNhom(data) {
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
     let dat = data.ngayDatHang ? data.ngayDatHang.trim() : "";
 
-    // Ưu tiên 1: batDauGiaoHang -> Ưu tiên 2: ketThucGiaoHang -> Ưu tiên 3: ngayxuatKho -> Ưu tiên 4: ngayDatHang
     let rawDate = bd !== "" ? bd : (kt !== "" ? kt : (xk !== "" ? xk : dat));
     let ngayBase = chuanHoaNgay(rawDate);
 
@@ -28,7 +29,6 @@ function layNgayGomNhom(data) {
     const duyet = data.duyet ? data.duyet.trim() : "";
     const laChuaGiaoHoanToan = !duyet || duyet === "" || duyet.toLowerCase().includes("chuẩn bị") || duyet.toLowerCase().includes("đã xuất");
 
-    // Nếu là đơn chưa giao hoàn toàn và không có cả bắt đầu lẫn kết thúc giao hàng thì gắn thêm nhãn nhận diện
     if (laChuaGiaoHoanToan && !bd && !kt) {
         return `${ngayBase}Chưa giao`;
     }
@@ -264,7 +264,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
         // Lưu toàn bộ dữ liệu thô vào bộ nhớ tạm
         window._cachedVanChuyenData = listData;
 
-        // Tiến hành hiển thị dữ liệu dựa theo bộ lọc hiện tại (Phương tiện & Tìm kiếm)
+        // Tiến hành hiển thị dữ liệu dựa theo tab, phương tiện và tìm kiếm hiện tại
         hienThiDanhSachVanChuyen();
 
     } catch (error) {
@@ -273,7 +273,7 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     }
 };
 
-// Hàm hiển thị danh sách đã xử lý lọc theo phương tiện và từ khóa tìm kiếm
+// Hàm hiển thị danh sách đã xử lý lọc theo Tab, phương tiện và từ khóa tìm kiếm
 function hienThiDanhSachVanChuyen() {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -291,6 +291,19 @@ function hienThiDanhSachVanChuyen() {
     const keywordKhongDau = loaiBoDauTiengViet(tuKhoaTimKiem);
 
     let listData = [...window._cachedVanChuyenData];
+
+    // Lọc theo Tab hiện tại
+    listData = listData.filter(data => {
+        const duyetVal = data.duyet ? data.duyet.trim() : "";
+        if (window._currentTabVanChuyen === 'da-giao') {
+            return duyetVal === "Đã giao hàng" || duyetVal === "Đang giao hàng";
+        } else if (window._currentTabVanChuyen === 'chuan-bi') {
+            return duyetVal === "Đã xuất kho" || duyetVal === "Chờ xuất kho";
+        } else if (window._currentTabVanChuyen === 'cho') {
+            return duyetVal === "Chờ BTGĐ duyệt" || duyetVal === "Chờ duyệt" || duyetVal === "Chờ TĐV duyệt";
+        }
+        return true;
+    });
 
     // Lọc theo từ khóa tìm kiếm tự do
     if (keywordKhongDau && keywordKhongDau.trim() !== "") {
@@ -451,8 +464,42 @@ function hienThiDanhSachVanChuyen() {
     let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
     container.innerHTML = '';
+    
+    // Tạo thanh Tab điều hướng phía trên danh sách
+    const tabNavWrapper = document.createElement('div');
+    tabNavWrapper.style.cssText = 'display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; width: 100%; box-sizing: border-box;';
+    
+    const tabsConfig = [
+        { id: 'da-giao', label: 'Đã giao' },
+        { id: 'chuan-bi', label: 'Chuẩn bị' },
+        { id: 'cho', label: 'Chờ' }
+    ];
+
+    tabsConfig.forEach(tab => {
+        const isActive = window._currentTabVanChuyen === tab.id;
+        const tabBtn = document.createElement('button');
+        tabBtn.type = 'button';
+        tabBtn.innerText = tab.label;
+        tabBtn.style.cssText = `
+            flex: 1; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: ${isActive ? '700' : '500'};
+            cursor: pointer; border: 1px solid ${isActive ? '#0284c7' : '#cbd5e1'};
+            background: ${isActive ? '#0284c7' : '#f8fafc'};
+            color: ${isActive ? '#ffffff' : '#475569'};
+            transition: all 0.2s ease;
+        `;
+        tabBtn.onclick = function() {
+            window._currentTabVanChuyen = tab.id;
+            hienThiDanhSachVanChuyen();
+        };
+        tabNavWrapper.appendChild(tabBtn);
+    });
+    container.appendChild(tabNavWrapper);
+
     if (sortedDates.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với từ khóa hoặc phương tiện bạn chọn.</div>';
+        const emptyMsg = document.createElement('div');
+        emptyMsg.style.cssText = 'text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;';
+        emptyMsg.innerText = 'Không tìm thấy dữ liệu nào ở tab này khớp với từ khóa hoặc phương tiện bạn chọn.';
+        container.appendChild(emptyMsg);
         return;
     }
 
