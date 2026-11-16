@@ -670,7 +670,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     parentElement.appendChild(cardItem);
 }
 
-// PHẦN 6: LẮNG NGHE SỰ KIỆN GIAO DIỆN & TỰ ĐỘNG TẠO THANH TAB Ở TRÊN CÙNG
+// PHẦN 6: LẮNG NGHE SỰ KIỆN GIAO DIỆN & TỰ ĐỘNG CHÈN THANH TAB NẰM CẠNH TIÊU ĐỀ
 document.addEventListener('DOMContentLoaded', function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
     const labelThangVC = document.getElementById('labelThangNamVC');
@@ -678,50 +678,63 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     const container = document.getElementById('danhSachLichSuVanChuyen');
 
-    // Tự động tạo thanh Tab điều hướng đặt ở phía trên các bộ lọc (lọc ngày, phương tiện)
-    if (container && container.parentNode) {
-        let existingTabNav = document.getElementById('tabNavVanChuyenContainer');
-        if (!existingTabNav) {
-            const tabNavWrapper = document.createElement('div');
-            tabNavWrapper.id = 'tabNavVanChuyenContainer';
-            tabNavWrapper.style.cssText = 'display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; width: 100%; box-sizing: border-box;';
-            
-            const tabsConfig = [
-                { id: 'da-giao', label: 'Đã giao' },
-                { id: 'chuan-bi', label: 'Chuẩn bị' },
-                { id: 'cho', label: 'Chờ' }
-            ];
-
-            tabsConfig.forEach(tab => {
-                const isActive = window._currentTabVanChuyen === tab.id;
-                const tabBtn = document.createElement('button');
-                tabBtn.type = 'button';
-                tabBtn.innerText = tab.label;
-                tabBtn.style.cssText = `
-                    flex: 1; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: ${isActive ? '700' : '500'};
-                    cursor: pointer; border: 1px solid ${isActive ? '#0284c7' : '#cbd5e1'};
-                    background: ${isActive ? '#0284c7' : '#f8fafc'};
-                    color: ${isActive ? '#ffffff' : '#475569'};
-                    transition: all 0.2s ease;
-                `;
-                tabBtn.onclick = function() {
-                    window._currentTabVanChuyen = tab.id;
-                    // Cập nhật lại màu sắc active của các nút tab ngay lập tức
-                    document.querySelectorAll('#tabNavVanChuyenContainer button').forEach(btn => {
-                        const isThisActive = btn.innerText === tab.label;
-                        btn.style.fontWeight = isThisActive ? '700' : '500';
-                        btn.style.borderColor = isThisActive ? '#0284c7' : '#cbd5e1';
-                        btn.style.background = isThisActive ? '#0284c7' : '#f8fafc';
-                        btn.style.color = isThisActive ? '#ffffff' : '#475569';
-                    });
-                    hienThiDanhSachVanChuyen();
-                };
-                tabNavWrapper.appendChild(tabBtn);
-            });
-
-            // Chèn thanh tab vào ngay trước container danh sách (hoặc ngay trên phần bộ lọc)
-            container.parentNode.insertBefore(tabNavWrapper, container);
+    // Tự động tìm tiêu đề (thường có chữ LỊCH SỬ VẬN CHUYỂN hoặc tương đương) để ghép các tab ngang hàng
+    const possibleTitles = document.querySelectorAll('h1, h2, h3, h4, .header-title, .title, span, div');
+    let titleElement = null;
+    for (let el of possibleTitles) {
+        if (el.innerText && el.innerText.toUpperCase().includes("LỊCH SỬ VẬN CHUYỂN") && el.children.length === 0) {
+            titleElement = el;
+            break;
         }
+    }
+
+    if (titleElement) {
+        // Gom tiêu đề và thanh tab vào một hàng ngang (Flexbox) ngay tại vị trí của tiêu đề cũ
+        let parentRow = document.createElement('div');
+        parentRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; width: 100%; box-sizing: border-box;';
+        
+        titleElement.parentNode.insertBefore(parentRow, titleElement);
+        parentRow.appendChild(titleElement);
+        titleElement.style.margin = '0'; // Bỏ khoảng trắng thừa
+
+        // Tạo thanh tab gọn gàng nằm cạnh tiêu đề
+        const tabNavWrapper = document.createElement('div');
+        tabNavWrapper.id = 'tabNavVanChuyenContainer';
+        tabNavWrapper.style.cssText = 'display: flex; gap: 4px;';
+
+        const tabsConfig = [
+            { id: 'da-giao', label: 'Đã giao' },
+            { id: 'chuan-bi', label: 'Chuẩn bị' },
+            { id: 'cho', label: 'Chờ' }
+        ];
+
+        tabsConfig.forEach(tab => {
+            const isActive = window._currentTabVanChuyen === tab.id;
+            const tabBtn = document.createElement('button');
+            tabBtn.type = 'button';
+            tabBtn.innerText = tab.label;
+            tabBtn.style.cssText = `
+                padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: ${isActive ? '700' : '500'};
+                cursor: pointer; border: 1px solid ${isActive ? '#0284c7' : '#cbd5e1'};
+                background: ${isActive ? '#0284c7' : '#f8fafc'};
+                color: ${isActive ? '#ffffff' : '#475569'};
+                transition: all 0.2s ease;
+            `;
+            tabBtn.onclick = function() {
+                window._currentTabVanChuyen = tab.id;
+                document.querySelectorAll('#tabNavVanChuyenContainer button').forEach(btn => {
+                    const isThisActive = btn.innerText === tab.label;
+                    btn.style.fontWeight = isThisActive ? '700' : '500';
+                    btn.style.borderColor = isThisActive ? '#0284c7' : '#cbd5e1';
+                    btn.style.background = isThisActive ? '#0284c7' : '#f8fafc';
+                    btn.style.color = isThisActive ? '#ffffff' : '#475569';
+                });
+                hienThiDanhSachVanChuyen();
+            };
+            tabNavWrapper.appendChild(tabBtn);
+        });
+
+        parentRow.appendChild(tabNavWrapper);
     }
 
     let inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
