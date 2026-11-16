@@ -1,7 +1,10 @@
-// VANCHUYEN.JS - Gom sát Tải/Tiền, viết liền km, định dạng kmVtracking 1 số lẻ, check-in sau vùng tiêu thụ và dùng gạch nhạt ngăn cách km
+// VANCHUYEN.JS - Tải từ Firebase 1 lần khi bấm nút, các thao tác lọc xe/tìm kiếm lọc trực tiếp trên bộ nhớ tạm
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
+
+// Biến toàn cục lưu trữ danh sách dữ liệu gốc sau khi tải từ Firebase về
+let cachedListData = [];
 
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "";
@@ -227,11 +230,12 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     return { optimized, tongKmDi, tongKmVe };
 }
 
+// 1. Hàm TẢI DỮ LIỆU TỪ FIREBASE (Chỉ chạy khi bấm nút "Tải dữ liệu")
 window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "", tuKhoaTimKiem = "") {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ máy chủ...</div>';
 
     try {
         const thangNum = parseInt(thangChon, 10);
@@ -245,284 +249,297 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon, bienSoTimKiem = "
         );
 
         const querySnapshot = await getDocs(q);
-        container.innerHTML = '';
+        cachedListData = []; // Lưu vào biến bộ nhớ tạm
 
         if (querySnapshot.empty) {
             container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chuyến vận chuyển nào trong Tháng ${thangNum}/${namNum}.</div>`;
             return;
         }
 
-        let listData = [];
-        const keywordKhongDau = loaiBoDauTiengViet(tuKhoaTimKiem);
-
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const ngayGom = layNgayGomNhom(data);
-            
-            if (keywordKhongDau && keywordKhongDau.trim() !== "") {
-                let match = false;
-                const hopThanhChuoi = Object.values(data).join(" ") + " " + docSnap.id;
-                const chuoiKhongDau = loaiBoDauTiengViet(hopThanhChuoi);
-
-                if (chuoiKhongDau.includes(keywordKhongDau)) match = true;
-                if (!match) return; 
-            }
-
-            listData.push({ 
+            cachedListData.push({ 
                 id: docSnap.id, 
                 ...data, 
                 _ngayGom: ngayGom 
             });
         });
 
-        listData.sort((a, b) => {
-            let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
-            let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
-            return timeA.localeCompare(timeB);
-        });
-
-        let globalVehicleTrips = {}; 
-        listData.forEach((data) => {
-            const coXe = data.phuongTien && data.phuongTien.trim() !== "";
-            const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
-
-            if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
-                const tuKhoa = bienSoTimKiem.toLowerCase().trim();
-                if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
-            }
-
-            if (coXe) {
-                const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
-                const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
-                if (!globalVehicleTrips[tripKey]) {
-                    globalVehicleTrips[tripKey] = {
-                        phuongTien: nhomKey,
-                        soChuyen: soChuyen,
-                        ngay: data._ngayGom,
-                        dons: []
-                    };
-                }
-                globalVehicleTrips[tripKey].dons.push(data);
-            } else {
-                const tripKey = `XE_MAY_${data._ngayGom}`;
-                if (!globalVehicleTrips[tripKey]) {
-                    globalVehicleTrips[tripKey] = {
-                        phuongTien: "Xe máy",
-                        soChuyen: 1,
-                        ngay: data._ngayGom,
-                        isXeMay: true,
-                        dons: []
-                    };
-                }
-                globalVehicleTrips[tripKey].dons.push(data);
-            }
-        });
-
-        let allTripsArray = Object.values(globalVehicleTrips);
-        allTripsArray.sort((a, b) => {
-            let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || "";
-            let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || "";
-            return timeA.localeCompare(timeB);
-        });
-
-        const LAT_KHO = 9.9234; 
-        const LON_KHO = 105.1245;
-
-        for (let idx = 0; idx < allTripsArray.length; idx++) {
-            let trip = allTripsArray[idx];
-            const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
-
-            let kmDi = 0;
-            let kmVeNum = 0;
-            let textKmVe = "chờ"; 
-
-            if (laNhomChuaGiao) {
-                let donsChuaGiao = [];
-                let donsDaGiao = [];
-
-                trip.dons.forEach(don => {
-                    const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
-                    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
-                    
-                    if (laChuaGiaoHoanToan) {
-                        donsChuaGiao.push(don);
-                    } else {
-                        donsDaGiao.push(don);
-                    }
-                });
-
-                let ketQuaSapXep = sapXepVaTinhKmNoiBo(donsChuaGiao, LAT_KHO, LON_KHO);
-                trip.dons = [...ketQuaSapXep.optimized, ...donsDaGiao];
-                
-                kmDi = ketQuaSapXep.tongKmDi;
-                kmVeNum = ketQuaSapXep.tongKmVe;
-                textKmVe = kmVeNum + "km";
-            } else {
-                trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
-                trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
-
-                if (trip.dons.length > 0) {
-                    const donDau = trip.dons[0];
-                    const donCuoi = trip.dons[trip.dons.length - 1];
-                    const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
-                    const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
-
-                    if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
-                        kmDi = kmKTCuoi - kmBDDau;
-                    }
-
-                    if (!trip.isXeMay) {
-                        for (let nextIdx = idx + 1; nextIdx < allTripsArray.length; nextIdx++) {
-                            let nextTrip = allTripsArray[nextIdx];
-                            if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
-                                const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
-                                if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
-                                    kmVeNum = kmBDChuyenSau - kmKTCuoi;
-                                    textKmVe = kmVeNum + "km";
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0, doanhThuChuyen = 0;
-            trip.dons.forEach(don => {
-                if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
-                if (don.thanhTien) doanhThuChuyen += Number(don.thanhTien) || 0;
-                const nganhStr = don.nganh ? don.nganh.trim().toLowerCase() : "";
-                const kg = Number(don.sonTbvsKg) || 0;
-                if (nganhStr.includes("thiết bị vệ sinh") || nganhStr.includes("tbvs")) {
-                    tongTbvsKg += kg;
-                } else {
-                    tongSonKg += kg;
-                }
-            });
-
-            trip.tongBaoBot = Math.round(tongBotKg / 40);
-            trip.tongSon = tongSonKg;
-            trip.tongTbvs = tongTbvsKg;
-            trip.kmDi = kmDi;
-            trip.textKmVe = textKmVe;
-
-            let tyLePhi = 0;
-            const tongKmChuyen = kmDi + kmVeNum;
-            if (doanhThuChuyen > 0) {
-                tyLePhi = ((tongKmChuyen * 10000) / doanhThuChuyen) * 100;
-            }
-            trip._tyLePhi = tyLePhi.toFixed(1);
-        }
-
-        let groupedByDate = {};
-        allTripsArray.forEach(trip => {
-            const ngay = trip.ngay;
-            if (!groupedByDate[ngay]) groupedByDate[ngay] = [];
-            groupedByDate[ngay].push(trip);
-        });
-
-        let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
-
-        if (sortedDates.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với từ khóa hoặc phương tiện bạn chọn.</div>';
-            return;
-        }
-
-        sortedDates.forEach(ngay => {
-            const tripsInDay = groupedByDate[ngay];
-
-            const dateWrapper = document.createElement('div');
-            dateWrapper.style.cssText = 'margin-bottom: 20px; width: 100%; box-sizing: border-box;';
-
-            let tongDonNgay = 0, tongTaiNgay = 0, tongDoanhThuNgay = 0;
-            tripsInDay.forEach(trip => {
-                tongDonNgay += trip.dons.length;
-                trip.dons.forEach(don => {
-                    if (don.tTai) tongTaiNgay += Number(don.tTai) || 0;
-                    if (don.thanhTien) tongDoanhThuNgay += Number(don.thanhTien) || 0;
-                });
-            });
-            const tongDTTrNgay = Math.round(tongDoanhThuNgay / 1000000);
-
-            const dateHeader = document.createElement('div');
-            dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; box-sizing: border-box;';
-            dateHeader.innerHTML = `
-                <span>📅 ${ngay}</span> 
-                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')}kg/${tongDTTrNgay}tr</span>
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonNgay} đơn</span>
-                </div>
-            `;
-            dateWrapper.appendChild(dateHeader);
-
-            tripsInDay.forEach(trip => {
-                let taiChuyen = 0, dtChuyen = 0;
-                trip.dons.forEach(don => {
-                    if (don.tTai) taiChuyen += Number(don.tTai) || 0;
-                    if (don.thanhTien) dtChuyen += Number(don.thanhTien) || 0;
-                });
-                const dtChuyenTr = Math.round(dtChuyen / 1000000);
-
-                const mauXe = layMauGiaoDienXe(trip.phuongTien);
-                const vehicleWrapper = document.createElement('div');
-                vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 0; width: 100%; box-sizing: border-box;`;
-
-                const vehicleHeader = document.createElement('div');
-                vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
-                
-                if (trip.isXeMay) {
-                    vehicleHeader.innerHTML = `
-                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
-                        </div>
-                        <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
-                            <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
-                        </div>
-                    `;
-                } else {
-                    vehicleHeader.innerHTML = `
-                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
-                        </div>
-                        <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                            <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
-                            <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
-                        </div>
-                    `;
-                }
-                vehicleWrapper.appendChild(vehicleHeader);
-
-                const vehicleSubHeader = document.createElement('div');
-                vehicleSubHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; flex-wrap: wrap; gap: 2px; width: 100%; box-sizing: border-box;';
-                vehicleSubHeader.innerHTML = `
-                    <span>Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span>Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong></span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span>Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong></span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span>TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
-                `;
-                vehicleWrapper.appendChild(vehicleSubHeader);
-
-                trip.dons.forEach((data, idx) => {
-                    renderCardDon(data, vehicleWrapper, trip.isXeMay, idx, trip.dons);
-                });
-
-                dateWrapper.appendChild(vehicleWrapper);
-            });
-
-            container.appendChild(dateWrapper);
-        });
+        // Sau khi tải xong, gọi hàm hiển thị để lọc và vẽ dữ liệu
+        hienThiDanhSachVanChuyen(bienSoTimKiem, tuKhoaTimKiem);
 
     } catch (error) {
         console.error("Lỗi tải lịch sử vận chuyển: ", error);
         container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu lịch sử vận chuyển!</div>';
     }
 };
+
+// 2. Hàm XỬ LÝ & HIỂN THỊ DỮ LIỆU (Lọc trên bộ nhớ tạm, không gọi lại Firebase)
+function hienThiDanhSachVanChuyen(bienSoTimKiem = "", tuKhoaTimKiem = "") {
+    const container = document.getElementById('danhSachLichSuVanChuyen');
+    if (!container) return;
+
+    if (!cachedListData || cachedListData.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Chưa có dữ liệu. Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b>.</div>';
+        return;
+    }
+
+    let listData = [...cachedListData];
+    const keywordKhongDau = loaiBoDauTiengViet(tuKhoaTimKiem);
+
+    // Lọc theo từ khóa tìm kiếm tự do
+    if (keywordKhongDau && keywordKhongDau.trim() !== "") {
+        listData = listData.filter(item => {
+            const hopThanhChuoi = Object.values(item).join(" ") + " " + item.id;
+            return loaiBoDauTiengViet(hopThanhChuoi).includes(keywordKhongDau);
+        });
+    }
+
+    listData.sort((a, b) => {
+        let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || "";
+        let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || "";
+        return timeA.localeCompare(timeB);
+    });
+
+    let globalVehicleTrips = {}; 
+    listData.forEach((data) => {
+        const coXe = data.phuongTien && data.phuongTien.trim() !== "";
+        const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
+
+        if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
+            const tuKhoa = bienSoTimKiem.toLowerCase().trim();
+            if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
+        }
+
+        if (coXe) {
+            const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
+            const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
+            if (!globalVehicleTrips[tripKey]) {
+                globalVehicleTrips[tripKey] = {
+                    phuongTien: nhomKey,
+                    soChuyen: soChuyen,
+                    ngay: data._ngayGom,
+                    dons: []
+                };
+            }
+            globalVehicleTrips[tripKey].dons.push(data);
+        } else {
+            const tripKey = `XE_MAY_${data._ngayGom}`;
+            if (!globalVehicleTrips[tripKey]) {
+                globalVehicleTrips[tripKey] = {
+                    phuongTien: "Xe máy",
+                    soChuyen: 1,
+                    ngay: data._ngayGom,
+                    isXeMay: true,
+                    dons: []
+                };
+            }
+            globalVehicleTrips[tripKey].dons.push(data);
+        }
+    });
+
+    let allTripsArray = Object.values(globalVehicleTrips);
+    allTripsArray.sort((a, b) => {
+        let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || "";
+        let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || "";
+        return timeA.localeCompare(timeB);
+    });
+
+    const LAT_KHO = 9.9234; 
+    const LON_KHO = 105.1245;
+
+    for (let idx = 0; idx < allTripsArray.length; idx++) {
+        let trip = allTripsArray[idx];
+        const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
+
+        let kmDi = 0;
+        let kmVeNum = 0;
+        let textKmVe = "chờ"; 
+
+        if (laNhomChuaGiao) {
+            let donsChuaGiao = [];
+            let donsDaGiao = [];
+
+            trip.dons.forEach(don => {
+                const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
+                const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
+                
+                if (laChuaGiaoHoanToan) {
+                    donsChuaGiao.push(don);
+                } else {
+                    donsDaGiao.push(don);
+                }
+            });
+
+            let ketQuaSapXep = sapXepVaTinhKmNoiBo(donsChuaGiao, LAT_KHO, LON_KHO);
+            trip.dons = [...ketQuaSapXep.optimized, ...donsDaGiao];
+            
+            kmDi = ketQuaSapXep.tongKmDi;
+            kmVeNum = ketQuaSapXep.tongKmVe;
+            textKmVe = kmVeNum + "km";
+        } else {
+            trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
+            trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
+
+            if (trip.dons.length > 0) {
+                const donDau = trip.dons[0];
+                const donCuoi = trip.dons[trip.dons.length - 1];
+                const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
+                const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
+
+                if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
+                    kmDi = kmKTCuoi - kmBDDau;
+                }
+
+                if (!trip.isXeMay) {
+                    for (let nextIdx = idx + 1; nextIdx < allTripsArray.length; nextIdx++) {
+                        let nextTrip = allTripsArray[nextIdx];
+                        if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
+                            const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
+                            if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
+                                kmVeNum = kmBDChuyenSau - kmKTCuoi;
+                                textKmVe = kmVeNum + "km";
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0, doanhThuChuyen = 0;
+        trip.dons.forEach(don => {
+            if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
+            if (don.thanhTien) doanhThuChuyen += Number(don.thanhTien) || 0;
+            const nganhStr = don.nganh ? don.nganh.trim().toLowerCase() : "";
+            const kg = Number(don.sonTbvsKg) || 0;
+            if (nganhStr.includes("thiết bị vệ sinh") || nganhStr.includes("tbvs")) {
+                tongTbvsKg += kg;
+            } else {
+                tongSonKg += kg;
+            }
+        });
+
+        trip.tongBaoBot = Math.round(tongBotKg / 40);
+        trip.tongSon = tongSonKg;
+        trip.tongTbvs = tongTbvsKg;
+        trip.kmDi = kmDi;
+        trip.textKmVe = textKmVe;
+
+        let tyLePhi = 0;
+        const tongKmChuyen = kmDi + kmVeNum;
+        if (doanhThuChuyen > 0) {
+            tyLePhi = ((tongKmChuyen * 10000) / doanhThuChuyen) * 100;
+        }
+        trip._tyLePhi = tyLePhi.toFixed(1);
+    }
+
+    let groupedByDate = {};
+    allTripsArray.forEach(trip => {
+        const ngay = trip.ngay;
+        if (!groupedByDate[ngay]) groupedByDate[ngay] = [];
+        groupedByDate[ngay].push(trip);
+    });
+
+    let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
+    container.innerHTML = '';
+
+    if (sortedDates.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không tìm thấy dữ liệu nào khớp với phương tiện hoặc từ khóa bạn chọn.</div>';
+        return;
+    }
+
+    sortedDates.forEach(ngay => {
+        const tripsInDay = groupedByDate[ngay];
+
+        const dateWrapper = document.createElement('div');
+        dateWrapper.style.cssText = 'margin-bottom: 20px; width: 100%; box-sizing: border-box;';
+
+        let tongDonNgay = 0, tongTaiNgay = 0, tongDoanhThuNgay = 0;
+        tripsInDay.forEach(trip => {
+            tongDonNgay += trip.dons.length;
+            trip.dons.forEach(don => {
+                if (don.tTai) tongTaiNgay += Number(don.tTai) || 0;
+                if (don.thanhTien) tongDoanhThuNgay += Number(don.thanhTien) || 0;
+            });
+        });
+        const tongDTTrNgay = Math.round(tongDoanhThuNgay / 1000000);
+
+        const dateHeader = document.createElement('div');
+        dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; box-sizing: border-box;';
+        dateHeader.innerHTML = `
+            <span>📅 ${ngay}</span> 
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')}kg/${tongDTTrNgay}tr</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonNgay} đơn</span>
+            </div>
+        `;
+        dateWrapper.appendChild(dateHeader);
+
+        tripsInDay.forEach(trip => {
+            let taiChuyen = 0, dtChuyen = 0;
+            trip.dons.forEach(don => {
+                if (don.tTai) taiChuyen += Number(don.tTai) || 0;
+                if (don.thanhTien) dtChuyen += Number(don.thanhTien) || 0;
+            });
+            const dtChuyenTr = Math.round(dtChuyen / 1000000);
+
+            const mauXe = layMauGiaoDienXe(trip.phuongTien);
+            const vehicleWrapper = document.createElement('div');
+            vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 0; width: 100%; box-sizing: border-box;`;
+
+            const vehicleHeader = document.createElement('div');
+            vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
+            
+            if (trip.isXeMay) {
+                vehicleHeader.innerHTML = `
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
+                        <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
+                        <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
+                    </div>
+                `;
+            } else {
+                vehicleHeader.innerHTML = `
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
+                        <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
+                        <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
+                    </div>
+                `;
+            }
+            vehicleWrapper.appendChild(vehicleHeader);
+
+            const vehicleSubHeader = document.createElement('div');
+            vehicleSubHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; flex-wrap: wrap; gap: 2px; width: 100%; box-sizing: border-box;';
+            vehicleSubHeader.innerHTML = `
+                <span>Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
+                <span style="color: #cbd5e1;">|</span>
+                <span>Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
+                <span style="color: #cbd5e1;">|</span>
+                <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong></span>
+                <span style="color: #cbd5e1;">|</span>
+                <span>Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong></span>
+                <span style="color: #cbd5e1;">|</span>
+                <span>TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
+            `;
+            vehicleWrapper.appendChild(vehicleSubHeader);
+
+            trip.dons.forEach((data, idx) => {
+                renderCardDon(data, vehicleWrapper, trip.isXeMay, idx, trip.dons);
+            });
+
+            dateWrapper.appendChild(vehicleWrapper);
+        });
+
+        container.appendChild(dateWrapper);
+    }
+}
 
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
@@ -546,11 +563,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
     const duyet = data.duyet || '';
     
-    // Tải liền số (kg)
     const tTaiVal = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') : '0';
     const tTaiText = `${tTaiVal}kg`;
     
-    // Tiền liền số (tr)
     let thanhTienText = '0.0tr';
     if (data.thanhTien) {
         const tienNum = Number(data.thanhTien) / 1000000;
@@ -712,6 +727,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Nút Tải dữ liệu: Mới thực sự kết nối Firebase tải dữ liệu về
     if (btnTaiDuLieu) {
         btnTaiDuLieu.onclick = function() {
             if (inputThangVC && inputThangVC.value) {
@@ -727,30 +743,24 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    // Chọn phương tiện: Chỉ lọc trên dữ liệu đã tải sẵn trong bộ nhớ tạm (không gọi lại Firebase)
     if (selectPhuongTien) {
         selectPhuongTien.addEventListener('change', function() {
-            if (inputThangVC && inputThangVC.value) {
-                const [y, m] = inputThangVC.value.split('-');
-                const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
-                if (typeof window.taiLichSuVanChuyen === 'function') {
-                    window.taiLichSuVanChuyen(m, y, this.value, tuKhoa);
-                }
-            }
+            const bienSo = this.value;
+            const tuKhoa = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
+            hienThiDanhSachVanChuyen(bienSo, tuKhoa);
         });
     }
 
+    // Nhập tìm kiếm: Chỉ lọc trên dữ liệu đã tải sẵn trong bộ nhớ tạm (không gọi lại Firebase)
     if (inputTimKiemTuDo) {
         let timer = null;
         inputTimKiemTuDo.addEventListener('input', function() {
             clearTimeout(timer);
             timer = setTimeout(() => {
-                if (inputThangVC && inputThangVC.value) {
-                    const [y, m] = inputThangVC.value.split('-');
-                    const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
-                    if (typeof window.taiLichSuVanChuyen === 'function') {
-                        window.taiLichSuVanChuyen(m, y, bienSo, this.value);
-                    }
-                }
+                const bienSo = selectPhuongTien ? selectPhuongTien.value : "";
+                const tuKhoa = this.value;
+                hienThiDanhSachVanChuyen(bienSo, tuKhoa);
             }, 300);
         });
     }
