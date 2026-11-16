@@ -19,21 +19,11 @@ function layNgayGomNhom(data) {
     let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
     let dat = data.ngayDatHang ? data.ngayDatHang.trim() : "";
 
+    // Đã bỏ bớt điều kiện rườm rà, ưu tiên lấy ngày theo thứ tự
     let rawDate = bd !== "" ? bd : (kt !== "" ? kt : (xk !== "" ? xk : dat));
     let ngayBase = chuanHoaNgay(rawDate);
 
-    if (!ngayBase) {
-        return "Chưa xác định";
-    }
-
-    const duyet = data.duyet ? data.duyet.trim() : "";
-    const laChuaGiaoHoanToan = !duyet || duyet === "" || duyet.toLowerCase().includes("chuẩn bị") || duyet.toLowerCase().includes("đã xuất");
-
-    if (laChuaGiaoHoanToan && !bd && !kt) {
-        return `${ngayBase}Chưa giao`;
-    }
-
-    return ngayBase;
+    return ngayBase || "Chưa xác định";
 }
 
 function layTenRutGon(hoTen) {
@@ -111,7 +101,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lat1 === 0)) return null;
 
         const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
