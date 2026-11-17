@@ -7,7 +7,7 @@ window._currentTabVanChuyen = 'da-giao';    // Biến lưu tab hiện tại ('da
 // PHẦN 2: CÁC HÀM TIỆN ÍCH XỬ LÝ NGÀY THÁNG, TÊN VÀ ĐỊA BÀN
 function chuanHoaNgay(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return "";
-    return ngaysStr = ngayStr.trim().split(" ")[0];
+    return ngayStr.trim().split(" ")[0];
 }
 
 function layNgayGomNhom(data) {
@@ -427,12 +427,17 @@ function hienThiDanhSachVanChuyen() {
         }
 
         let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0, doanhThuChuyen = 0;
-        let tongKmKhachVtracking = 0;
+        let tongKmChuyenDiVtracking = 0;
+        let tongKmChuyenVeVtracking = 0;
+        let tongKmChuyenVtracking = 0;
         
         trip.dons.forEach(don => {
             if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
             if (don.thanhTien) doanhThuChuyen += Number(don.thanhTien) || 0;
-            if (don.kmKhachVtracking) tongKmKhachVtracking += Number(don.kmKhachVtracking) || 0;
+            
+            if (don.kmChuyenDiVtracking) tongKmChuyenDiVtracking += Number(don.kmChuyenDiVtracking) || 0;
+            if (don.kmChuyenVeVtracking) tongKmChuyenVeVtracking += Number(don.kmChuyenVeVtracking) || 0;
+            if (don.kmChuyenVtracking) tongKmChuyenVtracking += Number(don.kmChuyenVtracking) || 0;
             
             const nganhStr = don.nganh ? don.nganh.trim().toLowerCase() : "";
             const kg = Number(don.sonTbvsKg) || 0;
@@ -443,28 +448,17 @@ function hienThiDanhSachVanChuyen() {
             }
         });
 
-        // Tính GPS Về (khoảng cách từ điểm dừng có GPS cuối cùng về lại kho)
-        let kmGpsVeNum = 0;
-        if (!trip.isXeMay && trip.dons.length > 0) {
-            let lastDonWithGPS = [...trip.dons].reverse().find(d => d.dinhVi && typeof d.dinhVi === 'string' && d.dinhVi.includes(',') && d.dinhVi !== '0,0');
-            if (lastDonWithGPS) {
-                const [lat, lon] = lastDonWithGPS.dinhVi.split(',').map(Number);
-                if (!isNaN(lat) && !isNaN(lon) && lat !== 0) {
-                    kmGpsVeNum = tinhKhoangCachNoiBo(lat, lon, LAT_KHO, LON_KHO);
-                }
-            }
-        }
-
         trip.tongBaoBot = Math.round(tongBotKg / 40);
         trip.tongSon = tongSonKg;
         trip.tongTbvs = tongTbvsKg;
         trip.kmDi = kmDi;
         trip.textKmVe = textKmVe;
-        trip._kmVeNum = kmVeNum; // Lưu giá trị số km về Odometer để tính tổng
+        trip._kmVeNum = kmVeNum;
 
-        trip.tongKmGpsDi = Math.round(tongKmKhachVtracking * 10) / 10;
-        trip.tongKmGpsVe = kmGpsVeNum;
-        trip.tongKmGpsSum = Math.round((trip.tongKmGpsDi + kmGpsVeNum) * 10) / 10;
+        // Gán các giá trị km Vtracking theo yêu cầu mới
+        trip.kmChuyenDiVtracking = Math.round(tongKmChuyenDiVtracking * 10) / 10;
+        trip.kmChuyenVeVtracking = Math.round(tongKmChuyenVeVtracking * 10) / 10;
+        trip.kmChuyenVtracking = Math.round(tongKmChuyenVtracking * 10) / 10;
 
         let tyLePhi = 0;
         const tongKmChuyen = kmDi + (typeof kmVeNum === 'number' ? kmVeNum : 0);
@@ -592,7 +586,6 @@ function hienThiDanhSachVanChuyen() {
             }
             vehicleWrapper.appendChild(vehicleHeader);
 
-            // TÍNH TOÁN TỔNG ODOMETER (∑) CHO DÒNG 1
             let odometerSum = (typeof trip._kmVeNum === 'number' && trip._kmVeNum > 0) ? (trip.kmDi + trip._kmVeNum) + 'km' : (trip.kmDi + 'km');
 
             const vehicleSubHeader = document.createElement('div');
@@ -603,7 +596,7 @@ function hienThiDanhSachVanChuyen() {
                     <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span>📍 Đi: <strong style="color: #0284c7;">${trip.tongKmGpsDi}km</strong> | Về: <strong style="color: #d97706;">${trip.tongKmGpsVe}km</strong> | ∑: <strong style="color: #16a34a;">${trip.tongKmGpsSum}km</strong></span>
+                    <span>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | ∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
                 </div>
             `;
             vehicleWrapper.appendChild(vehicleSubHeader);
