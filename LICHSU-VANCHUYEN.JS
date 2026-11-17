@@ -309,7 +309,7 @@ function hienThiDanhSachVanChuyen() {
             
             let vungKey = vungGoc;
             if (htGiaoNhan.includes("chành") || htGiaoNhan.includes("gửi chành")) {
-                vungKey = "Cần Thơ"; // Gộp chung vào nhóm Cần Thơ khi là gửi chành
+                vungKey = "Cần Thơ"; 
             }
 
             const tripKey = `VUNG_${vungKey}`;
@@ -324,7 +324,8 @@ function hienThiDanhSachVanChuyen() {
             globalVehicleTrips[tripKey].dons.push(data);
         } else {
             if (coXe) {
-                const soChuyen = data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "" ? data.chuyen : 1;
+                // ĐÃ ĐỔI TỪ data.chuyen SANG data.chuyenVtracking
+                const soChuyen = data.chuyenVtracking !== undefined && data.chuyenVtracking !== null && data.chuyenVtracking !== "" ? data.chuyenVtracking : 1;
                 const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
                 if (!globalVehicleTrips[tripKey]) {
                     globalVehicleTrips[tripKey] = {
