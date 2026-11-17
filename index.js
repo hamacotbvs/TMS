@@ -311,9 +311,12 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       vungTieuThu:      vungTieuThu,      
       ngayThangNam:     ngayThangNam,     
       chuyenVtracking:  null,             
-      kmChuyenDiVtracking: 0,   // 🌟 Thêm trường km chuyến đi
-      kmChuyenVeVtracking: 0,   // 🌟 Thêm trường km chuyến về
-      kmChuyenVtracking: 0      // 🌟 Thêm trường tổng km chuyến
+      kmChuyenDiVtracking: 0,   
+      kmChuyenVeVtracking: 0,   
+      kmChuyenVtracking: 0,
+      thoiGianDau:      "00:00:00",  
+      thoiGianDi:       "",          
+      kmKhachVtracking: 0          
     }; 
   } 
   return routeMap; 
@@ -451,7 +454,8 @@ function parseVTrackingToMap(buffer, monthNum) {
       thang: monthNum,
       nam: y,
       khachHang: "",
-      kmKhachVtracking: 0
+      kmKhachVtracking: 0,
+      thoiGianDau: "00:00:00"
     });
   }
 
@@ -761,8 +765,8 @@ async function mainSync() {
       }
     }
 
-    // 🌟 1. TRA CỨU CHÉO NGƯỢC LẠI TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG ĐỂ LẤY KM QUÃNG ĐƯỜNG V-TRACKING
-    console.log(`📏 Đang tra cứu chéo chỉ số km từ V-Tracking sang Tuyến Đường (dựa vào chuyến, ngày, phương tiện)...`);
+    // 1. TRA CỨU CHÉO KM TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG
+    console.log(`📏 Đang tra cứu chéo chỉ số km từ V-Tracking sang Tuyến Đường...`);
     for (const item of tuyenDuongMemoryList) {
       const thang = item.thang;
       const bienSo = item.phuongTien;
@@ -774,7 +778,6 @@ async function mainSync() {
       const vtrackingRows = vtrackingCache[thang];
       if (!vtrackingRows) continue;
 
-      // Tìm dòng V-tracking khớp đúng Biển số, Ngày và Chuyến V-tracking
       const matchedVt = vtrackingRows.find(vt => 
         vt.bienSo === bienSo && 
         vt.ngayChuan === ngayTuongUng && 
@@ -788,8 +791,8 @@ async function mainSync() {
       }
     }
 
-    // 2. TẠO CỘT ẢO `khachHang` TRÊN BỘ NHỚ TẠM V-TRACKING
-    console.log(`🔗 Đang tiến hành tạo cột ảo 'khachHang' trên bộ nhớ tạm V-Tracking...`);
+    // 2. TẠO CỘT ẢO `khachHang` VÀ `kmKhachVtracking` TRÊN V-TRACKING
+    console.log(`🔗 Đang tiến hành tạo cột ảo 'khachHang' và 'kmKhachVtracking' trên bộ nhớ tạm V-Tracking...`);
     Object.keys(vtrackingCache).forEach(thang => {
       const vtrackingRows = vtrackingCache[thang];
 
@@ -850,12 +853,6 @@ async function mainSync() {
           }
         }
       });
-    });
-
-    // 3. TẠO CỘT ẢO `kmKhachVtracking` TRÊN BỘ NHỚ TẠM V-TRACKING
-    console.log(`📏 Đang tính toán và điền cột ảo 'kmKhachVtracking' (tổng km theo khách hàng)...`);
-    Object.keys(vtrackingCache).forEach(thang => {
-      const vtrackingRows = vtrackingCache[thang];
 
       const customerGroupMap = {};
       vtrackingRows.forEach(vt => {
@@ -879,6 +876,68 @@ async function mainSync() {
           vt.kmKhachVtracking = roundedKm;
         });
       });
+    });
+
+    // 🌟 3. TRA CỨU CHÉO NGƯỢC LẠI TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG (KÈM ĐIỀU KIỆN CÙNG TỌA ĐỘ `dinhVi`)
+    console.log(`⏱️ Đang tra cứu chéo thoiGianDau, thoiGianDi, kmKhachVtracking từ V-Tracking sang Tuyến Đường (xét theo cùng chuyến, ngày, phương tiện, đối tượng và tọa độ)...`);
+    
+    // Nhóm các dòng Tuyến đường theo: chuyến, ngày, phương tiện, đối tượng VÀ tọa độ (dinhVi)
+    const tuyenDuongTripCustomerCoordMap = {};
+    tuyenDuongMemoryList.forEach((rt) => {
+      if (!rt.phuongTien || !rt.ngayThangNam || rt.chuyenVtracking === null || rt.chuyenVtracking === undefined || !rt.doiTuong) return;
+      const coordKey = rt.dinhVi ? rt.dinhVi.trim() : "";
+      const key = `${rt.phuongTien}_${rt.ngayThangNam}_${rt.chuyenVtracking}_${rt.doiTuong}_${coordKey}`;
+      if (!tuyenDuongTripCustomerCoordMap[key]) {
+        tuyenDuongTripCustomerCoordMap[key] = [];
+      }
+      tuyenDuongTripCustomerCoordMap[key].push(rt);
+    });
+
+    Object.keys(tuyenDuongTripCustomerCoordMap).forEach(key => {
+      const items = tuyenDuongTripCustomerCoordMap[key];
+      const parts = key.split("_");
+      const bienSo = parts[0];
+      const ngayChuan = parts[1];
+      const chuyenNum = parseInt(parts[2], 10);
+      const doiTuong = parts[3];
+
+      // Nếu có nhiều dòng cùng chuyến, cùng ngày, cùng phương tiện, cùng đối tượng VÀ cùng tọa độ (dinhVi)
+      // Chỉ nạp dữ liệu cho dòng có ketThucGiaoHang sớm nhất (nhỏ nhất), các dòng còn lại gán bằng 0
+      items.sort((a, b) => {
+        const timeA = a.ketThucGiaoHang ? a.ketThucGiaoHang.split(" ").pop() : "99:99:99";
+        const timeB = b.ketThucGiaoHang ? b.ketThucGiaoHang.split(" ").pop() : "99:99:99";
+        return timeA.localeCompare(timeB);
+      });
+
+      const selectedRt = items[0]; // Dòng có ketThucGiaoHang sớm nhất
+
+      // Tìm thông tin tương ứng trong V-tracking
+      const thang = selectedRt.thang;
+      const vtrackingRows = vtrackingCache[thang];
+      let matchedVt = null;
+
+      if (vtrackingRows) {
+        matchedVt = vtrackingRows.find(vt => 
+          vt.bienSo === bienSo && 
+          vt.ngayChuan === ngayChuan && 
+          vt.chuyenVtracking === chuyenNum && 
+          vt.khachHang === doiTuong
+        );
+      }
+
+      // Nạp dữ liệu cho dòng được chọn (sớm nhất)
+      if (matchedVt) {
+        selectedRt.thoiGianDau = matchedVt.thoiGianDau || "00:00:00";
+        selectedRt.thoiGianDi = matchedVt.thoiGianDi || "";
+        selectedRt.kmKhachVtracking = matchedVt.kmKhachVtracking || 0;
+      }
+
+      // Các dòng trùng còn lại (cùng tọa độ) cho bằng 0 hoặc rỗng
+      for (let i = 1; i < items.length; i++) {
+        items[i].thoiGianDau = "00:00:00";
+        items[i].thoiGianDi = "";
+        items[i].kmKhachVtracking = 0;
+      }
     });
 
     console.log(`📡 Đang đẩy toàn bộ dữ liệu TUYENDUONG lên Firestore...`);
@@ -923,7 +982,7 @@ async function mainSync() {
     }
     console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy thành công ${reportRows.length} dòng báo cáo lên 'KHACHHANGVUNG'!`);
 
-    // 4. ĐẨY DỮ LIỆU V-TRACKING (KÈM `khachHang` VÀ `kmKhachVtracking`) LÊN FIRESTORE
+    // 4. ĐẨY DỮ LIỆU V-TRACKING LÊN FIRESTORE
     console.log(`📡 Đang đẩy dữ liệu V-Tracking lên Firestore (collection 'VTRACKING')...`);
     for (const thangStr of Object.keys(vtrackingCache)) {
       const vtRows = vtrackingCache[thangStr];
