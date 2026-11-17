@@ -310,7 +310,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       nganh:            nganh,
       vungTieuThu:      vungTieuThu,      
       ngayThangNam:     ngayThangNam,     
-      chuyenVtracking:  null              // Sẽ cập nhật khi tra cứu chéo Vtracking
+      chuyenVtracking:  null              
     }; 
   } 
   return routeMap; 
@@ -385,7 +385,39 @@ function parseVTrackingToMap(buffer, monthNum) {
     const toaDoKetThuc = getTxt(row, 10);   
     const quangDuong = getNum(row, 11);     
 
+    // 🔍 1. ĐIỀU KIỆN 1: Quãng đường xe chạy (km) > 0
     if (quangDuong <= 0 || !bienSo || !ngayRaw) continue;
+
+    // 🔍 2. ĐIỀU KIỆN 2: Tọa độ bắt đầu và Tọa độ kết thúc trên cùng 1 dòng KHÔNG ĐƯỢC ĐỒNG THỜI cách kho 55 dưới 200m
+    let isStartNearKho55 = false;
+    let isEndNearKho55 = false;
+
+    if (toaDoBatDau && toaDoBatDau.includes(",")) {
+      const coordsS = toaDoBatDau.split(",");
+      const latS = parseFloat(coordsS[0]);
+      const lonS = parseFloat(coordsS[1]);
+      if (!isNaN(latS) && !isNaN(lonS)) {
+        if (getDistanceFromLatLonInMeters(latS, lonS, KHO_55_LAT, KHO_55_LON) <= 200) {
+          isStartNearKho55 = true;
+        }
+      }
+    }
+
+    if (toaDoKetThuc && toaDoKetThuc.includes(",")) {
+      const coordsE = toaDoKetThuc.split(",");
+      const latE = parseFloat(coordsE[0]);
+      const lonE = parseFloat(coordsE[1]);
+      if (!isNaN(latE) && !isNaN(lonE)) {
+        if (getDistanceFromLatLonInMeters(latE, lonE, KHO_55_LAT, KHO_55_LON) <= 200) {
+          isEndNearKho55 = true;
+        }
+      }
+    }
+
+    // Nếu cả điểm bắt đầu và điểm kết thúc đều cách kho 55 dưới 200m thì bỏ qua dòng này
+    if (isStartNearKho55 && isEndNearKho55) {
+      continue;
+    }
 
     let parts = ngayRaw.includes('/') ? ngayRaw.split('/') : ngayRaw.split('-');
     let d = parts[0] ? parts[0].padStart(2, '0') : "01";
@@ -640,7 +672,7 @@ async function mainSync() {
     const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
     const routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);         
 
-    // 🔍 1. ĐƯA TUYẾN ĐƯỜNG LÊN BỘ NHỚ TẠM VÀ LỌC: Chỉ lấy "Đã giao hàng" hoặc "Đang giao hàng"
+    // Đưa Tuyến Đường lên bộ nhớ tạm và lọc: Chỉ lấy "Đã giao hàng" hoặc "Đang giao hàng"
     let tuyenDuongMemoryList = Object.entries(routeDataMap).map(([maPhieu, data]) => ({
       maPhieu,
       ...data
@@ -651,10 +683,8 @@ async function mainSync() {
 
     console.log(`📋 [Bộ nhớ tạm] Đã lọc được ${tuyenDuongMemoryList.length} dòng Tuyến Đường có trạng thái Đã giao hàng hoặc Đang giao hàng.`);
 
-    // 🔍 2. SẮP XẾP TUYẾN ĐƯỜNG THEO YÊU CẦU:
-    // ngayThangNam (tăng dần) -> ketThucGiaoHang (tăng dần), nếu ketThucGiaoHang rỗng thì dựa vào kmKetThucGiaoHang (tăng dần)
+    // Sắp xếp Tuyến Đường theo: ngayThangNam (tăng dần) -> ketThucGiaoHang (tăng dần), nếu rỗng dựa vào kmKetThucGiaoHang (tăng dần)
     tuyenDuongMemoryList.sort((a, b) => {
-      // So sánh ngayThangNam (dd/mm/yyyy -> chuyển sang chuẩn YYYYMMDD để so sánh chính xác)
       const parseDateStr = (dateStr) => {
         if (!dateStr || !dateStr.includes("/")) return "00000000";
         const parts = dateStr.split(" ")[0].split("/");
@@ -665,37 +695,31 @@ async function mainSync() {
       const dateB = parseDateStr(b.ngayThangNam);
       if (dateA !== dateB) return dateA.localeCompare(dateB);
 
-      // Nếu cùng ngày, so sánh kết thúc giao hàng (giờ:phút:giây)
       const timeA = a.ketThucGiaoHang ? a.ketThucGiaoHang.split(" ").pop() : "";
       const timeB = b.ketThucGiaoHang ? b.ketThucGiaoHang.split(" ").pop() : "";
 
       if (timeA && timeB) {
         return timeA.localeCompare(timeB);
       } else if (!timeA && timeB) {
-        // A rỗng, B có -> A xét theo kmKetThucGiaoHang
         return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
       } else if (timeA && !timeB) {
         return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
       } else {
-        // Cả 2 đều rỗng giờ kết thúc giao hàng -> so sánh kmKetThucGiaoHang
         return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
       }
     });
 
-    // 🔍 3. CACHE V-TRACKING THEO THÁNG ĐỂ TRÁNH TẢI LẠI NHIỀU LẦN
     const vtrackingCache = {};
 
-    // 🔍 4. TRA CỨU CHÉO TUYẾN ĐƯỜNG QUA V-TRACKING
+    // Tra cứu chéo Tuyến Đường qua V-Tracking
     for (const item of tuyenDuongMemoryList) {
       const thang = item.thang;
-      const nam = item.nam || 2026;
-      const bienSo = item.phuongTien; // Phương tiện ứng với Biển số V-tracking
-      const ngayTuongUng = item.ngayThangNam; // ngayThangNam
-      const ketThucGiao = item.ketThucGiaoHang; // Lấy thời gian kết thúc giao hàng
+      const bienSo = item.phuongTien; 
+      const ngayTuongUng = item.ngayThangNam; 
+      const ketThucGiao = item.ketThucGiaoHang; 
 
       if (!thang || !bienSo || !ketThucGiao) continue;
 
-      // Kiểm tra xem file V-tracking tháng này đã được tải và parse chưa
       if (!vtrackingCache[thang]) {
         const vtFileId = ID_VTRACKING_MONTHS[thang];
         if (vtFileId) {
@@ -713,25 +737,20 @@ async function mainSync() {
       }
 
       const vtrackingRows = vtrackingCache[thang];
-
-      // Lọc danh sách V-tracking theo đúng Biển số và Ngày (ngayChuan == ngayThangNam)
       const matchedVtRows = vtrackingRows.filter(vt => vt.bienSo === bienSo && vt.ngayChuan === ngayTuongUng);
 
       if (matchedVtRows.length === 0) continue;
 
-      // Sắp xếp các dòng V-tracking theo thời gian bắt đầu tăng dần để dễ dò
       matchedVtRows.sort((a, b) => a.thoiGianBatDauOnly.localeCompare(b.thoiGianBatDauOnly));
 
-      // Dò từ dưới lên theo yêu cầu: ketThucGiao > Thời gian bắt đầu thì lấy chuyến ngay dòng đó, không dò lên nữa
       let foundChuyen = null;
-      // Trích xuất phần giờ:phút:giây từ kết thúc giao hàng (ví dụ: "16/11/2026 14:35:10" -> "14:35:10" hoặc lấy trực tiếp chuỗi thời gian)
       const timeKetThucGiao = ketThucGiao.includes(" ") ? ketThucGiao.split(" ").pop() : ketThucGiao;
 
       for (let j = matchedVtRows.length - 1; j >= 0; j--) {
         const vtRow = matchedVtRows[j];
         if (timeKetThucGiao > vtRow.thoiGianBatDauOnly) {
           foundChuyen = vtRow.chuyenVtracking;
-          break; // Dừng ngay, không dò lên nữa
+          break; 
         }
       }
 
@@ -760,7 +779,6 @@ async function mainSync() {
     }
     console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${tuyenDuongMemoryList.length} chứng từ TUYENDUONG kèm tra cứu chéo V-tracking lên Firestore!`); 
     
-    // Khởi tạo bảng tổng hợp KHACHHANGVUNG
     const reportRows = generateKhachHangVungReport(routeDataMap);
     let reportBatch = db.batch();
     let reportCount = 0;
@@ -798,7 +816,7 @@ async function mainSync() {
     const parsedRows = parseVTrackingToMap(vtBuffer, 11);
     
     const totalRows = parsedRows.length;
-    console.log(`   -> Đã xử lý thành công ${totalRows} dòng hợp lệ (Quãng đường > 0) cho tháng 11/2026.`);
+    console.log(`   -> Đã xử lý thành công ${totalRows} dòng hợp lệ cho tháng 11/2026.`);
 
     if (totalRows > 0) {
       console.log(`📡 Đang đẩy dữ liệu lên Firestore vào collection 'VTRACKING'...`);
