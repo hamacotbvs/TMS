@@ -15,7 +15,7 @@ const ID_SANPHAM = {
   "61": "1HSZMW142a1SeIUhaF8gTCFPGVipwDUPV",
   "69": "1CutRhZzBvh24zUsGPvkXWXQT3_ufUPmW"
 };
-const ID_YCGH = "152fW_bkRwUki4Gpz5qQ3_kaHruOnfbAb"; // THÊM TRA CỨU TRÉO YCGH
+const ID_YCGH = "152fW_bkRwUki4Gpz5qQ3_kaHruOnfbAb";
 
 // 🌟 DANH SÁCH ID 12 FILE V-TRACKING THEO THÁNG NĂM 2026
 const ID_VTRACKING_MONTHS = {
@@ -174,7 +174,7 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
   return dataMap; 
 }
 
-// HÀM ĐỌC FILE YCGH  // THÊM TRA CỨU TRÉO YCGH
+// HÀM ĐỌC FILE YCGH
 function parseYcghToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -197,8 +197,8 @@ function parseYcghToMap(buffer) {
   return ycghMap;
 }
 
-// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (TRA CỨU TRÉO YCGH)
-function parseRoutesToMap(buffer, ycghMap = {}) {             // THÊM TRA CỨU TRÉO YCGH
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (TRA CỨU CHÉO YCGH)
+function parseRoutesToMap(buffer, ycghMap = {}) {             
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
@@ -260,7 +260,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {             // THÊM TRA CỨU
     } else if (khoXuatVal === "61" || khoXuatVal === "69") {
       nganh = "TBVS";
     }
-    const vungTieuThu = ycghMap[maPhieu]?.vungTieuThu || ""; // THÊM TRA CỨU TRÉO YCGH
+    const vungTieuThu = ycghMap[maPhieu]?.vungTieuThu || "";
 
     routeMap[maPhieu] = {
       phuongXa:           getTxtByIdx(row, 0),   
@@ -302,7 +302,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {             // THÊM TRA CỨU
       thang:            thang,
       nam:              nam,
       nganh:            nganh,
-      vungTieuThu:      vungTieuThu      // THÊM TRA CỨU TRÉO YCGH
+      vungTieuThu:      vungTieuThu      
     }; 
   } 
   return routeMap; 
@@ -321,7 +321,7 @@ function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// 📌 HÀM TÍNH THỜI GIAN ĐẬU
+// 📌 HÀM TÍNH THỜI GIAN ĐẬU (Thời gian kết thúc dòng trước trừ đi Thời gian bắt đầu dòng hiện tại)
 function calculateParkingTime(endTimePrev, startTimeCurr) {
   if (!endTimePrev || !startTimeCurr) return "0 phút 0 giây";
   try {
@@ -434,12 +434,13 @@ function parseVTrackingToMap(buffer, monthNum) {
     let lastEndTime = "";
 
     items.forEach((item, idx) => {
+      // Công thức tính Thời gian đậu: Lấy Thời gian kết thúc dòng trước trừ Thời gian bắt đầu dòng hiện tại
       let thoiGianDau = "0 phút 0 giây";
       if (idx > 0 && lastEndTime) {
         thoiGianDau = calculateParkingTime(lastEndTime, item.thoiGianBatDauOnly);
       }
       item.thoiGianDau = thoiGianDau;
-      lastEndTime = item.thoiGianKetThucOnly;
+      lastEndTime = item.thoiGianKetThucOnly; // Lưu lại thời gian kết thúc của dòng hiện tại cho vòng lặp sau
 
       let isKho55 = false;
       if (item.toaDoKetThuc && item.toaDoKetThuc.includes(",")) {
@@ -466,7 +467,7 @@ function parseVTrackingToMap(buffer, monthNum) {
   return finalizedRows;
 }
 
-// 📊 HÀM VIẾT THÊM: GOM NHÓM DỮ LIỆU ĐỂ TẠO BẢNG KHACHHANGVUNG
+// 📊 HÀM GOM NHÓM DỮ LIỆU ĐỂ TẠO BẢNG KHACHHANGVUNG
 function generateKhachHangVungReport(routeDataMap) {
   const groupMap = {};
   const addToGroup = (doiTuong, vung, htGiaoNhan, nganh, nam, thang, tl, dt) => {
@@ -637,7 +638,7 @@ async function mainSync() {
   console.log('🚀 3. Bắt đầu tiến trình đẩy V-Tracking Tháng 11.2026 lên Firestore...');
   
   try {
-    const fileIdThang11 = ID_VTRACKING_MONTHS[11]; // "1t7KgNwHwQuK0terHjSVwrC722ObYsnj8"[cite: 1]
+    const fileIdThang11 = ID_VTRACKING_MONTHS[11];
     console.log(`📦 Đang tải file V-Tracking Tháng 11.2026 từ Google Drive (ID: ${fileIdThang11})...`);
     
     const vtBuffer = await downloadFileBuffer(drive, fileIdThang11);
