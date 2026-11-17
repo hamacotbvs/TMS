@@ -448,11 +448,11 @@ function hienThiDanhSachVanChuyen() {
         trip.textKmVe = textKmVe;
         trip._kmVeNum = kmVeNum;
 
-        // Lấy dữ liệu 1 dòng bất kỳ trong chuyến (lấy đơn đầu tiên `dons[0]` làm đại diện)
+        // Lấy dữ liệu 1 dòng bất kỳ trong chuyến (lấy đơn đầu tiên `dons[0]`) và làm tròn không số lẻ
         const sampleDon = trip.dons[0] || {};
-        trip.kmChuyenDiVtracking = sampleDon.kmChuyenDiVtracking !== undefined ? Number(sampleDon.kmChuyenDiVtracking) || 0 : 0;
-        trip.kmChuyenVeVtracking = sampleDon.kmChuyenVeVtracking !== undefined ? Number(sampleDon.kmChuyenVeVtracking) || 0 : 0;
-        trip.kmChuyenVtracking = sampleDon.kmChuyenVtracking !== undefined ? Number(sampleDon.kmChuyenVtracking) || 0 : 0;
+        trip.kmChuyenDiVtracking = sampleDon.kmChuyenDiVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenDiVtracking) || 0) : 0;
+        trip.kmChuyenVeVtracking = sampleDon.kmChuyenVeVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVeVtracking) || 0) : 0;
+        trip.kmChuyenVtracking = sampleDon.kmChuyenVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVtracking) || 0) : 0;
 
         let tyLePhi = 0;
         const tongKmChuyen = kmDi + (typeof kmVeNum === 'number' ? kmVeNum : 0);
