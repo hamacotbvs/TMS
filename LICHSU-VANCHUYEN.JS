@@ -427,17 +427,10 @@ function hienThiDanhSachVanChuyen() {
         }
 
         let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0, doanhThuChuyen = 0;
-        let tongKmChuyenDiVtracking = 0;
-        let tongKmChuyenVeVtracking = 0;
-        let tongKmChuyenVtracking = 0;
         
         trip.dons.forEach(don => {
             if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
             if (don.thanhTien) doanhThuChuyen += Number(don.thanhTien) || 0;
-            
-            if (don.kmChuyenDiVtracking) tongKmChuyenDiVtracking += Number(don.kmChuyenDiVtracking) || 0;
-            if (don.kmChuyenVeVtracking) tongKmChuyenVeVtracking += Number(don.kmChuyenVeVtracking) || 0;
-            if (don.kmChuyenVtracking) tongKmChuyenVtracking += Number(don.kmChuyenVtracking) || 0;
             
             const nganhStr = don.nganh ? don.nganh.trim().toLowerCase() : "";
             const kg = Number(don.sonTbvsKg) || 0;
@@ -455,10 +448,11 @@ function hienThiDanhSachVanChuyen() {
         trip.textKmVe = textKmVe;
         trip._kmVeNum = kmVeNum;
 
-        // Gán các giá trị km Vtracking theo yêu cầu mới
-        trip.kmChuyenDiVtracking = Math.round(tongKmChuyenDiVtracking * 10) / 10;
-        trip.kmChuyenVeVtracking = Math.round(tongKmChuyenVeVtracking * 10) / 10;
-        trip.kmChuyenVtracking = Math.round(tongKmChuyenVtracking * 10) / 10;
+        // Lấy dữ liệu 1 dòng bất kỳ trong chuyến (lấy đơn đầu tiên `dons[0]` làm đại diện)
+        const sampleDon = trip.dons[0] || {};
+        trip.kmChuyenDiVtracking = sampleDon.kmChuyenDiVtracking !== undefined ? Number(sampleDon.kmChuyenDiVtracking) || 0 : 0;
+        trip.kmChuyenVeVtracking = sampleDon.kmChuyenVeVtracking !== undefined ? Number(sampleDon.kmChuyenVeVtracking) || 0 : 0;
+        trip.kmChuyenVtracking = sampleDon.kmChuyenVtracking !== undefined ? Number(sampleDon.kmChuyenVtracking) || 0 : 0;
 
         let tyLePhi = 0;
         const tongKmChuyen = kmDi + (typeof kmVeNum === 'number' ? kmVeNum : 0);
