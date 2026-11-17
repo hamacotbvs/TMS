@@ -613,8 +613,12 @@ async function mainSync() {
       for (const [bienSo, datesObj] of Object.entries(parsedMap)) {
         for (const [ngay, tripsArr] of Object.entries(datesObj)) {
           for (const trip of tripsArr) {
-            const rawDocId = `${bienSo}_${ngay}_Chuyen_${trip.chuyen}`;
-            const docId = rawDocId.replace(/[\/.\s#$\[\]]/g, "_");
+            // 🌟 CHUYỂN ĐỔI NGÀY TỪ DD/MM/YYYY SANG YYYY-MM-DD ĐỂ ĐẶT ID
+            const [d, m, y] = ngay.split('/');
+            const formattedDate = `${y}-${m}-${d}`;
+            
+            // Định dạng ID mới: 65H-02591-2026-10-30-Chuyen-1
+            const docId = `${bienSo}-${formattedDate}-Chuyen-${trip.chuyen}`;
             const docRef = db.collection('VTRACKING').doc(docId);
 
             batch.set(docRef, {
