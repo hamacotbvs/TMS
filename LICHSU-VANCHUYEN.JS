@@ -601,7 +601,6 @@ function hienThiDanhSachVanChuyen() {
 // PHẦN 5: RENDER THẺ HIỂN THỊ CHI TIẾT TỪNG ĐƠN HÀNG (CARD ITEM)
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
-    // Riêng phần hiển thị ngay sau mã phiếu ở thẻ card: dùng trường "chuyen" theo yêu cầu
     const chuyenVal = (data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "") ? ` ${data.chuyen}` : "";
     const doiTuong = data.doiTuong || 'Chưa xác định';
     const maPXK = data.pxk ? data.pxk.trim() : '---';
@@ -701,8 +700,8 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     cardItem.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
             <div>
-                <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong><strong style="color: #0f172a; font-size: 6px; margin-left: 3px;">${chuyenVal}</strong>
-                <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span>
+                <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong>
+                <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span><strong style="color: #0f172a; font-size: 8px; margin-left: 3px;">${chuyenVal}</strong>
             </div>
             <div style="display: flex; gap: 4px; align-items: center;">
                 ${badgeThuTu}
