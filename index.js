@@ -447,8 +447,8 @@ function parseVTrackingToMap(buffer, monthNum) {
       quangDuong: quangDuong,
       thang: monthNum,
       nam: y,
-      khachHang: "",         // Cột ảo khách hàng
-      kmKhachVtracking: 0    // 🌟 Cột ảo tổng quãng đường theo khách hàng
+      khachHang: "",        // Thêm trường khachHang
+      kmKhachVtracking: 0   // Thêm trường kmKhachVtracking
     });
   }
 
@@ -662,6 +662,9 @@ async function mainSync() {
   console.log('\n--------------------------------------------------\n');
   console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường và Tra cứu chéo V-Tracking...');
   
+  let tuyenDuongMemoryList = [];
+  let routeDataMap = {};
+
   try {
     console.log(`📦 Đang tải file YCGH...`);
     const ycghBuffer = await downloadFileBuffer(drive, ID_YCGH);
@@ -669,9 +672,9 @@ async function mainSync() {
 
     console.log(`📦 Đang tải file Tuyến Đường...`);
     const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
-    const routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);         
+    routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);         
 
-    let tuyenDuongMemoryList = Object.entries(routeDataMap).map(([maPhieu, data]) => ({
+    tuyenDuongMemoryList = Object.entries(routeDataMap).map(([maPhieu, data]) => ({
       maPhieu,
       ...data
     })).filter(item => {
@@ -819,15 +822,14 @@ async function mainSync() {
       });
     });
 
-    // 🌟 2. TẠO CỘT ẢO `kmKhachVtracking` TRÊN BỘ NHỚ TẠM V-TRACKING
+    // 2. TẠO CỘT ẢO `kmKhachVtracking` TRÊN BỘ NHỚ TẠM V-TRACKING
     console.log(`📏 Đang tính toán và điền cột ảo 'kmKhachVtracking' (tổng km theo khách hàng)...`);
     Object.keys(vtrackingCache).forEach(thang => {
       const vtrackingRows = vtrackingCache[thang];
 
-      // Nhóm theo nhóm khóa: khachHang + ngayChuan + bienSo + chuyenVtracking
       const customerGroupMap = {};
       vtrackingRows.forEach(vt => {
-        if (!vt.khachHang) return; // Nếu chưa xác định khách hàng thì bỏ qua
+        if (!vt.khachHang) return; 
         const groupKey = `${vt.khachHang}_${vt.ngayChuan}_${vt.bienSo}_${vt.chuyenVtracking}`;
         if (!customerGroupMap[groupKey]) {
           customerGroupMap[groupKey] = [];
@@ -835,7 +837,6 @@ async function mainSync() {
         customerGroupMap[groupKey].push(vt);
       });
 
-      // Cộng dồn quãng đường và gán ngược lại cho từng dòng trong nhóm
       Object.keys(customerGroupMap).forEach(groupKey => {
         const groupItems = customerGroupMap[groupKey];
         let totalKmCustomer = 0;
@@ -843,7 +844,6 @@ async function mainSync() {
           totalKmCustomer += (vt.quangDuong || 0);
         });
 
-        // Gán tổng km đã làm tròn 2 chữ số thập phân vào trường kmKhachVtracking của từng dòng
         const roundedKm = Number(totalKmCustomer.toFixed(2));
         groupItems.forEach(vt => {
           vt.kmKhachVtracking = roundedKm;
@@ -893,47 +893,33 @@ async function mainSync() {
     }
     console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy thành công ${reportRows.length} dòng báo cáo lên 'KHACHHANGVUNG'!`);
 
-  } catch (err) {
-    console.error(`❌ Lỗi đồng bộ Tuyến Đường & Tra cứu chéo:`, err.message);
-  } 
+    // 🌟 3. ĐẨY DỮ LIỆU V-TRACKING (KÈM `khachHang` VÀ `kmKhachVtracking`) LÊN FIRESTORE CHO TẤT CẢ CÁC THÁNG ĐÃ TẢI
+    console.log(`📡 Đang đẩy dữ liệu V-Tracking (kèm khachHang và kmKhachVtracking) lên Firestore (collection 'VTRACKING')...`);
+    for (const thangStr of Object.keys(vtrackingCache)) {
+      const vtRows = vtrackingCache[thangStr];
+      if (!vtRows || vtRows.length === 0) continue;
 
-  console.log('\n--------------------------------------------------\n');
-  console.log('🚀 3. Bắt đầu tiến trình đẩy V-Tracking Tháng 11.2026 lên Firestore...');
-  
-  try {
-    const fileIdThang11 = ID_VTRACKING_MONTHS[11];
-    console.log(`📦 Đang tải file V-Tracking Tháng 11.2026 từ Google Drive (ID: ${fileIdThang11})...[cite: 1]`);
-    
-    const vtBuffer = await downloadFileBuffer(drive, fileIdThang11);
-    const parsedRows = parseVTrackingToMap(vtBuffer, 11);
-    
-    const totalRows = parsedRows.length;
-    console.log(`   -> Đã xử lý thành công ${totalRows} dòng hợp lệ cho tháng 11/2026.`);
-
-    if (totalRows > 0) {
-      console.log(`📡 Đang đẩy dữ liệu lên Firestore vào collection 'VTRACKING'...`);
       let vtBatch = db.batch();
       let vtCount = 0;
-      
-      for (const row of parsedRows) {
+
+      for (const row of vtRows) {
         const docRef = db.collection('VTRACKING').doc(row.id);
         vtBatch.set(docRef, row, { merge: true });
         vtCount++;
-        
+
         if (vtCount % 400 === 0) {
           await vtBatch.commit();
           vtBatch = db.batch();
         }
       }
-      
       if (vtCount % 400 !== 0) {
         await vtBatch.commit();
       }
-      
-      console.log(`🎉 HOÀN TẤT: Đã đẩy thành công ${totalRows} bản ghi V-Tracking tháng 11.2026 lên Firestore (collection 'VTRACKING')!`);
+      console.log(`   -> Đã đẩy thành công ${vtRows.length} bản ghi V-Tracking tháng ${thangStr}/2026 lên Firestore.`);
     }
-  } catch (vtErr) {
-    console.error(`❌ Lỗi khi xử lý và đẩy V-Tracking tháng 11.2026:`, vtErr.message);
+
+  } catch (err) {
+    console.error(`❌ Lỗi đồng bộ Tuyến Đường & Tra cứu chéo V-Tracking:`, err.message);
   }
 }
 
