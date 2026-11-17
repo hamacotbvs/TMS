@@ -33,9 +33,10 @@ const ID_VTRACKING_MONTHS = {
   12: "1pgJsXILGp20zFZ-ddoIbPH23ghT2DYmh"
 };
 
-// 📍 TỌA ĐỘ KHO 55 TẦM VU
+// 📍 TỌA ĐỘ KHO 55 TẦM VU (Dung sai mở rộng 500m ~ 0.005 độ)
 const KHO_55_TAM_VU_LAT = 10.007685;
 const KHO_55_TAM_VU_LONG = 105.763084;
+const KHO_TOLERANCE = 0.005; 
 
 if (!admin.apps.length) {
   admin.initializeApp({ credential: admin.credential.cert(serviceAccount), projectId: serviceAccount.project_id }); 
@@ -135,7 +136,7 @@ function formatSecondsToTime(totalSeconds) {
   return `${s} giây`;
 }
 
-// 🚚 ĐỌC VÀ XỬ LÝ FILE V-TRACKING (CHỈ LẤY DÒNG CÓ QUÃNG ĐƯỜNG XE CHẠY > 0)
+// 🚚 ĐỌC VÀ XỬ LÝ FILE V-TRACKING (CHỈ LẤY DÒNG QUÃNG ĐƯỜNG > 0)
 function parseVTrackingToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -155,7 +156,6 @@ function parseVTrackingToMap(buffer) {
     const thoiGianKetThucOnly = row[5] ? row[5].toString().trim() : "";
     const thoiGianDi = row[6] ? row[6].toString().trim() : "";
     
-    // Nối ngày vào thời gian bắt đầu và kết thúc (dd/mm/yyyy hh:mm:ss)
     const thoiGianBatDau = (ngayChuan && thoiGianBatDauOnly) ? `${ngayChuan} ${thoiGianBatDauOnly}` : thoiGianBatDauOnly;
     const thoiGianKetThuc = (ngayChuan && thoiGianKetThucOnly) ? `${ngayChuan} ${thoiGianKetThucOnly}` : thoiGianKetThucOnly;
 
@@ -167,7 +167,7 @@ function parseVTrackingToMap(buffer) {
     const longKetThuc = parseFloat(row[12]) || 0;
     const quangDuong = parseFloat(row[13]) || parseFloat(row[11]) || 0;
 
-    // 🌟 CHỈ LẤY CÁC DÒNG CÓ QUÃNG ĐƯỜNG XE CHẠY (KM) > 0
+    // Chỉ lấy dòng có quãng đường > 0
     if (!ngayChuan || !bienSo || quangDuong <= 0) continue;
 
     rawRows.push({
@@ -218,7 +218,8 @@ function parseVTrackingToMap(buffer) {
         row.thoiGianDau = "0 giây";
       }
 
-      const isToKho = (Math.abs(row.latKetThuc - KHO_55_TAM_VU_LAT) < 0.002 && Math.abs(row.longKetThuc - KHO_55_TAM_VU_LONG) < 0.002);
+      // Cắt chuyến với dung sai kho 500m (KHO_TOLERANCE = 0.005)
+      const isToKho = (Math.abs(row.latKetThuc - KHO_55_TAM_VU_LAT) < KHO_TOLERANCE && Math.abs(row.longKetThuc - KHO_55_TAM_VU_LONG) < KHO_TOLERANCE);
       row.chuyenVtracking = currentChuyen;
       if (isToKho) {
         currentChuyen++;
@@ -406,7 +407,6 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
     const ketThucGiaoTxt = getDateByIdx(row, 31);
     const ngayXuLyTxt = getDateByIdx(row, 6);
 
-    // 🌟 ƯU TIÊN NGÀY THÁNG NĂM: Bắt đầu giao hàng -> Kết thúc giao hàng -> Ngày xuất kho -> Ngày xử lý
     const ngayChinh = batDauGiaoTxt || ketThucGiaoTxt || ngayXuatKhoTxt || ngayXuLyTxt;
     const ngayThangNam = formatStandardDate(ngayChinh);
     const ngayTraCuuVTracking = ngayThangNam;
@@ -578,7 +578,7 @@ async function mainSync() {
   }
 
   console.log('\n--------------------------------------------------\n');
-  console.log('🚀 2. Bắt đầu tải và nạp bộ nhớ tạm 12 file V-Tracking (Chỉ lấy quãng đường > 0)...');
+  console.log('🚀 2. Bắt đầu tải và nạp bộ nhớ tạm 12 file V-Tracking (Dung sai kho 500m)...');
   
   const vtrackingCache = {};
   for (const [thangNum, fileId] of Object.entries(ID_VTRACKING_MONTHS)) {
@@ -603,7 +603,7 @@ async function mainSync() {
     
     const routeList = Object.values(routeDataMap);
     
-    // 🌟 SẮP XẾP TUYẾN ĐƯỜNG: ngayThangNam -> Kết thúc giao hàng (hoặc Km kết thúc giao hàng nếu rỗng)
+    // Sắp xếp Tuyến Đường theo yêu cầu
     routeList.sort((a, b) => {
       if (a.phuongTien !== b.phuongTien) return a.phuongTien.localeCompare(b.phuongTien);
       if (a.ngayThangNam !== b.ngayThangNam) return a.ngayThangNam.localeCompare(b.ngayThangNam);
@@ -637,7 +637,7 @@ async function mainSync() {
         if (item.ketThucGiaoHang && trips.length > 0) {
           const ketThucTimeOnly = item.ketThucGiaoHang.split(" ")[1] || item.ketThucGiaoHang;
           
-          // 🌟 DÒ TỪ DƯỚI LÊN (TỪ CHUYẾN LỚN ĐẾN NHỎ)
+          // Dò từ dưới lên (từ chuyến lớn đến nhỏ)
           for (let i = trips.length - 1; i >= 0; i--) {
             const currentTrip = trips[i];
             if (currentTrip.segments.length === 0) continue;
@@ -705,7 +705,7 @@ async function mainSync() {
       if (count % 400 !== 0) {
         await batch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG!`); 
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG với dung sai kho 500m!`); 
       
       const reportRows = generateKhachHangVungReport(routeList);
       let reportBatch = db.batch();
