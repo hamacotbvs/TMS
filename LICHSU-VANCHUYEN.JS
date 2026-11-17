@@ -324,7 +324,6 @@ function hienThiDanhSachVanChuyen() {
             globalVehicleTrips[tripKey].dons.push(data);
         } else {
             if (coXe) {
-                // Giữ nguyên dùng chuyenVtracking cho logic gom nhóm xe
                 const soChuyen = data.chuyenVtracking !== undefined && data.chuyenVtracking !== null && data.chuyenVtracking !== "" ? data.chuyenVtracking : 1;
                 const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
                 if (!globalVehicleTrips[tripKey]) {
@@ -651,8 +650,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         kmGiaoText = `⏱️ 0km`;
     }
 
-    let kmVtrackingNum = data.kmVtracking !== undefined ? Number(data.kmVtracking) : 0;
-    let kmVtrackingText = `📍 ${kmVtrackingNum.toFixed(1)}km`;
+    // ĐÃ ĐỔI TỪ kmVtracking SANG kmKhachVtracking
+    let kmKhachVtrackingNum = data.kmKhachVtracking !== undefined ? Number(data.kmKhachVtracking) : 0;
+    let kmKhachVtrackingText = `📍 ${kmKhachVtrackingNum.toFixed(1)}km`;
 
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
@@ -684,7 +684,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng" || duyet === "Đang giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmVtrackingText}</span>)</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
         badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
