@@ -385,10 +385,8 @@ function parseVTrackingToMap(buffer, monthNum) {
     const toaDoKetThuc = getTxt(row, 10);   
     const quangDuong = getNum(row, 11);     
 
-    // 🔍 1. ĐIỀU KIỆN 1: Quãng đường xe chạy (km) > 0
     if (quangDuong <= 0 || !bienSo || !ngayRaw) continue;
 
-    // 🔍 2. ĐIỀU KIỆN 2: Tọa độ bắt đầu và Tọa độ kết thúc trên cùng 1 dòng KHÔNG ĐƯỢC ĐỒNG THỜI cách kho 55 dưới 200m
     let isStartNearKho55 = false;
     let isEndNearKho55 = false;
 
@@ -414,7 +412,6 @@ function parseVTrackingToMap(buffer, monthNum) {
       }
     }
 
-    // Nếu cả điểm bắt đầu và điểm kết thúc đều cách kho 55 dưới 200m thì bỏ qua dòng này
     if (isStartNearKho55 && isEndNearKho55) {
       continue;
     }
@@ -449,7 +446,9 @@ function parseVTrackingToMap(buffer, monthNum) {
       toaDoKetThuc: toaDoKetThuc,
       quangDuong: quangDuong,
       thang: monthNum,
-      nam: y
+      nam: y,
+      khachHang: "",         // Cột ảo khách hàng
+      kmKhachVtracking: 0    // 🌟 Cột ảo tổng quãng đường theo khách hàng
     });
   }
 
@@ -672,7 +671,6 @@ async function mainSync() {
     const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
     const routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);         
 
-    // Đưa Tuyến Đường lên bộ nhớ tạm và lọc: Chỉ lấy "Đã giao hàng" hoặc "Đang giao hàng"
     let tuyenDuongMemoryList = Object.entries(routeDataMap).map(([maPhieu, data]) => ({
       maPhieu,
       ...data
@@ -683,7 +681,6 @@ async function mainSync() {
 
     console.log(`📋 [Bộ nhớ tạm] Đã lọc được ${tuyenDuongMemoryList.length} dòng Tuyến Đường có trạng thái Đã giao hàng hoặc Đang giao hàng.`);
 
-    // Sắp xếp Tuyến Đường theo: ngayThangNam (tăng dần) -> ketThucGiaoHang (tăng dần), nếu rỗng dựa vào kmKetThucGiaoHang (tăng dần)
     tuyenDuongMemoryList.sort((a, b) => {
       const parseDateStr = (dateStr) => {
         if (!dateStr || !dateStr.includes("/")) return "00000000";
@@ -711,7 +708,6 @@ async function mainSync() {
 
     const vtrackingCache = {};
 
-    // Tra cứu chéo Tuyến Đường qua V-Tracking
     for (const item of tuyenDuongMemoryList) {
       const thang = item.thang;
       const bienSo = item.phuongTien; 
@@ -759,7 +755,103 @@ async function mainSync() {
       }
     }
 
-    console.log(`📡 Đang đẩy toàn bộ dữ liệu TUYENDUONG (kèm chuyến V-tracking) lên Firestore...`);
+    // 1. TẠO CỘT ẢO `khachHang` TRÊN BỘ NHỚ TẠM V-TRACKING
+    console.log(`🔗 Đang tiến hành tạo cột ảo 'khachHang' trên bộ nhớ tạm V-Tracking...`);
+    Object.keys(vtrackingCache).forEach(thang => {
+      const vtrackingRows = vtrackingCache[thang];
+
+      const tripMap = {};
+      vtrackingRows.forEach((vtRow, vtIdx) => {
+        if (!vtRow.bienSo || !vtRow.ngayChuan || vtRow.chuyenVtracking === undefined) return;
+        const tripKey = `${vtRow.bienSo}_${vtRow.ngayChuan}_${vtRow.chuyenVtracking}`;
+        if (!tripMap[tripKey]) {
+          tripMap[tripKey] = [];
+        }
+        tripMap[tripKey].push({ vtRow, vtIdx });
+      });
+
+      Object.keys(tripMap).forEach(tripKey => {
+        const tripItems = tripMap[tripKey];
+        const [bienSo, ngayChuan, chuyen] = tripKey.split("_");
+        const chuyenNum = parseInt(chuyen, 10);
+
+        const matchedRoutes = tuyenDuongMemoryList.filter(rt => 
+          rt.phuongTien === bienSo && 
+          rt.ngayThangNam === ngayChuan && 
+          rt.chuyenVtracking === chuyenNum
+        );
+
+        if (matchedRoutes.length === 0) return;
+
+        tripItems.forEach(itemObj => {
+          const vt = itemObj.vtRow;
+          if (!vt.toaDoKetThuc || !vt.toaDoKetThuc.includes(",")) return;
+
+          const vtCoords = vt.toaDoKetThuc.split(",");
+          const latVT = parseFloat(vtCoords[0]);
+          const lonVT = parseFloat(vtCoords[1]);
+          if (isNaN(latVT) || isNaN(lonVT)) return;
+
+          for (const rt of matchedRoutes) {
+            if (!rt.dinhVi || !rt.dinhVi.includes(",")) continue;
+            const rtCoords = rt.dinhVi.split(",");
+            const latRT = parseFloat(rtCoords[0]);
+            const lonRT = parseFloat(rtCoords[1]);
+            if (isNaN(latRT) || isNaN(lonRT)) continue;
+
+            const distMeters = getDistanceFromLatLonInMeters(latVT, lonVT, latRT, lonRT);
+            if (distMeters <= 200) {
+              vt.khachHang = rt.doiTuong; 
+              break;
+            }
+          }
+        });
+
+        let lastFoundCustomer = "";
+        for (let i = tripItems.length - 1; i >= 0; i--) {
+          const vt = tripItems[i].vtRow;
+          if (vt.khachHang) {
+            lastFoundCustomer = vt.khachHang;
+          } else if (lastFoundCustomer) {
+            vt.khachHang = lastFoundCustomer;
+          }
+        }
+      });
+    });
+
+    // 🌟 2. TẠO CỘT ẢO `kmKhachVtracking` TRÊN BỘ NHỚ TẠM V-TRACKING
+    console.log(`📏 Đang tính toán và điền cột ảo 'kmKhachVtracking' (tổng km theo khách hàng)...`);
+    Object.keys(vtrackingCache).forEach(thang => {
+      const vtrackingRows = vtrackingCache[thang];
+
+      // Nhóm theo nhóm khóa: khachHang + ngayChuan + bienSo + chuyenVtracking
+      const customerGroupMap = {};
+      vtrackingRows.forEach(vt => {
+        if (!vt.khachHang) return; // Nếu chưa xác định khách hàng thì bỏ qua
+        const groupKey = `${vt.khachHang}_${vt.ngayChuan}_${vt.bienSo}_${vt.chuyenVtracking}`;
+        if (!customerGroupMap[groupKey]) {
+          customerGroupMap[groupKey] = [];
+        }
+        customerGroupMap[groupKey].push(vt);
+      });
+
+      // Cộng dồn quãng đường và gán ngược lại cho từng dòng trong nhóm
+      Object.keys(customerGroupMap).forEach(groupKey => {
+        const groupItems = customerGroupMap[groupKey];
+        let totalKmCustomer = 0;
+        groupItems.forEach(vt => {
+          totalKmCustomer += (vt.quangDuong || 0);
+        });
+
+        // Gán tổng km đã làm tròn 2 chữ số thập phân vào trường kmKhachVtracking của từng dòng
+        const roundedKm = Number(totalKmCustomer.toFixed(2));
+        groupItems.forEach(vt => {
+          vt.kmKhachVtracking = roundedKm;
+        });
+      });
+    });
+
+    console.log(`📡 Đang đẩy toàn bộ dữ liệu TUYENDUONG lên Firestore...`);
     let batch = db.batch();
     let count = 0;
     
@@ -777,7 +869,7 @@ async function mainSync() {
     if (count % 400 !== 0) {
       await batch.commit();
     }
-    console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${tuyenDuongMemoryList.length} chứng từ TUYENDUONG kèm tra cứu chéo V-tracking lên Firestore!`); 
+    console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${tuyenDuongMemoryList.length} chứng từ TUYENDUONG lên Firestore!`); 
     
     const reportRows = generateKhachHangVungReport(routeDataMap);
     let reportBatch = db.batch();
