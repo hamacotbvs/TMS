@@ -321,7 +321,7 @@ function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// 📌 HÀM TÍNH THỜI GIAN ĐẬU (Thời gian kết thúc dòng trước trừ đi Thời gian bắt đầu dòng hiện tại)
+// 📌 HÀM TÍNH THỜI GIAN ĐẬU
 function calculateParkingTime(endTimePrev, startTimeCurr) {
   if (!endTimePrev || !startTimeCurr) return "0 phút 0 giây";
   try {
@@ -433,7 +433,7 @@ function parseVTrackingToMap(buffer, monthNum) {
     let currentChuyen = 1;
     let lastEndTime = "";
 
-    // Bước 1: Gán chuyến và thời gian đậu cho từng item tạm thời
+    // Bước 1: Gán chuyến và thời gian đậu
     items.forEach((item, idx) => {
       let thoiGianDau = "0 phút 0 giây";
       if (idx > 0 && lastEndTime) {
@@ -461,17 +461,51 @@ function parseVTrackingToMap(buffer, monthNum) {
       }
     });
 
-    // Bước 2: Tính tổng quãng đường (km) cho từng chuyến trong ngày của xe đó (kmChuyenVtracking)
-    const tripKmMap = {};
+    // Bước 2: Gom nhóm theo từng chuyến (chuyenVtracking) để tính toán km tổng chuyến, km về kho 55 và km đi
+    const tripGroups = {};
     items.forEach(item => {
       const cNum = item.chuyenVtracking;
-      if (!tripKmMap[cNum]) tripKmMap[cNum] = 0;
-      tripKmMap[cNum] += item.quangDuong;
+      if (!tripGroups[cNum]) {
+        tripGroups[cNum] = { totalKm: 0, returnKm: 0, outboundKm: 0 };
+      }
+      tripGroups[cNum].totalKm += item.quangDuong;
     });
 
-    // Bước 3: Gán kmChuyenVtracking vào từng dòng và push vào mảng kết quả chính thức
+    // Xác định dòng cuối cùng của mỗi chuyến có chứa tọa độ kho 55 hay không để lấy km về kho 55
+    const tripLastItemMap = {};
     items.forEach(item => {
-      item.kmChuyenVtracking = Number(tripKmMap[item.chuyenVtracking].toFixed(2));
+      tripLastItemMap[item.chuyenVtracking] = item; // vì items đã sort tăng dần nên item duyệt sau sẽ đè lên làm item cuối của chuyến
+    });
+
+    Object.keys(tripGroups).forEach(cNum => {
+      const lastItem = tripLastItemMap[cNum];
+      let isLastItemKho55 = false;
+      if (lastItem && lastItem.toaDoKetThuc && lastItem.toaDoKetThuc.includes(",")) {
+        const coords = lastItem.toaDoKetThuc.split(",");
+        const latEnd = parseFloat(coords[0]);
+        const lonEnd = parseFloat(coords[1]);
+        if (!isNaN(latEnd) && !isNaN(lonEnd)) {
+          if (getDistanceFromLatLonInMeters(latEnd, lonEnd, KHO_55_LAT, KHO_55_LON) <= 200) {
+            isLastItemKho55 = true;
+          }
+        }
+      }
+
+      if (isLastItemKho55) {
+        tripGroups[cNum].returnKm = lastItem.quangDuong;
+      } else {
+        tripGroups[cNum].returnKm = 0;
+      }
+      tripGroups[cNum].outboundKm = tripGroups[cNum].totalKm - tripGroups[cNum].returnKm;
+    });
+
+    // Bước 3: Gán các trường kết quả vào từng dòng item
+    items.forEach(item => {
+      const groupInfo = tripGroups[item.chuyenVtracking];
+      item.kmChuyenVtracking = Number(groupInfo.totalKm.toFixed(2));
+      item.kmChuyenVeVtracking = Number(groupInfo.returnKm.toFixed(2));
+      item.kmChuyenDiVtracking = Number(groupInfo.outboundKm.toFixed(2));
+      
       finalizedRows.push(item);
     });
   });
