@@ -135,7 +135,7 @@ function formatSecondsToTime(totalSeconds) {
   return `${s} giây`;
 }
 
-// 🚚 ĐỌC VÀ XỬ LÝ FILE V-TRACKING (Lọc quangDuong > 0 và thêm minThoiGianBatDau)
+// 🚚 ĐỌC VÀ XỬ LÝ FILE V-TRACKING (Lọc quangDuong > 0 và lấy Thời gian bắt đầu từ cột dữ liệu)
 function parseVTrackingToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -156,6 +156,8 @@ function parseVTrackingToMap(buffer) {
     const ngayChuan = formatStandardDate(rawNgay);
     const bienSo = row[2] ? row[2].toString().trim() : "";
     const laiXe = row[3] ? row[3].toString().trim() : "";
+    
+    // Lấy trực tiếp giá trị từ cột "Thời gian bắt đầu" (row[4])
     const thoiGianBatDauOnly = row[4] ? row[4].toString().trim() : "";
     const thoiGianKetThucOnly = row[5] ? row[5].toString().trim() : "";
     const thoiGianDi = row[6] ? row[6].toString().trim() : "";
@@ -176,6 +178,7 @@ function parseVTrackingToMap(buffer) {
       ngayChuan,
       bienSo,
       laiXe,
+      thoiGianBatDauOnly, // Lưu lại giá trị gốc từ cột Thời gian bắt đầu
       thoiGianBatDau,
       thoiGianKetThuc,
       thoiGianDi,
@@ -240,10 +243,8 @@ function parseVTrackingToMap(buffer) {
     for (let c = 1; c <= maxChuyen; c++) {
       const segsOfTrip = rowsOfGroup.filter(r => r.chuyenVtracking === c);
       if (segsOfTrip.length > 0) {
-        // 🌟 TÌM MIN THỜI GIAN BẮT ĐẦU TRONG CÙNG NGÀY, BIỂN SỐ, CHUYẾN
-        const minThoiGianBatDau = segsOfTrip.reduce((min, curr) => {
-          return curr.thoiGianBatDau < min ? curr.thoiGianBatDau : min;
-        }, segsOfTrip[0].thoiGianBatDau);
+        // Lấy đúng giá trị từ cột "Thời gian bắt đầu" của dòng đầu tiên trong chuyến
+        const minThoiGianBatDau = segsOfTrip[0].thoiGianBatDau;
 
         processedTripsMap[bienSo][ngay].push({
           chuyen: c,
@@ -613,12 +614,15 @@ async function mainSync() {
       for (const [bienSo, datesObj] of Object.entries(parsedMap)) {
         for (const [ngay, tripsArr] of Object.entries(datesObj)) {
           for (const trip of tripsArr) {
-            // 🌟 CHUYỂN ĐỔI NGÀY TỪ DD/MM/YYYY SANG YYYY-MM-DD ĐỂ ĐẶT ID
+            // 🌟 CHUYỂN ĐỔI NGÀY TỪ DD/MM/YYYY SANG YYYY-MM-DD
             const [d, m, y] = ngay.split('/');
             const formattedDate = `${y}-${m}-${d}`;
             
-            // Định dạng ID mới: 65H-02591-2026-10-30-Chuyen-1
-            const docId = `${bienSo}-${formattedDate}-Chuyen-${trip.chuyen}`;
+            // 🌟 LẤY GIÁ TRỊ TỪ CỘT "Thời gian bắt đầu" VÀ LÀM SẠCH KÝ TỰ ĐẶC BIỆT ĐỂ LÀM ID
+            const safeMinTime = trip.minThoiGianBatDau.replace(/[\/.\s#$\[\]:]/g, "-");
+
+            // 🌟 ĐỊNH DẠNG ID MỚI: 65H-02591-2026-11-16-Chuyen-1-16-11-2026-07-09-44
+            const docId = `${bienSo}-${formattedDate}-Chuyen-${trip.chuyen}-${safeMinTime}`;
             const docRef = db.collection('VTRACKING').doc(docId);
 
             batch.set(docRef, {
