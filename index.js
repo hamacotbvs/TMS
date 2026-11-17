@@ -878,10 +878,9 @@ async function mainSync() {
       });
     });
 
-    // 🌟 3. TRA CỨU CHÉO NGƯỢC LẠI TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG (KÈM ĐIỀU KIỆN CÙNG TỌA ĐỘ `dinhVi`)
-    console.log(`⏱️ Đang tra cứu chéo thoiGianDau, thoiGianDi, kmKhachVtracking từ V-Tracking sang Tuyến Đường (xét theo cùng chuyến, ngày, phương tiện, đối tượng và tọa độ)...`);
+    // 🌟 3. TRA CỨU CHÉO NGƯỢC LẠI TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG (KÈM ƯU TIÊN SẮP XẾP THÔNG MINH)
+    console.log(`⏱️ Đang tra cứu chéo thoiGianDau, thoiGianDi, kmKhachVtracking từ V-Tracking sang Tuyến Đường theo thứ tự ưu tiên...`);
     
-    // Nhóm các dòng Tuyến đường theo: chuyến, ngày, phương tiện, đối tượng VÀ tọa độ (dinhVi)
     const tuyenDuongTripCustomerCoordMap = {};
     tuyenDuongMemoryList.forEach((rt) => {
       if (!rt.phuongTien || !rt.ngayThangNam || rt.chuyenVtracking === null || rt.chuyenVtracking === undefined || !rt.doiTuong) return;
@@ -901,17 +900,30 @@ async function mainSync() {
       const chuyenNum = parseInt(parts[2], 10);
       const doiTuong = parts[3];
 
-      // Nếu có nhiều dòng cùng chuyến, cùng ngày, cùng phương tiện, cùng đối tượng VÀ cùng tọa độ (dinhVi)
-      // Chỉ nạp dữ liệu cho dòng có ketThucGiaoHang sớm nhất (nhỏ nhất), các dòng còn lại gán bằng 0
+      // Sắp xếp các dòng trùng điều kiện theo thứ tự ưu tiên:
+      // 1. ketThucGiaoHang sớm nhất (nhỏ nhất)
+      // 2. Nếu bằng nhau -> batDauGiaoHang sớm nhất (nhỏ nhất)
+      // 3. Nếu bằng nhau luôn -> ngayXuatKho trễ nhất (lớn nhất)
       items.sort((a, b) => {
-        const timeA = a.ketThucGiaoHang ? a.ketThucGiaoHang.split(" ").pop() : "99:99:99";
-        const timeB = b.ketThucGiaoHang ? b.ketThucGiaoHang.split(" ").pop() : "99:99:99";
-        return timeA.localeCompare(timeB);
+        const timeEndA = a.ketThucGiaoHang ? a.ketThucGiaoHang.split(" ").pop() : "99:99:99";
+        const timeEndB = b.ketThucGiaoHang ? b.ketThucGiaoHang.split(" ").pop() : "99:99:99";
+        if (timeEndA !== timeEndB) {
+          return timeEndA.localeCompare(timeEndB);
+        }
+
+        const timeStartA = a.batDauGiaoHang ? a.batDauGiaoHang.split(" ").pop() : "99:99:99";
+        const timeStartB = b.batDauGiaoHang ? b.batDauGiaoHang.split(" ").pop() : "99:99:99";
+        if (timeStartA !== timeStartB) {
+          return timeStartA.localeCompare(timeStartB);
+        }
+
+        const dateXuatA = a.ngayxuatKho || "";
+        const dateXuatB = b.ngayxuatKho || "";
+        return dateXuatB.localeCompare(dateXuatA); // Lớn nhất xếp lên trước
       });
 
-      const selectedRt = items[0]; // Dòng có ketThucGiaoHang sớm nhất
+      const selectedRt = items[0]; // Dòng ưu tiên cao nhất
 
-      // Tìm thông tin tương ứng trong V-tracking
       const thang = selectedRt.thang;
       const vtrackingRows = vtrackingCache[thang];
       let matchedVt = null;
@@ -925,14 +937,14 @@ async function mainSync() {
         );
       }
 
-      // Nạp dữ liệu cho dòng được chọn (sớm nhất)
+      // Nạp dữ liệu cho dòng được ưu tiên chọn
       if (matchedVt) {
         selectedRt.thoiGianDau = matchedVt.thoiGianDau || "00:00:00";
         selectedRt.thoiGianDi = matchedVt.thoiGianDi || "";
         selectedRt.kmKhachVtracking = matchedVt.kmKhachVtracking || 0;
       }
 
-      // Các dòng trùng còn lại (cùng tọa độ) cho bằng 0 hoặc rỗng
+      // Các dòng còn lại gán bằng 0 / rỗng
       for (let i = 1; i < items.length; i++) {
         items[i].thoiGianDau = "00:00:00";
         items[i].thoiGianDi = "";
