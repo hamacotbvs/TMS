@@ -592,7 +592,7 @@ async function mainSync() {
   }
 
   console.log('\n--------------------------------------------------\n');
-  console.log('🚀 3. Bắt đầu xử lý Tuyến Đường & Tra cứu chéo V-Tracking theo tháng/năm...');
+  console.log('🚀 3. Bắt đầu xử lý Tuyến Đường & Tra cứu chéo V-Tracking (Dò từ dưới lên)...');
   
   try {
     const ycghBuffer = await downloadFileBuffer(drive, ID_YCGH);
@@ -618,7 +618,7 @@ async function mainSync() {
       return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
     });
 
-    // 🌟 TRA CỨU TRÉO TÍNH KM VÀ XÁC ĐỊNH chuyenVtracking (CHUYẾN CUỐI CHỈ CẦN ketThucGiaoHang > BẮT ĐẦU)
+    // 🌟 TRA CỨU TRÉO TÍNH KM VÀ XÁC ĐỊNH chuyenVtracking (DÒ TỪ DƯỚI LÊN - TỪ CHUYẾN LỚN ĐẾN NHỎ)
     routeList.forEach(item => {
       let tongKmDon = 0;
       let matchedChuyenVtracking = 0;
@@ -633,37 +633,25 @@ async function mainSync() {
       if (thang && vtrackingCache[thang] && vtrackingCache[thang][bienSo] && vtrackingCache[thang][bienSo][ngay]) {
         const trips = vtrackingCache[thang][bienSo][ngay];
 
-        if (item.ketThucGiaoHang) {
+        if (item.ketThucGiaoHang && trips.length > 0) {
           const ketThucTimeOnly = item.ketThucGiaoHang.split(" ")[1] || item.ketThucGiaoHang;
           
-          for (let i = 0; i < trips.length; i++) {
+          // 🌟 DÒ TỪ DƯỚI LÊN: Duyệt ngược từ chuyến lớn nhất về chuyến nhỏ nhất (i từ trips.length - 1 về 0)
+          for (let i = trips.length - 1; i >= 0; i--) {
             const currentTrip = trips[i];
             if (currentTrip.segments.length === 0) continue;
 
             const startTripTimeFull = currentTrip.segments[0].thoiGianBatDau;
             const startTripTimeOnly = startTripTimeFull.split(" ")[1] || startTripTimeFull;
 
-            // Kiểm tra xem đây có phải là chuyến cuối cùng trong ngày không
-            const isLastTrip = (i === trips.length - 1);
-
-            if (isLastTrip) {
-              // 🌟 Đối với chuyến cuối trong ngày: chỉ cần ketThucGiaoHang > Thời gian bắt đầu là được
-              if (ketThucTimeOnly >= startTripTimeOnly) {
-                matchedChuyenVtracking = currentTrip.chuyen;
-                break;
-              }
-            } else {
-              // Đối với các chuyến trước: nằm trong khoảng [Bắt đầu chuyến n, Bắt đầu chuyến n+1)
-              const nextStartFull = trips[i + 1].segments[0].thoiGianBatDau;
-              const nextTripStartTimeOnly = nextStartFull.split(" ")[1] || nextStartFull;
-
-              if (ketThucTimeOnly >= startTripTimeOnly && ketThucTimeOnly < nextTripStartTimeOnly) {
-                matchedChuyenVtracking = currentTrip.chuyen;
-                break;
-              }
+            // Điều kiện: ketThucGiaoHang > min Thời gian bắt đầu chuyến (Thời gian bắt đầu của chuyến đó)
+            if (ketThucTimeOnly >= startTripTimeOnly) {
+              matchedChuyenVtracking = currentTrip.chuyen;
+              break; // Tìm thấy chuyến phù hợp từ dưới lên thì dừng lại luôn
             }
           }
 
+          // Fallback nếu vẫn không khớp, gán chuyến đầu tiên
           if (matchedChuyenVtracking === 0 && trips.length > 0) {
             matchedChuyenVtracking = trips[0].chuyen;
           }
@@ -716,7 +704,7 @@ async function mainSync() {
       if (count % 400 !== 0) {
         await batch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm điều kiện chuyến cuối!`); 
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG với logic dò chuyến từ dưới lên!`); 
       
       const reportRows = generateKhachHangVungReport(routeList);
       let reportBatch = db.batch();
