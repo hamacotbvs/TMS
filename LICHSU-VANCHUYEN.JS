@@ -448,7 +448,7 @@ function hienThiDanhSachVanChuyen() {
         trip.textKmVe = textKmVe;
         trip._kmVeNum = kmVeNum;
 
-        // Lấy dữ liệu 1 dòng bất kỳ trong chuyến (lấy đơn đầu tiên `dons[0]`) và làm tròn không số lẻ
+        // Lấy dữ liệu 1 dòng bất kỳ trong chuyến (đơn đầu tiên `dons[0]`) và làm tròn không số lẻ
         const sampleDon = trip.dons[0] || {};
         trip.kmChuyenDiVtracking = sampleDon.kmChuyenDiVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenDiVtracking) || 0) : 0;
         trip.kmChuyenVeVtracking = sampleDon.kmChuyenVeVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVeVtracking) || 0) : 0;
@@ -555,7 +555,7 @@ function hienThiDanhSachVanChuyen() {
             vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 0; width: 100%; box-sizing: border-box;`;
 
             const vehicleHeader = document.createElement('div');
-            vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
+            vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
@@ -583,7 +583,7 @@ function hienThiDanhSachVanChuyen() {
             let odometerSum = (typeof trip._kmVeNum === 'number' && trip._kmVeNum > 0) ? (trip.kmDi + trip._kmVeNum) + 'km' : (trip.kmDi + 'km');
 
             const vehicleSubHeader = document.createElement('div');
-            vehicleSubHeader.style.cssText = 'display: flex; flex-direction: column; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; gap: 3px; width: 100%; box-sizing: border-box;';
+            vehicleSubHeader.style.cssText = 'display: flex; flex-direction: column; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 3px; margin-bottom: 6px; gap: 1px; width: 100%; box-sizing: border-box;';
             vehicleSubHeader.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 4px;">
                     <span>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về: <strong style="color: #d97706;">${trip.textKmVe}</strong> | ∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
