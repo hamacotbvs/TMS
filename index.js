@@ -15,7 +15,7 @@ const ID_SANPHAM = {
   "61": "1HSZMW142a1SeIUhaF8gTCFPGVipwDUPV",
   "69": "1CutRhZzBvh24zUsGPvkXWXQT3_ufUPmW"
 };
-const ID_YCGH = "152fW_bkRwUki4Gpz5qQ3_kaHruOnfbAb"; 
+const ID_YCGH = "152fW_bkRwUki4Gpz5qQ3_kaHruOnfbAb"; // THÊM TRA CỨU TRÉO YCGH
 
 // 🌟 DANH SÁCH ID 12 FILE V-TRACKING THEO THÁNG NĂM 2026
 const ID_VTRACKING_MONTHS = {
@@ -33,9 +33,9 @@ const ID_VTRACKING_MONTHS = {
   12: "1pgJsXILGp20zFZ-ddoIbPH23ghT2DYmh"
 };
 
-// 📍 TỌA ĐỘ KHO 55 TẦM VU
-const KHO_55_TAM_VU_LAT = 10.007685;
-const KHO_55_TAM_VU_LONG = 105.763084;
+// Tọa độ Kho 55 Tầm Vu để tính chuyến Vtracking
+const KHO_55_LAT = 10.007685;
+const KHO_55_LON = 105.763084;
 
 if (!admin.apps.length) {
   admin.initializeApp({ credential: admin.credential.cert(serviceAccount), projectId: serviceAccount.project_id }); 
@@ -51,6 +51,7 @@ async function downloadFileBuffer(drive, fileId) {
   return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));
 }
 
+// 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN ĐẸP (DD/MM/YYYY HH:mm:ss)
 function formatExcelDate(cellValue) {
   if (cellValue === undefined || cellValue === null || cellValue === "") return "";
   const pad = (n) => String(n).padStart(2, '0');
@@ -82,191 +83,7 @@ function formatExcelDate(cellValue) {
   return strVal;
 }
 
-function formatStandardDate(dateStr) {
-  if (!dateStr) return "";
-  const cleanDate = dateStr.split(" ")[0];
-  if (cleanDate.includes("/")) {
-    const parts = cleanDate.split("/");
-    if (parts.length === 3) {
-      const pad = (n) => String(n).padStart(2, '0');
-      const d = pad(parseInt(parts[0], 10));
-      const m = pad(parseInt(parts[1], 10));
-      const y = parts[2];
-      return `${d}/${m}/${y}`;
-    }
-  } else if (cleanDate.includes("-")) {
-    const parts = cleanDate.split("-");
-    const pad = (n) => String(n).padStart(2, '0');
-    if (parts.length === 3) {
-      if (parts[0].length === 4) {
-        const y = parts[0];
-        const m = pad(parseInt(parts[1], 10));
-        const d = pad(parseInt(parts[2], 10));
-        return `${d}/${m}/${y}`;
-      } else {
-        const d = pad(parseInt(parts[0], 10));
-        const m = pad(parseInt(parts[1], 10));
-        const y = parts[2];
-        return `${d}/${m}/${y}`;
-      }
-    }
-  }
-  return cleanDate;
-}
-
-function parseTimeToSeconds(timeStr) {
-  if (!timeStr) return 0;
-  const parts = timeStr.split(":");
-  if (parts.length < 2) return 0;
-  const h = parseInt(parts[0], 10) || 0;
-  const m = parseInt(parts[1], 10) || 0;
-  const s = parseInt(parts[2], 10) || 0;
-  return h * 3600 + m * 60 + s;
-}
-
-function formatSecondsToTime(totalSeconds) {
-  if (totalSeconds <= 0) return "0 giây";
-  const pad = (n) => String(n).padStart(2, '0');
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  if (h > 0) return `${h} giờ ${pad(m)} phút ${pad(s)} giây`;
-  if (m > 0) return `${m} phút ${pad(s)} giây`;
-  return `${s} giây`;
-}
-
-// 🚚 ĐỌC VÀ XỬ LÝ FILE V-TRACKING (Lọc quangDuong > 0 và lấy Thời gian bắt đầu từ cột dữ liệu)
-function parseVTrackingToMap(buffer) {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-  
-  const rawRows = [];
-
-  for (let i = 1; i < jsonData.length; i++) {
-    const row = jsonData[i];
-    if (!row || row.length < 12) continue;
-
-    const quangDuong = parseFloat(row[13]) || parseFloat(row[11]) || 0;
-    
-    // 🌟 CHỈ LẤY DÒNG QUÃNG ĐƯỜNG XE CHẠY (KM) > 0
-    if (quangDuong <= 0) continue;
-
-    const rawNgay = row[1] ? row[1].toString().trim() : "";
-    const ngayChuan = formatStandardDate(rawNgay);
-    const bienSo = row[2] ? row[2].toString().trim() : "";
-    const laiXe = row[3] ? row[3].toString().trim() : "";
-    
-    // Lấy trực tiếp giá trị từ cột "Thời gian bắt đầu" (row[4])
-    const thoiGianBatDauOnly = row[4] ? row[4].toString().trim() : "";
-    const thoiGianKetThucOnly = row[5] ? row[5].toString().trim() : "";
-    const thoiGianDi = row[6] ? row[6].toString().trim() : "";
-    
-    const thoiGianBatDau = (ngayChuan && thoiGianBatDauOnly) ? `${ngayChuan} ${thoiGianBatDauOnly}` : thoiGianBatDauOnly;
-    const thoiGianKetThuc = (ngayChuan && thoiGianKetThucOnly) ? `${ngayChuan} ${thoiGianKetThucOnly}` : thoiGianKetThucOnly;
-
-    const diaDiemBatDau = row[7] ? row[7].toString().trim() : "";
-    const latBatDau = parseFloat(row[8]) || 0;
-    const longBatDau = parseFloat(row[9]) || 0;
-    const diaDiemKetThuc = row[10] ? row[10].toString().trim() : "";
-    const latKetThuc = parseFloat(row[11]) || 0;
-    const longKetThuc = parseFloat(row[12]) || 0;
-
-    if (!ngayChuan || !bienSo) continue;
-
-    rawRows.push({
-      ngayChuan,
-      bienSo,
-      laiXe,
-      thoiGianBatDauOnly, // Lưu lại giá trị gốc từ cột Thời gian bắt đầu
-      thoiGianBatDau,
-      thoiGianKetThuc,
-      thoiGianDi,
-      thoiGianDau: "",
-      diaDiemBatDau,
-      latBatDau,
-      longBatDau,
-      diaDiemKetThuc,
-      latKetThuc,
-      longKetThuc,
-      quangDuong,
-      chuyenVtracking: 1
-    });
-  }
-
-  const groupedMap = {};
-  rawRows.forEach(r => {
-    const key = `${r.bienSo}_${r.ngayChuan}`;
-    if (!groupedMap[key]) groupedMap[key] = [];
-    groupedMap[key].push(r);
-  });
-
-  const processedTripsMap = {};
-
-  Object.keys(groupedMap).forEach(key => {
-    const rowsOfGroup = groupedMap[key];
-    let currentChuyen = 1;
-
-    rowsOfGroup.forEach((row, idx) => {
-      if (idx > 0) {
-        const prevRow = rowsOfGroup[idx - 1];
-        const prevEndTimeOnly = prevRow.thoiGianKetThuc.split(" ")[1] || "";
-        const currStartTimeOnly = row.thoiGianBatDau.split(" ")[1] || "";
-        const prevSec = parseTimeToSeconds(prevEndTimeOnly);
-        const currSec = parseTimeToSeconds(currStartTimeOnly);
-        if (currSec >= prevSec) {
-          row.thoiGianDau = formatSecondsToTime(currSec - prevSec);
-        } else {
-          row.thoiGianDau = "0 giây";
-        }
-      } else {
-        row.thoiGianDau = "0 giây";
-      }
-
-      if (row.quangDuong > 0) {
-        const isToKho = (Math.abs(row.latKetThuc - KHO_55_TAM_VU_LAT) < 0.002 && Math.abs(row.longKetThuc - KHO_55_TAM_VU_LONG) < 0.002);
-        row.chuyenVtracking = currentChuyen;
-        if (isToKho) {
-          currentChuyen++;
-        }
-      } else {
-        row.chuyenVtracking = currentChuyen;
-      }
-    });
-
-    const bienSo = rowsOfGroup[0].bienSo;
-    const ngay = rowsOfGroup[0].ngayChuan;
-    if (!processedTripsMap[bienSo]) processedTripsMap[bienSo] = {};
-    if (!processedTripsMap[bienSo][ngay]) processedTripsMap[bienSo][ngay] = [];
-
-    const maxChuyen = rowsOfGroup[rowsOfGroup.length - 1].chuyenVtracking;
-    for (let c = 1; c <= maxChuyen; c++) {
-      const segsOfTrip = rowsOfGroup.filter(r => r.chuyenVtracking === c);
-      if (segsOfTrip.length > 0) {
-        // Lấy đúng giá trị từ cột "Thời gian bắt đầu" của dòng đầu tiên trong chuyến
-        const minThoiGianBatDau = segsOfTrip[0].thoiGianBatDau;
-
-        processedTripsMap[bienSo][ngay].push({
-          chuyen: c,
-          minThoiGianBatDau: minThoiGianBatDau,
-          segments: segsOfTrip.map(s => ({
-            thoiGianBatDau: s.thoiGianBatDau,
-            thoiGianKetThuc: s.thoiGianKetThuc,
-            latBatDau: s.latBatDau,
-            longBatDau: s.longBatDau,
-            latKetThuc: s.latKetThuc,
-            longKetThuc: s.longKetThuc,
-            quangDuong: s.quangDuong,
-            thoiGianDau: s.thoiGianDau
-          }))
-        });
-      }
-    }
-  });
-
-  return processedTripsMap;
-}
-
+// HÀM ĐỌC FILE SẢN PHẨM
 function parseCatalogToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -280,7 +97,7 @@ function parseCatalogToMap(buffer) {
     if (!maCTKT) continue; 
     
     catalogMap[maCTKT] = {
-      sanPham:  row[5]  ? row[5].toString().trim()  : "",
+      sanPham:   row[5]  ? row[5].toString().trim()  : "",
       phanLoai:  row[6]  ? row[6].toString().trim()  : "",
       maCatalo:  row[10] ? row[10].toString().trim() : "",
       tenCatalo: row[11] ? row[11].toString().trim() : ""
@@ -289,6 +106,7 @@ function parseCatalogToMap(buffer) {
   return catalogMap;
 }
 
+// 1. XỬ LÝ ĐỌC FILE TỒN KHO (TRA CỨU CHÉO)
 function parseInventoryToMap(buffer, khoName, catalogMap = null) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -335,17 +153,17 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
     dataMap[tenHang] = {
       category: row[0] ? row[0].toString().trim() : "",    
       maHang: maHang,
-      tenHang: tenHang,    
+      tenHang: tenHang,     
       nsx: nsxTxt,
       thang: thang, 
-      nam: nam,    
+      nam: nam,     
       dauKy_sl: parseFloat(row[4]) || 0,                 
       dauKy_tl: parseFloat(row[5]) || 0,                 
-      nhap_sl: parseFloat(row[6]) || 0,                   
-      nhap_tl: parseFloat(row[7]) || 0,                   
-      xuat_sl: parseFloat(row[8]) || 0,                   
-      xuat_tl: parseFloat(row[9]) || 0,                   
-      cuoiKy_sl: parseFloat(row[10]) || 0,                
+      nhap_sl: parseFloat(row[6]) || 0,                    
+      nhap_tl: parseFloat(row[7]) || 0,                    
+      xuat_sl: parseFloat(row[8]) || 0,                    
+      xuat_tl: parseFloat(row[9]) || 0,                    
+      cuoiKy_sl: parseFloat(row[10]) || 0,                 
       cuoiKy_tl: parseFloat(row[11]) || 0,
       maCatalo: boSung_maCatalo,
       tenCatalo: boSung_tenCatalo,
@@ -356,6 +174,7 @@ function parseInventoryToMap(buffer, khoName, catalogMap = null) {
   return dataMap; 
 }
 
+// HÀM ĐỌC FILE YCGH  // THÊM TRA CỨU TRÉO YCGH
 function parseYcghToMap(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -378,11 +197,14 @@ function parseYcghToMap(buffer) {
   return ycghMap;
 }
 
-function parseRoutesToMap(buffer, ycghMap = {}) {              
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (TRA CỨU TRÉO YCGH)
+function parseRoutesToMap(buffer, ycghMap = {}) {             // THÊM TRA CỨU TRÉO YCGH
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
   const routeMap = {};
+  
+  console.log(`📊 [Tuyến Đường] Tổng số dòng đọc được trong file: ${jsonData.length}`);
   
   let headerRowIdx = 7; 
   for (let i = 0; i < Math.min(25, jsonData.length); i++) {
@@ -404,10 +226,8 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
     const maPhieu = getTxtByIdx(row, 3);
     if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
     
-    let latGiao = parseFloat(row[24]) || 0;
-    let longGiao = parseFloat(row[25]) || 0;
-    let dinhVi = (latGiao && longGiao) ? `${latGiao},${longGiao}` : "";
-
+    let dinhVi = "";
+    if (row[24] && row[25]) dinhVi = `${row[24].toString().trim()},${row[25].toString().trim()}`;
     let checkIn = "";
     if (row[34] && row[35]) checkIn = `${row[34].toString().trim()},${row[35].toString().trim()}`;
     
@@ -420,17 +240,18 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
     const ketThucGiaoTxt = getDateByIdx(row, 31);
     const ngayXuLyTxt = getDateByIdx(row, 6);
 
-    // 🌟 TẠO CỘT ẢO ngayThangNam THEO ƯU TIÊN: Bắt đầu giao hàng -> Kết thúc giao hàng -> Ngày xuất kho -> Ngày xử lý
-    const ngayChinh = batDauGiaoTxt || ketThucGiaoTxt || ngayXuatKhoTxt || ngayXuLyTxt;
-    const ngayThangNam = formatStandardDate(ngayChinh);
-    const ngayTraCuuVTracking = ngayThangNam;
+    const ngayChinh = ngayXuatKhoTxt || batDauGiaoTxt || ketThucGiaoTxt || ngayXuLyTxt;
 
     let thang = "";
     let nam = "";
-    if (ngayThangNam && ngayThangNam.includes("/")) {
-      const parts = ngayThangNam.split("/");
+    if (ngayChinh && ngayChinh.includes("/")) {
+      const parts = ngayChinh.split("/");
       if (parts[1]) thang = parseInt(parts[1], 10); 
       if (parts[2]) nam = parseInt(parts[2].split(" ")[0], 10); 
+    } else if (ngayChinh && ngayChinh.includes("-")) {
+      const parts = ngayChinh.split("-");
+      if (parts[1]) thang = parseInt(parts[1], 10); 
+      if (parts[0] && parts[0].length === 4) nam = parseInt(parts[0], 10); 
     }
 
     let nganh = "";
@@ -439,14 +260,13 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
     } else if (khoXuatVal === "61" || khoXuatVal === "69") {
       nganh = "TBVS";
     }
-    
-    const vungTieuThu = ycghMap[maPhieu]?.vungTieuThu || ""; 
+    const vungTieuThu = ycghMap[maPhieu]?.vungTieuThu || ""; // THÊM TRA CỨU TRÉO YCGH
 
     routeMap[maPhieu] = {
-      phuongXa:        getTxtByIdx(row, 0),   
-      khoXuat:          khoXuatVal,            
+      phuongXa:           getTxtByIdx(row, 0),   
+      khoXuat:          khoXuatVal,          
       tuyenDuong:       getTxtByIdx(row, 2),   
-      maPhieu:          maPhieu,               
+      maPhieu:          maPhieu,                 
       doiTuong:         getTxtByIdx(row, 4),   
       ngayDatHang:      getDateByIdx(row, 5),  
       ngayXuLy:         ngayXuLyTxt,  
@@ -469,7 +289,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       giaoNhan:         getTxtByIdx(row, 23),  
       pxk:              getTxtByIdx(row, 26),  
       dinhVi:           dinhVi,
-      ngayxuatKho:      ngayXuatKhoTxt,        
+      ngayxuatKho:      ngayChinh,         
       thoiGianLamViec:  getTxtByIdx(row, 28),  
       thanhPho:         getTxtByIdx(row, 29),  
       batDauGiaoHang:   batDauGiaoTxt, 
@@ -482,22 +302,175 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       thang:            thang,
       nam:              nam,
       nganh:            nganh,
-      vungTieuThu:      vungTieuThu,
-      ngayThangNam:     ngayThangNam, // Cột ảo theo yêu cầu
-      ngayTraCuuVTracking: ngayTraCuuVTracking,
-      kmVtracking:      0,
-      _latGiao:         latGiao,
-      _longGiao:        longGiao
+      vungTieuThu:      vungTieuThu      // THÊM TRA CỨU TRÉO YCGH
     }; 
   } 
   return routeMap; 
 }
 
+// 📌 HÀM TÍNH KHOẢNG CÁCH HAVERSINE (MET)
+function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// 📌 HÀM TÍNH THỜI GIAN ĐẬU
+function calculateParkingTime(endTimePrev, startTimeCurr) {
+  if (!endTimePrev || !startTimeCurr) return "0 phút 0 giây";
+  try {
+    const t1 = new Date(`1970-01-01T${endTimePrev}Z`).getTime();
+    const t2 = new Date(`1970-01-01T${startTimeCurr}Z`).getTime();
+    let diffSec = Math.floor((t2 - t1) / 1000);
+    if (diffSec < 0) diffSec = 0;
+    const hours = Math.floor(diffSec / 3600);
+    const minutes = Math.floor((diffSec % 3600) / 60);
+    const seconds = diffSec % 60;
+    let res = "";
+    if (hours > 0) res += `${hours} giờ `;
+    if (minutes > 0 || hours > 0) res += `${minutes} phút `;
+    res += `${seconds} giây`;
+    return res;
+  } catch (e) {
+    return "0 phút";
+  }
+}
+
+// 3. XỬ LÝ ĐỌC VÀ CHUẨN HÓA FILE V-TRACKING
+function parseVTrackingToMap(buffer, monthNum) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  
+  let headerRowIdx = 0;
+  for (let i = 0; i < Math.min(15, jsonData.length); i++) {
+    const rowStr = JSON.stringify(jsonData[i]);
+    if (rowStr.includes("Biển số") || rowStr.includes("Lái xe") || rowStr.includes("Thời gian bắt đầu")) {
+      headerRowIdx = i;
+      break;
+    }
+  }
+
+  const getTxt = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? row[idx].toString().trim() : "";
+  const getNum = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? (parseFloat(row[idx]) || 0) : 0;
+
+  let rawRows = [];
+
+  for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
+    const row = jsonData[i];
+    if (!row || row.length < 5) continue;
+
+    const ngayRaw = getTxt(row, 1); 
+    const bienSo = getTxt(row, 2);  
+    const laiXe = getTxt(row, 3);   
+    const thoiGianBatDau = getTxt(row, 4); 
+    const thoiGianKetThuc = getTxt(row, 5); 
+    const thoiGianDi = getTxt(row, 6);      
+    const diaDiemBatDau = getTxt(row, 7);
+    const toaDoBatDau = getTxt(row, 8);
+    const diaDiemKetThuc = getTxt(row, 9);
+    const toaDoKetThuc = getTxt(row, 10);   
+    const quangDuong = getNum(row, 11);     
+
+    // 🔍 CHỈ LẤY DÒNG CÓ QUÃNG ĐƯỜNG XE CHẠY (KM) > 0
+    if (quangDuong <= 0 || !bienSo || !ngayRaw) continue;
+
+    let parts = ngayRaw.includes('/') ? ngayRaw.split('/') : ngayRaw.split('-');
+    let d = parts[0] ? parts[0].padStart(2, '0') : "01";
+    let m = parts[1] ? parts[1].padStart(2, '0') : String(monthNum).padStart(2, '0');
+    let y = parts[2] ? parts[2].split(" ")[0] : "2026";
+    const ngayChuan = `${d}/${m}/${y}`;
+    const yyyy_mm_dd = `${y}-${m}-${d}`;
+
+    const timeForId = thoiGianBatDau ? thoiGianBatDau : "00:00:00";
+    const idRecord = `${bienSo}-${yyyy_mm_dd}-${timeForId}`.replace(/[\/.\s#$\[\]]/g, "_");
+
+    const tgBatDauFull = thoiGianBatDau ? `${ngayChuan} ${thoiGianBatDau}` : "";
+    const tgKetThucFull = thoiGianKetThuc ? `${ngayChuan} ${thoiGianKetThuc}` : "";
+
+    rawRows.push({
+      id: idRecord,
+      ngay: ngayRaw,
+      ngayChuan: ngayChuan,
+      bienSo: bienSo,
+      laiXe: laiXe,
+      thoiGianBatDau: tgBatDauFull,
+      thoiGianKetThuc: tgKetThucFull,
+      thoiGianDi: thoiGianDi,
+      thoiGianBatDauOnly: thoiGianBatDau,
+      thoiGianKetThucOnly: thoiGianKetThuc,
+      diaDiemBatDau: diaDiemBatDau,
+      toaDoBatDau: toaDoBatDau,
+      diaDiemKetThuc: diaDiemKetThuc,
+      toaDoKetThuc: toaDoKetThuc,
+      quangDuong: quangDuong,
+      thang: monthNum,
+      nam: y
+    });
+  }
+
+  const groupedByVehicleAndDate = {};
+  rawRows.forEach(item => {
+    const groupKey = `${item.bienSo}_${item.ngayChuan}`;
+    if (!groupedByVehicleAndDate[groupKey]) {
+      groupedByVehicleAndDate[groupKey] = [];
+    }
+    groupedByVehicleAndDate[groupKey].push(item);
+  });
+
+  const finalizedRows = [];
+
+  Object.keys(groupedByVehicleAndDate).forEach(key => {
+    const items = groupedByVehicleAndDate[key];
+    items.sort((a, b) => a.thoiGianBatDauOnly.localeCompare(b.thoiGianBatDauOnly));
+
+    let currentChuyen = 1;
+    let lastEndTime = "";
+
+    items.forEach((item, idx) => {
+      let thoiGianDau = "0 phút 0 giây";
+      if (idx > 0 && lastEndTime) {
+        thoiGianDau = calculateParkingTime(lastEndTime, item.thoiGianBatDauOnly);
+      }
+      item.thoiGianDau = thoiGianDau;
+      lastEndTime = item.thoiGianKetThucOnly;
+
+      let isKho55 = false;
+      if (item.toaDoKetThuc && item.toaDoKetThuc.includes(",")) {
+        const coords = item.toaDoKetThuc.split(",");
+        const latEnd = parseFloat(coords[0]);
+        const lonEnd = parseFloat(coords[1]);
+        if (!isNaN(latEnd) && !isNaN(lonEnd)) {
+          const distanceMeters = getDistanceFromLatLonInMeters(latEnd, lonEnd, KHO_55_LAT, KHO_55_LON);
+          if (distanceMeters <= 200) {
+            isKho55 = true;
+          }
+        }
+      }
+
+      item.chuyenVtracking = currentChuyen;
+      finalizedRows.push(item);
+
+      if (isKho55) {
+        currentChuyen++;
+      }
+    });
+  });
+
+  return finalizedRows;
+}
+
+// 📊 HÀM VIẾT THÊM: GOM NHÓM DỮ LIỆU ĐỂ TẠO BẢNG KHACHHANGVUNG
 function generateKhachHangVungReport(routeDataMap) {
   const groupMap = {};
   const addToGroup = (doiTuong, vung, htGiaoNhan, nganh, nam, thang, tl, dt) => {
     const key = `${doiTuong}_${vung}_${htGiaoNhan}_${nganh}_${nam}`;
-    
     if (!groupMap[key]) {
       groupMap[key] = {
         doiTuong: doiTuong,
@@ -513,7 +486,6 @@ function generateKhachHangVungReport(routeDataMap) {
         groupMap[key].doanhThuMonths[m] = 0;
       }
     }
-    
     groupMap[key].trongLuongMonths[thang] += tl;
     groupMap[key].doanhThuMonths[thang] += dt;
   };
@@ -558,6 +530,7 @@ function generateKhachHangVungReport(routeDataMap) {
   return finalRecords;
 }
 
+// 4. TIẾN TRÌNH ĐỒNG BỘ CHÍNH
 async function mainSync() {
   const drive = getDriveClient();
   console.log('🚀 1. Bắt đầu tiến trình cập nhật Tồn Kho...');
@@ -568,8 +541,14 @@ async function mainSync() {
     try {
       let catalogMap = null;
       if (ID_SANPHAM[khoName]) {
-        const catalogBuffer = await downloadFileBuffer(drive, ID_SANPHAM[khoName]);
-        catalogMap = parseCatalogToMap(catalogBuffer);
+        console.log(`🔍 [Kho ${khoName}] Phát hiện yêu cầu dò tìm danh mục mở rộng. Đang tải file đối chiếu...`);
+        try {
+          const catalogBuffer = await downloadFileBuffer(drive, ID_SANPHAM[khoName]);
+          catalogMap = parseCatalogToMap(catalogBuffer);
+          console.log(`   -> Cấu trúc Map danh mục cho Kho ${khoName} đã sẵn sàng.`); 
+        } catch (catErr) {
+          console.error(`   ⚠️ Cảnh báo: Không thể nạp file danh mục cho Kho ${khoName} (${catErr.message}). Chạy chế độ không gộp dữ liệu.`);
+        }
       }
 
       const buffer = await downloadFileBuffer(drive, fileId);
@@ -578,6 +557,7 @@ async function mainSync() {
       if (Object.keys(dataObject).length > 0) {
         finalInventoryData[`Kho_${khoName}`] = dataObject;
         invSuccessCount++;
+        console.log(`✅ Thành công Kho ${khoName}: Đã đọc ${Object.keys(dataObject).length} mặt hàng.`);
       } 
     } catch (err) {
       console.error(`❌ Lỗi kết nối Kho ${khoName}:`, err.message);
@@ -587,164 +567,29 @@ async function mainSync() {
   if (invSuccessCount > 0) {
     finalInventoryData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
     await db.collection('TONKHO').doc('KHO').set(finalInventoryData, { merge: true });
+    console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy Tồn Kho kèm dữ liệu mở rộng lên Firestore thành công!`);
   }
 
   console.log('\n--------------------------------------------------\n');
-  console.log('🚀 2. Bắt đầu tải và nạp bộ nhớ tạm 12 file V-Tracking...');
-  
-  const vtrackingCache = {};
-  for (const [thangNum, fileId] of Object.entries(ID_VTRACKING_MONTHS)) {
-    try {
-      const vtBuffer = await downloadFileBuffer(drive, fileId);
-      vtrackingCache[thangNum] = parseVTrackingToMap(vtBuffer);
-      console.log(`  -> Đã nạp thành công bộ nhớ tạm V-Tracking Tháng ${thangNum}`);
-    } catch (vtErr) {
-      console.error(`  ⚠️ Không thể tải V-Tracking Tháng ${thangNum}: ${vtErr.message}`);
-    }
-  }
-
-  console.log('\n--------------------------------------------------\n');
-  console.log('🚀 2.1. Đẩy dữ liệu V-Tracking lên collection "VTRACKING" trên Firestore...');
-  try {
-    for (const [thangNum, parsedMap] of Object.entries(vtrackingCache)) {
-      let batch = db.batch();
-      let count = 0;
-      let batchCount = 0;
-
-      for (const [bienSo, datesObj] of Object.entries(parsedMap)) {
-        for (const [ngay, tripsArr] of Object.entries(datesObj)) {
-          for (const trip of tripsArr) {
-            // 🌟 CHUYỂN ĐỔI NGÀY TỪ DD/MM/YYYY SANG YYYY-MM-DD
-            const [d, m, y] = ngay.split('/');
-            const formattedDate = `${y}-${m}-${d}`;
-            
-            // 🌟 LẤY GIÁ TRỊ TỪ CỘT "Thời gian bắt đầu" VÀ LÀM SẠCH KÝ TỰ ĐẶC BIỆT ĐỂ LÀM ID
-            const safeMinTime = trip.minThoiGianBatDau.replace(/[\/.\s#$\[\]:]/g, "-");
-
-            // 🌟 ĐỊNH DẠNG ID MỚI: 65H-02591-2026-11-16-Chuyen-1-16-11-2026-07-09-44
-            const docId = `${bienSo}-${formattedDate}-Chuyen-${trip.chuyen}-${safeMinTime}`;
-            const docRef = db.collection('VTRACKING').doc(docId);
-
-            batch.set(docRef, {
-              bienSo: bienSo,
-              ngayChuan: ngay,
-              thang: Number(thangNum),
-              chuyen: trip.chuyen,
-              minThoiGianBatDau: trip.minThoiGianBatDau,
-              segments: trip.segments
-            }, { merge: true });
-
-            count++;
-            batchCount++;
-
-            if (batchCount >= 400) {
-              await batch.commit();
-              batch = db.batch();
-              batchCount = 0;
-            }
-          }
-        }
-      }
-      if (batchCount > 0) {
-        await batch.commit();
-      }
-      console.log(`   -> Đã đồng bộ xong V-Tracking Tháng ${thangNum} lên collection 'VTRACKING'`);
-    }
-  } catch (vtPushErr) {
-    console.error(`❌ Lỗi đẩy dữ liệu V-Tracking lên Firestore:`, vtPushErr.message);
-  }
-
-  console.log('\n--------------------------------------------------\n');
-  console.log('🚀 3. Bắt đầu xử lý Tuyến Đường & Tra cứu kmVtracking theo điều kiện Duyệt...');
+  console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường...');
   
   try {
+    console.log(`📦 Đang tải file YCGH từ Drive (ID: ${ID_YCGH})...`);
     const ycghBuffer = await downloadFileBuffer(drive, ID_YCGH);
     const ycghMapData = parseYcghToMap(ycghBuffer);
+    console.log(`   -> Cấu trúc dữ liệu tra cứu YCGH đã sẵn sàng.`);
 
+    console.log(`📦 Đang tải file Tuyến Đường từ Drive (ID: ${ID_TUYENDUONG})...`);
     const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
     const routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);         
-    
-    const routeList = Object.values(routeDataMap);
-    
-    // 🌟 SẮP XẾP THEO YÊU CẦU: ngayThangNam -> Kết thúc giao hàng -> Km kết thúc giao hàng (nếu kết thúc giao rỗng)
-    routeList.sort((a, b) => {
-      if (a.phuongTien !== b.phuongTien) return a.phuongTien.localeCompare(b.phuongTien);
-      if (a.ngayThangNam !== b.ngayThangNam) return a.ngayThangNam.localeCompare(b.ngayThangNam);
-      if (a.chuyen !== b.chuyen) return a.chuyen - b.chuyen;
-
-      const dateA = a.ketThucGiaoHang || "";
-      const dateB = b.ketThucGiaoHang || "";
-      
-      if (dateA && dateB) return dateA.localeCompare(dateB);
-      if (dateA && !dateB) return -1;
-      if (!dateA && dateB) return 1;
-
-      // Nếu cả hai đều rỗng Kết thúc giao hàng, sắp xếp theo Km kết thúc giao hàng từ nhỏ đến lớn
-      return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
-    });
-
-    const groupedByTrip = {};
-    routeList.forEach(item => {
-      const key = `${item.phuongTien}_${item.ngayThangNam}_${item.chuyen}`;
-      if (!groupedByTrip[key]) groupedByTrip[key] = [];
-      groupedByTrip[key].push(item);
-    });
-
-    Object.values(groupedByTrip).forEach(tripItems => {
-      tripItems.forEach((item, index) => {
-        let tongKmDon = 0;
-
-        // 🌟 CHỈ TRA CỨU TRÉO NẾU TRƯỜNG DUYỆT LÀ "Đã giao hàng" HOẶC "Đang giao hàng"
-        const trangThaiDuyet = item.duyet ? item.duyet.toString().trim() : "";
-        const isHopLeTraCuu = (trangThaiDuyet === "Đã giao hàng" || trangThaiDuyet === "Đang giao hàng");
-
-        if (index === 0 && isHopLeTraCuu) {
-          const thang = item.thang;
-          const bienSo = item.phuongTien;
-          const ngay = item.ngayTraCuuVTracking;
-          const chuyenNum = item.chuyen;
-
-          if (thang && vtrackingCache[thang] && vtrackingCache[thang][bienSo] && vtrackingCache[thang][bienSo][ngay]) {
-            const trips = vtrackingCache[thang][bienSo][ngay];
-            const targetTrip = trips.find(t => t.chuyen === chuyenNum);
-
-            if (targetTrip && targetTrip.segments.length > 0) {
-              const diemDichLat = item._latGiao;
-              const diemDichLong = item._longGiao;
-
-              if (diemDichLat && diemDichLong) {
-                for (const seg of targetTrip.segments) {
-                  tongKmDon += seg.quangDuong;
-
-                  const matchEndLat = Math.abs(seg.latKetThuc - diemDichLat) < 0.002;
-                  const matchEndLong = Math.abs(seg.longKetThuc - diemDichLong) < 0.002;
-
-                  if (matchEndLat && matchEndLong) {
-                    break;
-                  }
-                }
-              }
-            }
-          }
-        } else {
-          tongKmDon = 0;
-        }
-
-        item.kmVtracking = Number(tongKmDon.toFixed(2));
-
-        delete item._latGiao;
-        delete item._longGiao;
-      });
-    });
-
-    const totalRecords = routeList.length;
+    const totalRecords = Object.keys(routeDataMap).length;
     
     if (totalRecords > 0) {
       console.log(`📡 Đang đẩy dữ liệu tuần tự ${totalRecords} mã phiếu vào collection 'TUYENDUONG'...`);
       let batch = db.batch();
       let count = 0;
-      for (const data of routeList) {
-        const docRef = db.collection('TUYENDUONG').doc(data.maPhieu);
+      for (const [maPhieu, data] of Object.entries(routeDataMap)) {
+        const docRef = db.collection('TUYENDUONG').doc(maPhieu);
         batch.set(docRef, data, { merge: true });
         count++;
         if (count % 400 === 0) {
@@ -755,9 +600,11 @@ async function mainSync() {
       if (count % 400 !== 0) {
         await batch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm bộ lọc điều kiện Duyệt và cột ảo ngayThangNam!`); 
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG ${totalRecords} chứng từ lên Firestore!`); 
       
-      const reportRows = generateKhachHangVungReport(routeList);
+      console.log(`📊 Đang khởi tạo bảng tổng hợp KHACHHANGVUNG...`);
+      const reportRows = generateKhachHangVungReport(routeDataMap);
+      
       let reportBatch = db.batch();
       let reportCount = 0;
 
@@ -777,12 +624,55 @@ async function mainSync() {
       if (reportCount % 400 !== 0) {
         await reportBatch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã đẩy ${reportRows.length} dòng báo cáo lên 'KHACHHANGVUNG'!`);
+      console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy thành công ${reportRows.length} dòng báo cáo lên 'KHACHHANGVUNG'!`);
 
+    } else {
+      console.log('⚠️ Không tìm thấy bản ghi hợp lệ nào thuộc các kho 41, 61, 69 trong file Tuyến đường.'); 
     } 
   } catch (err) {
     console.error(`❌ Lỗi đồng bộ Tuyến Đường:`, err.message);
   } 
+
+  console.log('\n--------------------------------------------------\n');
+  console.log('🚀 3. Bắt đầu tiến trình đẩy V-Tracking Tháng 11.2026 lên Firestore...');
+  
+  try {
+    const fileIdThang11 = ID_VTRACKING_MONTHS[11]; // "1t7KgNwHwQuK0terHjSVwrC722ObYsnj8"[cite: 1]
+    console.log(`📦 Đang tải file V-Tracking Tháng 11.2026 từ Google Drive (ID: ${fileIdThang11})...`);
+    
+    const vtBuffer = await downloadFileBuffer(drive, fileIdThang11);
+    const parsedRows = parseVTrackingToMap(vtBuffer, 11);
+    
+    const totalRows = parsedRows.length;
+    console.log(`   -> Đã xử lý thành công ${totalRows} dòng hợp lệ (Quãng đường > 0) cho tháng 11/2026.`);
+
+    if (totalRows > 0) {
+      console.log(`📡 Đang đẩy dữ liệu lên Firestore vào collection 'VTRACKING'...`);
+      let vtBatch = db.batch();
+      let vtCount = 0;
+      
+      for (const row of parsedRows) {
+        const docRef = db.collection('VTRACKING').doc(row.id);
+        vtBatch.set(docRef, row, { merge: true });
+        vtCount++;
+        
+        if (vtCount % 400 === 0) {
+          await vtBatch.commit();
+          vtBatch = db.batch();
+        }
+      }
+      
+      if (vtCount % 400 !== 0) {
+        await vtBatch.commit();
+      }
+      
+      console.log(`🎉 HOÀN TẤT: Đã đẩy thành công ${totalRows} bản ghi V-Tracking tháng 11.2026 lên Firestore (collection 'VTRACKING')!`);
+    } else {
+      console.log(`⚠️ Không có bản ghi nào thỏa mãn điều kiện quãng đường > 0 trong file tháng 11.2026.`);
+    }
+  } catch (vtErr) {
+    console.error(`❌ Lỗi khi xử lý và đẩy V-Tracking tháng 11.2026:`, vtErr.message);
+  }
 }
 
 mainSync().catch(err => {
