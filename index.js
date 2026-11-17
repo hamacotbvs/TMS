@@ -433,14 +433,14 @@ function parseVTrackingToMap(buffer, monthNum) {
     let currentChuyen = 1;
     let lastEndTime = "";
 
+    // Bước 1: Gán chuyến và thời gian đậu cho từng item tạm thời
     items.forEach((item, idx) => {
-      // Công thức tính Thời gian đậu: Lấy Thời gian kết thúc dòng trước trừ Thời gian bắt đầu dòng hiện tại
       let thoiGianDau = "0 phút 0 giây";
       if (idx > 0 && lastEndTime) {
         thoiGianDau = calculateParkingTime(lastEndTime, item.thoiGianBatDauOnly);
       }
       item.thoiGianDau = thoiGianDau;
-      lastEndTime = item.thoiGianKetThucOnly; // Lưu lại thời gian kết thúc của dòng hiện tại cho vòng lặp sau
+      lastEndTime = item.thoiGianKetThucOnly;
 
       let isKho55 = false;
       if (item.toaDoKetThuc && item.toaDoKetThuc.includes(",")) {
@@ -456,11 +456,23 @@ function parseVTrackingToMap(buffer, monthNum) {
       }
 
       item.chuyenVtracking = currentChuyen;
-      finalizedRows.push(item);
-
       if (isKho55) {
         currentChuyen++;
       }
+    });
+
+    // Bước 2: Tính tổng quãng đường (km) cho từng chuyến trong ngày của xe đó (kmChuyenVtracking)
+    const tripKmMap = {};
+    items.forEach(item => {
+      const cNum = item.chuyenVtracking;
+      if (!tripKmMap[cNum]) tripKmMap[cNum] = 0;
+      tripKmMap[cNum] += item.quangDuong;
+    });
+
+    // Bước 3: Gán kmChuyenVtracking vào từng dòng và push vào mảng kết quả chính thức
+    items.forEach(item => {
+      item.kmChuyenVtracking = Number(tripKmMap[item.chuyenVtracking].toFixed(2));
+      finalizedRows.push(item);
     });
   });
 
