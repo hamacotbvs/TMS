@@ -474,6 +474,7 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
       ngayTraCuuVTracking: ngayTraCuuVTracking,
       kmVtracking:      0,
       chuyenVtracking:  0,
+      minThoiGianBatDau: "", // Thêm trường lưu thời gian bắt đầu nhỏ nhất của chuyến
       _latGiao:         latGiao,
       _longGiao:        longGiao
     }; 
@@ -618,10 +619,11 @@ async function mainSync() {
       return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
     });
 
-    // 🌟 TRA CỨU TRÉO TÍNH KM VÀ XÁC ĐỊNH chuyenVtracking (DÒ TỪ DƯỚI LÊN - TỪ CHUYẾN LỚN ĐẾN NHỎ)
+    // 🌟 TRA CỨU TRÉO TÍNH KM, XÁC ĐỊNH chuyenVtracking VÀ minThoiGianBatDau (DÒ TỪ DƯỚI LÊN)
     routeList.forEach(item => {
       let tongKmDon = 0;
       let matchedChuyenVtracking = 0;
+      let matchedMinStartFull = "";
 
       const trangThaiDuyet = item.duyet ? item.duyet.toString().trim() : "";
       const isHopLeTraCuu = (trangThaiDuyet === "Đã giao hàng" || trangThaiDuyet === "Đang giao hàng");
@@ -636,7 +638,7 @@ async function mainSync() {
         if (item.ketThucGiaoHang && trips.length > 0) {
           const ketThucTimeOnly = item.ketThucGiaoHang.split(" ")[1] || item.ketThucGiaoHang;
           
-          // 🌟 DÒ TỪ DƯỚI LÊN: Duyệt ngược từ chuyến lớn nhất về chuyến nhỏ nhất (i từ trips.length - 1 về 0)
+          // Dò từ dưới lên: Duyệt ngược từ chuyến lớn nhất về chuyến nhỏ nhất
           for (let i = trips.length - 1; i >= 0; i--) {
             const currentTrip = trips[i];
             if (currentTrip.segments.length === 0) continue;
@@ -644,16 +646,18 @@ async function mainSync() {
             const startTripTimeFull = currentTrip.segments[0].thoiGianBatDau;
             const startTripTimeOnly = startTripTimeFull.split(" ")[1] || startTripTimeFull;
 
-            // Điều kiện: ketThucGiaoHang > min Thời gian bắt đầu chuyến (Thời gian bắt đầu của chuyến đó)
+            // Điều kiện: ketThucGiaoHang > min Thời gian bắt đầu chuyến
             if (ketThucTimeOnly >= startTripTimeOnly) {
               matchedChuyenVtracking = currentTrip.chuyen;
-              break; // Tìm thấy chuyến phù hợp từ dưới lên thì dừng lại luôn
+              matchedMinStartFull = startTripTimeFull; // Lưu lại thời gian bắt đầu tương ứng
+              break;
             }
           }
 
           // Fallback nếu vẫn không khớp, gán chuyến đầu tiên
           if (matchedChuyenVtracking === 0 && trips.length > 0) {
             matchedChuyenVtracking = trips[0].chuyen;
+            matchedMinStartFull = trips[0].segments[0].thoiGianBatDau;
           }
         }
 
@@ -681,6 +685,7 @@ async function mainSync() {
 
       item.kmVtracking = Number(tongKmDon.toFixed(2));
       item.chuyenVtracking = matchedChuyenVtracking;
+      item.minThoiGianBatDau = matchedMinStartFull; // Cập nhật giá trị vào trường minThoiGianBatDau
 
       delete item._latGiao;
       delete item._longGiao;
@@ -704,7 +709,7 @@ async function mainSync() {
       if (count % 400 !== 0) {
         await batch.commit();
       }
-      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG với logic dò chuyến từ dưới lên!`); 
+      console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công TUYENDUONG kèm trường minThoiGianBatDau!`); 
       
       const reportRows = generateKhachHangVungReport(routeList);
       let reportBatch = db.batch();
