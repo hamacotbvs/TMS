@@ -552,10 +552,12 @@ function hienThiDanhSachVanChuyen() {
 
             const mauXe = layMauGiaoDienXe(trip.phuongTien);
             const vehicleWrapper = document.createElement('div');
-            vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 8px; padding: 10px; margin-bottom: 10px; margin-left: 0; width: 100%; box-sizing: border-box;`;
+            // Tối ưu padding và margin bên ngoài card xe nhỏ nhất có thể
+            vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; margin-left: 0; width: 100%; box-sizing: border-box;`;
 
             const vehicleHeader = document.createElement('div');
-            vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
+            // Giảm margin-bottom xuống 2px để sát với phần Đi/Về phía dưới
+            vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 4px 6px; border-radius: 4px; font-weight: 600; font-size: 12px; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
@@ -582,16 +584,17 @@ function hienThiDanhSachVanChuyen() {
 
             let odometerSum = (typeof trip._kmVeNum === 'number' && trip._kmVeNum > 0) ? (trip.kmDi + trip._kmVeNum) + 'km' : (trip.kmDi + 'km');
 
-            // --- BỐ CỤC 2 CỘT: Cột trái (Đồng hồ & GPS gồm 2 dòng), Cột phải (Bột/Sơn/TBVS căn giữa theo chiều dọc) ---
+            // --- BỐ CỤC 2 CỘT TỐI ƯU KHOẢNG CÁCH NHỎ NHẤT ---
             const vehicleSubHeader = document.createElement('div');
-            vehicleSubHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; margin-bottom: 6px; width: 100%; box-sizing: border-box;';
+            // padding-top rút gọn còn 2px, margin-bottom 3px để sát rịt với danh sách đơn phía dưới
+            vehicleSubHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 2px; margin-bottom: 3px; width: 100%; box-sizing: border-box;';
             vehicleSubHeader.innerHTML = `
-                <!-- Cột trái: Gồm 2 dòng Đi / Về (Đồng hồ & GPS) -->
-                <div style="display: flex; flex-direction: column; gap: 1px;">
+                <!-- Cột trái: Gồm 2 dòng Đi / Về (Đồng hồ & GPS), dùng gap: 0 để dính sát nhau -->
+                <div style="display: flex; flex-direction: column; gap: 0px;">
                     <div>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về: <strong style="color: #d97706;">${trip.textKmVe}</strong> | ∑: <strong style="color: #16a34a;">${odometerSum}</strong></div>
                     <div>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | ∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></div>
                 </div>
-                <!-- Cột phải: Bột / Sơn / TBVS được căn giữa dọc so với cột trái -->
+                <!-- Cột phải: Bột / Sơn / TBVS được căn giữa dọc hoàn hảo so với 2 dòng cột trái -->
                 <div style="display: flex; align-items: center; text-align: right; white-space: nowrap; padding-left: 6px;">
                     <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
                 </div>
@@ -706,10 +709,11 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     const cardItem = document.createElement('div');
     cardItem.className = 'card-lich-su-item';
-    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;';
+    // Tối ưu padding và margin của từng đơn hàng bên dưới cho gọn gàng nhất
+    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; margin-bottom: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;';
 
     cardItem.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px; margin-bottom: 3px;">
             <div>
                 <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong>
                 <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span><strong style="color: #0f172a; font-size: 8px; margin-left: 3px;">${chuyenVal}</strong>
@@ -720,21 +724,21 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             </div>
         </div>
 
-        <div style="font-weight: 600; color: #1e293b; font-size: 12px; margin-bottom: 3px;">
+        <div style="font-weight: 600; color: #1e293b; font-size: 12px; margin-bottom: 2px;">
             🏢 ${doiTuong}
         </div>
 
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 3px; align-items: baseline;">
-            <div style="line-height: 1.4;">${nhanVienHtml}</div>
-            <div style="text-align: right; line-height: 1.4;">📍 ${vungTieuThu}${htmlKhoangCach}</div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 2px; align-items: baseline;">
+            <div style="line-height: 1.3;">${nhanVienHtml}</div>
+            <div style="text-align: right; line-height: 1.3;">📍 ${vungTieuThu}${htmlKhoangCach}</div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 4px; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 3px; background: #f1f5f9; padding: 3px 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
             <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
             <div>${badgeDuyet}</div>
         </div>
         
-        <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
+        <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 3px; border-top: 1px solid #e2e8f0; padding-top: 2px;">
             <span>🚀 BĐ: <strong>${batDauGiaoHang ? batDauGiaoHang.split(" ")[1] || batDauGiaoHang : '---'}</strong></span>
             <span>🏁 KT: <strong>${ketThucGiaoHang ? ketThucGiaoHang.split(" ")[1] || ketThucGiaoHang : '---'}</strong></span>
             <span>📅 XK: <strong>${ngayxuatKho || '---'}</strong></span>
