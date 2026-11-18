@@ -552,31 +552,29 @@ function hienThiDanhSachVanChuyen() {
 
             const mauXe = layMauGiaoDienXe(trip.phuongTien);
             const vehicleWrapper = document.createElement('div');
-            // Tối ưu padding và margin bên ngoài card xe nhỏ nhất có thể
-            vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; margin-left: 0; width: 100%; box-sizing: border-box;`;
+            vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 6px; padding: 5px 6px; margin-bottom: 6px; margin-left: 0; width: 100%; box-sizing: border-box;`;
 
             const vehicleHeader = document.createElement('div');
-            // Giảm margin-bottom xuống 2px để sát với phần Đi/Về phía dưới
-            vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 4px 6px; border-radius: 4px; font-weight: 600; font-size: 12px; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
+            vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
+                        🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
                     <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                        <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
-                        <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
+                        <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
+                        <span style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${trip.dons.length} đơn</span>
                     </div>
                 `;
             } else {
                 vehicleHeader.innerHTML = `
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 10px;">(${trip._tyLePhi}%DT)</span>
+                        🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
                     <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap; flex-shrink: 0;">
-                        <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 5px; border-radius: 6px; font-size: 10px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
-                        <span style="background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 6px; font-size: 10px;">${trip.dons.length} đơn</span>
+                        <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
+                        <span style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${trip.dons.length} đơn</span>
                     </div>
                 `;
             }
@@ -584,18 +582,17 @@ function hienThiDanhSachVanChuyen() {
 
             let odometerSum = (typeof trip._kmVeNum === 'number' && trip._kmVeNum > 0) ? (trip.kmDi + trip._kmVeNum) + 'km' : (trip.kmDi + 'km');
 
-            // --- BỐ CỤC 2 CỘT TỐI ƯU KHOẢNG CÁCH NHỎ NHẤT ---
+            // --- ĐÃ THU NHỎ CỠ CHỮ CÒN 9.5px VÀ KHOẢNG CÁCH TỐI THIỂU ---
             const vehicleSubHeader = document.createElement('div');
-            // padding-top rút gọn còn 2px, margin-bottom 3px để sát rịt với danh sách đơn phía dưới
-            vehicleSubHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 2px; margin-bottom: 3px; width: 100%; box-sizing: border-box;';
+            vehicleSubHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: normal; color: #475569; font-size: 9.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 1px; margin-bottom: 2px; width: 100%; box-sizing: border-box;';
             vehicleSubHeader.innerHTML = `
-                <!-- Cột trái: Gồm 2 dòng Đi / Về (Đồng hồ & GPS), dùng gap: 0 để dính sát nhau -->
-                <div style="display: flex; flex-direction: column; gap: 0px;">
+                <!-- Cột trái: Đồng hồ & GPS (font chữ nhỏ 9.5px, dính sát nhau gap: 0px) -->
+                <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.2;">
                     <div>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về: <strong style="color: #d97706;">${trip.textKmVe}</strong> | ∑: <strong style="color: #16a34a;">${odometerSum}</strong></div>
                     <div>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | ∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></div>
                 </div>
-                <!-- Cột phải: Bột / Sơn / TBVS được căn giữa dọc hoàn hảo so với 2 dòng cột trái -->
-                <div style="display: flex; align-items: center; text-align: right; white-space: nowrap; padding-left: 6px;">
+                <!-- Cột phải: Bột / Sơn / TBVS căn giữa dọc, font chữ 9.5px -->
+                <div style="display: flex; align-items: center; text-align: right; white-space: nowrap; padding-left: 4px;">
                     <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
                 </div>
             `;
@@ -675,9 +672,9 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     if (laChuaGiaoHoanToan) {
         let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
         if (coGPS) {
-            badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Thứ tự tuyến ưu tiên">📍 #${data._thuTu}</span>`;
+            badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 4px; font-size: 9.5px; font-weight: 600;" title="Thứ tự tuyến ưu tiên">📍 #${data._thuTu}</span>`;
         } else {
-            badgeThuTu = `<span style="background: #fef2f2; color: #dc2626; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600;" title="Chưa có GPS">📍 #${data._thuTu} (Chưa GPS)</span>`;
+            badgeThuTu = `<span style="background: #fef2f2; color: #dc2626; padding: 1px 4px; border-radius: 4px; font-size: 9.5px; font-weight: 600;" title="Chưa có GPS">📍 #${data._thuTu} (Chưa GPS)</span>`;
         }
     }
 
@@ -686,37 +683,36 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     if (khoangCachKm !== null) {
         const kcNum = parseFloat(khoangCachKm);
         const iconCheck = kcNum < 0.2 ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
-        htmlKhoangCach = ` <span style="font-size: 10.5px;">${iconCheck} ${khoangCachKm}km</span>`;
+        htmlKhoangCach = ` <span style="font-size: 10px;">${iconCheck} ${khoangCachKm}km</span>`;
     } else {
-        htmlKhoangCach = ` <span style="font-size: 10.5px; color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
+        htmlKhoangCach = ` <span style="font-size: 10px; color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
     }
 
     const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
     const badgeHT = isChanh 
-        ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚚 Chành</span>'
-        : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">🚛 Giao</span>';
+        ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚚 Chành</span>'
+        : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚛 Giao</span>';
 
-    let badgeDuyet = `<span style="color: #64748b; font-size: 11px;">${duyet}</span>`;
+    let badgeDuyet = `<span style="color: #64748b; font-size: 10.5px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng" || duyet === "Đang giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 11px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
+        badgeDuyet = `<span style="color: #16a34a; font-size: 10.5px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
-        badgeDuyet = `<span style="color: #d97706; font-size: 11px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
+        badgeDuyet = `<span style="color: #d97706; font-size: 10.5px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
     } else if (laChuaGiaoHoanToan) {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
-        badgeDuyet = `<span style="color: #9333ea; font-size: 11px; font-weight: 600;">⏳ Chưa giao (${kmHienThi}km)</span>`;
+        badgeDuyet = `<span style="color: #9333ea; font-size: 10.5px; font-weight: 600;">⏳ Chưa giao (${kmHienThi}km)</span>`;
     }
 
     const cardItem = document.createElement('div');
     cardItem.className = 'card-lich-su-item';
-    // Tối ưu padding và margin của từng đơn hàng bên dưới cho gọn gàng nhất
-    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; margin-bottom: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;';
+    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 7px; margin-bottom: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;';
 
     cardItem.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px; margin-bottom: 3px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 2px; margin-bottom: 2px;">
             <div>
-                <strong style="color: #0f172a; font-size: 12px;">${maPhieu}</strong>
-                <span style="font-size: 10px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span><strong style="color: #0f172a; font-size: 8px; margin-left: 3px;">${chuyenVal}</strong>
+                <strong style="color: #0f172a; font-size: 11.5px;">${maPhieu}</strong>
+                <span style="font-size: 9.5px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span><strong style="color: #0f172a; font-size: 8px; margin-left: 3px;">${chuyenVal}</strong>
             </div>
             <div style="display: flex; gap: 4px; align-items: center;">
                 ${badgeThuTu}
@@ -724,21 +720,21 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             </div>
         </div>
 
-        <div style="font-weight: 600; color: #1e293b; font-size: 12px; margin-bottom: 2px;">
+        <div style="font-weight: 600; color: #1e293b; font-size: 11.5px; margin-bottom: 2px;">
             🏢 ${doiTuong}
         </div>
 
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569; margin-bottom: 2px; align-items: baseline;">
-            <div style="line-height: 1.3;">${nhanVienHtml}</div>
-            <div style="text-align: right; line-height: 1.3;">📍 ${vungTieuThu}${htmlKhoangCach}</div>
+        <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: #475569; margin-bottom: 2px; align-items: baseline;">
+            <div style="line-height: 1.2;">${nhanVienHtml}</div>
+            <div style="text-align: right; line-height: 1.2;">📍 ${vungTieuThu}${htmlKhoangCach}</div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 3px; background: #f1f5f9; padding: 3px 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; margin-top: 2px; background: #f1f5f9; padding: 2px 5px; border-radius: 4px; width: 100%; box-sizing: border-box;">
             <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
             <div>${badgeDuyet}</div>
         </div>
         
-        <div style="font-size: 10px; color: #64748b; display: flex; justify-content: space-between; margin-top: 3px; border-top: 1px solid #e2e8f0; padding-top: 2px;">
+        <div style="font-size: 9.5px; color: #64748b; display: flex; justify-content: space-between; margin-top: 2px; border-top: 1px solid #e2e8f0; padding-top: 2px;">
             <span>🚀 BĐ: <strong>${batDauGiaoHang ? batDauGiaoHang.split(" ")[1] || batDauGiaoHang : '---'}</strong></span>
             <span>🏁 KT: <strong>${ketThucGiaoHang ? ketThucGiaoHang.split(" ")[1] || ketThucGiaoHang : '---'}</strong></span>
             <span>📅 XK: <strong>${ngayxuatKho || '---'}</strong></span>
