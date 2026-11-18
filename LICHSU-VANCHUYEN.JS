@@ -559,15 +559,15 @@ function hienThiDanhSachVanChuyen() {
             const vehicleHeader = document.createElement('div');
             vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
-            // --- HÀNG TRÊN: Cột trái (Tên xe + Chuyến + Tỷ lệ %DT), Cột phải (Cụm Đi / Về gồm 2 dòng) ---
+            // --- HÀNG TRÊN: Cột trái (Tên xe + Chuyến + Tỷ lệ %DT), Cột phải (Cụm Đi / Về song song tuyệt đối) ---
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.1; font-size: 9.5px; text-align: right;">
-                        <div>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về: <strong style="color: #d97706;">${trip.textKmVe}</strong> | ∑: <strong style="color: #16a34a;">${odometerSum}</strong></div>
-                        <div>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | ∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></div>
+                    <div style="display: flex; flex-direction: column; gap: 1px; line-height: 1.1; font-size: 9.5px; text-align: right; width: 155px; flex-shrink: 0;">
+                        <div style="display: flex; justify-content: flex-end; gap: 3px;"><span>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span><span>|</span><span>Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span><span>|</span><span>∑: <strong style="color: #16a34a;">${odometerSum}</strong></span></div>
+                        <div style="display: flex; justify-content: flex-end; gap: 3px;"><span>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span><span>|</span><span>Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span><span>|</span><span>∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span></div>
                     </div>
                 `;
             } else {
@@ -575,24 +575,24 @@ function hienThiDanhSachVanChuyen() {
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.1; font-size: 9.5px; text-align: right;">
-                        <div>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về: <strong style="color: #d97706;">${trip.textKmVe}</strong> | ∑: <strong style="color: #16a34a;">${odometerSum}</strong></div>
-                        <div>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | ∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></div>
+                    <div style="display: flex; flex-direction: column; gap: 1px; line-height: 1.1; font-size: 9.5px; text-align: right; width: 155px; flex-shrink: 0;">
+                        <div style="display: flex; justify-content: flex-end; gap: 3px;"><span>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span><span>|</span><span>Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span><span>|</span><span>∑: <strong style="color: #16a34a;">${odometerSum}</strong></span></div>
+                        <div style="display: flex; justify-content: flex-end; gap: 3px;"><span>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span><span>|</span><span>Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span><span>|</span><span>∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span></div>
                     </div>
                 `;
             }
             vehicleWrapper.appendChild(vehicleHeader);
 
-            // --- HÀNG DƯỚI: ĐÃ HOÁN ĐỔI - Cột trái (800kg/5tr 1 đơn), Cột phải (Bột / Sơn / TBVS) ---
+            // --- HÀNG DƯỚI: Cột trái (Bột / Sơn / TBVS), Cột phải (800kg/5tr 1 đơn) ---
             const vehicleSubHeader = document.createElement('div');
             vehicleSubHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: normal; color: #475569; font-size: 9.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 2px; margin-bottom: 2px; width: 100%; box-sizing: border-box;';
             vehicleSubHeader.innerHTML = `
+                <div style="display: flex; align-items: center; white-space: nowrap;">
+                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
+                </div>
                 <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap;">
                     <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
                     <span style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${trip.dons.length} đơn</span>
-                </div>
-                <div style="display: flex; align-items: center; white-space: nowrap; text-align: right;">
-                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
                 </div>
             `;
             vehicleWrapper.appendChild(vehicleSubHeader);
