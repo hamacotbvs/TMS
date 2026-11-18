@@ -454,24 +454,23 @@ function hienThiDanhSachVanChuyen() {
         trip.kmChuyenVeVtracking = sampleDon.kmChuyenVeVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVeVtracking) || 0) : 0;
         trip.kmChuyenVtracking = sampleDon.kmChuyenVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVtracking) || 0) : 0;
 
-        // --- SO SÁNH VÀ LẤY GIÁ TRỊ LỚN HƠN CHO CÁC CỘT (Đi, Về, ∑) ---
+        // Tính khoảng cách lớn hơn giữa đồng hồ và GPS cho Đi, Về, ∑
         let numKmDiTime = Number(trip.kmDi) || 0;
         let numKmDiGPS = Number(trip.kmChuyenDiVtracking) || 0;
-        trip._hienThiDi = Math.max(numKmDiTime, numKmDiGPS);
+        let maxDi = Math.max(numKmDiTime, numKmDiGPS);
+        trip._hienThiDi = maxDi;
 
         let numKmVeTime = typeof trip._kmVeNum === 'number' ? trip._kmVeNum : (parseFloat(trip.textKmVe) || 0);
         let numKmVeGPS = Number(trip.kmChuyenVeVtracking) || 0;
         let maxVe = Math.max(numKmVeTime, numKmVeGPS);
         trip._hienThiVe = (trip.textKmVe === "chờ" && numKmVeGPS === 0) ? "chờ" : (maxVe + "km");
 
-        let sumTime = numKmDiTime + numKmVeTime;
-        let sumGPS = numKmDiGPS + numKmVeGPS;
-        trip._hienThiSum = Math.max(sumTime, sumGPS) + "km";
+        let sumMax = maxDi + maxVe;
+        trip._hienThiSum = sumMax + "km";
 
         let tyLePhi = 0;
-        const tongKmChuyen = Math.max(sumTime, sumGPS);
         if (doanhThuChuyen > 0) {
-            tyLePhi = ((tongKmChuyen * 10000) / doanhThuChuyen) * 100;
+            tyLePhi = ((sumMax * 10000) / doanhThuChuyen) * 100;
         }
         trip._tyLePhi = tyLePhi.toFixed(1);
     }
@@ -571,20 +570,20 @@ function hienThiDanhSachVanChuyen() {
             const vehicleHeader = document.createElement('div');
             vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
-            // --- HÀNG TRÊN: Sử dụng giá trị lớn hơn giữa đồng hồ và GPS cho các cột Đi, Về, ∑ ---
+            // --- HÀNG TRÊN: Cố định chuẩn chiều rộng cột grid (grid-template-columns: 16px 52px 52px 55px) giúp các cột thẳng tắp, cân đối, đẹp mắt ---
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 6px;">
                         🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1; font-size: 9.5px; width: max-content; flex-shrink: 0;">
-                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 2px;">
+                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
                             <span style="text-align: center; font-size: 8.5px;">⏱️</span>
                             <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip._hienThiDi}km</strong></span>
                             <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip._hienThiVe}</strong></span>
                             <span style="text-align: right;">∑: <strong style="color: #16a34a;">${trip._hienThiSum}</strong></span>
                         </div>
-                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 2px;">
+                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
                             <span style="text-align: center; font-size: 8.5px;">📍</span>
                             <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip._hienThiDi}km</strong></span>
                             <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip._hienThiVe}</strong></span>
@@ -598,13 +597,13 @@ function hienThiDanhSachVanChuyen() {
                         🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1; font-size: 9.5px; width: max-content; flex-shrink: 0;">
-                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 2px;">
+                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
                             <span style="text-align: center; font-size: 8.5px;">⏱️</span>
                             <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip._hienThiDi}km</strong></span>
                             <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip._hienThiVe}</strong></span>
                             <span style="text-align: right;">∑: <strong style="color: #16a34a;">${trip._hienThiSum}</strong></span>
                         </div>
-                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 2px;">
+                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
                             <span style="text-align: center; font-size: 8.5px;">📍</span>
                             <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip._hienThiDi}km</strong></span>
                             <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip._hienThiVe}</strong></span>
