@@ -559,20 +559,20 @@ function hienThiDanhSachVanChuyen() {
             const vehicleHeader = document.createElement('div');
             vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
-            // --- HÀNG TRÊN: Chia 4 cột sát khít, nội dung căn phải (`text-align: right`) trong từng ô ---
+            // --- HÀNG TRÊN: Chia 4 cột co giãn tự động vừa khít dữ liệu (không cố định width) ---
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
-                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 6px;">
                         🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 1px; font-size: 9.5px; width: 175px; flex-shrink: 0;">
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
+                    <div style="display: flex; flex-direction: column; gap: 1px; font-size: 9.5px; width: max-content; flex-shrink: 0;">
+                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 4px;">
                             <span style="text-align: center;">⏱️</span>
                             <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
                             <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
                             <span style="text-align: right;">∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
                         </div>
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
+                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 4px;">
                             <span style="text-align: center;">📍</span>
                             <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
                             <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
@@ -582,17 +582,17 @@ function hienThiDanhSachVanChuyen() {
                 `;
             } else {
                 vehicleHeader.innerHTML = `
-                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 6px;">
                         🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 1px; font-size: 9.5px; width: 175px; flex-shrink: 0;">
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
+                    <div style="display: flex; flex-direction: column; gap: 1px; font-size: 9.5px; width: max-content; flex-shrink: 0;">
+                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 4px;">
                             <span style="text-align: center;">⏱️</span>
                             <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
                             <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
                             <span style="text-align: right;">∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
                         </div>
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
+                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 4px;">
                             <span style="text-align: center;">📍</span>
                             <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
                             <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
