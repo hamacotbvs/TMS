@@ -559,15 +559,25 @@ function hienThiDanhSachVanChuyen() {
             const vehicleHeader = document.createElement('div');
             vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
-            // --- HÀNG TRÊN: Cột trái (Tên xe + Chuyến + Tỷ lệ %DT), Cột phải (Cụm Đi / Về gồm 2 dòng) ---
+            // --- HÀNG TRÊN: Cột trái (Tên xe + Chuyến + Tỷ lệ %DT), Cột phải (Cấu trúc 4 cột chuẩn tuyệt đối cho Icon, Đi, Về, ∑) ---
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.1; font-size: 9.5px; text-align: right;">
-                        <div>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về: <strong style="color: #d97706;">${trip.textKmVe}</strong> | ∑: <strong style="color: #16a34a;">${odometerSum}</strong></div>
-                        <div>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | ∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></div>
+                    <div style="display: flex; flex-direction: column; gap: 1px; font-size: 9.5px; width: 175px; flex-shrink: 0;">
+                        <div style="display: grid; grid-template-columns: 20px 50px 50px 55px; align-items: center; text-align: right;">
+                            <span style="text-align: center;">⏱️</span>
+                            <span><strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
+                            <span><strong style="color: #d97706;">${trip.textKmVe}</strong></span>
+                            <span><strong style="color: #16a34a;">${odometerSum}</strong></span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 20px 50px 50px 55px; align-items: center; text-align: right;">
+                            <span style="text-align: center;">📍</span>
+                            <span><strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
+                            <span><strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
+                            <span><strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
+                        </div>
                     </div>
                 `;
             } else {
@@ -575,9 +585,19 @@ function hienThiDanhSachVanChuyen() {
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.1; font-size: 9.5px; text-align: right;">
-                        <div>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về: <strong style="color: #d97706;">${trip.textKmVe}</strong> | ∑: <strong style="color: #16a34a;">${odometerSum}</strong></div>
-                        <div>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | ∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></div>
+                    <div style="display: flex; flex-direction: column; gap: 1px; font-size: 9.5px; width: 175px; flex-shrink: 0;">
+                        <div style="display: grid; grid-template-columns: 20px 50px 50px 55px; align-items: center; text-align: right;">
+                            <span style="text-align: center;">⏱️</span>
+                            <span><strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
+                            <span><strong style="color: #d97706;">${trip.textKmVe}</strong></span>
+                            <span><strong style="color: #16a34a;">${odometerSum}</strong></span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 20px 50px 50px 55px; align-items: center; text-align: right;">
+                            <span style="text-align: center;">📍</span>
+                            <span><strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
+                            <span><strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
+                            <span><strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
+                        </div>
                     </div>
                 `;
             }
