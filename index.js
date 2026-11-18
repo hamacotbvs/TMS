@@ -490,8 +490,8 @@ function hienThiDanhSachVanChuyen() {
             vungHeader.innerHTML = `
                 <span>📍 ${trip.phuongTien}</span> 
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;"><b>${taiVung.toLocaleString('vi-VN')}kg/${dtVungTr}tr</b></span>
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;"><b>${trip.dons.length} đơn</b></span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${taiVung.toLocaleString('vi-VN')}kg/${dtVungTr}tr</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${trip.dons.length} đơn</span>
                 </div>
             `;
             vungWrapper.appendChild(vungHeader);
@@ -536,8 +536,8 @@ function hienThiDanhSachVanChuyen() {
         dateHeader.innerHTML = `
             <span>📅 ${ngay}</span> 
             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;"><b>${tongTaiNgay.toLocaleString('vi-VN')}kg/${tongDTTrNgay}tr</b></span>
-                <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;"><b>${tongDonNgay} đơn</b></span>
+                <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')}kg/${tongDTTrNgay}tr</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonNgay} đơn</span>
             </div>
         `;
         dateWrapper.appendChild(dateHeader);
@@ -559,24 +559,24 @@ function hienThiDanhSachVanChuyen() {
             const vehicleHeader = document.createElement('div');
             vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
-            // --- HÀNG TRÊN: Cố định độ rộng cột, chữ canh trái, giãn đều và cân đối ---
+            // --- HÀNG TRÊN: Icon thu nhỏ tối đa, gap 0px ép 2 dòng khít nhau nhất có thể, nhãn & số liệu canh phải ---
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 6px;">
                         🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.1; font-size: 9.5px; width: max-content; flex-shrink: 0;">
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
+                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1; font-size: 9.5px; width: max-content; flex-shrink: 0;">
+                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 2px;">
                             <span style="text-align: center; font-size: 8.5px;">⏱️</span>
-                            <span style="text-align: left;">Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
-                            <span style="text-align: left;">Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
-                            <span style="text-align: left;">∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
+                            <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
+                            <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
+                            <span style="text-align: right;">∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
                         </div>
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
+                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 2px;">
                             <span style="text-align: center; font-size: 8.5px;">📍</span>
-                            <span style="text-align: left;">Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
-                            <span style="text-align: left;">Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
-                            <span style="text-align: left;">∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
+                            <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
+                            <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
+                            <span style="text-align: right;">∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
                         </div>
                     </div>
                 `;
@@ -585,18 +585,18 @@ function hienThiDanhSachVanChuyen() {
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 6px;">
                         🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.1; font-size: 9.5px; width: max-content; flex-shrink: 0;">
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
+                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1; font-size: 9.5px; width: max-content; flex-shrink: 0;">
+                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 2px;">
                             <span style="text-align: center; font-size: 8.5px;">⏱️</span>
-                            <span style="text-align: left;">Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
-                            <span style="text-align: left;">Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
-                            <span style="text-align: left;">∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
+                            <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
+                            <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
+                            <span style="text-align: right;">∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
                         </div>
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
+                        <div style="display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 2px;">
                             <span style="text-align: center; font-size: 8.5px;">📍</span>
-                            <span style="text-align: left;">Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
-                            <span style="text-align: left;">Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
-                            <span style="text-align: left;">∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
+                            <span style="text-align: right;">Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
+                            <span style="text-align: right;">Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
+                            <span style="text-align: right;">∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
                         </div>
                     </div>
                 `;
@@ -611,8 +611,8 @@ function hienThiDanhSachVanChuyen() {
                     <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
                 </div>
                 <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap;">
-                    <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 4px; border-radius: 4px; font-size: 9.5px;"><b>${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</b></span>
-                    <span style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 4px; font-size: 9.5px;"><b>${trip.dons.length} đơn</b></span>
+                    <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
+                    <span style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${trip.dons.length} đơn</span>
                 </div>
             `;
             vehicleWrapper.appendChild(vehicleSubHeader);
