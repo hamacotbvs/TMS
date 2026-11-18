@@ -559,7 +559,7 @@ function hienThiDanhSachVanChuyen() {
             const vehicleHeader = document.createElement('div');
             vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
-            // --- ĐÃ HOÁN ĐỔI: Đưa nguyên cụm Đi/Về (2 dòng) lên chỗ tên xe/tổng tải cũ, và chuyển tổng tải/doanh thu/số đơn xuống hàng dưới ---
+            // --- HÀNG TRÊN: Cột trái (Tên xe + Chuyến + Tỷ lệ %DT), Cột phải (Cụm Đi / Về gồm 2 dòng) ---
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -583,16 +583,16 @@ function hienThiDanhSachVanChuyen() {
             }
             vehicleWrapper.appendChild(vehicleHeader);
 
-            // --- HÀNG DƯỚI: Cột trái (Bột/Sơn/TBVS), Cột phải (Tổng tải / Doanh thu / Số đơn được chuyển xuống đây và căn giữa dọc hoàn hảo) ---
+            // --- HÀNG DƯỚI: ĐÃ HOÁN ĐỔI - Cột trái (800kg/5tr 1 đơn), Cột phải (Bột / Sơn / TBVS) ---
             const vehicleSubHeader = document.createElement('div');
             vehicleSubHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: normal; color: #475569; font-size: 9.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 2px; margin-bottom: 2px; width: 100%; box-sizing: border-box;';
             vehicleSubHeader.innerHTML = `
-                <div style="display: flex; align-items: center; white-space: nowrap;">
-                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
-                </div>
                 <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap;">
                     <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
                     <span style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${trip.dons.length} đơn</span>
+                </div>
+                <div style="display: flex; align-items: center; white-space: nowrap; text-align: right;">
+                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
                 </div>
             `;
             vehicleWrapper.appendChild(vehicleSubHeader);
