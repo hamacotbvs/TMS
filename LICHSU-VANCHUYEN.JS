@@ -1,8 +1,8 @@
 // PHẦN 1: KHỞI TẠO, IMPORT VÀ BIẾN TOÀN CỤC (CACHE & TAB)
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 const db = window.db;
-window._cachedVanChuyenData = null;        // Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
-window._currentTabVanChuyen = 'da-giao';    // Biến lưu tab hiện tại ('da-giao', 'chuan-bi', 'cho')
+window._cachedVanChuyenData = null;        
+window._currentTabVanChuyen = 'da-giao';    
 
 // PHẦN 2: CÁC HÀM TIỆN ÍCH XỬ LÝ NGÀY THÁNG, TÊN VÀ ĐỊA BÀN
 function chuanHoaNgay(ngayStr) {
@@ -96,7 +96,7 @@ function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
     try {
         const [lat1, lon1] = toaDo1.split(',').map(Number);
         const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0)) return null;
+        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lat1 === 0)) return null;
 
         const R = 6371; 
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -265,7 +265,6 @@ function hienThiDanhSachVanChuyen() {
 
     let listData = [...window._cachedVanChuyenData];
 
-    // Lọc theo Tab hiện tại
     listData = listData.filter(data => {
         const duyetVal = data.duyet ? data.duyet.trim() : "";
         if (window._currentTabVanChuyen === 'da-giao') {
@@ -302,7 +301,6 @@ function hienThiDanhSachVanChuyen() {
             if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
         }
 
-        // ĐẶC BIỆT CHO TAB CHỜ: Lấy trực tiếp trường vungTieuThu. Nếu là gửi chành thì gộp chung vào "Cần Thơ"
         if (window._currentTabVanChuyen === 'cho') {
             let vungGoc = (data.vungTieuThu && data.vungTieuThu.trim() !== "") ? data.vungTieuThu.trim() : "---";
             const htGiaoNhan = data.htGiaoNhan ? data.htGiaoNhan.toLowerCase() : "";
@@ -448,7 +446,6 @@ function hienThiDanhSachVanChuyen() {
         trip.textKmVe = textKmVe;
         trip._kmVeNum = kmVeNum;
 
-        // Lấy dữ liệu 1 dòng bất kỳ trong chuyến (đơn đầu tiên `dons[0]`) và làm tròn không số lẻ
         const sampleDon = trip.dons[0] || {};
         trip.kmChuyenDiVtracking = sampleDon.kmChuyenDiVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenDiVtracking) || 0) : 0;
         trip.kmChuyenVeVtracking = sampleDon.kmChuyenVeVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVeVtracking) || 0) : 0;
@@ -472,7 +469,6 @@ function hienThiDanhSachVanChuyen() {
         return;
     }
 
-    // RENDER RIÊNG CHO TAB CHỜ: HIỂN THỊ THEO VÙNG TIÊU THỤ
     if (window._currentTabVanChuyen === 'cho') {
         allTripsArray.forEach(trip => {
             let taiVung = 0, dtVung = 0;
@@ -505,7 +501,6 @@ function hienThiDanhSachVanChuyen() {
         return;
     }
 
-    // GOM NHÓM THEO NGÀY CHO 2 TAB CÒN LẠI (ĐÃ GIAO & CHUẨN BỊ)
     let groupedByDate = {};
     allTripsArray.forEach(trip => {
         const ngay = trip.ngay;
@@ -582,15 +577,18 @@ function hienThiDanhSachVanChuyen() {
 
             let odometerSum = (typeof trip._kmVeNum === 'number' && trip._kmVeNum > 0) ? (trip.kmDi + trip._kmVeNum) + 'km' : (trip.kmDi + 'km');
 
+            // --- THIẾT KẾ LẠI GỌN GÀNG & CHUYÊN NGHIỆP CHO DÒNG ĐỒNG HỒ, GPS VÀ VẬT TƯ ---
             const vehicleSubHeader = document.createElement('div');
-            vehicleSubHeader.style.cssText = 'display: flex; flex-direction: column; font-weight: normal; color: #475569; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 1px; margin-bottom: 6px; gap: 0.1px; width: 100%; box-sizing: border-box;';
+            vehicleSubHeader.style.cssText = 'display: flex; flex-direction: column; font-size: 10.5px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 5px; margin-top: 4px; gap: 4px; width: 100%; box-sizing: border-box;';
             vehicleSubHeader.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 0.1px;">
-                    <span>⏱️ Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về: <strong style="color: #d97706;">${trip.textKmVe}</strong> | ∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
-                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
-                </div>
+                <!-- Hàng 1: Đồng hồ (Km Ô tô) & Vật tư (Bột, Sơn, TBVS) -->
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span>📍 Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | ∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
+                    <span style="color: #334155;">⏱️ Đồng hồ: Đi <strong style="color: #0284c7;">${trip.kmDi}km</strong> | Về <strong style="color: #d97706;">${trip.textKmVe}</strong> | Tổng <strong style="color: #16a34a;">${odometerSum}</strong></span>
+                    <span style="color: #475569;">Bột: <strong style="color: #16a34a;">${trip.tongBaoBot}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs}kg</strong></span>
+                </div>
+                <!-- Hàng 2: GPS Vtracking -->
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; background: rgba(2, 132, 199, 0.05); padding: 2px 6px; border-radius: 4px;">
+                    <span style="color: #0369a1;">📍 GPS Vtracking: Đi <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong> | Về <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong> | Tổng <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
                 </div>
             `;
             vehicleWrapper.appendChild(vehicleSubHeader);
@@ -867,6 +865,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (selectPhuongTien) {
         selectPhuongTien.addEventListener('change', function() {
             if (window._cachedVanChuyenData) {
+                hienThiDataVanChuyen(); // fallback
                 hienThiDanhSachVanChuyen();
             } else if (inputThangVC && inputThangVC.value) {
                 const [y, m] = inputThangVC.value.split('-');
