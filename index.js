@@ -994,31 +994,6 @@ async function mainSync() {
     }
     console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy thành công ${reportRows.length} dòng báo cáo lên 'KHACHHANGVUNG'!`);
 
-    // 4. ĐẨY DỮ LIỆU V-TRACKING LÊN FIRESTORE
-    console.log(`📡 Đang đẩy dữ liệu V-Tracking lên Firestore (collection 'VTRACKING')...`);
-    for (const thangStr of Object.keys(vtrackingCache)) {
-      const vtRows = vtrackingCache[thangStr];
-      if (!vtRows || vtRows.length === 0) continue;
-
-      let vtBatch = db.batch();
-      let vtCount = 0;
-
-      for (const row of vtRows) {
-        const docRef = db.collection('VTRACKING').doc(row.id);
-        vtBatch.set(docRef, row, { merge: true });
-        vtCount++;
-
-        if (vtCount % 400 === 0) {
-          await vtBatch.commit();
-          vtBatch = db.batch();
-        }
-      }
-      if (vtCount % 400 !== 0) {
-        await vtBatch.commit();
-      }
-      console.log(`   -> Đã đẩy thành công ${vtRows.length} bản ghi V-Tracking tháng ${thangStr}/2026 lên Firestore.`);
-    }
-
   } catch (err) {
     console.error(`❌ Lỗi đồng bộ Tuyến Đường & Tra cứu chéo V-Tracking:`, err.message);
   }
