@@ -1,1411 +1,1014 @@
-// PHẦN 1: KHỞI TẠO, IMPORT VÀ BIẾN TOÀN CỤC (CACHE & TAB)
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-const db = window.db;
-window._cachedVanChuyenData = null;        // Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
-window._currentTabVanChuyen = 'da-giao';    // Biến lưu tab hiện tại ('da-giao', 'chuan-bi', 'cho')
+const { google } = require('googleapis');
+const admin = require('firebase-admin');
+const XLSX = require('xlsx');
 
-// PHẦN 2: CÁC HÀM TIỆN ÍCH XỬ LÝ NGÀY THÁNG, TÊN VÀ ĐỊA BÀN
-function chuanHoaNgay(ngayStr) {
-    if (!ngayStr || typeof ngayStr !== "string") return "";
-    return ngayStr.trim().split(" ")[0];
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+// 🔗 Link ID các file gốc của bạn
+const ID_TONKHO = {
+  "41": "1ZS9K4lSPHMzBR4ifgSpiGx_RbYbDJ8tb",
+  "61": "1ONnLc9N7IxZOvbs4udNjEH_JZxYOATLB",
+  "69": "1lvbNAvxQ-jXMEIwZ-w3GOdsbcd5-TCIf"
+};
+const ID_TUYENDUONG = "1JEgcPzZUSDj5MmLqifbOD6cBhJ7ggsHR"; 
+const ID_SANPHAM = {
+  "61": "1HSZMW142a1SeIUhaF8gTCFPGVipwDUPV",
+  "69": "1CutRhZzBvh24zUsGPvkXWXQT3_ufUPmW"
+};
+const ID_YCGH = "152fW_bkRwUki4Gpz5qQ3_kaHruOnfbAb";
+
+// 🌟 DANH SÁCH ID 12 FILE V-TRACKING THEO THÁNG NĂM 2026
+const ID_VTRACKING_MONTHS = {
+  1: "1sqIs2aBJom_u-Oj0IB1Z2LI2f9heToHP",
+  2: "1Yv144AWuT9iU-EwptWrrfk_79yKrvRB6",
+  3: "1EfCBdpAGaJjKnXnSjH5aBz7lJvysu9RW",
+  4: "1CElJxYpy7hQImjBrfJMEYX9Lm39iITjO",
+  5: "1GRo0ru9i2mR0djDY7A3XckwRx8TTBXoK",
+  6: "1q0vTb0HNC-ldAZg_1Uzr6KJkD0Xy7FIx",
+  7: "1QT2oxfIu4cLCTgpwAHKhQsIyq4KqB0yC",
+  8: "1a2z7w_DLsf9f24XYAsf2SJjzo413d8iM",
+  9: "1nUMJB8FVCN1ObRmW6Gf8aERnmfogs2fd",
+  10: "1L6yuunc1I-v1H-BWSLbQP8TjTyCXNyUq",
+  11: "1t7KgNwHwQuK0terHjSVwrC722ObYsnj8",
+  12: "1pgJsXILGp20zFZ-ddoIbPH23ghT2DYmh"
+};
+
+// Tọa độ Kho 55 Tầm Vu để tính chuyến Vtracking
+const KHO_55_LAT = 10.007685;
+const KHO_55_LON = 105.763084;
+
+if (!admin.apps.length) {
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount), projectId: serviceAccount.project_id }); 
+}
+const db = admin.firestore();
+
+function getDriveClient() {
+  const auth = new google.auth.JWT(serviceAccount.client_email, null, serviceAccount.private_key, ['https://www.googleapis.com/auth/drive.readonly']); 
+  return google.drive({ version: 'v3', auth }); 
 }
 
-function layNgayGomNhom(data) {
-    let bd = data.batDauGiaoHang ? data.batDauGiaoHang.trim() : "";
-    let kt = data.ketThucGiaoHang ? data.ketThucGiaoHang.trim() : "";
-    let xk = data.ngayxuatKho ? data.ngayxuatKho.trim() : "";
-    let xl = data.ngayXuLy ? data.ngayXuLy.trim() : "";
-    let rawDate = bd !== "" ? bd : (kt !== "" ? kt : (xk !== "" ? xk : xl));
-    let ngayBase = chuanHoaNgay(rawDate);
-    return ngayBase || "Chưa xác định";
+async function downloadFileBuffer(drive, fileId) {
+  return await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data));
 }
 
-function layTenRutGon(hoTen) {
-    if (!hoTen || typeof hoTen !== "string") return "";
-    const arr = hoTen.trim().split(/\s+/);
-    return arr[arr.length - 1];
-}
-
-function layVungTieuThu(data) {
-    let xa = data.phuongXa ? data.phuongXa.trim() : "";
-    let tinh = data.thanhPho ? data.thanhPho.trim() : "";
-
-    xa = xa.replace(/^(Xã|Phường|Thị trấn|P)\s+/i, "").trim();
-    tinh = tinh.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, "").trim();
-
-    if (tinh.toLowerCase().includes("cần thơ")) {
-        let duong = "";
-        if (data.noiGiao && typeof data.noiGiao === "string") {
-            let diaChiClean = data.noiGiao.split("(")[0].trim();
-            let parts = diaChiClean.split(",").map(p => p.trim()).filter(p => p !== "");
-            
-            let foundDuong = parts.find(p => {
-                let l = p.toLowerCase();
-                return l.includes("đường") || l.includes("ql") || l.includes("đt") || l.includes("quốc lộ") || l.includes("3/2") || l.includes("30/4") || l.includes("cách mạng tháng");
-            });
-
-            if (!foundDuong) {
-                foundDuong = parts.find(p => {
-                    let l = p.toLowerCase();
-                    return !l.includes("số nhà") && !l.includes("ấp") && !l.includes("khu phố") && !l.includes("huyện") && !l.includes("quận") && !l.includes("thị xã") && !l.startsWith("xã") && !l.startsWith("phường") && !l.startsWith("tỉnh") && !l.includes("việt nam");
-                });
-            }
-
-            if (foundDuong) duong = foundDuong;
-        }
-
-        let arr = [];
-        if (duong) arr.push(duong);
-        if (xa) arr.push(xa);
-        return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
+// 📡 HÀM ĐỊNH DẠNG NGÀY GIỜ CHUẨN ĐẸP (DD/MM/YYYY HH:mm:ss)
+function formatExcelDate(cellValue) {
+  if (cellValue === undefined || cellValue === null || cellValue === "") return "";
+  const pad = (n) => String(n).padStart(2, '0');
+  if (cellValue instanceof Date) {
+    const d = cellValue;
+    const dateStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    return timeStr === "00:00:00" ? dateStr : `${dateStr} ${timeStr}`;
+  }
+  const strVal = cellValue.toString().trim();
+  if (strVal.includes('/') || strVal.includes('-')) return strVal;
+  if (!isNaN(strVal) && !isNaN(parseFloat(strVal))) {
+    const numVal = parseFloat(strVal);
+    if (numVal > 30000) {
+      try {
+        const dateObj = XLSX.SSF.parse_date_code(numVal);
+        const y = dateObj.y;
+        const m = pad(dateObj.m);
+        const d = pad(dateObj.d);
+        const hh = pad(dateObj.H);
+        const mm = pad(dateObj.M);
+        const ss = pad(dateObj.S);
+        const dateStr = `${d}/${m}/${y}`;
+        if (dateObj.H === 0 && dateObj.M === 0 && dateObj.S === 0) { return dateStr; }
+        return `${dateStr} ${hh}:${mm}:${ss}`;
+      } catch (e) { return strVal; } 
     } 
+  } 
+  return strVal;
+}
+
+// HÀM ĐỌC FILE SẢN PHẨM
+function parseCatalogToMap(buffer) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  const catalogMap = {};
+  
+  for (let i = 1; i < jsonData.length; i++) {
+    const row = jsonData[i]; 
+    if (!row || row.length === 0) continue;
+    const maCTKT = row[0] ? row[0].toString().trim() : ""; 
+    if (!maCTKT) continue; 
     
-    let arr = [];
-    if (xa) arr.push(xa);
-    if (tinh) arr.push(tinh);
-
-    return arr.length > 0 ? arr.join(" - ") : (data.vungTieuThu || "---");
+    catalogMap[maCTKT] = {
+      sanPham:   row[5]  ? row[5].toString().trim()  : "",
+      phanLoai:  row[6]  ? row[6].toString().trim()  : "",
+      maCatalo:  row[10] ? row[10].toString().trim() : "",
+      tenCatalo: row[11] ? row[11].toString().trim() : ""
+    }; 
+  } 
+  return catalogMap;
 }
 
-function loaiBoDauTiengViet(str) {
-    if (!str || typeof str !== "string") return "";
-    return str.normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .replace(/đ/g, "d")
-              .replace(/Đ/g, "D")
-              .toLowerCase();
-}
-
-// PHẦN 3: TÍNH TOÁN KHOẢNG CÁCH GPS VÀ GIAO DIỆN XE
-function tinhKhoangCachNoiBo(lat1, lon1, lat2, lon2) {
-    if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lon1 === 0) || (lat2 === 0 && lon2 === 0)) {
-        return 0;
+// 1. XỬ LÝ ĐỌC FILE TỒN KHO (TRA CỨU CHÉO)
+function parseInventoryToMap(buffer, khoName, catalogMap = null) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  const dataMap = {};
+  
+  let startRowIndex = 9; 
+  for (let i = 0; i < Math.min(20, jsonData.length); i++) {
+    const rowStr = JSON.stringify(jsonData[i]);
+    if (rowStr.includes("Mã hàng") || rowStr.includes("Tên hàng")) { startRowIndex = i + 1; break; } 
+  }
+  for (let i = startRowIndex; i < jsonData.length; i++) {
+    const row = jsonData[i];
+    if (!row || row.length < 3) continue;
+    const tenHang = row[2] ? row[2].toString().trim() : "";
+    if (!tenHang || tenHang === "" || tenHang === "Tên hàng") continue;
+    const maHang = row[1] ? row[1].toString().trim() : ""; 
+    if (!maHang || maHang === "" || maHang === "Mã hàng" || maHang.includes("CÔNG TY")) continue;
+    const nsxTxt = formatExcelDate(row[3]);
+    let thang = "";
+    let nam = "";
+    if (nsxTxt && nsxTxt.includes("/")) {
+      const parts = nsxTxt.split("/");
+      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
+      if (parts[2]) nam = parts[2].split(" ")[0]; 
+    } else if (nsxTxt && nsxTxt.includes("-")) {
+      const parts = nsxTxt.split("-");
+      if (parts[1]) thang = `Tháng ${parseInt(parts[1])}`;
+      if (parts[0] && parts[0].length === 4) nam = parts[0];
     }
-    const R = 6371;
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 1.15);
+    
+    let boSung_maCatalo = "";
+    let boSung_tenCatalo = "";
+    let boSung_sanPham = "";
+    let boSung_phanLoai = "";
+    
+    if (catalogMap && catalogMap[maHang]) {
+      boSung_maCatalo  = catalogMap[maHang].maCatalo;
+      boSung_tenCatalo = catalogMap[maHang].tenCatalo;
+      boSung_sanPham   = catalogMap[maHang].sanPham;
+      boSung_phanLoai  = catalogMap[maHang].phanLoai;
+    }
+    
+    dataMap[tenHang] = {
+      category: row[0] ? row[0].toString().trim() : "",    
+      maHang: maHang,
+      tenHang: tenHang,     
+      nsx: nsxTxt,
+      thang: thang, 
+      nam: nam,     
+      dauKy_sl: parseFloat(row[4]) || 0,                 
+      dauKy_tl: parseFloat(row[5]) || 0,                 
+      nhap_sl: parseFloat(row[6]) || 0,                    
+      nhap_tl: parseFloat(row[7]) || 0,                    
+      xuat_sl: parseFloat(row[8]) || 0,                    
+      xuat_tl: parseFloat(row[9]) || 0,                    
+      cuoiKy_sl: parseFloat(row[10]) || 0,                 
+      cuoiKy_tl: parseFloat(row[11]) || 0,
+      maCatalo: boSung_maCatalo,
+      tenCatalo: boSung_tenCatalo,
+      sanPham: boSung_sanPham,
+      phanLoai: boSung_phanLoai
+    }; 
+  } 
+  return dataMap; 
 }
 
-function tinhKhoangCachCheckIn(toaDo1, toaDo2) {
-    if (!toaDo1 || !toaDo2 || toaDo1 === "0,0" || toaDo2 === "0,0") return null;
+// HÀM ĐỌC FILE YCGH
+function parseYcghToMap(buffer) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  const ycghMap = {};
+  for (let i = 1; i < jsonData.length; i++) {
+    const row = jsonData[i]; 
+    if (!row || row.length === 0) continue;
+    const maPhieu = row[1] ? row[1].toString().trim() : ""; 
+    if (!maPhieu) continue; 
+    ycghMap[maPhieu] = {
+      congNo:   row[9]  ? row[9].toString().trim()  : "",
+      hanMuc:  row[10]  ? row[10].toString().trim()  : "",
+      timeNo:  row[11] ? row[11].toString().trim() : "",
+      nvbh: row[16] ? row[16].toString().trim() : "",
+      vungTieuThu: row[17] ? row[17].toString().trim() : "",
+      vanDe: row[22] ? row[22].toString().trim() : ""
+    }; 
+  } 
+  return ycghMap;
+}
+
+// 2. XỬ LÝ ĐỌC FILE TUYẾN ĐƯỜNG (TRA CỨU CHÉO YCGH)
+function parseRoutesToMap(buffer, ycghMap = {}) {             
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  const routeMap = {};
+  
+  console.log(`📊 [Tuyến Đường] Tổng số dòng đọc được trong file: ${jsonData.length}`);
+  
+  let headerRowIdx = 7; 
+  for (let i = 0; i < Math.min(25, jsonData.length); i++) {
+    const rowStr = JSON.stringify(jsonData[i]);
+    if (rowStr.includes("Mã Phiếu") || rowStr.includes("Đối tượng") || rowStr.includes("Kho xuất")) {
+      headerRowIdx = i; 
+      break;
+    } 
+  }
+  const getTxtByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? row[idx].toString().trim() : "";
+  const getDateByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? formatExcelDate(row[idx]) : "";
+  const getNumByIdx = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? (parseFloat(row[idx]) || 0) : 0;
+  
+  for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
+    const row = jsonData[i];
+    if (!row || row.length < 5) continue;
+    const khoXuatVal = getTxtByIdx(row, 1);
+    if (khoXuatVal !== "41" && khoXuatVal !== "61" && khoXuatVal !== "69") continue; 
+    const maPhieu = getTxtByIdx(row, 3);
+    if (!maPhieu || maPhieu === "" || maPhieu === "Mã Phiếu" || maPhieu.includes("CÔNG TY")) continue;
+    
+    let dinhVi = "";
+    if (row[24] && row[25]) dinhVi = `${row[24].toString().trim()},${row[25].toString().trim()}`;
+    let checkIn = "";
+    if (row[34] && row[35]) checkIn = `${row[34].toString().trim()},${row[35].toString().trim()}`;
+    
+    const saiLechKm = getNumByIdx(row, 36); 
+    let theoDoi = "";
+    if (saiLechKm > 0.5) theoDoi = "Cần kiểm tra";
+    
+    const ngayXuatKhoTxt = getDateByIdx(row, 27);
+    const batDauGiaoTxt = getDateByIdx(row, 30);
+    const ketThucGiaoTxt = getDateByIdx(row, 31);
+    const ngayXuLyTxt = getDateByIdx(row, 6);
+
+    const ngayChinh = ngayXuatKhoTxt || batDauGiaoTxt || ketThucGiaoTxt || ngayXuLyTxt;
+
+    const rawNgayThangNam = batDauGiaoTxt || ketThucGiaoTxt || ngayXuatKhoTxt || ngayXuLyTxt;
+    let ngayThangNam = "";
+    if (rawNgayThangNam) {
+      ngayThangNam = rawNgayThangNam.split(" ")[0]; 
+    }
+
+    let thang = "";
+    let nam = "";
+    if (ngayChinh && ngayChinh.includes("/")) {
+      const parts = ngayChinh.split("/");
+      if (parts[1]) thang = parseInt(parts[1], 10); 
+      if (parts[2]) nam = parseInt(parts[2].split(" ")[0], 10); 
+    } else if (ngayChinh && ngayChinh.includes("-")) {
+      const parts = ngayChinh.split("-");
+      if (parts[1]) thang = parseInt(parts[1], 10); 
+      if (parts[0] && parts[0].length === 4) nam = parseInt(parts[0], 10); 
+    }
+
+    let nganh = "";
+    if (khoXuatVal === "41") {
+      nganh = "Sơn";
+    } else if (khoXuatVal === "61" || khoXuatVal === "69") {
+      nganh = "TBVS";
+    }
+    const vungTieuThu = ycghMap[maPhieu]?.vungTieuThu || "";
+
+    routeMap[maPhieu] = {
+      phuongXa:           getTxtByIdx(row, 0),   
+      khoXuat:          khoXuatVal,          
+      tuyenDuong:       getTxtByIdx(row, 2),   
+      maPhieu:          maPhieu,                 
+      doiTuong:         getTxtByIdx(row, 4),   
+      ngayDatHang:      getDateByIdx(row, 5),  
+      ngayXuLy:         ngayXuLyTxt,  
+      ngayDuyet:        getDateByIdx(row, 7),  
+      ngayDuKien:       getDateByIdx(row, 8),  
+      duyet:            getTxtByIdx(row, 9),   
+      status:           getTxtByIdx(row, 10),  
+      botTretKg:        getNumByIdx(row, 11),  
+      sonTbvsKg:        getNumByIdx(row, 12),  
+      tTai:             getNumByIdx(row, 13),  
+      thanhTien:        getNumByIdx(row, 14),  
+      noiGiao:          getTxtByIdx(row, 15),  
+      ghiChu:           getTxtByIdx(row, 16),  
+      kmDuKIen:         getNumByIdx(row, 17),  
+      htGiaoNhan:       getTxtByIdx(row, 18),  
+      ngayGiao:         getDateByIdx(row, 19), 
+      phuongTien:       getTxtByIdx(row, 20),  
+      taiXe:            getTxtByIdx(row, 21),  
+      chuyen:           getNumByIdx(row, 22),  
+      giaoNhan:         getTxtByIdx(row, 23),  
+      pxk:              getTxtByIdx(row, 26),  
+      dinhVi:           dinhVi,
+      ngayxuatKho:      ngayChinh,         
+      thoiGianLamViec:  getTxtByIdx(row, 28),  
+      thanhPho:         getTxtByIdx(row, 29),  
+      batDauGiaoHang:   batDauGiaoTxt, 
+      ketThucGiaoHang:  ketThucGiaoTxt, 
+      kmBatDauGiaoHang: getNumByIdx(row, 32),  
+      kmKetThucGiaoHang:getNumByIdx(row, 33),  
+      checkIn:          checkIn,
+      saiLechKm:        saiLechKm,
+      theoDoi:          theoDoi,
+      thang:            thang,
+      nam:              nam,
+      nganh:            nganh,
+      vungTieuThu:      vungTieuThu,      
+      ngayThangNam:     ngayThangNam,     
+      chuyenVtracking:  null,             
+      kmChuyenDiVtracking: 0,   
+      kmChuyenVeVtracking: 0,   
+      kmChuyenVtracking: 0,
+      thoiGianDau:      "00:00:00",  
+      thoiGianDi:       "",          
+      kmKhachVtracking: 0          
+    }; 
+  } 
+  return routeMap; 
+}
+
+// 📌 HÀM TÍNH KHOẢNG CÁCH HAVERSINE (MET)
+function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// 📌 HÀM TÍNH THỜI GIAN ĐẬU
+function calculateParkingTime(endTimeCurr, startTimeNext) {
+  if (!endTimeCurr || !startTimeNext) return "00:00:00";
+  try {
+    const t1 = new Date(`1970-01-01T${endTimeCurr}Z`).getTime();
+    const t2 = new Date(`1970-01-01T${startTimeNext}Z`).getTime();
+    let diffSec = Math.floor((t2 - t1) / 1000);
+    if (diffSec < 0) diffSec = 0;
+    
+    const pad = (n) => String(n).padStart(2, '0');
+    const hours = Math.floor(diffSec / 3600);
+    const minutes = Math.floor((diffSec % 3600) / 60);
+    const seconds = diffSec % 60;
+    
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  } catch (e) {
+    return "00:00:00";
+  }
+}
+
+// 3. XỬ LÝ ĐỌC VÀ CHUẨN HÓA FILE V-TRACKING
+function parseVTrackingToMap(buffer, monthNum) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  
+  let headerRowIdx = 0;
+  for (let i = 0; i < Math.min(15, jsonData.length); i++) {
+    const rowStr = JSON.stringify(jsonData[i]);
+    if (rowStr.includes("Biển số") || rowStr.includes("Lái xe") || rowStr.includes("Thời gian bắt đầu")) {
+      headerRowIdx = i;
+      break;
+    }
+  }
+
+  const getTxt = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? row[idx].toString().trim() : "";
+  const getNum = (row, idx) => (row[idx] !== undefined && row[idx] !== null) ? (parseFloat(row[idx]) || 0) : 0;
+
+  let rawRows = [];
+
+  for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
+    const row = jsonData[i];
+    if (!row || row.length < 5) continue;
+
+    const ngayRaw = getTxt(row, 1); 
+    const bienSo = getTxt(row, 2);  
+    const laiXe = getTxt(row, 3);   
+    const thoiGianBatDau = getTxt(row, 4); 
+    const thoiGianKetThuc = getTxt(row, 5); 
+    const thoiGianDi = getTxt(row, 6);      
+    const diaDiemBatDau = getTxt(row, 7);
+    const toaDoBatDau = getTxt(row, 8);
+    const diaDiemKetThuc = getTxt(row, 9);
+    const toaDoKetThuc = getTxt(row, 10);   
+    const quangDuong = getNum(row, 11);     
+
+    if (quangDuong <= 0 || !bienSo || !ngayRaw) continue;
+
+    let isStartNearKho55 = false;
+    let isEndNearKho55 = false;
+    let latS = NaN, lonS = NaN, latE = NaN, lonE = NaN;
+
+    if (toaDoBatDau && toaDoBatDau.includes(",")) {
+      const coordsS = toaDoBatDau.split(",");
+      latS = parseFloat(coordsS[0]);
+      lonS = parseFloat(coordsS[1]);
+      if (!isNaN(latS) && !isNaN(lonS)) {
+        if (getDistanceFromLatLonInMeters(latS, lonS, KHO_55_LAT, KHO_55_LON) <= 200) {
+          isStartNearKho55 = true;
+        }
+      }
+    }
+
+    if (toaDoKetThuc && toaDoKetThuc.includes(",")) {
+      const coordsE = toaDoKetThuc.split(",");
+      latE = parseFloat(coordsE[0]);
+      lonE = parseFloat(coordsE[1]);
+      if (!isNaN(latE) && !isNaN(lonE)) {
+        if (getDistanceFromLatLonInMeters(latE, lonE, KHO_55_LAT, KHO_55_LON) <= 200) {
+          isEndNearKho55 = true;
+        }
+      }
+    }
+
+    let isStartEndUnder200m = false;
+    if (!isNaN(latS) && !isNaN(lonS) && !isNaN(latE) && !isNaN(lonE)) {
+      if (getDistanceFromLatLonInMeters(latS, lonS, latE, lonE) < 200) {
+        isStartEndUnder200m = true;
+      }
+    }
+
+    // Nếu tọa độ đầu & cuối chênh lệch < 200m nhưng Quãng đường xe chạy (km) > 500m (0.5 km) -> giữ lại tính như 1 chuyến
+    const isLongTripDespiteCloseCoords = isStartEndUnder200m && (quangDuong > 0.5);
+
+    if (!isLongTripDespiteCloseCoords && isStartNearKho55 && isEndNearKho55) {
+      continue;
+    }
+
+    let parts = ngayRaw.includes('/') ? ngayRaw.split('/') : ngayRaw.split('-');
+    let d = parts[0] ? parts[0].padStart(2, '0') : "01";
+    let m = parts[1] ? parts[1].padStart(2, '0') : String(monthNum).padStart(2, '0');
+    let y = parts[2] ? parts[2].split(" ")[0] : "2026";
+    const ngayChuan = `${d}/${m}/${y}`;
+    const yyyy_mm_dd = `${y}-${m}-${d}`;
+
+    const timeForId = thoiGianBatDau ? thoiGianBatDau : "00:00:00";
+    const idRecord = `${bienSo}-${yyyy_mm_dd}-${timeForId}`.replace(/[\/.\s#$\[\]]/g, "_");
+
+    const tgBatDauFull = thoiGianBatDau ? `${ngayChuan} ${thoiGianBatDau}` : "";
+    const tgKetThucFull = thoiGianKetThuc ? `${ngayChuan} ${thoiGianKetThuc}` : "";
+
+    rawRows.push({
+      id: idRecord,
+      ngay: ngayRaw,
+      ngayChuan: ngayChuan,
+      bienSo: bienSo,
+      laiXe: laiXe,
+      thoiGianBatDau: tgBatDauFull,
+      thoiGianKetThuc: tgKetThucFull,
+      thoiGianDi: thoiGianDi,
+      thoiGianBatDauOnly: thoiGianBatDau,
+      thoiGianKetThucOnly: thoiGianKetThuc,
+      diaDiemBatDau: diaDiemBatDau,
+      toaDoBatDau: toaDoBatDau,
+      diaDiemKetThuc: diaDiemKetThuc,
+      toaDoKetThuc: toaDoKetThuc,
+      quangDuong: quangDuong,
+      thang: monthNum,
+      nam: y,
+      khachHang: "",
+      kmKhachVtracking: 0,
+      thoiGianDau: "00:00:00"
+    });
+  }
+
+  const groupedByVehicleAndDate = {};
+  rawRows.forEach(item => {
+    const groupKey = `${item.bienSo}_${item.ngayChuan}`;
+    if (!groupedByVehicleAndDate[groupKey]) {
+      groupedByVehicleAndDate[groupKey] = [];
+    }
+    groupedByVehicleAndDate[groupKey].push(item);
+  });
+
+  const finalizedRows = [];
+
+  Object.keys(groupedByVehicleAndDate).forEach(key => {
+    const items = groupedByVehicleAndDate[key];
+    items.sort((a, b) => a.thoiGianBatDauOnly.localeCompare(b.thoiGianBatDauOnly));
+
+    let currentChuyen = 1;
+
+    items.forEach(item => {
+      let isKho55 = false;
+      if (item.toaDoKetThuc && item.toaDoKetThuc.includes(",")) {
+        const coords = item.toaDoKetThuc.split(",");
+        const latEnd = parseFloat(coords[0]);
+        const lonEnd = parseFloat(coords[1]);
+        if (!isNaN(latEnd) && !isNaN(lonEnd)) {
+          const distanceMeters = getDistanceFromLatLonInMeters(latEnd, lonEnd, KHO_55_LAT, KHO_55_LON);
+          if (distanceMeters <= 200) {
+            isKho55 = true;
+          }
+        }
+      }
+
+      item.chuyenVtracking = currentChuyen;
+      if (isKho55) {
+        currentChuyen++;
+      }
+    });
+
+    items.forEach((item, idx) => {
+      let thoiGianDau = "00:00:00";
+
+      let isLastItemKho55 = false;
+      if (item.toaDoKetThuc && item.toaDoKetThuc.includes(",")) {
+        const coords = item.toaDoKetThuc.split(",");
+        const latEnd = parseFloat(coords[0]);
+        const lonEnd = parseFloat(coords[1]);
+        if (!isNaN(latEnd) && !isNaN(lonEnd)) {
+          if (getDistanceFromLatLonInMeters(latEnd, lonEnd, KHO_55_LAT, KHO_55_LON) <= 200) {
+            const nextItem = items[idx + 1];
+            if (!nextItem || nextItem.chuyenVtracking !== item.chuyenVtracking) {
+              isLastItemKho55 = true;
+            }
+          }
+        }
+      }
+
+      if (!isLastItemKho55 && idx < items.length - 1) {
+        const nextItem = items[idx + 1];
+        thoiGianDau = calculateParkingTime(item.thoiGianKetThucOnly, nextItem.thoiGianBatDauOnly);
+      }
+
+      item.thoiGianDau = thoiGianDau;
+    });
+
+    const tripGroups = {};
+    items.forEach(item => {
+      const cNum = item.chuyenVtracking;
+      if (!tripGroups[cNum]) {
+        tripGroups[cNum] = { totalKm: 0, returnKm: 0, outboundKm: 0 };
+      }
+      tripGroups[cNum].totalKm += item.quangDuong;
+    });
+
+    const tripLastItemMap = {};
+    items.forEach(item => {
+      tripLastItemMap[item.chuyenVtracking] = item;
+    });
+
+    Object.keys(tripGroups).forEach(cNum => {
+      const lastItem = tripLastItemMap[cNum];
+      let isLastItemKho55 = false;
+      if (lastItem && lastItem.toaDoKetThuc && lastItem.toaDoKetThuc.includes(",")) {
+        const coords = lastItem.toaDoKetThuc.split(",");
+        const latEnd = parseFloat(coords[0]);
+        const lonEnd = parseFloat(coords[1]);
+        if (!isNaN(latEnd) && !isNaN(lonEnd)) {
+          if (getDistanceFromLatLonInMeters(latEnd, lonEnd, KHO_55_LAT, KHO_55_LON) <= 200) {
+            isLastItemKho55 = true;
+          }
+        }
+      }
+
+      if (isLastItemKho55) {
+        tripGroups[cNum].returnKm = lastItem.quangDuong;
+      } else {
+        tripGroups[cNum].returnKm = 0;
+      }
+      tripGroups[cNum].outboundKm = tripGroups[cNum].totalKm - tripGroups[cNum].returnKm;
+    });
+
+    items.forEach(item => {
+      const groupInfo = tripGroups[item.chuyenVtracking];
+      item.kmChuyenVtracking = Number(groupInfo.totalKm.toFixed(2));
+      item.kmChuyenVeVtracking = Number(groupInfo.returnKm.toFixed(2));
+      item.kmChuyenDiVtracking = Number(groupInfo.outboundKm.toFixed(2));
+      
+      finalizedRows.push(item);
+    });
+  });
+
+  return finalizedRows;
+}
+
+// 📊 HÀM GOM NHÓM DỮ LIỆU ĐỂ TẠO BẢNG KHACHHANGVUNG
+function generateKhachHangVungReport(routeDataMap) {
+  const groupMap = {};
+  const addToGroup = (doiTuong, vung, htGiaoNhan, nganh, nam, thang, tl, dt) => {
+    const key = `${doiTuong}_${vung}_${htGiaoNhan}_${nganh}_${nam}`;
+    if (!groupMap[key]) {
+      groupMap[key] = {
+        doiTuong: doiTuong,
+        vungTieuThu: vung,
+        htGiaoNhan: htGiaoNhan,
+        nganh: nganh,
+        nam: nam,
+        trongLuongMonths: {},
+        doanhThuMonths: {}
+      };
+      for (let m = 1; m <= 12; m++) {
+        groupMap[key].trongLuongMonths[m] = 0;
+        groupMap[key].doanhThuMonths[m] = 0;
+      }
+    }
+    groupMap[key].trongLuongMonths[thang] += tl;
+    groupMap[key].doanhThuMonths[thang] += dt;
+  };
+
+  Object.values(routeDataMap).forEach(item => {
+    const trangThaiDuyet = item.duyet ? item.duyet.toString().trim() : "";
+    if (trangThaiDuyet !== "Đã giao hàng" && trangThaiDuyet !== "Đã xuất kho" && trangThaiDuyet !== "Đang giao hàng") { return; }
+    const doiTuong = item.doiTuong;
+    const vung = item.vungTieuThu || "Chưa xác định";
+    const thang = item.thang;
+    const nam = item.nam || "Chưa xác định";
+    if (!doiTuong || !thang || thang < 1 || thang > 12) return;
+    const htGoc = item.htGiaoNhan ? item.htGiaoNhan.toString().trim() : "";
+    const isGuiChanh = htGoc.includes("Gửi chành");
+    const nganhCuThe = item.nganh || "Khác";
+    const tl = item.tTai || 0;
+    const dt = item.thanhTien || 0;
+
+    if (isGuiChanh) {
+      addToGroup(doiTuong, vung, "Gửi chành", nganhCuThe, nam, thang, tl, dt);
+      addToGroup(doiTuong, vung, "Gửi chành", "All", nam, thang, tl, dt);
+    }
+    addToGroup(doiTuong, vung, "Tổng giao", nganhCuThe, nam, thang, tl, dt);
+    addToGroup(doiTuong, vung, "Tổng giao", "All", nam, thang, tl, dt);
+  });
+
+  const finalRecords = [];
+  Object.values(groupMap).forEach(group => {
+    const record = {
+      doiTuong: group.doiTuong,
+      vungTieuThu: group.vungTieuThu,
+      htGiaoNhan: group.htGiaoNhan,
+      nganh: group.nganh,
+      nam: group.nam
+    };
+    for (let m = 1; m <= 12; m++) {
+      record[`TL${m}`] = Number(group.trongLuongMonths[m].toFixed(2));
+      record[`DT${m}`] = Number(group.doanhThuMonths[m].toFixed(2));
+    }
+    finalRecords.push(record);
+  });
+  return finalRecords;
+}
+
+function isEligibleForVTracking(item) {
+  const statusDuyet = item.duyet ? item.duyet.toString().trim() : "";
+  return statusDuyet === "Đã giao hàng" || statusDuyet === "Đang giao hàng";
+}
+
+// 4. TIẾN TRÌNH ĐỒNG BỘ CHÍNH & TRA CỨU CHÉO V-TRACKING
+async function mainSync() {
+  const drive = getDriveClient();
+  console.log('🚀 1. Bắt đầu tiến trình cập nhật Tồn Kho...');
+  let finalInventoryData = {};
+  let invSuccessCount = 0;
+
+  for (const [khoName, fileId] of Object.entries(ID_TONKHO)) {
     try {
-        const [lat1, lon1] = toaDo1.split(',').map(Number);
-        const [lat2, lon2] = toaDo2.split(',').map(Number);
-        if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) || (lat1 === 0 && lat1 === 0)) return null;
-
-        const R = 6371; 
-        const dLat = (lat2 - lat1) * (Math.PI / 180);
-        const dLon = (lon2 - lon1) * (Math.PI / 180);
-        const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
-    } catch (e) {
-        return null;
-    }
-}
-
-function layMauGiaoDienXe(phuongTien) {
-    const xe = phuongTien ? phuongTien.trim().toUpperCase() : "";
-    
-    if (xe.includes("06126")) {
-        return {
-            bgHeader: '#eff6ff', border: '#bfdbfe', textHeader: '#1e40af', 
-            badgeBg: '#dbeafe', badgeText: '#1d4ed8', tagColor: '#2563eb'
-        };
-    } else if (xe.includes("12290")) {
-        return {
-            bgHeader: '#f0fdf4', border: '#bbf7d0', textHeader: '#166534', 
-            badgeBg: '#dcfce7', badgeText: '#15803d', tagColor: '#16a34a'
-        };
-    } else if (xe.includes("02591")) {
-        return {
-            bgHeader: '#fef2f2', border: '#fecaca', textHeader: '#991b1b', 
-            badgeBg: '#fee2e2', badgeText: '#dc2626', tagColor: '#ef4444'
-        };
-    } else if (xe === "XE MÁY" || !phuongTien || phuongTien.trim() === "") {
-        return {
-            bgHeader: '#fffbeb', border: '#fde68a', textHeader: '#92400e', 
-            badgeBg: '#fef3c7', badgeText: '#b45309', tagColor: '#d97706'
-        };
-    } else {
-        return {
-            bgHeader: '#f8fafc', border: '#e2e8f0', textHeader: '#1e293b', 
-            badgeBg: '#e2e8f0', badgeText: '#334155', tagColor: '#0284c7'
-        };
-    }
-}
-
-function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
-    if (!danhSachDon || danhSachDon.length === 0) return { optimized: [], tongKmDi: 0, tongKmVe: 0 };
-
-    let unvisited = [...danhSachDon];
-    let optimized = [];
-    let currentLat = latKho;
-    let currentLon = lonKho;
-    let tongKmDi = 0;
-    let lastValidLat = latKho;
-    let lastValidLon = lonKho;
-    let hasValidStop = false;
-
-    while (unvisited.length > 0) {
-        let nearestIdx = 0;
-        let minDistance = Infinity;
-
-        for (let i = 0; i < unvisited.length; i++) {
-            let don = unvisited[i];
-            let lat = 0, lon = 0;
-            let hasGPS = false;
-            if (don.dinhVi && typeof don.dinhVi === 'string' && don.dinhVi.includes(',')) {
-                const parts = don.dinhVi.split(',').map(Number);
-                if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
-                    lat = parts[0]; lon = parts[1];
-                    hasGPS = true;
-                }
-            }
-
-            let estDist = hasGPS ? Math.abs(currentLat - lat) + Math.abs(currentLon - lon) : 999999;
-            if (estDist < minDistance) {
-                minDistance = estDist;
-                nearestIdx = i;
-            }
-        }
-
-        let nextDon = unvisited.splice(nearestIdx, 1)[0];
-        
-        let kmChang = 0;
-        if (nextDon.dinhVi && typeof nextDon.dinhVi === 'string' && nextDon.dinhVi.includes(',')) {
-            const parts = nextDon.dinhVi.split(',').map(Number);
-            if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0) {
-                kmChang = tinhKhoangCachNoiBo(currentLat, currentLon, parts[0], parts[1]);
-                tongKmDi += kmChang;
-                currentLat = parts[0];
-                currentLon = parts[1];
-                lastValidLat = parts[0];
-                lastValidLon = parts[1];
-                hasValidStop = true;
-            }
-        }
-
-        nextDon._kmTinhToan = kmChang;
-        optimized.push(nextDon);
-    }
-
-    optimized.forEach((don, idx) => {
-        don._thuTu = idx + 1;
-    });
-
-    let tongKmVe = 0;
-    if (hasValidStop) {
-        tongKmVe = tinhKhoangCachNoiBo(lastValidLat, lastValidLon, latKho, lonKho);
-    }
-
-    return { optimized, tongKmDi, tongKmVe };
-}
-
-// PHẦN 4: TẢI DỮ LIỆU TỪ FIREBASE VÀ XỬ LÝ HIỂN THỊ
-window.taiLichSuVanChuyen = async function(thangChon, namChon) {
-    const container = document.getElementById('danhSachLichSuVanChuyen');
-    if (!container) return;
-
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ hệ thống...</div>';
-
-    try {
-        const thangNum = parseInt(thangChon, 10);
-        const namNum = parseInt(namChon, 10);
-
-        const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
-        const q = query(thamChieuTuyenDuong, where("nam", "==", namNum), where("thang", "==", thangNum));
-
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-            window._cachedVanChuyenData = [];
-            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">Không có chuyến vận chuyển nào trong Tháng ${thangNum}/${namNum}.</div>`;
-            return;
-        }
-
-        let listData = [];
-        querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const ngayGom = layNgayGomNhom(data);
-            listData.push({ id: docSnap.id, ...data, _ngayGom: ngayGom });
-        });
-        
-        window._cachedVanChuyenData = listData;
-        hienThiDanhSachVanChuyen();
-
-    } catch (error) {
-        console.error("Lỗi tải lịch sử vận chuyển: ", error);
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444; font-size: 13px;">Lỗi tải dữ liệu lịch sử vận chuyển!</div>';
-    }
-};
-
-function hienThiDanhSachVanChuyen() {
-    const container = document.getElementById('danhSachLichSuVanChuyen');
-    if (!container) return;
-
-    if (!window._cachedVanChuyenData) {
-        container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
-        return;
-    }
-
-    const selectPhuongTien = document.getElementById('filterPhuongTien');
-    const inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
-
-    const bienSoTimKiem = selectPhuongTien ? selectPhuongTien.value : "";
-    const tuKhoaTimKiem = inputTimKiemTuDo ? inputTimKiemTuDo.value : "";
-    const keywordKhongDau = loaiBoDauTiengViet(tuKhoaTimKiem);
-
-    let listData = [...window._cachedVanChuyenData];
-
-    // Lọc theo Tab hiện tại
-    listData = listData.filter(data => {
-        const duyetVal = data.duyet ? data.duyet.trim() : "";
-        if (window._currentTabVanChuyen === 'da-giao') {
-            return duyetVal === "Đã giao hàng" || duyetVal === "Đang giao hàng";
-        } else if (window._currentTabVanChuyen === 'chuan-bi') {
-            return duyetVal === "Đã xuất kho" || duyetVal === "Chờ xuất kho";
-        } else if (window._currentTabVanChuyen === 'cho') {
-            return duyetVal === "Chờ BTGĐ duyệt" || duyetVal === "Chờ duyệt" || duyetVal === "Chờ TĐV duyệt";
-        }
-        return true;
-    });
-
-    if (keywordKhongDau && keywordKhongDau.trim() !== "") {
-        listData = listData.filter(data => {
-            const hopThanhChuoi = Object.values(data).join(" ") + " " + data.id;
-            const chuoiKhongDau = loaiBoDauTiengViet(hopThanhChuoi);
-            return chuoiKhongDau.includes(keywordKhongDau);
-        });
-    }
-
-    listData.sort((a, b) => {
-        let timeA = a.batDauGiaoHang || a.ketThucGiaoHang || a.ngayxuatKho || a.ngayXuLy || "";
-        let timeB = b.batDauGiaoHang || b.ketThucGiaoHang || b.ngayxuatKho || b.ngayXuLy || "";
-        return timeA.localeCompare(timeB);
-    });
-
-    let globalVehicleTrips = {}; 
-    listData.forEach((data) => {
-        const coXe = data.phuongTien && data.phuongTien.trim() !== "";
-        const nhomKey = coXe ? data.phuongTien.trim() : "Xe máy";
-
-        if (bienSoTimKiem && bienSoTimKiem.trim() !== "") {
-            const tuKhoa = bienSoTimKiem.toLowerCase().trim();
-            if (!nhomKey.toLowerCase().includes(tuKhoa)) return; 
-        }
-
-        // ĐẶC BIỆT CHO TAB CHỜ: Lấy trực tiếp trường vungTieuThu. Nếu là gửi chành thì gộp chung vào "Cần Thơ"
-        if (window._currentTabVanChuyen === 'cho') {
-            let vungGoc = (data.vungTieuThu && data.vungTieuThu.trim() !== "") ? data.vungTieuThu.trim() : "---";
-            const htGiaoNhan = data.htGiaoNhan ? data.htGiaoNhan.toLowerCase() : "";
-            
-            let vungKey = vungGoc;
-            if (htGiaoNhan.includes("chành") || htGiaoNhan.includes("gửi chành")) {
-                vungKey = "Cần Thơ"; 
-            }
-
-            const tripKey = `VUNG_${vungKey}`;
-            if (!globalVehicleTrips[tripKey]) {
-                globalVehicleTrips[tripKey] = {
-                    phuongTien: vungKey,
-                    isVungGroup: true,
-                    ngay: vungKey,
-                    dons: []
-                };
-            }
-            globalVehicleTrips[tripKey].dons.push(data);
-        } else {
-            if (coXe) {
-                const soChuyen = data.chuyenVtracking !== undefined && data.chuyenVtracking !== null && data.chuyenVtracking !== "" ? data.chuyenVtracking : 1;
-                const tripKey = `XE_${nhomKey}_CHUYEN_${soChuyen}_${data._ngayGom}`;
-                if (!globalVehicleTrips[tripKey]) {
-                    globalVehicleTrips[tripKey] = {
-                        phuongTien: nhomKey,
-                        soChuyen: soChuyen,
-                        ngay: data._ngayGom,
-                        dons: []
-                    };
-                }
-                globalVehicleTrips[tripKey].dons.push(data);
-            } else {
-                const tripKey = `XE_MAY_${data._ngayGom}`;
-                if (!globalVehicleTrips[tripKey]) {
-                    globalVehicleTrips[tripKey] = {
-                        phuongTien: "Xe máy",
-                        soChuyen: 1,
-                        ngay: data._ngayGom,
-                        isXeMay: true,
-                        dons: []
-                    };
-                }
-                globalVehicleTrips[tripKey].dons.push(data);
-            }
-        }
-    });
-
-    let allTripsArray = Object.values(globalVehicleTrips);
-    allTripsArray.sort((a, b) => {
-        if (window._currentTabVanChuyen === 'cho') {
-            return a.phuongTien.localeCompare(b.phuongTien);
-        }
-        let timeA = a.dons[0]?.batDauGiaoHang || a.dons[0]?.ngayxuatKho || a.dons[0]?.ngayXuLy || "";
-        let timeB = b.dons[0]?.batDauGiaoHang || b.dons[0]?.ngayxuatKho || b.dons[0]?.ngayXuLy || "";
-        return timeA.localeCompare(timeB);
-    });
-
-    const LAT_KHO = 9.9234; 
-    const LON_KHO = 105.1245;
-
-    for (let idx = 0; idx < allTripsArray.length; idx++) {
-        let trip = allTripsArray[idx];
-        const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
-
-        let kmDi = 0;
-        let kmVeNum = 0;
-        let textKmVe = "chờ"; 
-
-        if (window._currentTabVanChuyen === 'cho') {
-            trip.dons.sort((a, b) => (a.maPhieu || "").localeCompare(b.maPhieu || ""));
-            trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
-        } else if (laNhomChuaGiao) {
-            let donsChuaGiao = [];
-            let donsDaGiao = [];
-
-            trip.dons.forEach(don => {
-                const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
-                const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
-                
-                if (laChuaGiaoHoanToan) {
-                    donsChuaGiao.push(don);
-                } else {
-                    donsDaGiao.push(don);
-                }
-            });
-
-            let ketQuaSapXep = sapXepVaTinhKmNoiBo(donsChuaGiao, LAT_KHO, LON_KHO);
-            trip.dons = [...ketQuaSapXep.optimized, ...donsDaGiao];
-            
-            kmDi = ketQuaSapXep.tongKmDi;
-            kmVeNum = ketQuaSapXep.tongKmVe;
-            textKmVe = kmVeNum + "km";
-        } else {
-            trip.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
-            trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
-
-            if (trip.dons.length > 0) {
-                const donDau = trip.dons[0];
-                const donCuoi = trip.dons[trip.dons.length - 1];
-                const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
-                const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
-
-                if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
-                    kmDi = kmKTCuoi - kmBDDau;
-                }
-
-                if (!trip.isXeMay) {
-                    for (let nextIdx = idx + 1; nextIdx < allTripsArray.length; nextIdx++) {
-                        let nextTrip = allTripsArray[nextIdx];
-                        if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
-                            const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
-                            if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
-                                kmVeNum = kmBDChuyenSau - kmKTCuoi;
-                                textKmVe = kmVeNum + "km";
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        let tongBotKg = 0, tongSonKg = 0, tongTbvsKg = 0, doanhThuChuyen = 0;
-        
-        trip.dons.forEach(don => {
-            if (don.botTretKg) tongBotKg += Number(don.botTretKg) || 0;
-            if (don.thanhTien) doanhThuChuyen += Number(don.thanhTien) || 0;
-            
-            const nganhStr = don.nganh ? don.nganh.trim().toLowerCase() : "";
-            const kg = Number(don.sonTbvsKg) || 0;
-            if (nganhStr.includes("thiết bị vệ sinh") || nganhStr.includes("tbvs")) {
-                tongTbvsKg += kg;
-            } else {
-                tongSonKg += kg;
-            }
-        });
-
-        trip.tongBaoBot = Math.round(tongBotKg / 40);
-        trip.tongSon = tongSonKg;
-        trip.tongTbvs = tongTbvsKg;
-        trip.kmDi = kmDi;
-        trip.textKmVe = textKmVe;
-        trip._kmVeNum = kmVeNum;
-
-        // Lấy dữ liệu 1 dòng bất kỳ trong chuyến (đơn đầu tiên `dons[0]`) và làm tròn không số lẻ
-        const sampleDon = trip.dons[0] || {};
-        trip.kmChuyenDiVtracking = sampleDon.kmChuyenDiVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenDiVtracking) || 0) : 0;
-        trip.kmChuyenVeVtracking = sampleDon.kmChuyenVeVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVeVtracking) || 0) : 0;
-        trip.kmChuyenVtracking = sampleDon.kmChuyenVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVtracking) || 0) : 0;
-
-        let tyLePhi = 0;
-        const tongKmChuyen = kmDi + (typeof kmVeNum === 'number' ? kmVeNum : 0);
-        if (doanhThuChuyen > 0) {
-            tyLePhi = ((tongKmChuyen * 10000) / doanhThuChuyen) * 100;
-        }
-        trip._tyLePhi = tyLePhi.toFixed(1);
-    }
-
-    container.innerHTML = '';
-
-    if (allTripsArray.length === 0) {
-        const emptyMsg = document.createElement('div');
-        emptyMsg.style.cssText = 'text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;';
-        emptyMsg.innerText = 'Không tìm thấy dữ liệu nào ở tab này khớp với từ khóa hoặc phương tiện bạn chọn.';
-        container.appendChild(emptyMsg);
-        return;
-    }
-
-    // RENDER RIÊNG CHO TAB CHỜ: HIỂN THỊ THEO VÙNG TIÊU THỤ
-    if (window._currentTabVanChuyen === 'cho') {
-        allTripsArray.forEach(trip => {
-            let taiVung = 0, dtVung = 0;
-            trip.dons.forEach(don => {
-                if (don.tTai) taiVung += Number(don.tTai) || 0;
-                if (don.thanhTien) dtVung += Number(don.thanhTien) || 0;
-            });
-            const dtVungTr = Math.round(dtVung / 1000000);
-
-            const vungWrapper = document.createElement('div');
-            vungWrapper.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 12px; width: 100%; box-sizing: border-box;';
-
-            const vungHeader = document.createElement('div');
-            vungHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; box-sizing: border-box;';
-            vungHeader.innerHTML = `
-                <span>📍 ${trip.phuongTien}</span> 
-                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${taiVung.toLocaleString('vi-VN')}kg/${dtVungTr}tr</span>
-                    <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${trip.dons.length} đơn</span>
-                </div>
-            `;
-            vungWrapper.appendChild(vungHeader);
-
-            trip.dons.forEach((data, idx) => {
-                renderCardDon(data, vungWrapper, true, idx, trip.dons);
-            });
-
-            container.appendChild(vungWrapper);
-        });
-        return;
-    }
-
-    // GOM NHÓM THEO NGÀY CHO 2 TAB CÒN LẠI (ĐÃ GIAO & CHUẨN BỊ)
-    let groupedByDate = {};
-    allTripsArray.forEach(trip => {
-        const ngay = trip.ngay;
-        if (!groupedByDate[ngay]) groupedByDate[ngay] = [];
-        groupedByDate[ngay].push(trip);
-    });
-
-    let sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
-
-    sortedDates.forEach(ngay => {
-        const tripsInDay = groupedByDate[ngay];
-
-        const dateWrapper = document.createElement('div');
-        dateWrapper.style.cssText = 'margin-bottom: 20px; width: 100%; box-sizing: border-box;';
-
-        let tongDonNgay = 0, tongTaiNgay = 0, tongDoanhThuNgay = 0;
-        tripsInDay.forEach(trip => {
-            tongDonNgay += trip.dons.length;
-            trip.dons.forEach(don => {
-                if (don.tTai) tongTaiNgay += Number(don.tTai) || 0;
-                if (don.thanhTien) tongDoanhThuNgay += Number(don.thanhTien) || 0;
-            });
-        });
-        const tongDTTrNgay = Math.round(tongDoanhThuNgay / 1000000);
-
-        const dateHeader = document.createElement('div');
-        dateHeader.style.cssText = 'background: #0284c7; color: #fff; padding: 8px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; box-sizing: border-box;';
-        dateHeader.innerHTML = `
-            <span>📅 ${ngay}</span> 
-            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongTaiNgay.toLocaleString('vi-VN')}kg/${tongDTTrNgay}tr</span>
-                <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 8px; font-size: 11px;">${tongDonNgay} đơn</span>
-            </div>
-        `;
-        dateWrapper.appendChild(dateHeader);
-
-        tripsInDay.forEach(trip => {
-            let taiChuyen = 0, dtChuyen = 0;
-            trip.dons.forEach(don => {
-                if (don.tTai) taiChuyen += Number(don.tTai) || 0;
-                if (don.thanhTien) dtChuyen += Number(don.thanhTien) || 0;
-            });
-            const dtChuyenTr = Math.round(dtChuyen / 1000000);
-
-            let odometerSum = (typeof trip._kmVeNum === 'number' && trip._kmVeNum > 0) ? (trip.kmDi + trip._kmVeNum) + 'km' : (trip.kmDi + 'km');
-
-            const mauXe = layMauGiaoDienXe(trip.phuongTien);
-            const vehicleWrapper = document.createElement('div');
-            vehicleWrapper.style.cssText = `background: ${mauXe.bgHeader}; border: 1px solid ${mauXe.border}; border-radius: 6px; padding: 5px 6px; margin-bottom: 6px; margin-left: 0; width: 100%; box-sizing: border-box;`;
-
-            const vehicleHeader = document.createElement('div');
-            vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
-            
-            // --- HÀNG TRÊN: Cố định độ rộng cột, chữ canh trái, giãn đều và cân đối ---
-            if (trip.isXeMay) {
-                vehicleHeader.innerHTML = `
-                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 6px;">
-                        🏍️ <strong style="color: ${mauXe.tagColor};">${trip.phuongTien}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.1; font-size: 9.5px; width: max-content; flex-shrink: 0;">
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
-                            <span style="text-align: center; font-size: 8.5px;">⏱️</span>
-                            <span style="text-align: left;">Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
-                            <span style="text-align: left;">Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
-                            <span style="text-align: left;">∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
-                            <span style="text-align: center; font-size: 8.5px;">📍</span>
-                            <span style="text-align: left;">Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
-                            <span style="text-align: left;">Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
-                            <span style="text-align: left;">∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                vehicleHeader.innerHTML = `
-                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 6px;">
-                        🚛 <strong style="color: ${mauXe.tagColor};">${trip.phuongTien} Chuyến ${trip.soChuyen}</strong> <span style="color: #0369a1; font-weight: normal; font-size: 9.5px;">(${trip._tyLePhi}%DT)</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 0px; line-height: 1.1; font-size: 9.5px; width: max-content; flex-shrink: 0;">
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
-                            <span style="text-align: center; font-size: 8.5px;">⏱️</span>
-                            <span style="text-align: left;">Đi: <strong style="color: #0284c7;">${trip.kmDi}km</strong></span>
-                            <span style="text-align: left;">Về: <strong style="color: #d97706;">${trip.textKmVe}</strong></span>
-                            <span style="text-align: left;">∑: <strong style="color: #16a34a;">${odometerSum}</strong></span>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 16px 52px 52px 55px; align-items: center;">
-                            <span style="text-align: center; font-size: 8.5px;">📍</span>
-                            <span style="text-align: left;">Đi: <strong style="color: #0284c7;">${trip.kmChuyenDiVtracking}km</strong></span>
-                            <span style="text-align: left;">Về: <strong style="color: #d97706;">${trip.kmChuyenVeVtracking}km</strong></span>
-                            <span style="text-align: left;">∑: <strong style="color: #16a34a;">${trip.kmChuyenVtracking}km</strong></span>
-                        </div>
-                    </div>
-                `;
-            }
-            vehicleWrapper.appendChild(vehicleHeader);
-
-            // --- HÀNG DƯỚI: Cột trái (Bột / Sơn / TBVS), Cột phải (800kg/5tr 1 đơn) ---
-            const vehicleSubHeader = document.createElement('div');
-            vehicleSubHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: normal; color: #475569; font-size: 9.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; padding-bottom: 3px; margin-bottom: 2px; width: 100%; box-sizing: border-box;';
-            vehicleSubHeader.innerHTML = `
-                <div style="display: flex; align-items: center; white-space: nowrap;">
-                    <span>Bột: <strong style="color: #16a34a;">${trip.tongBaoBot.toLocaleString('vi-VN')}b</strong> | Sơn: <strong style="color: #2563eb;">${trip.tongSon.toLocaleString('vi-VN')}kg</strong> | TBVS: <strong style="color: #9333ea;">${trip.tongTbvs.toLocaleString('vi-VN')}kg</strong></span>
-                </div>
-                <div style="display: flex; gap: 4px; align-items: center; white-space: nowrap;">
-                    <span style="background: rgba(16,185,129,0.15); color: #047857; padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${taiChuyen.toLocaleString('vi-VN')}kg/${dtChuyenTr}tr</span>
-                    <span style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 4px; font-size: 9.5px;">${trip.dons.length} đơn</span>
-                </div>
-            `;
-            vehicleWrapper.appendChild(vehicleSubHeader);
-
-            trip.dons.forEach((data, idx) => {
-                renderCardDon(data, vehicleWrapper, trip.isXeMay, idx, trip.dons);
-            });
-
-            dateWrapper.appendChild(vehicleWrapper);
-        });
-
-        container.appendChild(dateWrapper);
-    });
-};
-
-// PHẦN 5: RENDER THẺ HIỂN THỊ CHI TIẾT TỪNG ĐƠN HÀNG (CARD ITEM)
-function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
-    const maPhieu = data.maPhieu || data.id;
-    const chuyenVal = (data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "") ? ` ${data.chuyen}` : "";
-    const doiTuong = data.doiTuong || 'Chưa xác định';
-    const maPXK = data.pxk ? data.pxk.trim() : '---';
-
-    let nhanVienHtml = '';
-    if (isXeMay) {
-        const tenGN = layTenRutGon(data.giaoNhan);
-        const htmlGN = tenGN ? `<strong>${tenGN}</strong>` : `<span style="color: #dc2626;">❌</span>`;
-        nhanVienHtml = `<span>GN: ${htmlGN}</span>`;
-    } else {
-        const tenTX = layTenRutGon(data.taiXe);
-        const tenGN = layTenRutGon(data.giaoNhan);
-        const htmlTX = `<strong>${tenTX || '---'}</strong>`;
-        const htmlGN = tenGN ? `<strong>${tenGN}</strong>` : `<span style="color: #dc2626;">❌</span>`;
-        nhanVienHtml = `<span>TX: ${htmlTX} | GN: ${htmlGN}</span>`;
-    }
-
-    const vungTieuThu = layVungTieuThu(data);
-    const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
-    const duyet = data.duyet || '';
-    
-    const tTaiVal = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') : '0';
-    const tTaiText = `${tTaiVal}kg`;
-    
-    let thanhTienText = '0.0tr';
-    if (data.thanhTien) {
-        const tienNum = Number(data.thanhTien) / 1000000;
-        thanhTienText = `${tienNum.toFixed(1)}tr`;
-    }
-
-    const ngayxuatKho = data.ngayxuatKho || '';
-    const batDauGiaoHang = data.batDauGiaoHang || '';
-    const ketThucGiaoHang = data.ketThucGiaoHang || '';
-
-    let kmGiaoText = '';
-    const kmKT = Number(data.kmKetThucGiaoHang) || 0;
-    if (kmKT > 0) {
-        let kmGiao = 0;
-        if (index === 0) {
-            const kmBD = Number(data.kmBatDauGiaoHang) || 0;
-            if (kmBD > 0) kmGiao = kmKT - kmBD;
-        } else {
-            const kmKTTruoc = Number(danhSachDon[index - 1]?.kmKetThucGiaoHang) || 0;
-            if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
-        }
-        kmGiaoText = `⏱️ ${kmGiao}km`;
-    } else {
-        kmGiaoText = `⏱️ 0km`;
-    }
-
-    let kmKhachVtrackingNum = data.kmKhachVtracking !== undefined ? Number(data.kmKhachVtracking) : 0;
-    let kmKhachVtrackingText = `📍 ${kmKhachVtrackingNum.toFixed(1)}km`;
-
-    let badgeThuTu = '';
-    const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
-    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
-    
-    if (laChuaGiaoHoanToan) {
-        let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
-        if (coGPS) {
-            badgeThuTu = `<span style="background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 4px; font-size: 9.5px; font-weight: 600;" title="Thứ tự tuyến ưu tiên">📍 #${data._thuTu}</span>`;
-        } else {
-            badgeThuTu = `<span style="background: #fef2f2; color: #dc2626; padding: 1px 4px; border-radius: 4px; font-size: 9.5px; font-weight: 600;" title="Chưa có GPS">📍 #${data._thuTu} (Chưa GPS)</span>`;
-        }
-    }
-
-    const khoangCachKm = tinhKhoangCachCheckIn(data.dinhVi, data.checkIn);
-    let htmlKhoangCach = '';
-    if (khoangCachKm !== null) {
-        const kcNum = parseFloat(khoangCachKm);
-        const iconCheck = kcNum < 0.2 ? '<span style="color: #16a34a; font-weight: bold;">✓</span>' : '<span style="color: #dc2626; font-weight: bold;">✗</span>';
-        htmlKhoangCach = ` <span style="font-size: 10px;">${iconCheck} ${khoangCachKm}km</span>`;
-    } else {
-        htmlKhoangCach = ` <span style="font-size: 10px; color: #dc2626; font-weight: bold;" title="Chưa bật định vị">📍❌</span>`;
-    }
-
-    const isChanh = htGiaoNhan.includes("Chành") || htGiaoNhan.includes("Gửi chành");
-    const badgeHT = isChanh 
-        ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚚 Chành</span>'
-        : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚛 Giao</span>';
-
-    let badgeDuyet = `<span style="color: #64748b; font-size: 10.5px;">${duyet}</span>`;
-    if (duyet === "Đã giao hàng" || duyet === "Đang giao hàng") {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 10.5px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
-    } else if (duyet === "Đã xuất kho") {
-        let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
-        badgeDuyet = `<span style="color: #d97706; font-size: 10.5px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
-    } else if (laChuaGiaoHoanToan) {
-        let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
-        badgeDuyet = `<span style="color: #9333ea; font-size: 10.5px; font-weight: 600;">⏳ Chưa giao (${kmHienThi}km)</span>`;
-    }
-
-    const cardItem = document.createElement('div');
-    cardItem.className = 'card-lich-su-item';
-    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 7px; margin-bottom: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;';
-
-    cardItem.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 2px; margin-bottom: 2px;">
-            <div>
-                <strong style="color: #0f172a; font-size: 11.5px;">${maPhieu}</strong>
-                <span style="font-size: 9.5px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span><strong style="color: #0f172a; font-size: 8px; margin-left: 3px;">${chuyenVal}</strong>
-            </div>
-            <div style="display: flex; gap: 4px; align-items: center;">
-                ${badgeThuTu}
-                ${badgeHT}
-            </div>
-        </div>
-
-        <div style="font-weight: 600; color: #1e293b; font-size: 11.5px; margin-bottom: 2px;">
-            🏢 ${doiTuong}
-        </div>
-
-        <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: #475569; margin-bottom: 2px; align-items: baseline;">
-            <div style="line-height: 1.2;">${nhanVienHtml}</div>
-            <div style="text-align: right; line-height: 1.2;">📍 ${vungTieuThu}${htmlKhoangCach}</div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; margin-top: 2px; background: #f1f5f9; padding: 2px 5px; border-radius: 4px; width: 100%; box-sizing: border-box;">
-            <span>Tải: <strong style="color: #0284c7;">${tTaiText}</strong> | Tiền: <strong style="color: #16a34a;">${thanhTienText}</strong></span>
-            <div>${badgeDuyet}</div>
-        </div>
-        
-        <div style="font-size: 9.5px; color: #64748b; display: flex; justify-content: space-between; margin-top: 2px; border-top: 1px solid #e2e8f0; padding-top: 2px;">
-            <span>🚀 BĐ: <strong>${batDauGiaoHang ? batDauGiaoHang.split(" ")[1] || batDauGiaoHang : '---'}</strong></span>
-            <span>🏁 KT: <strong>${ketThucGiaoHang ? ketThucGiaoHang.split(" ")[1] || ketThucGiaoHang : '---'}</strong></span>
-            <span>📅 XK: <strong>${ngayxuatKho || '---'}</strong></span>
-        </div>
-    `;
-
-    parentElement.appendChild(cardItem);
-}
-
-// PHẦN 6: LẮNG NGHE SỰ KIỆN GIAO DIỆN & TỰ ĐỘNG CHÈN THANH TAB NẰM CẠNH TIÊU ĐỀ
-document.addEventListener('DOMContentLoaded', function() {
-    const inputThangVC = document.getElementById('thangVanChuyen');
-    const labelThangVC = document.getElementById('labelThangNamVC');
-    const selectPhuongTien = document.getElementById('filterPhuongTien');
-    const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
-    const container = document.getElementById('danhSachLichSuVanChuyen');
-
-    const possibleTitles = document.querySelectorAll('h1, h2, h3, h4, .header-title, .title, span, div');
-    let titleElement = null;
-    for (let el of possibleTitles) {
-        if (el.innerText && el.innerText.toUpperCase().includes("LỊCH SỬ VẬN CHUYỂN") && el.children.length === 0) {
-            titleElement = el;
-            break;
-        }
-    }
-
-    if (titleElement) {
-        let parentRow = document.createElement('div');
-        parentRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; width: 100%; box-sizing: border-box;';
-        
-        titleElement.parentNode.insertBefore(parentRow, titleElement);
-        parentRow.appendChild(titleElement);
-        titleElement.style.margin = '0';
-
-        const tabNavWrapper = document.createElement('div');
-        tabNavWrapper.id = 'tabNavVanChuyenContainer';
-        tabNavWrapper.style.cssText = 'display: flex; gap: 4px;';
-
-        const tabsConfig = [
-            { id: 'da-giao', label: 'Đã giao' },
-            { id: 'chuan-bi', label: 'Chuẩn bị' },
-            { id: 'cho', label: 'Chờ' }
-        ];
-
-        tabsConfig.forEach(tab => {
-            const isActive = window._currentTabVanChuyen === tab.id;
-            const tabBtn = document.createElement('button');
-            tabBtn.type = 'button';
-            tabBtn.innerText = tab.label;
-            tabBtn.style.cssText = `
-                padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: ${isActive ? '700' : '500'};
-                cursor: pointer; border: 1px solid ${isActive ? '#0284c7' : '#cbd5e1'};
-                background: ${isActive ? '#0284c7' : '#f8fafc'};
-                color: ${isActive ? '#ffffff' : '#475569'};
-                transition: all 0.2s ease;
-            `;
-            tabBtn.onclick = function() {
-                window._currentTabVanChuyen = tab.id;
-                document.querySelectorAll('#tabNavVanChuyenContainer button').forEach(btn => {
-                    const isThisActive = btn.innerText === tab.label;
-                    btn.style.fontWeight = isThisActive ? '700' : '500';
-                    btn.style.borderColor = isThisActive ? '#0284c7' : '#cbd5e1';
-                    btn.style.background = isThisActive ? '#0284c7' : '#f8fafc';
-                    btn.style.color = isThisActive ? '#ffffff' : '#475569';
-                });
-                hienThiDanhSachVanChuyen();
-            };
-            tabNavWrapper.appendChild(tabBtn);
-        });
-
-        parentRow.appendChild(tabNavWrapper);
-    }
-
-    let inputTimKiemTuDo = document.getElementById('inputTimKiemTuDo');
-    if (!inputTimKiemTuDo && selectPhuongTien && selectPhuongTien.parentNode) {
-        inputTimKiemTuDo = document.createElement('input');
-        inputTimKiemTuDo.id = 'inputTimKiemTuDo';
-        inputTimKiemTuDo.type = 'text';
-        inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm...';
-        inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; width: 100px; transition: width 0.3s ease, box-shadow 0.3s ease;';
-        
-        inputTimKiemTuDo.addEventListener('focus', function() {
-            this.style.width = '240px';
-            this.style.boxShadow = '0 0 0 2px rgba(2, 132, 199, 0.2)';
-            this.placeholder = '🔍 Nhập từ khóa tìm kiếm...';
-        });
-
-        inputTimKiemTuDo.addEventListener('blur', function() {
-            if (!this.value) {
-                this.style.width = '100px';
-                this.style.boxShadow = 'none';
-                this.placeholder = '🔍 Tìm kiếm...';
-            }
-        });
-
-        selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
-    }
-
-    // Tự động chèn nút Xuất PDF Bảng kê cạnh nút Tải dữ liệu
-    if (btnTaiDuLieu && btnTaiDuLieu.parentNode && !document.getElementById('btnXuatPdfBangKe')) {
-        const btnXuatPdf = document.createElement('button');
-        btnXuatPdf.id = 'btnXuatPdfBangKe';
-        btnXuatPdf.type = 'button';
-        btnXuatPdf.innerHTML = '🖨️ Xuất PDF';
-        btnXuatPdf.style.cssText = 'padding: 6px 10px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 6px;';
-        btnXuatPdf.onclick = function() {
-            window.xuatPdfBangKeVanChuyen();
-        };
-        btnTaiDuLieu.parentNode.insertBefore(btnXuatPdf, btnTaiDuLieu.nextSibling);
-    }
-
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-
-    if (inputThangVC) {
-        if (!inputThangVC.value) inputThangVC.value = `${year}-${month}`;
-        const [currY, currM] = inputThangVC.value.split('-');
-        if (labelThangVC) labelThangVC.innerText = `${currM}/${currY}`;
-
-        if (container && container.innerHTML.trim() === "") {
-            container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
-        }
-
-        inputThangVC.addEventListener('change', function() {
-            if (this.value) {
-                const [y, m] = this.value.split('-');
-                if (labelThangVC) labelThangVC.innerText = `${m}/${y}`;
-            }
-        });
-    }
-
-    if (btnTaiDuLieu) {
-        btnTaiDuLieu.onclick = function() {
-            if (inputThangVC && inputThangVC.value) {
-                const [y, m] = inputThangVC.value.split('-');
-                if (typeof window.taiLichSuVanChuyen === 'function') {
-                    window.taiLichSuVanChuyen(m, y);
-                }
-            } else {
-                alert("Vui lòng chọn tháng năm trước khi tải!");
-            }
-        };
-    }
-
-    if (selectPhuongTien) {
-        selectPhuongTien.addEventListener('change', function() {
-            if (window._cachedVanChuyenData) {
-                hienThiDanhSachVanChuyen();
-            } else if (inputThangVC && inputThangVC.value) {
-                const [y, m] = inputThangVC.value.split('-');
-                window.taiLichSuVanChuyen(m, y);
-            }
-        });
-    }
-
-    if (inputTimKiemTuDo) {
-        let timer = null;
-        inputTimKiemTuDo.addEventListener('input', function() {
-            clearTimeout(timer);
-            timer = setTimeout(() => {
-                if (window._cachedVanChuyenData) {
-                    hienThiDanhSachVanChuyen();
-                } else if (inputThangVC && inputThangVC.value) {
-                    const [y, m] = inputThangVC.value.split('-');
-                    window.taiLichSuVanChuyen(m, y);
-                }
-            }, 300);
-        });
-    }
-});
-
-// =========================================================================
-// PHẦN 7: XUẤT PDF BẢNG KÊ VẬN CHUYỂN THEO MẪU BIỂU CHUẨN
-// =========================================================================
-function chuyenNgaySangDate(ngayStr) {
-    if (!ngayStr || typeof ngayStr !== "string") return null;
-    const clean = ngayStr.trim().split(" ")[0];
-    if (clean.includes("/")) {
-        const parts = clean.split("/");
-        if (parts.length === 3) {
-            return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-        }
-    } else if (clean.includes("-")) {
-        const parts = clean.split("-");
-        if (parts.length === 3) {
-            return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        }
-    }
-    return null;
-}
-
-function dinhDangNgayHienThi(ngayStr) {
-    if (!ngayStr) return "";
-    const d = chuyenNgaySangDate(ngayStr);
-    if (!d || isNaN(d.getTime())) return ngayStr.trim().split(" ")[0];
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-}
-
-function catSoKhongDau(pxkStr) {
-    if (pxkStr === undefined || pxkStr === null) return "";
-    return String(pxkStr).trim().replace(/^0+/, "");
-}
-
-window.xuatPdfBangKeVanChuyen = async function() {
-    const inputThangVC = document.getElementById('thangVanChuyen');
-    const selectPhuongTien = document.getElementById('filterPhuongTien');
-
-    if (!inputThangVC || !inputThangVC.value) {
-        alert("Vui lòng chọn tháng năm trước khi xuất PDF!");
-        return;
-    }
-
-    const bienSoChon = selectPhuongTien ? selectPhuongTien.value.trim() : "";
-    if (!bienSoChon || bienSoChon.toLowerCase().includes("xe máy") || bienSoChon.toLowerCase().includes("tất cả")) {
-        alert("Vui lòng chọn một biển số xe tải cụ thể (VD: 65C-06126) trong ô lọc Phương tiện để xuất Bảng kê!");
-        return;
-    }
-
-    const [namStr, thangStr] = inputThangVC.value.split('-');
-    const thangNum = parseInt(thangStr, 10);
-    const namNum = parseInt(namStr, 10);
-
-    const btnPdf = document.getElementById('btnXuatPdfBangKe');
-    const oldText = btnPdf ? btnPdf.innerHTML : "";
-    if (btnPdf) {
-        btnPdf.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo PDF...';
-        btnPdf.disabled = true;
-    }
-
-    try {
-        // 1. Lấy cấu hình PHUONGTIEN của biển số xe đang chọn
-        const qPt = query(collection(db, "PHUONGTIEN"), where("bienSo", "==", bienSoChon));
-        const snapPt = await getDocs(qPt);
-        let dsCauHinhXe = [];
-        snapPt.forEach(docSnap => {
-            const d = docSnap.data();
-            const dateApDung = chuyenNgaySangDate(d.ngayApDung);
-            dsCauHinhXe.push({
-                ...d,
-                _dateApDung: dateApDung || new Date(2000, 0, 1)
-            });
-        });
-
-        // Sắp xếp cấu hình theo ngày áp dụng tăng dần
-        dsCauHinhXe.sort((a, b) => a._dateApDung - b._dateApDung);
-
-        if (dsCauHinhXe.length === 0) {
-            alert(`Không tìm thấy cấu hình phương tiện "${bienSoChon}" trong bảng PHUONGTIEN!`);
-            return;
-        }
-
-        // Hàm tìm cấu hình phương tiện áp dụng tại 1 ngày cụ thể
-        const layCauHinhTaiNgay = (dateObj) => {
-            let chosen = dsCauHinhXe[0];
-            for (let i = 0; i < dsCauHinhXe.length; i++) {
-                if (dsCauHinhXe[i]._dateApDung <= dateObj) {
-                    chosen = dsCauHinhXe[i];
-                }
-            }
-            return chosen;
-        };
-
-        // Xác định cấu hình đầu tháng đang xuất
-        const ngayDauThangXuat = new Date(namNum, thangNum - 1, 1);
-        const cauHinhDauKy = layCauHinhTaiNgay(ngayDauThangXuat);
-        const ngayApDungGoc = cauHinhDauKy._dateApDung;
-        const kmDauKyGoc = Number(cauHinhDauKy.kmDauKy) || 0;
-        const dauDauKyGoc = Number(cauHinhDauKy.dauDauKy) || 0;
-        const dinhMucHienThi = Number(cauHinhDauKy.dinhMuc) || 0.16;
-        const nguongNoiO = Number(cauHinhDauKy.noiO) || 60;
-
-        // 2. Tải dữ liệu TUYENDUONG của xe này từ tháng của ngayApDung đến tháng đang xuất (cùng năm hoặc qua năm)
-        const qTd = query(collection(db, "TUYENDUONG"), where("phuongTien", "==", bienSoChon));
-        const snapTd = await getDocs(qTd);
-
-        let allDocsXe = [];
-        snapTd.forEach(docSnap => {
-            const d = docSnap.data();
-            const duyetVal = (d.duyet || "").trim();
-            if (duyetVal === "Đã giao hàng" || duyetVal === "Đang giao hàng") {
-                const rawNgay = d.ngayThangNam || layNgayGomNhom(d);
-                const dateChuyen = chuyenNgaySangDate(rawNgay);
-                allDocsXe.push({
-                    id: docSnap.id,
-                    ...d,
-                    _rawNgay: rawNgay,
-                    _dateChuyen: dateChuyen
-                });
-            }
-        });
-
-        // Gom nhóm toàn bộ các chuyến của xe để tính lũy kế ODO từ ngayApDung đến trước tháng xuất
-        let mapChuyenTruocKy = {};
-        let mapChuyenTrongKy = {};
-
-        allDocsXe.forEach(d => {
-            if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc) return;
-
-            const m = d._dateChuyen.getMonth() + 1;
-            const y = d._dateChuyen.getFullYear();
-            const ngayKey = dinhDangNgayHienThi(d._rawNgay);
-            const soChuyen = (d.chuyenVtracking !== undefined && d.chuyenVtracking !== null && d.chuyenVtracking !== "") ? d.chuyenVtracking : 1;
-            const tripKey = `${ngayKey}_CHUYEN_${soChuyen}`;
-
-            if (y < namNum || (y === namNum && m < thangNum)) {
-                // Các chuyến chạy từ ngayApDung đến trước tháng hiện tại
-                if (!mapChuyenTruocKy[tripKey]) {
-                    mapChuyenTruocKy[tripKey] = Number(d.kmChuyenVtracking) || 0;
-                }
-            } else if (y === namNum && m === thangNum) {
-                // Các chuyến trong tháng đang xuất
-                if (!mapChuyenTrongKy[tripKey]) {
-                    mapChuyenTrongKy[tripKey] = {
-                        ngayStr: ngayKey,
-                        dateObj: d._dateChuyen,
-                        soChuyen: Number(soChuyen) || 1,
-                        kmChuyenDiVtracking: Number(d.kmChuyenDiVtracking) || 0,
-                        kmChuyenVeVtracking: Number(d.kmChuyenVeVtracking) || 0,
-                        kmChuyenVtracking: Number(d.kmChuyenVtracking) || 0,
-                        dons: []
-                    };
-                }
-                mapChuyenTrongKy[tripKey].dons.push(d);
-            }
-        });
-
-        // Tính Đồng hồ KM đầu kỳ
-        let kmTichLuyTruocKy = 0;
-        Object.values(mapChuyenTruocKy).forEach(km => {
-            kmTichLuyTruocKy += km;
-        });
-        const dongHoKmDauKy = Math.round(kmDauKyGoc + kmTichLuyTruocKy);
-
-        // Sắp xếp các chuyến trong kỳ theo ngày và số chuyến tăng dần
-        let dsChuyenTrongKy = Object.values(mapChuyenTrongKy).sort((a, b) => {
-            if (a.dateObj - b.dateObj !== 0) return a.dateObj - b.dateObj;
-            return a.soChuyen - b.soChuyen;
-        });
-
-        // 3. Xử lý từng chuyến: gom đơn trùng (doiTuong + dinhVi) & thêm dòng "Về kho"
-        let bangKeRows = [];
-        let tongKmNoiO = 0;
-        let tongKmTinh = 0;
-        let tongKmTatCaChuyen = 0;
-        let tongTieuThuLit = 0;
-
-        dsChuyenTrongKy.forEach(chuyen => {
-            const cfgNgay = layCauHinhTaiNgay(chuyen.dateObj);
-            const dinhMucChuyen = Number(cfgNgay.dinhMuc) || dinhMucHienThi;
-            const noiOChuyen = Number(cfgNgay.noiO) || nguongNoiO;
-
-            // Cộng quãng đường chuyến (1 chuyến chỉ lấy 1 lần kmChuyenVtracking)
-            const kmChuyen = chuyen.kmChuyenVtracking;
-            tongKmTatCaChuyen += kmChuyen;
-            if (kmChuyen <= noiOChuyen) {
-                tongKmNoiO += kmChuyen;
-            } else {
-                tongKmTinh += kmChuyen;
-            }
-
-            // Gom các dòng trong cùng chuyến nếu doiTuong giống nhau và dinhVi giống nhau
-            let groupedStops = [];
-            let stopIndexMap = {};
-
-            // Sắp xếp đơn trong chuyến theo thứ tự kết thúc giao hàng
-            chuyen.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
-
-            chuyen.dons.forEach(don => {
-                const dt = (don.doiTuong || "").trim();
-                const dv = (don.dinhVi || "").trim();
-                const groupKey = `${dt}___${dv}`;
-                const pxkClean = catSoKhongDau(don.pxk);
-
-                if (stopIndexMap[groupKey] === undefined) {
-                    stopIndexMap[groupKey] = groupedStops.length;
-                    groupedStops.push({
-                        ngay: chuyen.ngayStr,
-                        noiGiao: dt,
-                        km: Number(don.kmKhachVtracking) || 0,
-                        pxkList: pxkClean ? [pxkClean] : []
-                    });
-                } else {
-                    const idx = stopIndexMap[groupKey];
-                    if (pxkClean && !groupedStops[idx].pxkList.includes(pxkClean)) {
-                        groupedStops[idx].pxkList.push(pxkClean);
-                    }
-                }
-            });
-
-            // Tính nhiên liệu tiêu thụ theo kmChuyenDiVtracking & dinhMuc cho các điểm giao
-            let tongLitDiChuan = chuyen.kmChuyenDiVtracking * dinhMucChuyen;
-            let congDonLitDi = 0;
-
-            groupedStops.forEach((stop, i) => {
-                let litHang = 0;
-                if (i === groupedStops.length - 1 && groupedStops.length > 0 && chuyen.kmChuyenDiVtracking > 0) {
-                    // Cân chỉnh phần lẻ ở điểm cuối lượt đi để tổng lượt đi khớp chính xác kmChuyenDiVtracking * dinhMuc
-                    litHang = Math.max(0, Number((tongLitDiChuan - congDonLitDi).toFixed(2)));
-                } else {
-                    litHang = Number((stop.km * dinhMucChuyen).toFixed(2));
-                    congDonLitDi += litHang;
-                }
-
-                tongTieuThuLit += litHang;
-
-                bangKeRows.push({
-                    ngay: stop.ngay,
-                    noiGiao: stop.noiGiao,
-                    km: stop.km > 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
-                    tieuThu: litHang > 0 ? litHang.toFixed(2) : "0.00",
-                    doThem: "",
-                    chungTu: stop.pxkList.join(", "),
-                    ghiChu: ""
-                });
-            });
-
-            // Thêm dòng "Về kho" cuối mỗi chuyến
-            const kmVe = chuyen.kmChuyenVeVtracking;
-            const litVe = Number((kmVe * dinhMucChuyen).toFixed(2));
-            tongTieuThuLit += litVe;
-
-            bangKeRows.push({
-                ngay: chuyen.ngayStr,
-                noiGiao: "Về kho",
-                km: kmVe > 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
-                tieuThu: litVe > 0 ? litVe.toFixed(2) : "0.00",
-                doThem: "",
-                chungTu: "",
-                ghiChu: ""
-            });
-        });
-
-        const dongHoKmCuoiKy = Math.round(dongHoKmDauKy + tongKmTatCaChuyen);
-        const dinhMucLit100Km = Math.round(dinhMucHienThi * 100);
-
-        // Nếu ít dòng, chèn thêm dòng trống cho đẹp khung A4 như mẫu
-        const minRows = 16;
-        while (bangKeRows.length < minRows) {
-            bangKeRows.push({ ngay: "&nbsp;", noiGiao: "", km: "", tieuThu: "", doThem: "", chungTu: "", ghiChu: "" });
-        }
-
-        // 4. Tạo giao diện HTML chuẩn A4 và mở hộp thoại in/lưu PDF
-        const rowsHtml = bangKeRows.map(r => `
-            <tr>
-                <td style="text-align: center;">${r.ngay}</td>
-                <td style="text-align: left; padding-left: 6px;">${r.noiGiao}</td>
-                <td style="text-align: right; padding-right: 6px;">${r.km}</td>
-                <td style="text-align: right; padding-right: 6px;">${r.tieuThu}</td>
-                <td style="text-align: right; padding-right: 6px;">${r.doThem}</td>
-                <td style="text-align: left; padding-left: 6px;">${r.chungTu}</td>
-                <td style="text-align: left; padding-left: 6px;">${r.ghiChu}</td>
-            </tr>
-        `).join("");
-
-        const today = new Date();
-        const ngayKyStr = `Cần Thơ, ngày ${String(today.getDate()).padStart(2, '0')} tháng ${String(today.getMonth() + 1).padStart(2, '0')} năm ${today.getFullYear()}`;
-
-        const printWindow = window.open('', '_blank', 'width=900,height=1100');
-        if (!printWindow) {
-            alert("Trình duyệt đang chặn cửa sổ bật lên (Pop-up). Vui lòng cho phép mở Pop-up để xuất PDF!");
-            return;
-        }
-
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html lang="vi">
-            <head>
-                <meta charset="UTF-8">
-                <title>Bảng Kê Vận Chuyển Tháng ${String(thangNum).padStart(2, '0')}/${namNum} - ${bienSoChon}</title>
-                <style>
-                    @page {
-                        size: A4 portrait;
-                        margin: 12mm 10mm 12mm 10mm;
-                    }
-                    body {
-                        font-family: "Times New Roman", Times, serif;
-                        font-size: 11px;
-                        color: #000;
-                        margin: 0;
-                        padding: 0;
-                    }
-                    .company-header {
-                        font-weight: bold;
-                        font-size: 11px;
-                        line-height: 1.4;
-                        text-align: left;
-                    }
-                    .doc-title {
-                        text-align: center;
-                        font-weight: bold;
-                        font-size: 15px;
-                        margin: 8px 0 6px 0;
-                        text-transform: uppercase;
-                    }
-                    .sub-info {
-                        display: flex;
-                        justify-content: space-between;
-                        font-size: 11px;
-                        margin-bottom: 4px;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        table-layout: fixed;
-                    }
-                    th, td {
-                        border: 1px solid #000;
-                        padding: 3px 4px;
-                        font-size: 10.5px;
-                        word-wrap: break-word;
-                        height: 18px;
-                    }
-                    th {
-                        background-color: #d9d9d9 !important;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                        font-weight: bold;
-                        text-align: center;
-                    }
-                    .summary-table {
-                        margin-top: 8px;
-                    }
-                    .summary-table td {
-                        text-align: center;
-                        font-weight: bold;
-                        height: 20px;
-                    }
-                    .footer-sign {
-                        margin-top: 14px;
-                        width: 100%;
-                    }
-                    .sign-date {
-                        text-align: right;
-                        font-style: italic;
-                        font-size: 11px;
-                        padding-right: 25px;
-                        margin-bottom: 4px;
-                    }
-                    .sign-cols {
-                        display: flex;
-                        justify-content: space-around;
-                        text-align: center;
-                        font-weight: bold;
-                        font-size: 11px;
-                    }
-                    @media print {
-                        .no-print { display: none !important; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="no-print" style="background: #f1f5f9; padding: 8px 12px; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif;">
-                    <span style="font-size: 12px; color: #334155;">Xem trước bản in PDF (Chọn <b>Lưu dưới dạng PDF / Save as PDF</b> trong hộp thoại in)</span>
-                    <button onclick="window.print()" style="background: #0284c7; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-weight: bold; cursor: pointer;">🖨️ In / Lưu PDF ngay</button>
-                </div>
-
-                <div class="company-header">
-                    CÔNG TY CỔ PHẦN VẬT TƯ HẬU GIANG<br>
-                    PHÒNG KINH DOANH SƠN
-                </div>
-
-                <div class="doc-title">BẢNG KÊ VẬN CHUYỂN THÁNG ${String(thangNum).padStart(2, '0')}/${namNum}</div>
-
-                <div class="sub-info">
-                    <span>Phương tiện: <strong>${bienSoChon}</strong></span>
-                    <span>Định mức: <strong>${dinhMucLit100Km} lít/100 km</strong></span>
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th rowspan="2" style="width: 11%;">NGÀY</th>
-                            <th rowspan="2" style="width: 34%;">NƠI GIAO</th>
-                            <th rowspan="2" style="width: 8%;">KM</th>
-                            <th colspan="2" style="width: 19%;">NHIÊN LIỆU (lít)</th>
-                            <th rowspan="2" style="width: 16%;">CHỨNG TỪ</th>
-                            <th rowspan="2" style="width: 12%;">GHI CHÚ</th>
-                        </tr>
-                        <tr>
-                            <th style="width: 9.5%;">TIÊU THỤ</th>
-                            <th style="width: 9.5%;">ĐỔ THÊM</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                    </tbody>
-                </table>
-
-                <table class="summary-table">
-                    <thead>
-                        <tr>
-                            <th colspan="2" style="width: 22%;">ĐỒNG HỒ KM</th>
-                            <th colspan="3" style="width: 33%;">TỔNG QUÃNG ĐƯỜNG (km)</th>
-                            <th colspan="4" style="width: 45%;">NHIÊN LIỆU (lít)</th>
-                        </tr>
-                        <tr>
-                            <th style="width: 11%;">ĐẦU KỲ</th>
-                            <th style="width: 11%;">CUỐI KỲ</th>
-                            <th style="width: 11%;">NỘI Ô</th>
-                            <th style="width: 11%;">TỈNH</th>
-                            <th style="width: 11%;">TỔNG</th>
-                            <th style="width: 11.25%;">TIÊU THỤ</th>
-                            <th style="width: 11.25%;">ĐỔ THÊM</th>
-                            <th style="width: 11.25%;">TỒN ĐẦU KỲ</th>
-                            <th style="width: 11.25%;">TỒN CUỐI KỲ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>${dongHoKmDauKy.toLocaleString('vi-VN')}</td>
-                            <td>${dongHoKmCuoiKy.toLocaleString('vi-VN')}</td>
-                            <td>${Math.round(tongKmNoiO).toLocaleString('vi-VN')}</td>
-                            <td>${Math.round(tongKmTinh).toLocaleString('vi-VN')}</td>
-                            <td>${Math.round(tongKmTatCaChuyen).toLocaleString('vi-VN')}</td>
-                            <td>${tongTieuThuLit.toFixed(2)}</td>
-                            <td></td>
-                            <td>${dauDauKyGoc.toFixed(3)}</td>
-                            <td></td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="footer-sign">
-                    <div class="sign-date">${ngayKyStr}</div>
-                    <div class="sign-cols">
-                        <div style="width: 33%;">Trưởng đơn vị</div>
-                        <div style="width: 33%;">Kế toán</div>
-                        <div style="width: 33%;">Người lập bảng</div>
-                    </div>
-                </div>
-
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() { window.print(); }, 300);
-                    };
-                </script>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-
+      let catalogMap = null;
+      if (ID_SANPHAM[khoName]) {
+        const catalogBuffer = await downloadFileBuffer(drive, ID_SANPHAM[khoName]);
+        catalogMap = parseCatalogToMap(catalogBuffer);
+      }
+      const buffer = await downloadFileBuffer(drive, fileId);
+      const dataObject = parseInventoryToMap(buffer, khoName, catalogMap);
+      if (Object.keys(dataObject).length > 0) {
+        finalInventoryData[`Kho_${khoName}`] = dataObject;
+        invSuccessCount++;
+      } 
     } catch (err) {
-        console.error("Lỗi khi xuất PDF Bảng kê:", err);
-        alert("Có lỗi xảy ra khi tổng hợp dữ liệu xuất PDF: " + err.message);
-    } finally {
-        if (btnPdf) {
-            btnPdf.innerHTML = oldText;
-            btnPdf.disabled = false;
+      console.error(`❌ Lỗi kết nối Kho ${khoName}:`, err.message);
+    } 
+  }
+
+  if (invSuccessCount > 0) {
+    finalInventoryData["last_updated"] = admin.firestore.FieldValue.serverTimestamp();
+    await db.collection('TONKHO').doc('KHO').set(finalInventoryData, { merge: true });
+    console.log(`🎉 Đã cập nhật Tồn Kho lên Firestore!`);
+  }
+
+  console.log('\n--------------------------------------------------\n');
+  console.log('🚀 2. Bắt đầu tiến trình cập nhật Tuyến Đường và Tra cứu chéo V-Tracking...');
+  
+  let tuyenDuongMemoryList = [];
+  let routeDataMap = {};
+
+  try {
+    console.log(`📦 Đang tải file YCGH...`);
+    const ycghBuffer = await downloadFileBuffer(drive, ID_YCGH);
+    const ycghMapData = parseYcghToMap(ycghBuffer);
+
+    console.log(`📦 Đang tải file Tuyến Đường...`);
+    const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
+    routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);         
+
+    // Giữ toàn bộ dòng Tuyến Đường để đẩy lên Firestore; chỉ tra cứu chéo V-Tracking cho dòng Đã giao hàng / Đang giao hàng
+    tuyenDuongMemoryList = Object.entries(routeDataMap).map(([maPhieu, data]) => ({
+      maPhieu,
+      ...data
+    }));
+
+    const eligibleRoutes = tuyenDuongMemoryList.filter(isEligibleForVTracking);
+    console.log(`📋 [Bộ nhớ tạm] Tổng ${tuyenDuongMemoryList.length} dòng Tuyến Đường; có ${eligibleRoutes.length} dòng đủ điều kiện tra cứu chéo V-Tracking (Đã giao hàng / Đang giao hàng).`);
+
+    eligibleRoutes.sort((a, b) => {
+      const parseDateStr = (dateStr) => {
+        if (!dateStr || !dateStr.includes("/")) return "00000000";
+        const parts = dateStr.split(" ")[0].split("/");
+        return `${parts[2] || "0000"}${parts[1] || "00"}${parts[0] || "00"}`;
+      };
+
+      const dateA = parseDateStr(a.ngayThangNam);
+      const dateB = parseDateStr(b.ngayThangNam);
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+
+      const timeA = a.ketThucGiaoHang ? a.ketThucGiaoHang.split(" ").pop() : "";
+      const timeB = b.ketThucGiaoHang ? b.ketThucGiaoHang.split(" ").pop() : "";
+
+      if (timeA && timeB) {
+        return timeA.localeCompare(timeB);
+      } else if (!timeA && timeB) {
+        return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
+      } else if (timeA && !timeB) {
+        return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
+      } else {
+        return (a.kmKetThucGiaoHang || 0) - (b.kmKetThucGiaoHang || 0);
+      }
+    });
+
+    const vtrackingCache = {};
+
+    for (const item of eligibleRoutes) {
+      const thang = item.thang;
+      const bienSo = item.phuongTien; 
+      const ngayTuongUng = item.ngayThangNam; 
+      const ketThucGiao = item.ketThucGiaoHang; 
+
+      if (!thang || !bienSo || !ketThucGiao) continue;
+
+      if (!vtrackingCache[thang]) {
+        const vtFileId = ID_VTRACKING_MONTHS[thang];
+        if (vtFileId) {
+          try {
+            console.log(`📦 Đang tải file V-Tracking Tháng ${thang}/2026 cho tra cứu chéo...`);
+            const vtBuffer = await downloadFileBuffer(drive, vtFileId);
+            vtrackingCache[thang] = parseVTrackingToMap(vtBuffer, thang);
+          } catch (vtLoadErr) {
+            console.error(`⚠️ Không thể tải V-Tracking tháng ${thang}:`, vtLoadErr.message);
+            vtrackingCache[thang] = [];
+          }
+        } else {
+          vtrackingCache[thang] = [];
         }
+      }
+
+      const vtrackingRows = vtrackingCache[thang];
+      const matchedVtRows = vtrackingRows.filter(vt => vt.bienSo === bienSo && vt.ngayChuan === ngayTuongUng);
+
+      if (matchedVtRows.length === 0) continue;
+
+      matchedVtRows.sort((a, b) => a.thoiGianBatDauOnly.localeCompare(b.thoiGianBatDauOnly));
+
+      let foundChuyen = null;
+      const timeKetThucGiao = ketThucGiao.includes(" ") ? ketThucGiao.split(" ").pop() : ketThucGiao;
+
+      for (let j = matchedVtRows.length - 1; j >= 0; j--) {
+        const vtRow = matchedVtRows[j];
+        if (timeKetThucGiao > vtRow.thoiGianBatDauOnly) {
+          foundChuyen = vtRow.chuyenVtracking;
+          break; 
+        }
+      }
+
+      if (foundChuyen !== null) {
+        item.chuyenVtracking = foundChuyen;
+      }
     }
-};
+
+    // 1. TRA CỨU CHÉO KM TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG
+    console.log(`📏 Đang tra cứu chéo chỉ số km từ V-Tracking sang Tuyến Đường...`);
+    for (const item of eligibleRoutes) {
+      const thang = item.thang;
+      const bienSo = item.phuongTien;
+      const ngayTuongUng = item.ngayThangNam;
+      const chuyenNum = item.chuyenVtracking;
+
+      if (!thang || !bienSo || !ngayTuongUng || chuyenNum === null || chuyenNum === undefined) continue;
+
+      const vtrackingRows = vtrackingCache[thang];
+      if (!vtrackingRows) continue;
+
+      const matchedVt = vtrackingRows.find(vt => 
+        vt.bienSo === bienSo && 
+        vt.ngayChuan === ngayTuongUng && 
+        vt.chuyenVtracking === chuyenNum
+      );
+
+      if (matchedVt) {
+        item.kmChuyenDiVtracking = matchedVt.kmChuyenDiVtracking || 0;
+        item.kmChuyenVeVtracking = matchedVt.kmChuyenVeVtracking || 0;
+        item.kmChuyenVtracking = matchedVt.kmChuyenVtracking || 0;
+      }
+    }
+
+    // 2. TẠO CỘT ẢO `khachHang` VÀ `kmKhachVtracking` TRÊN V-TRACKING
+    console.log(`🔗 Đang tiến hành tạo cột ảo 'khachHang' và 'kmKhachVtracking' trên bộ nhớ tạm V-Tracking...`);
+    Object.keys(vtrackingCache).forEach(thang => {
+      const vtrackingRows = vtrackingCache[thang];
+
+      const tripMap = {};
+      vtrackingRows.forEach((vtRow, vtIdx) => {
+        if (!vtRow.bienSo || !vtRow.ngayChuan || vtRow.chuyenVtracking === undefined) return;
+        const tripKey = `${vtRow.bienSo}_${vtRow.ngayChuan}_${vtRow.chuyenVtracking}`;
+        if (!tripMap[tripKey]) {
+          tripMap[tripKey] = [];
+        }
+        tripMap[tripKey].push({ vtRow, vtIdx });
+      });
+
+      Object.keys(tripMap).forEach(tripKey => {
+        const tripItems = tripMap[tripKey];
+        const [bienSo, ngayChuan, chuyen] = tripKey.split("_");
+        const chuyenNum = parseInt(chuyen, 10);
+
+        const matchedRoutes = eligibleRoutes.filter(rt => 
+          rt.phuongTien === bienSo && 
+          rt.ngayThangNam === ngayChuan && 
+          rt.chuyenVtracking === chuyenNum
+        );
+
+        if (matchedRoutes.length === 0) return;
+
+        tripItems.forEach(itemObj => {
+          const vt = itemObj.vtRow;
+          if (!vt.toaDoKetThuc || !vt.toaDoKetThuc.includes(",")) return;
+
+          const vtCoords = vt.toaDoKetThuc.split(",");
+          const latVT = parseFloat(vtCoords[0]);
+          const lonVT = parseFloat(vtCoords[1]);
+          if (isNaN(latVT) || isNaN(lonVT)) return;
+
+          for (const rt of matchedRoutes) {
+            if (!rt.dinhVi || !rt.dinhVi.includes(",")) continue;
+            const rtCoords = rt.dinhVi.split(",");
+            const latRT = parseFloat(rtCoords[0]);
+            const lonRT = parseFloat(rtCoords[1]);
+            if (isNaN(latRT) || isNaN(lonRT)) continue;
+
+            const distMeters = getDistanceFromLatLonInMeters(latVT, lonVT, latRT, lonRT);
+            if (distMeters <= 300) {
+              vt.khachHang = rt.doiTuong; 
+              break;
+            }
+          }
+        });
+
+        let lastFoundCustomer = "";
+        for (let i = tripItems.length - 1; i >= 0; i--) {
+          const vt = tripItems[i].vtRow;
+          if (vt.khachHang) {
+            lastFoundCustomer = vt.khachHang;
+          } else if (lastFoundCustomer) {
+            vt.khachHang = lastFoundCustomer;
+          }
+        }
+      });
+
+      const customerGroupMap = {};
+      vtrackingRows.forEach(vt => {
+        if (!vt.khachHang) return; 
+        const groupKey = `${vt.khachHang}_${vt.ngayChuan}_${vt.bienSo}_${vt.chuyenVtracking}`;
+        if (!customerGroupMap[groupKey]) {
+          customerGroupMap[groupKey] = [];
+        }
+        customerGroupMap[groupKey].push(vt);
+      });
+
+      Object.keys(customerGroupMap).forEach(groupKey => {
+        const groupItems = customerGroupMap[groupKey];
+        let totalKmCustomer = 0;
+        groupItems.forEach(vt => {
+          totalKmCustomer += (vt.quangDuong || 0);
+        });
+
+        const roundedKm = Number(totalKmCustomer.toFixed(2));
+        groupItems.forEach(vt => {
+          vt.kmKhachVtracking = roundedKm;
+        });
+      });
+    });
+
+    // 🌟 3. TRA CỨU CHÉO NGƯỢC LẠI TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG (KÈM ƯU TIÊN SẮP XẾP THÔNG MINH)
+    console.log(`⏱️ Đang tra cứu chéo thoiGianDau, thoiGianDi, kmKhachVtracking từ V-Tracking sang Tuyến Đường theo thứ tự ưu tiên...`);
+    
+    const tuyenDuongTripCustomerCoordMap = {};
+    eligibleRoutes.forEach((rt) => {
+      if (!rt.phuongTien || !rt.ngayThangNam || rt.chuyenVtracking === null || rt.chuyenVtracking === undefined || !rt.doiTuong) return;
+      const coordKey = rt.dinhVi ? rt.dinhVi.trim() : "";
+      const key = `${rt.phuongTien}_${rt.ngayThangNam}_${rt.chuyenVtracking}_${rt.doiTuong}_${coordKey}`;
+      if (!tuyenDuongTripCustomerCoordMap[key]) {
+        tuyenDuongTripCustomerCoordMap[key] = [];
+      }
+      tuyenDuongTripCustomerCoordMap[key].push(rt);
+    });
+
+    Object.keys(tuyenDuongTripCustomerCoordMap).forEach(key => {
+      const items = tuyenDuongTripCustomerCoordMap[key];
+      const parts = key.split("_");
+      const bienSo = parts[0];
+      const ngayChuan = parts[1];
+      const chuyenNum = parseInt(parts[2], 10);
+      const doiTuong = parts[3];
+
+      items.sort((a, b) => {
+        const timeEndA = a.ketThucGiaoHang ? a.ketThucGiaoHang.split(" ").pop() : "99:99:99";
+        const timeEndB = b.ketThucGiaoHang ? b.ketThucGiaoHang.split(" ").pop() : "99:99:99";
+        if (timeEndA !== timeEndB) {
+          return timeEndA.localeCompare(timeEndB);
+        }
+
+        const timeStartA = a.batDauGiaoHang ? a.batDauGiaoHang.split(" ").pop() : "99:99:99";
+        const timeStartB = b.batDauGiaoHang ? b.batDauGiaoHang.split(" ").pop() : "99:99:99";
+        if (timeStartA !== timeStartB) {
+          return timeStartA.localeCompare(timeStartB);
+        }
+
+        const dateXuatA = a.ngayxuatKho || "";
+        const dateXuatB = b.ngayxuatKho || "";
+        return dateXuatB.localeCompare(dateXuatA);
+      });
+
+      const selectedRt = items[0];
+
+      const thang = selectedRt.thang;
+      const vtrackingRows = vtrackingCache[thang];
+      let matchedVt = null;
+
+      if (vtrackingRows) {
+        matchedVt = vtrackingRows.find(vt => 
+          vt.bienSo === bienSo && 
+          vt.ngayChuan === ngayChuan && 
+          vt.chuyenVtracking === chuyenNum && 
+          vt.khachHang === doiTuong
+        );
+      }
+
+      if (matchedVt) {
+        selectedRt.thoiGianDau = matchedVt.thoiGianDau || "00:00:00";
+        selectedRt.thoiGianDi = matchedVt.thoiGianDi || "";
+        selectedRt.kmKhachVtracking = matchedVt.kmKhachVtracking || 0;
+      }
+
+      for (let i = 1; i < items.length; i++) {
+        items[i].thoiGianDau = "00:00:00";
+        items[i].thoiGianDi = "";
+        items[i].kmKhachVtracking = 0;
+      }
+    });
+
+    console.log(`📡 Đang đẩy toàn bộ dữ liệu TUYENDUONG lên Firestore...`);
+    let batch = db.batch();
+    let count = 0;
+    
+    for (const item of tuyenDuongMemoryList) {
+      const { maPhieu, ...dataToSave } = item;
+      const docRef = db.collection('TUYENDUONG').doc(maPhieu);
+      batch.set(docRef, dataToSave, { merge: true });
+      count++;
+      
+      if (count % 400 === 0) {
+        await batch.commit();
+        batch = db.batch();
+      } 
+    } 
+    if (count % 400 !== 0) {
+      await batch.commit();
+    }
+    console.log(`🎉 HOÀN TẤT: Đã cập nhật thành công ${tuyenDuongMemoryList.length} chứng từ TUYENDUONG lên Firestore!`); 
+    
+    const reportRows = generateKhachHangVungReport(routeDataMap);
+    let reportBatch = db.batch();
+    let reportCount = 0;
+
+    for (const record of reportRows) {
+      const rawId = `${record.doiTuong}_${record.vungTieuThu}_${record.htGiaoNhan}_${record.nganh}_${record.nam}`;
+      const docId = rawId.replace(/[\/.\s#$\[\]]/g, "_");
+      const docRef = db.collection('KHACHHANGVUNG').doc(docId);
+      
+      reportBatch.set(docRef, record, { merge: true });
+      reportCount++;
+
+      if (reportCount % 400 === 0) {
+        await reportBatch.commit();
+        reportBatch = db.batch();
+      }
+    }
+    if (reportCount % 400 !== 0) {
+      await reportBatch.commit();
+    }
+    console.log(`🎉 HOÀN TẤT: Đã gộp và đẩy thành công ${reportRows.length} dòng báo cáo lên 'KHACHHANGVUNG'!`);
+
+  } catch (err) {
+    console.error(`❌ Lỗi đồng bộ Tuyến Đường & Tra cứu chéo V-Tracking:`, err.message);
+  }
+}
+
+mainSync().catch(err => {
+  console.error('❌ Lỗi hệ thống nghiêm trọng:', err);
+  process.exit(1);
+});
