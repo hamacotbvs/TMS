@@ -395,11 +395,12 @@ function parseVTrackingToMap(buffer, monthNum) {
 
     let isStartNearKho55 = false;
     let isEndNearKho55 = false;
+    let latS = NaN, lonS = NaN, latE = NaN, lonE = NaN;
 
     if (toaDoBatDau && toaDoBatDau.includes(",")) {
       const coordsS = toaDoBatDau.split(",");
-      const latS = parseFloat(coordsS[0]);
-      const lonS = parseFloat(coordsS[1]);
+      latS = parseFloat(coordsS[0]);
+      lonS = parseFloat(coordsS[1]);
       if (!isNaN(latS) && !isNaN(lonS)) {
         if (getDistanceFromLatLonInMeters(latS, lonS, KHO_55_LAT, KHO_55_LON) <= 200) {
           isStartNearKho55 = true;
@@ -409,8 +410,8 @@ function parseVTrackingToMap(buffer, monthNum) {
 
     if (toaDoKetThuc && toaDoKetThuc.includes(",")) {
       const coordsE = toaDoKetThuc.split(",");
-      const latE = parseFloat(coordsE[0]);
-      const lonE = parseFloat(coordsE[1]);
+      latE = parseFloat(coordsE[0]);
+      lonE = parseFloat(coordsE[1]);
       if (!isNaN(latE) && !isNaN(lonE)) {
         if (getDistanceFromLatLonInMeters(latE, lonE, KHO_55_LAT, KHO_55_LON) <= 200) {
           isEndNearKho55 = true;
@@ -418,7 +419,17 @@ function parseVTrackingToMap(buffer, monthNum) {
       }
     }
 
-    if (isStartNearKho55 && isEndNearKho55) {
+    let isStartEndUnder200m = false;
+    if (!isNaN(latS) && !isNaN(lonS) && !isNaN(latE) && !isNaN(lonE)) {
+      if (getDistanceFromLatLonInMeters(latS, lonS, latE, lonE) < 200) {
+        isStartEndUnder200m = true;
+      }
+    }
+
+    // Nếu tọa độ đầu & cuối chênh lệch < 200m nhưng Quãng đường xe chạy (km) > 500m (0.5 km) -> giữ lại tính như 1 chuyến
+    const isLongTripDespiteCloseCoords = isStartEndUnder200m && (quangDuong > 0.5);
+
+    if (!isLongTripDespiteCloseCoords && isStartNearKho55 && isEndNearKho55) {
       continue;
     }
 
