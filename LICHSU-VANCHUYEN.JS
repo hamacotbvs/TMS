@@ -852,6 +852,19 @@ document.addEventListener('DOMContentLoaded', function() {
         selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
     }
 
+    // Tự động chèn nút Xuất PDF Bảng kê cạnh nút Tải dữ liệu
+    if (btnTaiDuLieu && btnTaiDuLieu.parentNode && !document.getElementById('btnXuatPdfBangKe')) {
+        const btnXuatPdf = document.createElement('button');
+        btnXuatPdf.id = 'btnXuatPdfBangKe';
+        btnXuatPdf.type = 'button';
+        btnXuatPdf.innerHTML = '🖨️ Xuất PDF';
+        btnXuatPdf.style.cssText = 'padding: 6px 10px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 6px;';
+        btnXuatPdf.onclick = function() {
+            window.xuatPdfBangKeVanChuyen();
+        };
+        btnTaiDuLieu.parentNode.insertBefore(btnXuatPdf, btnTaiDuLieu.nextSibling);
+    }
+
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -912,3 +925,487 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// =========================================================================
+// PHẦN 7: XUẤT PDF BẢNG KÊ VẬN CHUYỂN THEO MẪU BIỂU CHUẨN
+// =========================================================================
+function chuyenNgaySangDate(ngayStr) {
+    if (!ngayStr || typeof ngayStr !== "string") return null;
+    const clean = ngayStr.trim().split(" ")[0];
+    if (clean.includes("/")) {
+        const parts = clean.split("/");
+        if (parts.length === 3) {
+            return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+        }
+    } else if (clean.includes("-")) {
+        const parts = clean.split("-");
+        if (parts.length === 3) {
+            return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        }
+    }
+    return null;
+}
+
+function dinhDangNgayHienThi(ngayStr) {
+    if (!ngayStr) return "";
+    const d = chuyenNgaySangDate(ngayStr);
+    if (!d || isNaN(d.getTime())) return ngayStr.trim().split(" ")[0];
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+}
+
+function catSoKhongDau(pxkStr) {
+    if (pxkStr === undefined || pxkStr === null) return "";
+    return String(pxkStr).trim().replace(/^0+/, "");
+}
+
+window.xuatPdfBangKeVanChuyen = async function() {
+    const inputThangVC = document.getElementById('thangVanChuyen');
+    const selectPhuongTien = document.getElementById('filterPhuongTien');
+
+    if (!inputThangVC || !inputThangVC.value) {
+        alert("Vui lòng chọn tháng năm trước khi xuất PDF!");
+        return;
+    }
+
+    const bienSoChon = selectPhuongTien ? selectPhuongTien.value.trim() : "";
+    if (!bienSoChon || bienSoChon.toLowerCase().includes("xe máy") || bienSoChon.toLowerCase().includes("tất cả")) {
+        alert("Vui lòng chọn một biển số xe tải cụ thể (VD: 65C-06126) trong ô lọc Phương tiện để xuất Bảng kê!");
+        return;
+    }
+
+    const [namStr, thangStr] = inputThangVC.value.split('-');
+    const thangNum = parseInt(thangStr, 10);
+    const namNum = parseInt(namStr, 10);
+
+    const btnPdf = document.getElementById('btnXuatPdfBangKe');
+    const oldText = btnPdf ? btnPdf.innerHTML : "";
+    if (btnPdf) {
+        btnPdf.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo PDF...';
+        btnPdf.disabled = true;
+    }
+
+    try {
+        // 1. Lấy cấu hình PHUONGTIEN của biển số xe đang chọn
+        const qPt = query(collection(db, "PHUONGTIEN"), where("bienSo", "==", bienSoChon));
+        const snapPt = await getDocs(qPt);
+        let dsCauHinhXe = [];
+        snapPt.forEach(docSnap => {
+            const d = docSnap.data();
+            const dateApDung = chuyenNgaySangDate(d.ngayApDung);
+            dsCauHinhXe.push({
+                ...d,
+                _dateApDung: dateApDung || new Date(2000, 0, 1)
+            });
+        });
+
+        // Sắp xếp cấu hình theo ngày áp dụng tăng dần
+        dsCauHinhXe.sort((a, b) => a._dateApDung - b._dateApDung);
+
+        if (dsCauHinhXe.length === 0) {
+            alert(`Không tìm thấy cấu hình phương tiện "${bienSoChon}" trong bảng PHUONGTIEN!`);
+            return;
+        }
+
+        // Hàm tìm cấu hình phương tiện áp dụng tại 1 ngày cụ thể
+        const layCauHinhTaiNgay = (dateObj) => {
+            let chosen = dsCauHinhXe[0];
+            for (let i = 0; i < dsCauHinhXe.length; i++) {
+                if (dsCauHinhXe[i]._dateApDung <= dateObj) {
+                    chosen = dsCauHinhXe[i];
+                }
+            }
+            return chosen;
+        };
+
+        // Xác định cấu hình đầu tháng đang xuất
+        const ngayDauThangXuat = new Date(namNum, thangNum - 1, 1);
+        const cauHinhDauKy = layCauHinhTaiNgay(ngayDauThangXuat);
+        const ngayApDungGoc = cauHinhDauKy._dateApDung;
+        const kmDauKyGoc = Number(cauHinhDauKy.kmDauKy) || 0;
+        const dauDauKyGoc = Number(cauHinhDauKy.dauDauKy) || 0;
+        const dinhMucHienThi = Number(cauHinhDauKy.dinhMuc) || 0.16;
+        const nguongNoiO = Number(cauHinhDauKy.noiO) || 60;
+
+        // 2. Tải dữ liệu TUYENDUONG của xe này từ tháng của ngayApDung đến tháng đang xuất (cùng năm hoặc qua năm)
+        const qTd = query(collection(db, "TUYENDUONG"), where("phuongTien", "==", bienSoChon));
+        const snapTd = await getDocs(qTd);
+
+        let allDocsXe = [];
+        snapTd.forEach(docSnap => {
+            const d = docSnap.data();
+            const duyetVal = (d.duyet || "").trim();
+            if (duyetVal === "Đã giao hàng" || duyetVal === "Đang giao hàng") {
+                const rawNgay = d.ngayThangNam || layNgayGomNhom(d);
+                const dateChuyen = chuyenNgaySangDate(rawNgay);
+                allDocsXe.push({
+                    id: docSnap.id,
+                    ...d,
+                    _rawNgay: rawNgay,
+                    _dateChuyen: dateChuyen
+                });
+            }
+        });
+
+        // Gom nhóm toàn bộ các chuyến của xe để tính lũy kế ODO từ ngayApDung đến trước tháng xuất
+        let mapChuyenTruocKy = {};
+        let mapChuyenTrongKy = {};
+
+        allDocsXe.forEach(d => {
+            if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc) return;
+
+            const m = d._dateChuyen.getMonth() + 1;
+            const y = d._dateChuyen.getFullYear();
+            const ngayKey = dinhDangNgayHienThi(d._rawNgay);
+            const soChuyen = (d.chuyenVtracking !== undefined && d.chuyenVtracking !== null && d.chuyenVtracking !== "") ? d.chuyenVtracking : 1;
+            const tripKey = `${ngayKey}_CHUYEN_${soChuyen}`;
+
+            if (y < namNum || (y === namNum && m < thangNum)) {
+                // Các chuyến chạy từ ngayApDung đến trước tháng hiện tại
+                if (!mapChuyenTruocKy[tripKey]) {
+                    mapChuyenTruocKy[tripKey] = Number(d.kmChuyenVtracking) || 0;
+                }
+            } else if (y === namNum && m === thangNum) {
+                // Các chuyến trong tháng đang xuất
+                if (!mapChuyenTrongKy[tripKey]) {
+                    mapChuyenTrongKy[tripKey] = {
+                        ngayStr: ngayKey,
+                        dateObj: d._dateChuyen,
+                        soChuyen: Number(soChuyen) || 1,
+                        kmChuyenDiVtracking: Number(d.kmChuyenDiVtracking) || 0,
+                        kmChuyenVeVtracking: Number(d.kmChuyenVeVtracking) || 0,
+                        kmChuyenVtracking: Number(d.kmChuyenVtracking) || 0,
+                        dons: []
+                    };
+                }
+                mapChuyenTrongKy[tripKey].dons.push(d);
+            }
+        });
+
+        // Tính Đồng hồ KM đầu kỳ
+        let kmTichLuyTruocKy = 0;
+        Object.values(mapChuyenTruocKy).forEach(km => {
+            kmTichLuyTruocKy += km;
+        });
+        const dongHoKmDauKy = Math.round(kmDauKyGoc + kmTichLuyTruocKy);
+
+        // Sắp xếp các chuyến trong kỳ theo ngày và số chuyến tăng dần
+        let dsChuyenTrongKy = Object.values(mapChuyenTrongKy).sort((a, b) => {
+            if (a.dateObj - b.dateObj !== 0) return a.dateObj - b.dateObj;
+            return a.soChuyen - b.soChuyen;
+        });
+
+        // 3. Xử lý từng chuyến: gom đơn trùng (doiTuong + dinhVi) & thêm dòng "Về kho"
+        let bangKeRows = [];
+        let tongKmNoiO = 0;
+        let tongKmTinh = 0;
+        let tongKmTatCaChuyen = 0;
+        let tongTieuThuLit = 0;
+
+        dsChuyenTrongKy.forEach(chuyen => {
+            const cfgNgay = layCauHinhTaiNgay(chuyen.dateObj);
+            const dinhMucChuyen = Number(cfgNgay.dinhMuc) || dinhMucHienThi;
+            const noiOChuyen = Number(cfgNgay.noiO) || nguongNoiO;
+
+            // Cộng quãng đường chuyến (1 chuyến chỉ lấy 1 lần kmChuyenVtracking)
+            const kmChuyen = chuyen.kmChuyenVtracking;
+            tongKmTatCaChuyen += kmChuyen;
+            if (kmChuyen <= noiOChuyen) {
+                tongKmNoiO += kmChuyen;
+            } else {
+                tongKmTinh += kmChuyen;
+            }
+
+            // Gom các dòng trong cùng chuyến nếu doiTuong giống nhau và dinhVi giống nhau
+            let groupedStops = [];
+            let stopIndexMap = {};
+
+            // Sắp xếp đơn trong chuyến theo thứ tự kết thúc giao hàng
+            chuyen.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
+
+            chuyen.dons.forEach(don => {
+                const dt = (don.doiTuong || "").trim();
+                const dv = (don.dinhVi || "").trim();
+                const groupKey = `${dt}___${dv}`;
+                const pxkClean = catSoKhongDau(don.pxk);
+
+                if (stopIndexMap[groupKey] === undefined) {
+                    stopIndexMap[groupKey] = groupedStops.length;
+                    groupedStops.push({
+                        ngay: chuyen.ngayStr,
+                        noiGiao: dt,
+                        km: Number(don.kmKhachVtracking) || 0,
+                        pxkList: pxkClean ? [pxkClean] : []
+                    });
+                } else {
+                    const idx = stopIndexMap[groupKey];
+                    if (pxkClean && !groupedStops[idx].pxkList.includes(pxkClean)) {
+                        groupedStops[idx].pxkList.push(pxkClean);
+                    }
+                }
+            });
+
+            // Tính nhiên liệu tiêu thụ theo kmChuyenDiVtracking & dinhMuc cho các điểm giao
+            let tongLitDiChuan = chuyen.kmChuyenDiVtracking * dinhMucChuyen;
+            let congDonLitDi = 0;
+
+            groupedStops.forEach((stop, i) => {
+                let litHang = 0;
+                if (i === groupedStops.length - 1 && groupedStops.length > 0 && chuyen.kmChuyenDiVtracking > 0) {
+                    // Cân chỉnh phần lẻ ở điểm cuối lượt đi để tổng lượt đi khớp chính xác kmChuyenDiVtracking * dinhMuc
+                    litHang = Math.max(0, Number((tongLitDiChuan - congDonLitDi).toFixed(2)));
+                } else {
+                    litHang = Number((stop.km * dinhMucChuyen).toFixed(2));
+                    congDonLitDi += litHang;
+                }
+
+                tongTieuThuLit += litHang;
+
+                bangKeRows.push({
+                    ngay: stop.ngay,
+                    noiGiao: stop.noiGiao,
+                    km: stop.km > 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
+                    tieuThu: litHang > 0 ? litHang.toFixed(2) : "0.00",
+                    doThem: "",
+                    chungTu: stop.pxkList.join(", "),
+                    ghiChu: ""
+                });
+            });
+
+            // Thêm dòng "Về kho" cuối mỗi chuyến
+            const kmVe = chuyen.kmChuyenVeVtracking;
+            const litVe = Number((kmVe * dinhMucChuyen).toFixed(2));
+            tongTieuThuLit += litVe;
+
+            bangKeRows.push({
+                ngay: chuyen.ngayStr,
+                noiGiao: "Về kho",
+                km: kmVe > 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
+                tieuThu: litVe > 0 ? litVe.toFixed(2) : "0.00",
+                doThem: "",
+                chungTu: "",
+                ghiChu: ""
+            });
+        });
+
+        const dongHoKmCuoiKy = Math.round(dongHoKmDauKy + tongKmTatCaChuyen);
+        const dinhMucLit100Km = Math.round(dinhMucHienThi * 100);
+
+        // Nếu ít dòng, chèn thêm dòng trống cho đẹp khung A4 như mẫu
+        const minRows = 16;
+        while (bangKeRows.length < minRows) {
+            bangKeRows.push({ ngay: "&nbsp;", noiGiao: "", km: "", tieuThu: "", doThem: "", chungTu: "", ghiChu: "" });
+        }
+
+        // 4. Tạo giao diện HTML chuẩn A4 và mở hộp thoại in/lưu PDF
+        const rowsHtml = bangKeRows.map(r => `
+            <tr>
+                <td style="text-align: center;">${r.ngay}</td>
+                <td style="text-align: left; padding-left: 6px;">${r.noiGiao}</td>
+                <td style="text-align: right; padding-right: 6px;">${r.km}</td>
+                <td style="text-align: right; padding-right: 6px;">${r.tieuThu}</td>
+                <td style="text-align: right; padding-right: 6px;">${r.doThem}</td>
+                <td style="text-align: left; padding-left: 6px;">${r.chungTu}</td>
+                <td style="text-align: left; padding-left: 6px;">${r.ghiChu}</td>
+            </tr>
+        `).join("");
+
+        const today = new Date();
+        const ngayKyStr = `Cần Thơ, ngày ${String(today.getDate()).padStart(2, '0')} tháng ${String(today.getMonth() + 1).padStart(2, '0')} năm ${today.getFullYear()}`;
+
+        const printWindow = window.open('', '_blank', 'width=900,height=1100');
+        if (!printWindow) {
+            alert("Trình duyệt đang chặn cửa sổ bật lên (Pop-up). Vui lòng cho phép mở Pop-up để xuất PDF!");
+            return;
+        }
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+                <meta charset="UTF-8">
+                <title>Bảng Kê Vận Chuyển Tháng ${String(thangNum).padStart(2, '0')}/${namNum} - ${bienSoChon}</title>
+                <style>
+                    @page {
+                        size: A4 portrait;
+                        margin: 12mm 10mm 12mm 10mm;
+                    }
+                    body {
+                        font-family: "Times New Roman", Times, serif;
+                        font-size: 11px;
+                        color: #000;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .company-header {
+                        font-weight: bold;
+                        font-size: 11px;
+                        line-height: 1.4;
+                        text-align: left;
+                    }
+                    .doc-title {
+                        text-align: center;
+                        font-weight: bold;
+                        font-size: 15px;
+                        margin: 8px 0 6px 0;
+                        text-transform: uppercase;
+                    }
+                    .sub-info {
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 11px;
+                        margin-bottom: 4px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        table-layout: fixed;
+                    }
+                    th, td {
+                        border: 1px solid #000;
+                        padding: 3px 4px;
+                        font-size: 10.5px;
+                        word-wrap: break-word;
+                        height: 18px;
+                    }
+                    th {
+                        background-color: #d9d9d9 !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                        font-weight: bold;
+                        text-align: center;
+                    }
+                    .summary-table {
+                        margin-top: 8px;
+                    }
+                    .summary-table td {
+                        text-align: center;
+                        font-weight: bold;
+                        height: 20px;
+                    }
+                    .footer-sign {
+                        margin-top: 14px;
+                        width: 100%;
+                    }
+                    .sign-date {
+                        text-align: right;
+                        font-style: italic;
+                        font-size: 11px;
+                        padding-right: 25px;
+                        margin-bottom: 4px;
+                    }
+                    .sign-cols {
+                        display: flex;
+                        justify-content: space-around;
+                        text-align: center;
+                        font-weight: bold;
+                        font-size: 11px;
+                    }
+                    @media print {
+                        .no-print { display: none !important; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="no-print" style="background: #f1f5f9; padding: 8px 12px; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif;">
+                    <span style="font-size: 12px; color: #334155;">Xem trước bản in PDF (Chọn <b>Lưu dưới dạng PDF / Save as PDF</b> trong hộp thoại in)</span>
+                    <button onclick="window.print()" style="background: #0284c7; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-weight: bold; cursor: pointer;">🖨️ In / Lưu PDF ngay</button>
+                </div>
+
+                <div class="company-header">
+                    CÔNG TY CỔ PHẦN VẬT TƯ HẬU GIANG<br>
+                    PHÒNG KINH DOANH SƠN
+                </div>
+
+                <div class="doc-title">BẢNG KÊ VẬN CHUYỂN THÁNG ${String(thangNum).padStart(2, '0')}/${namNum}</div>
+
+                <div class="sub-info">
+                    <span>Phương tiện: <strong>${bienSoChon}</strong></span>
+                    <span>Định mức: <strong>${dinhMucLit100Km} lít/100 km</strong></span>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 11%;">NGÀY</th>
+                            <th rowspan="2" style="width: 34%;">NƠI GIAO</th>
+                            <th rowspan="2" style="width: 8%;">KM</th>
+                            <th colspan="2" style="width: 19%;">NHIÊN LIỆU (lít)</th>
+                            <th rowspan="2" style="width: 16%;">CHỨNG TỪ</th>
+                            <th rowspan="2" style="width: 12%;">GHI CHÚ</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 9.5%;">TIÊU THỤ</th>
+                            <th style="width: 9.5%;">ĐỔ THÊM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2" style="width: 22%;">ĐỒNG HỒ KM</th>
+                            <th colspan="3" style="width: 33%;">TỔNG QUÃNG ĐƯỜNG (km)</th>
+                            <th colspan="4" style="width: 45%;">NHIÊN LIỆU (lít)</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 11%;">ĐẦU KỲ</th>
+                            <th style="width: 11%;">CUỐI KỲ</th>
+                            <th style="width: 11%;">NỘI Ô</th>
+                            <th style="width: 11%;">TỈNH</th>
+                            <th style="width: 11%;">TỔNG</th>
+                            <th style="width: 11.25%;">TIÊU THỤ</th>
+                            <th style="width: 11.25%;">ĐỔ THÊM</th>
+                            <th style="width: 11.25%;">TỒN ĐẦU KỲ</th>
+                            <th style="width: 11.25%;">TỒN CUỐI KỲ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${dongHoKmDauKy.toLocaleString('vi-VN')}</td>
+                            <td>${dongHoKmCuoiKy.toLocaleString('vi-VN')}</td>
+                            <td>${Math.round(tongKmNoiO).toLocaleString('vi-VN')}</td>
+                            <td>${Math.round(tongKmTinh).toLocaleString('vi-VN')}</td>
+                            <td>${Math.round(tongKmTatCaChuyen).toLocaleString('vi-VN')}</td>
+                            <td>${tongTieuThuLit.toFixed(2)}</td>
+                            <td></td>
+                            <td>${dauDauKyGoc.toFixed(3)}</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="footer-sign">
+                    <div class="sign-date">${ngayKyStr}</div>
+                    <div class="sign-cols">
+                        <div style="width: 33%;">Trưởng đơn vị</div>
+                        <div style="width: 33%;">Kế toán</div>
+                        <div style="width: 33%;">Người lập bảng</div>
+                    </div>
+                </div>
+
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() { window.print(); }, 300);
+                    };
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+
+    } catch (err) {
+        console.error("Lỗi khi xuất PDF Bảng kê:", err);
+        alert("Có lỗi xảy ra khi tổng hợp dữ liệu xuất PDF: " + err.message);
+    } finally {
+        if (btnPdf) {
+            btnPdf.innerHTML = oldText;
+            btnPdf.disabled = false;
+        }
+    }
+};
