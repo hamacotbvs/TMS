@@ -252,7 +252,7 @@ function hienThiDanhSachVanChuyen() {
     if (!container) return;
 
     if (!window._cachedVanChuyenData) {
-        container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
+        container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải"</b> để xem lịch sử vận chuyển.</div>';
         return;
     }
 
@@ -771,6 +771,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTaiDuLieu = document.getElementById('btnTaiLichSuVC');
     const container = document.getElementById('danhSachLichSuVanChuyen');
 
+    if (btnTaiDuLieu) {
+        btnTaiDuLieu.textContent = 'Tải';
+    }
+
     const possibleTitles = document.querySelectorAll('h1, h2, h3, h4, .header-title, .title, span, div');
     let titleElement = null;
     for (let el of possibleTitles) {
@@ -852,7 +856,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
     }
 
-    // Tự động chèn nút icon máy in cạnh nút Tải dữ liệu
+    // Tự động chèn nút icon máy in cạnh nút Tải
     if (btnTaiDuLieu && btnTaiDuLieu.parentNode && !document.getElementById('btnXuatPdfBangKe')) {
         const btnXuatPdf = document.createElement('button');
         btnXuatPdf.id = 'btnXuatPdfBangKe';
@@ -876,7 +880,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (labelThangVC) labelThangVC.innerText = `${currM}/${currY}`;
 
         if (container && container.innerHTML.trim() === "") {
-            container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải dữ liệu"</b> để xem lịch sử vận chuyển.</div>';
+            container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải"</b> để xem lịch sử vận chuyển.</div>';
         }
 
         inputThangVC.addEventListener('change', function() {
