@@ -466,8 +466,7 @@ function parseVTrackingToMap(buffer, monthNum) {
       nam: y,
       khachHang: "",
       kmKhachVtracking: 0,
-      thoiGianDau: "00:00:00",
-      odo: null
+      thoiGianDau: "00:00:00"
     });
   }
 
@@ -538,183 +537,22 @@ function parseVTrackingToMap(buffer, monthNum) {
     items.forEach(item => {
       const cNum = item.chuyenVtracking;
       if (!tripGroups[cNum]) {
-        tripGroups[cNum] = { totalKm: 0, returnKm: 0, outboundKm: 0 };
+        tripGroups[cNum] = { totalKm: 0 };
       }
       tripGroups[cNum].totalKm += item.quangDuong;
-    });
-
-    const tripLastItemMap = {};
-    items.forEach(item => {
-      tripLastItemMap[item.chuyenVtracking] = item;
-    });
-
-    Object.keys(tripGroups).forEach(cNum => {
-      const lastItem = tripLastItemMap[cNum];
-      let isLastItemKho55 = false;
-      if (lastItem && lastItem.toaDoKetThuc && lastItem.toaDoKetThuc.includes(",")) {
-        const coords = lastItem.toaDoKetThuc.split(",");
-        const latEnd = parseFloat(coords[0]);
-        const lonEnd = parseFloat(coords[1]);
-        if (!isNaN(latEnd) && !isNaN(lonEnd)) {
-          if (getDistanceFromLatLonInMeters(latEnd, lonEnd, KHO_55_LAT, KHO_55_LON) <= 200) {
-            isLastItemKho55 = true;
-          }
-        }
-      }
-
-      if (isLastItemKho55) {
-        tripGroups[cNum].returnKm = lastItem.quangDuong;
-      } else {
-        tripGroups[cNum].returnKm = 0;
-      }
-      tripGroups[cNum].outboundKm = tripGroups[cNum].totalKm - tripGroups[cNum].returnKm;
     });
 
     items.forEach(item => {
       const groupInfo = tripGroups[item.chuyenVtracking];
       item.kmChuyenVtracking = Number(groupInfo.totalKm.toFixed(2));
-      item.kmChuyenVeVtracking = Number(groupInfo.returnKm.toFixed(2));
-      item.kmChuyenDiVtracking = Number(groupInfo.outboundKm.toFixed(2));
-      
+      item.kmChuyenDiVtracking = 0;
+      item.kmChuyenVeVtracking = 0;
+
       finalizedRows.push(item);
     });
   });
 
   return finalizedRows;
-}
-
-// Chuyển chuỗi ngày "DD/MM/YYYY" thành khóa so sánh "YYYYMMDD"
-function toSortableDateKey(dateStr) {
-  if (!dateStr) return "00000000";
-  const clean = dateStr.toString().trim().split(" ")[0];
-  const sep = clean.includes("/") ? "/" : (clean.includes("-") ? "-" : null);
-  if (!sep) return "00000000";
-  const parts = clean.split(sep);
-  if (parts[0].length === 4) {
-    return `${parts[0]}${(parts[1] || "00").padStart(2, "0")}${(parts[2] || "00").padStart(2, "0")}`;
-  }
-  return `${(parts[2] || "0000").padStart(4, "0")}${(parts[1] || "00").padStart(2, "0")}${(parts[0] || "00").padStart(2, "0")}`;
-}
-
-// Đọc các mốc KM đầu kỳ từ collection KMDAUKY trên Firestore
-async function loadKmDauKyMilestones(firestoreDb) {
-  const milestonesByVehicleYear = {};
-  try {
-    const snap = await firestoreDb.collection('KMDAUKY').get();
-    snap.forEach(doc => {
-      const data = doc.data() || {};
-      const bienSo = (data.bienSo || "").toString().trim();
-      const ngayDauKy = (data.ngayDauKy || "").toString().trim();
-      const kmDauKy = parseFloat(data.kmDauKy);
-      const dateKey = toSortableDateKey(ngayDauKy);
-      const yearStr = data.nam
-        ? String(parseInt(data.nam, 10))
-        : (dateKey.length >= 4 ? dateKey.slice(0, 4) : "2026");
-
-      if (!bienSo || isNaN(kmDauKy) || dateKey === "00000000") return;
-
-      const key = `${bienSo}_${yearStr}`;
-      if (!milestonesByVehicleYear[key]) {
-        milestonesByVehicleYear[key] = [];
-      }
-      milestonesByVehicleYear[key].push({
-        ngayDauKy,
-        dateKey,
-        kmDauKy
-      });
-    });
-
-    Object.keys(milestonesByVehicleYear).forEach(key => {
-      milestonesByVehicleYear[key].sort((a, b) => a.dateKey.localeCompare(b.dateKey));
-    });
-  } catch (err) {
-    console.warn(`⚠️ Không đọc được collection KMDAUKY:`, err.message);
-  }
-  return milestonesByVehicleYear;
-}
-
-// 📌 TÍNH TRƯỜNG ẢO `odo` TRÊN VTRACKING BỘ NHỚ TẠM
-// Hỗ trợ nhiều mốc đầu kỳ trong năm (bao gồm ngày thay đồng hồ giữa năm)
-// Chỉ tính trên các dòng có Quãng đường xe chạy (km) > 200m (0.2 km)
-function computeVirtualOdoInMemory(vtrackingCache, milestonesByVehicleYear = {}) {
-  const allRows = [];
-  Object.values(vtrackingCache).forEach(rows => {
-    if (Array.isArray(rows)) {
-      rows.forEach(r => allRows.push(r));
-    }
-  });
-
-  const byVehicleAndYear = {};
-  allRows.forEach(row => {
-    const endDatePart = row.thoiGianKetThuc
-      ? row.thoiGianKetThuc.split(" ")[0]
-      : row.ngayChuan;
-    const endDateKey = toSortableDateKey(endDatePart);
-    const yearStr = endDateKey.length >= 4 && endDateKey !== "00000000"
-      ? endDateKey.slice(0, 4)
-      : String(row.nam || "2026").trim();
-    const key = `${row.bienSo}_${yearStr}`;
-    if (!byVehicleAndYear[key]) {
-      byVehicleAndYear[key] = { bienSo: row.bienSo, yearStr, rows: [] };
-    }
-    byVehicleAndYear[key].rows.push({ ...row, _endDateKey: endDateKey });
-  });
-
-  const odoById = {};
-
-  Object.values(byVehicleAndYear).forEach(({ bienSo, yearStr, rows }) => {
-    const vehicleYearKey = `${bienSo}_${yearStr}`;
-    const milestones = milestonesByVehicleYear[vehicleYearKey] || [];
-
-    rows.sort((a, b) => {
-      if (a._endDateKey !== b._endDateKey) {
-        return a._endDateKey.localeCompare(b._endDateKey);
-      }
-      const timeA = a.thoiGianKetThucOnly || a.thoiGianBatDauOnly || "00:00:00";
-      const timeB = b.thoiGianKetThucOnly || b.thoiGianBatDauOnly || "00:00:00";
-      return timeA.localeCompare(timeB);
-    });
-
-    let currentOdo = null;
-    let activeMilestoneIndex = -1;
-
-    rows.forEach(r => {
-      // Tìm mốc mới nhất có dateKey <= _endDateKey của dòng hiện tại
-      let latestEligibleIdx = -1;
-      for (let mIdx = 0; mIdx < milestones.length; mIdx++) {
-        if (milestones[mIdx].dateKey <= r._endDateKey) {
-          latestEligibleIdx = mIdx;
-        } else {
-          break;
-        }
-      }
-
-      // Nếu chuyển sang mốc đầu kỳ mới (VD: mốc 01/01 hoặc mốc thay đồng hồ giữa năm) -> reset ODO theo mốc đó
-      if (latestEligibleIdx !== -1 && latestEligibleIdx !== activeMilestoneIndex) {
-        activeMilestoneIndex = latestEligibleIdx;
-        currentOdo = milestones[latestEligibleIdx].kmDauKy;
-      }
-
-      const km = parseFloat(r.quangDuong) || 0;
-      if (km > 0.2) {
-        if (currentOdo === null) {
-          currentOdo = 0;
-        }
-        currentOdo += km;
-        odoById[r.id] = Number(currentOdo.toFixed(2));
-      } else {
-        odoById[r.id] = null;
-      }
-    });
-  });
-
-  Object.values(vtrackingCache).forEach(rows => {
-    if (Array.isArray(rows)) {
-      rows.forEach(r => {
-        r.odo = Object.prototype.hasOwnProperty.call(odoById, r.id) ? odoById[r.id] : null;
-      });
-    }
-  });
 }
 
 // 📊 HÀM GOM NHÓM DỮ LIỆU ĐỂ TẠO BẢNG KHACHHANGVUNG
@@ -824,9 +662,6 @@ async function mainSync() {
   let routeDataMap = {};
 
   try {
-    console.log(`📦 Đang tải các mốc KM đầu kỳ từ KMDAUKY...`);
-    const milestonesByVehicleYear = await loadKmDauKyMilestones(db);
-
     console.log(`📦 Đang tải file YCGH...`);
     const ycghBuffer = await downloadFileBuffer(drive, ID_YCGH);
     const ycghMapData = parseYcghToMap(ycghBuffer);
@@ -918,36 +753,7 @@ async function mainSync() {
       }
     }
 
-    // Tính trường ảo `odo` trên bộ nhớ tạm Vtracking từ các mốc KMDAUKY
-    computeVirtualOdoInMemory(vtrackingCache, milestonesByVehicleYear);
-
-    // 1. TRA CỨU CHÉO KM TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG
-    console.log(`📏 Đang tra cứu chéo chỉ số km từ V-Tracking sang Tuyến Đường...`);
-    for (const item of eligibleRoutes) {
-      const thang = item.thang;
-      const bienSo = item.phuongTien;
-      const ngayTuongUng = item.ngayThangNam;
-      const chuyenNum = item.chuyenVtracking;
-
-      if (!thang || !bienSo || !ngayTuongUng || chuyenNum === null || chuyenNum === undefined) continue;
-
-      const vtrackingRows = vtrackingCache[thang];
-      if (!vtrackingRows) continue;
-
-      const matchedVt = vtrackingRows.find(vt => 
-        vt.bienSo === bienSo && 
-        vt.ngayChuan === ngayTuongUng && 
-        vt.chuyenVtracking === chuyenNum
-      );
-
-      if (matchedVt) {
-        item.kmChuyenDiVtracking = matchedVt.kmChuyenDiVtracking || 0;
-        item.kmChuyenVeVtracking = matchedVt.kmChuyenVeVtracking || 0;
-        item.kmChuyenVtracking = matchedVt.kmChuyenVtracking || 0;
-      }
-    }
-
-    // 2. TẠO CỘT ẢO `khachHang` VÀ `kmKhachVtracking` TRÊN V-TRACKING
+    // 1. TẠO CỘT ẢO `khachHang` VÀ `kmKhachVtracking` TRÊN V-TRACKING
     console.log(`🔗 Đang tiến hành tạo cột ảo 'khachHang' và 'kmKhachVtracking' trên bộ nhớ tạm V-Tracking...`);
     Object.keys(vtrackingCache).forEach(thang => {
       const vtrackingRows = vtrackingCache[thang];
@@ -992,7 +798,7 @@ async function mainSync() {
             if (isNaN(latRT) || isNaN(lonRT)) continue;
 
             const distMeters = getDistanceFromLatLonInMeters(latVT, lonVT, latRT, lonRT);
-            if (distMeters <= 200) {
+            if (distMeters <= 300) {
               vt.khachHang = rt.doiTuong; 
               break;
             }
@@ -1032,7 +838,59 @@ async function mainSync() {
           vt.kmKhachVtracking = roundedKm;
         });
       });
+
+      // Tính `kmChuyenDiVtracking` trước bằng tổng `kmKhachVtracking` trong chuyến, sau đó `kmChuyenVeVtracking = kmChuyenVtracking - kmChuyenDiVtracking`
+      const tripCustomerKmMap = {};
+      vtrackingRows.forEach(vt => {
+        if (!vt.bienSo || !vt.ngayChuan || vt.chuyenVtracking === undefined || !vt.khachHang) return;
+        const tripKey = `${vt.bienSo}_${vt.ngayChuan}_${vt.chuyenVtracking}`;
+        if (!tripCustomerKmMap[tripKey]) {
+          tripCustomerKmMap[tripKey] = {};
+        }
+        tripCustomerKmMap[tripKey][vt.khachHang] = vt.kmKhachVtracking || 0;
+      });
+
+      Object.keys(tripMap).forEach(tripKey => {
+        const tripItems = tripMap[tripKey];
+        const custKmObj = tripCustomerKmMap[tripKey] || {};
+        const sumKmKhachInTrip = Object.values(custKmObj).reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
+        const kmDiRounded = Number(sumKmKhachInTrip.toFixed(2));
+
+        tripItems.forEach(itemObj => {
+          const vt = itemObj.vtRow;
+          const totalTripKm = parseFloat(vt.kmChuyenVtracking) || 0;
+          const kmVeRounded = Number((totalTripKm - kmDiRounded).toFixed(2));
+          vt.kmChuyenDiVtracking = kmDiRounded;
+          vt.kmChuyenVeVtracking = kmVeRounded;
+        });
+      });
     });
+
+    // 2. TRA CỨU CHÉO KM TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG
+    console.log(`📏 Đang tra cứu chéo chỉ số km từ V-Tracking sang Tuyến Đường...`);
+    for (const item of eligibleRoutes) {
+      const thang = item.thang;
+      const bienSo = item.phuongTien;
+      const ngayTuongUng = item.ngayThangNam;
+      const chuyenNum = item.chuyenVtracking;
+
+      if (!thang || !bienSo || !ngayTuongUng || chuyenNum === null || chuyenNum === undefined) continue;
+
+      const vtrackingRows = vtrackingCache[thang];
+      if (!vtrackingRows) continue;
+
+      const matchedVt = vtrackingRows.find(vt => 
+        vt.bienSo === bienSo && 
+        vt.ngayChuan === ngayTuongUng && 
+        vt.chuyenVtracking === chuyenNum
+      );
+
+      if (matchedVt) {
+        item.kmChuyenDiVtracking = matchedVt.kmChuyenDiVtracking || 0;
+        item.kmChuyenVeVtracking = matchedVt.kmChuyenVeVtracking || 0;
+        item.kmChuyenVtracking = matchedVt.kmChuyenVtracking || 0;
+      }
+    }
 
     // 🌟 3. TRA CỨU CHÉO NGƯỢC LẠI TỪ V-TRACKING VÀO TUYẾN ĐƯỜNG (KÈM ƯU TIÊN SẮP XẾP THÔNG MINH)
     console.log(`⏱️ Đang tra cứu chéo thoiGianDau, thoiGianDi, kmKhachVtracking từ V-Tracking sang Tuyến Đường theo thứ tự ưu tiên...`);
