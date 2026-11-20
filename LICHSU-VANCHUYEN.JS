@@ -852,13 +852,14 @@ document.addEventListener('DOMContentLoaded', function() {
         selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
     }
 
-    // Tự động chèn nút Xuất PDF Bảng kê cạnh nút Tải dữ liệu
+    // Tự động chèn nút icon máy in cạnh nút Tải dữ liệu
     if (btnTaiDuLieu && btnTaiDuLieu.parentNode && !document.getElementById('btnXuatPdfBangKe')) {
         const btnXuatPdf = document.createElement('button');
         btnXuatPdf.id = 'btnXuatPdfBangKe';
         btnXuatPdf.type = 'button';
-        btnXuatPdf.innerHTML = '🖨️ Xuất PDF';
-        btnXuatPdf.style.cssText = 'padding: 6px 10px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 6px;';
+        btnXuatPdf.title = 'Xuất PDF Bảng kê';
+        btnXuatPdf.innerHTML = '🖨️';
+        btnXuatPdf.style.cssText = 'padding: 6px 9px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 6px;';
         btnXuatPdf.onclick = function() {
             window.xuatPdfBangKeVanChuyen();
         };
@@ -983,7 +984,7 @@ window.xuatPdfBangKeVanChuyen = async function() {
     const btnPdf = document.getElementById('btnXuatPdfBangKe');
     const oldText = btnPdf ? btnPdf.innerHTML : "";
     if (btnPdf) {
-        btnPdf.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo PDF...';
+        btnPdf.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         btnPdf.disabled = true;
     }
 
@@ -1001,7 +1002,6 @@ window.xuatPdfBangKeVanChuyen = async function() {
             });
         });
 
-        // Sắp xếp cấu hình theo ngày áp dụng tăng dần
         dsCauHinhXe.sort((a, b) => a._dateApDung - b._dateApDung);
 
         if (dsCauHinhXe.length === 0) {
@@ -1009,7 +1009,6 @@ window.xuatPdfBangKeVanChuyen = async function() {
             return;
         }
 
-        // Hàm tìm cấu hình phương tiện áp dụng tại 1 ngày cụ thể
         const layCauHinhTaiNgay = (dateObj) => {
             let chosen = dsCauHinhXe[0];
             for (let i = 0; i < dsCauHinhXe.length; i++) {
@@ -1020,7 +1019,6 @@ window.xuatPdfBangKeVanChuyen = async function() {
             return chosen;
         };
 
-        // Xác định cấu hình đầu tháng đang xuất
         const ngayDauThangXuat = new Date(namNum, thangNum - 1, 1);
         const cauHinhDauKy = layCauHinhTaiNgay(ngayDauThangXuat);
         const ngayApDungGoc = cauHinhDauKy._dateApDung;
@@ -1029,7 +1027,7 @@ window.xuatPdfBangKeVanChuyen = async function() {
         const dinhMucHienThi = Number(cauHinhDauKy.dinhMuc) || 0.16;
         const nguongNoiO = Number(cauHinhDauKy.noiO) || 60;
 
-        // 2. Tải dữ liệu TUYENDUONG của xe này từ tháng của ngayApDung đến tháng đang xuất (cùng năm hoặc qua năm)
+        // 2. Tải dữ liệu TUYENDUONG của xe này
         const qTd = query(collection(db, "TUYENDUONG"), where("phuongTien", "==", bienSoChon));
         const snapTd = await getDocs(qTd);
 
@@ -1049,7 +1047,6 @@ window.xuatPdfBangKeVanChuyen = async function() {
             }
         });
 
-        // Gom nhóm toàn bộ các chuyến của xe để tính lũy kế ODO từ ngayApDung đến trước tháng xuất
         let mapChuyenTruocKy = {};
         let mapChuyenTrongKy = {};
 
@@ -1063,12 +1060,10 @@ window.xuatPdfBangKeVanChuyen = async function() {
             const tripKey = `${ngayKey}_CHUYEN_${soChuyen}`;
 
             if (y < namNum || (y === namNum && m < thangNum)) {
-                // Các chuyến chạy từ ngayApDung đến trước tháng hiện tại
                 if (!mapChuyenTruocKy[tripKey]) {
                     mapChuyenTruocKy[tripKey] = Number(d.kmChuyenVtracking) || 0;
                 }
             } else if (y === namNum && m === thangNum) {
-                // Các chuyến trong tháng đang xuất
                 if (!mapChuyenTrongKy[tripKey]) {
                     mapChuyenTrongKy[tripKey] = {
                         ngayStr: ngayKey,
@@ -1084,14 +1079,12 @@ window.xuatPdfBangKeVanChuyen = async function() {
             }
         });
 
-        // Tính Đồng hồ KM đầu kỳ
         let kmTichLuyTruocKy = 0;
         Object.values(mapChuyenTruocKy).forEach(km => {
             kmTichLuyTruocKy += km;
         });
         const dongHoKmDauKy = Math.round(kmDauKyGoc + kmTichLuyTruocKy);
 
-        // Sắp xếp các chuyến trong kỳ theo ngày và số chuyến tăng dần
         let dsChuyenTrongKy = Object.values(mapChuyenTrongKy).sort((a, b) => {
             if (a.dateObj - b.dateObj !== 0) return a.dateObj - b.dateObj;
             return a.soChuyen - b.soChuyen;
@@ -1109,7 +1102,6 @@ window.xuatPdfBangKeVanChuyen = async function() {
             const dinhMucChuyen = Number(cfgNgay.dinhMuc) || dinhMucHienThi;
             const noiOChuyen = Number(cfgNgay.noiO) || nguongNoiO;
 
-            // Cộng quãng đường chuyến (1 chuyến chỉ lấy 1 lần kmChuyenVtracking)
             const kmChuyen = chuyen.kmChuyenVtracking;
             tongKmTatCaChuyen += kmChuyen;
             if (kmChuyen <= noiOChuyen) {
@@ -1118,11 +1110,9 @@ window.xuatPdfBangKeVanChuyen = async function() {
                 tongKmTinh += kmChuyen;
             }
 
-            // Gom các dòng trong cùng chuyến nếu doiTuong giống nhau và dinhVi giống nhau
             let groupedStops = [];
             let stopIndexMap = {};
 
-            // Sắp xếp đơn trong chuyến theo thứ tự kết thúc giao hàng
             chuyen.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
 
             chuyen.dons.forEach(don => {
@@ -1147,14 +1137,12 @@ window.xuatPdfBangKeVanChuyen = async function() {
                 }
             });
 
-            // Tính nhiên liệu tiêu thụ theo kmChuyenDiVtracking & dinhMuc cho các điểm giao
             let tongLitDiChuan = chuyen.kmChuyenDiVtracking * dinhMucChuyen;
             let congDonLitDi = 0;
 
             groupedStops.forEach((stop, i) => {
                 let litHang = 0;
                 if (i === groupedStops.length - 1 && groupedStops.length > 0 && chuyen.kmChuyenDiVtracking > 0) {
-                    // Cân chỉnh phần lẻ ở điểm cuối lượt đi để tổng lượt đi khớp chính xác kmChuyenDiVtracking * dinhMuc
                     litHang = Math.max(0, Number((tongLitDiChuan - congDonLitDi).toFixed(2)));
                 } else {
                     litHang = Number((stop.km * dinhMucChuyen).toFixed(2));
@@ -1174,7 +1162,6 @@ window.xuatPdfBangKeVanChuyen = async function() {
                 });
             });
 
-            // Thêm dòng "Về kho" cuối mỗi chuyến
             const kmVe = chuyen.kmChuyenVeVtracking;
             const litVe = Number((kmVe * dinhMucChuyen).toFixed(2));
             tongTieuThuLit += litVe;
@@ -1193,7 +1180,6 @@ window.xuatPdfBangKeVanChuyen = async function() {
         const dongHoKmCuoiKy = Math.round(dongHoKmDauKy + tongKmTatCaChuyen);
         const dinhMucLit100Km = Math.round(dinhMucHienThi * 100);
 
-        // Nếu ít dòng, chèn thêm dòng trống cho đẹp khung A4 như mẫu
         const minRows = 16;
         while (bangKeRows.length < minRows) {
             bangKeRows.push({ ngay: "&nbsp;", noiGiao: "", km: "", tieuThu: "", doThem: "", chungTu: "", ghiChu: "" });
