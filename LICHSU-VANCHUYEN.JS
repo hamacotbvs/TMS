@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnXuatPdf.innerHTML = '🖨️';
         btnXuatPdf.style.cssText = 'padding: 6px 9px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 6px;';
         btnXuatPdf.onclick = function() {
-            window.xuatPdfBangKeVanChuyen();
+            window.moChonKyInPdf();
         };
         btnTaiDuLieu.parentNode.insertBefore(btnXuatPdf, btnTaiDuLieu.nextSibling);
     }
@@ -932,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // =========================================================================
-// PHẦN 7: XUẤT PDF BẢNG KÊ VẬN CHUYỂN THEO MẪU BIỂU CHUẨN
+// PHẦN 7: XUẤT PDF BẢNG KÊ VẬN CHUYỂN THEO KỲ TRONG THÁNG
 // =========================================================================
 function chuyenNgaySangDate(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return null;
@@ -966,7 +966,23 @@ function catSoKhongDau(pxkStr) {
     return String(pxkStr).trim().replace(/^0+/, "");
 }
 
-window.xuatPdfBangKeVanChuyen = async function() {
+function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
+    const ngayCuoiThang = new Date(namNum, thangNum, 0).getDate();
+    if (kyChon === '16-cuoi') {
+        return {
+            tuNgay: new Date(namNum, thangNum - 1, 16),
+            denNgay: new Date(namNum, thangNum - 1, ngayCuoiThang, 23, 59, 59, 999),
+            labelKy: `16/${String(thangNum).padStart(2, '0')}/${namNum} - ${String(ngayCuoiThang).padStart(2, '0')}/${String(thangNum).padStart(2, '0')}/${namNum}`
+        };
+    }
+    return {
+        tuNgay: new Date(namNum, thangNum - 1, 1),
+        denNgay: new Date(namNum, thangNum - 1, 15, 23, 59, 59, 999),
+        labelKy: `01/${String(thangNum).padStart(2, '0')}/${namNum} - 15/${String(thangNum).padStart(2, '0')}/${namNum}`
+    };
+}
+
+window.moChonKyInPdf = function() {
     const inputThangVC = document.getElementById('thangVanChuyen');
     const selectPhuongTien = document.getElementById('filterPhuongTien');
 
@@ -984,6 +1000,78 @@ window.xuatPdfBangKeVanChuyen = async function() {
     const [namStr, thangStr] = inputThangVC.value.split('-');
     const thangNum = parseInt(thangStr, 10);
     const namNum = parseInt(namStr, 10);
+    const ngayCuoiThang = new Date(namNum, thangNum, 0).getDate();
+    const mm2 = String(thangNum).padStart(2, '0');
+
+    let popover = document.getElementById('popoverKyInBangKe');
+    if (popover) popover.remove();
+
+    const btnPdf = document.getElementById('btnXuatPdfBangKe');
+    popover = document.createElement('div');
+    popover.id = 'popoverKyInBangKe';
+    popover.style.cssText = 'position: fixed; z-index: 9999; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.14); display: flex; flex-direction: column; gap: 6px; min-width: 195px; font-family: Arial, sans-serif;';
+
+    if (btnPdf) {
+        const rect = btnPdf.getBoundingClientRect();
+        popover.style.top = `${Math.min(window.innerHeight - 110, rect.bottom + 6)}px`;
+        popover.style.left = `${Math.max(8, Math.min(window.innerWidth - 210, rect.left))}px`;
+    } else {
+        popover.style.top = '80px';
+        popover.style.left = '50%';
+    }
+
+    popover.innerHTML = `
+        <div style="font-size: 11px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+            Chọn kỳ in (${bienSoChon})
+        </div>
+        <button type="button" data-ky="01-15" style="text-align: left; padding: 6px 8px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e40af; border-radius: 5px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+            01/${mm2}/${namNum} – 15/${mm2}/${namNum}
+        </button>
+        <button type="button" data-ky="16-cuoi" style="text-align: left; padding: 6px 8px; border: 1px solid #bbf7d0; background: #f0fdf4; color: #166534; border-radius: 5px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+            16/${mm2}/${namNum} – ${ngayCuoiThang}/${mm2}/${namNum}
+        </button>
+    `;
+
+    popover.querySelectorAll('button[data-ky]').forEach(b => {
+        b.onclick = function() {
+            const ky = this.getAttribute('data-ky');
+            popover.remove();
+            window.xuatPdfBangKeVanChuyen(ky);
+        };
+    });
+
+    document.body.appendChild(popover);
+
+    setTimeout(() => {
+        const closeOutside = (ev) => {
+            if (!popover.contains(ev.target) && ev.target !== btnPdf && !(btnPdf && btnPdf.contains(ev.target))) {
+                popover.remove();
+                document.removeEventListener('click', closeOutside);
+            }
+        };
+        document.addEventListener('click', closeOutside);
+    }, 0);
+};
+
+window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
+    const inputThangVC = document.getElementById('thangVanChuyen');
+    const selectPhuongTien = document.getElementById('filterPhuongTien');
+
+    if (!inputThangVC || !inputThangVC.value) {
+        alert("Vui lòng chọn tháng năm trước khi xuất PDF!");
+        return;
+    }
+
+    const bienSoChon = selectPhuongTien ? selectPhuongTien.value.trim() : "";
+    if (!bienSoChon || bienSoChon.toLowerCase().includes("xe máy") || bienSoChon.toLowerCase().includes("tất cả")) {
+        alert("Vui lòng chọn một biển số xe tải cụ thể (VD: 65C-06126) trong ô lọc Phương tiện để xuất Bảng kê!");
+        return;
+    }
+
+    const [namStr, thangStr] = inputThangVC.value.split('-');
+    const thangNum = parseInt(thangStr, 10);
+    const namNum = parseInt(namStr, 10);
+    const { tuNgay, denNgay, labelKy } = layKhoangNgayCuaKy(kyChon, namNum, thangNum);
 
     const btnPdf = document.getElementById('btnXuatPdfBangKe');
     const oldText = btnPdf ? btnPdf.innerHTML : "";
@@ -1023,13 +1111,12 @@ window.xuatPdfBangKeVanChuyen = async function() {
             return chosen;
         };
 
-        const ngayDauThangXuat = new Date(namNum, thangNum - 1, 1);
-        const cauHinhDauKy = layCauHinhTaiNgay(ngayDauThangXuat);
-        const ngayApDungGoc = cauHinhDauKy._dateApDung;
-        const kmDauKyGoc = Number(cauHinhDauKy.kmDauKy) || 0;
-        const dauDauKyGoc = Number(cauHinhDauKy.dauDauKy) || 0;
-        const dinhMucHienThi = Number(cauHinhDauKy.dinhMuc) || 0.16;
-        const nguongNoiO = Number(cauHinhDauKy.noiO) || 60;
+        const cauHinhKy = layCauHinhTaiNgay(tuNgay);
+        const ngayApDungGoc = cauHinhKy._dateApDung;
+        const kmDauKyGoc = Number(cauHinhKy.kmDauKy) || 0;
+        const dauDauKyGoc = Number(cauHinhKy.dauDauKy) || 0;
+        const dinhMucHienThi = Number(cauHinhKy.dinhMuc) || 0.16;
+        const nguongNoiO = Number(cauHinhKy.noiO) || 60;
 
         // 2. Tải dữ liệu TUYENDUONG của xe này
         const qTd = query(collection(db, "TUYENDUONG"), where("phuongTien", "==", bienSoChon));
@@ -1057,17 +1144,15 @@ window.xuatPdfBangKeVanChuyen = async function() {
         allDocsXe.forEach(d => {
             if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc) return;
 
-            const m = d._dateChuyen.getMonth() + 1;
-            const y = d._dateChuyen.getFullYear();
             const ngayKey = dinhDangNgayHienThi(d._rawNgay);
             const soChuyen = (d.chuyenVtracking !== undefined && d.chuyenVtracking !== null && d.chuyenVtracking !== "") ? d.chuyenVtracking : 1;
             const tripKey = `${ngayKey}_CHUYEN_${soChuyen}`;
 
-            if (y < namNum || (y === namNum && m < thangNum)) {
+            if (d._dateChuyen < tuNgay) {
                 if (!mapChuyenTruocKy[tripKey]) {
                     mapChuyenTruocKy[tripKey] = Number(d.kmChuyenVtracking) || 0;
                 }
-            } else if (y === namNum && m === thangNum) {
+            } else if (d._dateChuyen >= tuNgay && d._dateChuyen <= denNgay) {
                 if (!mapChuyenTrongKy[tripKey]) {
                     mapChuyenTrongKy[tripKey] = {
                         ngayStr: ngayKey,
@@ -1216,7 +1301,7 @@ window.xuatPdfBangKeVanChuyen = async function() {
             <html lang="vi">
             <head>
                 <meta charset="UTF-8">
-                <title>Bảng Kê Vận Chuyển Tháng ${String(thangNum).padStart(2, '0')}/${namNum} - ${bienSoChon}</title>
+                <title>Bảng Kê Vận Chuyển (${labelKy}) - ${bienSoChon}</title>
                 <style>
                     @page {
                         size: A4 portrait;
@@ -1239,8 +1324,14 @@ window.xuatPdfBangKeVanChuyen = async function() {
                         text-align: center;
                         font-weight: bold;
                         font-size: 15px;
-                        margin: 8px 0 6px 0;
+                        margin: 8px 0 3px 0;
                         text-transform: uppercase;
+                    }
+                    .doc-period {
+                        text-align: center;
+                        font-style: italic;
+                        font-size: 11px;
+                        margin-bottom: 6px;
                     }
                     .sub-info {
                         display: flex;
@@ -1300,7 +1391,7 @@ window.xuatPdfBangKeVanChuyen = async function() {
             </head>
             <body>
                 <div class="no-print" style="background: #f1f5f9; padding: 8px 12px; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif;">
-                    <span style="font-size: 12px; color: #334155;">Xem trước bản in PDF (Chọn <b>Lưu dưới dạng PDF / Save as PDF</b> trong hộp thoại in)</span>
+                    <span style="font-size: 12px; color: #334155;">Xem trước bản in PDF kỳ <b>${labelKy}</b> (Chọn <b>Lưu dưới dạng PDF / Save as PDF</b> trong hộp thoại in)</span>
                     <button onclick="window.print()" style="background: #0284c7; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-weight: bold; cursor: pointer;">🖨️ In / Lưu PDF ngay</button>
                 </div>
 
@@ -1310,6 +1401,7 @@ window.xuatPdfBangKeVanChuyen = async function() {
                 </div>
 
                 <div class="doc-title">BẢNG KÊ VẬN CHUYỂN THÁNG ${String(thangNum).padStart(2, '0')}/${namNum}</div>
+                <div class="doc-period">Kỳ báo cáo: ${labelKy}</div>
 
                 <div class="sub-info">
                     <span>Phương tiện: <strong>${bienSoChon}</strong></span>
