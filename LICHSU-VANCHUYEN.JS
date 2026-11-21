@@ -775,6 +775,19 @@ document.addEventListener('DOMContentLoaded', function() {
         btnTaiDuLieu.textContent = 'Tải';
     }
 
+    if (inputThangVC) {
+        inputThangVC.disabled = false;
+        inputThangVC.readOnly = false;
+        inputThangVC.style.position = 'relative';
+        inputThangVC.style.zIndex = '5';
+        inputThangVC.style.pointerEvents = 'auto';
+        inputThangVC.addEventListener('click', function() {
+            if (typeof this.showPicker === 'function') {
+                try { this.showPicker(); } catch (e) {}
+            }
+        });
+    }
+
     const possibleTitles = document.querySelectorAll('h1, h2, h3, h4, .header-title, .title, span, div');
     let titleElement = null;
     for (let el of possibleTitles) {
