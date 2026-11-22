@@ -621,7 +621,7 @@ function generateKhachHangVungReport(routeDataMap) {
 
 function isEligibleForVTracking(item) {
   const statusDuyet = item.duyet ? item.duyet.toString().trim() : "";
-  return statusDuyet === "Đã giao hàng" || statusDuyet === "Đang giao hàng";
+  return statusDuyet === "Đã giao hàng" || statusDuyet === "Đang giao hàng" || statusDuyet === "Đã xuất kho";
 }
 
 // 4. TIẾN TRÌNH ĐỒNG BỘ CHÍNH & TRA CỨU CHÉO V-TRACKING
@@ -670,14 +670,14 @@ async function mainSync() {
     const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
     routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);         
 
-    // Giữ toàn bộ dòng Tuyến Đường để đẩy lên Firestore; chỉ tra cứu chéo V-Tracking cho dòng Đã giao hàng / Đang giao hàng
+    // Giữ toàn bộ dòng Tuyến Đường để đẩy lên Firestore; chỉ tra cứu chéo V-Tracking cho dòng Đã giao hàng / Đang giao hàng / Đã xuất kho
     tuyenDuongMemoryList = Object.entries(routeDataMap).map(([maPhieu, data]) => ({
       maPhieu,
       ...data
     }));
 
     const eligibleRoutes = tuyenDuongMemoryList.filter(isEligibleForVTracking);
-    console.log(`📋 [Bộ nhớ tạm] Tổng ${tuyenDuongMemoryList.length} dòng Tuyến Đường; có ${eligibleRoutes.length} dòng đủ điều kiện tra cứu chéo V-Tracking (Đã giao hàng / Đang giao hàng).`);
+    console.log(`📋 [Bộ nhớ tạm] Tổng ${tuyenDuongMemoryList.length} dòng Tuyến Đường; có ${eligibleRoutes.length} dòng đủ điều kiện tra cứu chéo V-Tracking (Đã giao hàng / Đang giao hàng / Đã xuất kho).`);
 
     eligibleRoutes.sort((a, b) => {
       const parseDateStr = (dateStr) => {
