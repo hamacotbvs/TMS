@@ -484,6 +484,16 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
 }
 
 // PHẦN 4: TẢI DỮ LIỆU TỪ FIREBASE VÀ XỬ LÝ HIỂN THỊ
+function coDuLieuGiaoHang(data) {
+    const hasStr = (v) => v !== undefined && v !== null && String(v).trim() !== "";
+    return (
+        hasStr(data.batDauGiaoHang) ||
+        hasStr(data.ketThucGiaoHang) ||
+        hasStr(data.kmBatDauGiaoHang) ||
+        hasStr(data.kmKetThucGiaoHang)
+    );
+}
+
 window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -542,10 +552,19 @@ function hienThiDanhSachVanChuyen() {
     // Lọc theo Tab hiện tại
     listData = listData.filter(data => {
         const duyetVal = data.duyet ? data.duyet.trim() : "";
+        const daCoThongTinGiao = coDuLieuGiaoHang(data);
+
         if (window._currentTabVanChuyen === 'da-giao') {
-            return duyetVal === "Đã giao hàng" || duyetVal === "Đang giao hàng";
+            return (
+                duyetVal === "Đã giao hàng" ||
+                duyetVal === "Đang giao hàng" ||
+                (duyetVal === "Đã xuất kho" && daCoThongTinGiao)
+            );
         } else if (window._currentTabVanChuyen === 'chuan-bi') {
-            return duyetVal === "Đã xuất kho" || duyetVal === "Chờ xuất kho";
+            return (
+                (duyetVal === "Đã xuất kho" && !daCoThongTinGiao) ||
+                duyetVal === "Chờ xuất kho"
+            );
         } else if (window._currentTabVanChuyen === 'cho') {
             return duyetVal === "Chờ BTGĐ duyệt" || duyetVal === "Chờ duyệt" || duyetVal === "Chờ TĐV duyệt";
         }
@@ -674,7 +693,7 @@ function hienThiDanhSachVanChuyen() {
 
             trip.dons.forEach(don => {
                 const trangThaiDuyet = don.duyet ? don.duyet.trim() : "";
-                const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
+                const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || (trangThaiDuyet.toLowerCase().includes("chuẩn bị") || (trangThaiDuyet.toLowerCase().includes("đã xuất") && !coDuLieuGiaoHang(don)));
                 
                 if (laChuaGiaoHoanToan) {
                     donsChuaGiao.push(don);
@@ -971,7 +990,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeThuTu = '';
     const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
-    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || trangThaiDuyet.toLowerCase().includes("đã xuất");
+    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || (trangThaiDuyet.toLowerCase().includes("đã xuất") && !coDuLieuGiaoHang(data));
     
     if (laChuaGiaoHoanToan) {
         let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
@@ -998,7 +1017,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚛 Giao</span>';
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 10.5px;">${duyet}</span>`;
-    if (duyet === "Đã giao hàng" || duyet === "Đang giao hàng") {
+    if (duyet === "Đã giao hàng" || duyet === "Đang giao hàng" || (duyet === "Đã xuất kho" && coDuLieuGiaoHang(data))) {
         badgeDuyet = `<span style="color: #16a34a; font-size: 10.5px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
@@ -1451,7 +1470,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         snapTd.forEach(docSnap => {
             const d = docSnap.data();
             const duyetVal = (d.duyet || "").trim();
-            if (duyetVal === "Đã giao hàng" || duyetVal === "Đang giao hàng") {
+            if (duyetVal === "Đã giao hàng" || duyetVal === "Đang giao hàng" || (duyetVal === "Đã xuất kho" && coDuLieuGiaoHang(d))) {
                 const rawNgay = d.ngayThangNam || layNgayGomNhom(d);
                 const dateChuyen = chuyenNgaySangDate(rawNgay);
                 allDocsXe.push({
