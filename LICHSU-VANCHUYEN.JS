@@ -363,7 +363,12 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
     if (bdDungDoDai.length > 0) {
         if (kmThamChieuTruoc > 0) {
             const hopLy = bdDungDoDai.find(v => v >= kmThamChieuTruoc && v - kmThamChieuTruoc <= 800);
-            kmBDChuan = hopLy || bdDungDoDai[0];
+            if (hopLy) {
+                kmBDChuan = hopLy;
+            } else {
+                const daSua = suaSoOdometerTheoMoc(bdDungDoDai[0], kmThamChieuTruoc, 800);
+                kmBDChuan = daSua !== null ? daSua : kmThamChieuTruoc;
+            }
         } else {
             kmBDChuan = bdDungDoDai[0];
         }
@@ -371,7 +376,7 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
         kmBDChuan = dsKmBD[0];
         if (kmThamChieuTruoc > 0) {
             const daSua = suaSoOdometerTheoMoc(kmBDChuan, kmThamChieuTruoc, 800);
-            if (daSua !== null) kmBDChuan = daSua;
+            kmBDChuan = daSua !== null ? daSua : kmThamChieuTruoc;
         }
     } else if (kmThamChieuTruoc > 0) {
         kmBDChuan = kmThamChieuTruoc;
