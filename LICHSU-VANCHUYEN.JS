@@ -215,7 +215,6 @@ function parseThoiGianGiao(str) {
     const s = str.trim();
     if (!s) return null;
 
-    // Hỗ trợ: "dd/mm/yyyy HH:mm(:ss)", "yyyy-mm-dd HH:mm(:ss)", "HH:mm(:ss) dd/mm/yyyy", hoặc chỉ "HH:mm(:ss)"
     let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
     if (m) {
         return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4] || 0), Number(m[5] || 0), Number(m[6] || 0)).getTime();
@@ -244,6 +243,13 @@ function parseSoOdometer(val) {
     return isNaN(num) ? 0 : Math.round(num);
 }
 
+function parseKmKhachVtracking(val) {
+    if (val === undefined || val === null || val === "") return 0;
+    const num = typeof val === "number" ? val : Number(String(val).replace(/[^\d.-]/g, ""));
+    if (isNaN(num) || num <= 0) return 0;
+    return Math.round(num);
+}
+
 function parseToaDoDon(dinhVi) {
     if (!dinhVi || typeof dinhVi !== "string" || !dinhVi.includes(",")) return null;
     const parts = dinhVi.split(",").map(Number);
@@ -253,7 +259,7 @@ function parseToaDoDon(dinhVi) {
     return null;
 }
 
-// Thử sửa số odometer bị tài xế nhập thiếu chữ số đầu, dư chữ số, hoặc nhầm hàng chục/trăm nghìn
+// Kiểm tra và khôi phục số odometer hợp lệ theo mốc chuẩn (ưu tiên giữ nguyên nếu hợp lệ, sửa thiếu số đầu/dư số/nhầm hàng cao)
 function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
     const raw = parseSoOdometer(rawVal);
     if (raw <= 0) return null;
@@ -275,7 +281,6 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
         if (ghep >= mocChuan && ghep - mocChuan <= maxDelta) {
             ungVien.push(ghep);
         }
-        // Trường hợp số bị nhảy hàng (VD: mốc 125980, nhập 015 -> 126015)
         const prefixCong1 = String(Number(prefix) + 1);
         const ghepCong1 = Number(prefixCong1 + rawStr);
         if (ghepCong1 >= mocChuan && ghepCong1 - mocChuan <= maxDelta) {
@@ -283,7 +288,7 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
         }
     }
 
-    // 3. Tài xế gõ dư 1 chữ số (VD: 125430 -> 1254430 hoặc 1125430)
+    // 3. Tài xế gõ dư 1 chữ số
     if (rawStr.length === refStr.length + 1) {
         for (let i = 0; i < rawStr.length; i++) {
             const bo1So = Number(rawStr.slice(0, i) + rawStr.slice(i + 1));
@@ -293,7 +298,7 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
         }
     }
 
-    // 4. Tài xế nhìn nhầm 1 chữ số ở hàng cao (VD: 125455 gõ nhầm thành 225455 hoặc 135455)
+    // 4. Tài xế nhìn nhầm 1 chữ số ở hàng cao
     if (rawStr.length === refStr.length) {
         const soChuSoGiu = Math.min(3, rawStr.length - 1);
         const duoiRaw = rawStr.slice(-soChuSoGiu);
@@ -309,7 +314,6 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
     }
 
     if (ungVien.length > 0) {
-        // Chọn ứng viên gần với mocChuan nhất (delta nhỏ nhất nhưng >= 0)
         ungVien.sort((a, b) => (a - mocChuan) - (b - mocChuan));
         return ungVien[0];
     }
@@ -317,13 +321,11 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
     return null;
 }
 
-// Sắp xếp lại đúng thứ tự đơn trong chuyến và dự đoán lại kmKetThucGiaoHang chuẩn
+// Sắp xếp lại đúng thứ tự đơn trong chuyến và sửa/dự đoán lại kmKetThucGiaoHang chuẩn
 function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, lonKho = 105.1245) {
     if (!trip || !trip.dons || trip.dons.length === 0) return;
 
-    // BƯỚC 1: Sắp xếp đơn để xác định đúng INDEX
-    // Ưu tiên 1: Thời gian ketThucGiaoHang thực tế (Date)
-    // Ưu tiên 2: Nếu thiếu/trùng ketThucGiaoHang thì dùng batDauGiaoHang, sau đó mới đến kmKetThucGiaoHang gốc
+    // BƯỚC 1: Sắp xếp đơn để xác định đúng INDEX theo ketThucGiaoHang
     trip.dons.sort((a, b) => {
         const tKTA = parseThoiGianGiao(a.ketThucGiaoHang);
         const tKTB = parseThoiGianGiao(b.ketThucGiaoHang);
@@ -349,11 +351,10 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
         return (a.maPhieu || "").localeCompare(b.maPhieu || "");
     });
 
-    // BƯỚC 2: Tìm mốc kmBatDauGiaoHang chuẩn cho chuyến
+    // BƯỚC 2: Xác định mốc kmBatDauGiaoHang chuẩn của chuyến
     let dsKmBD = trip.dons.map(d => parseSoOdometer(d.kmBatDauGiaoHang)).filter(v => v > 0);
     let dsKmKT = trip.dons.map(d => parseSoOdometer(d.kmKetThucGiaoHang)).filter(v => v > 0);
 
-    // Xác định độ dài chữ số odometer chủ đạo của xe (VD: 6 chữ số như 125430)
     const tatCaSo = [...dsKmBD, ...dsKmKT];
     let doDaiChuan = 0;
     if (tatCaSo.length > 0) {
@@ -366,7 +367,6 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
     }
 
     let kmBDChuan = 0;
-    // Ưu tiên số kmBatDauGiaoHang có đúng độ dài chuẩn (và phù hợp kmThamChieuTruoc nếu có)
     const bdDungDoDai = dsKmBD.filter(v => String(v).length === doDaiChuan);
     if (bdDungDoDai.length > 0) {
         if (kmThamChieuTruoc > 0) {
@@ -384,41 +384,67 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
     } else if (kmThamChieuTruoc > 0) {
         kmBDChuan = kmThamChieuTruoc;
     } else if (dsKmKT.length > 0) {
-        // Không có kmBD nào -> lấy số kmKT hợp lệ nhỏ nhất trừ đi km từ kho tới điểm đầu
         const ktDungDoDai = dsKmKT.filter(v => String(v).length === doDaiChuan);
         const kmKTMin = ktDungDoDai.length > 0 ? Math.min(...ktDungDoDai) : Math.min(...dsKmKT);
-        const gpsDau = parseToaDoDon(trip.dons[0].dinhVi);
-        const kmTuKho = gpsDau ? tinhKhoangCachNoiBo(latKho, lonKho, gpsDau.lat, gpsDau.lon) : 0;
-        kmBDChuan = Math.max(0, kmKTMin - kmTuKho);
+        const kmKhachDau = parseKmKhachVtracking(trip.dons[0].kmKhachVtracking);
+        if (kmKhachDau > 0 && kmKTMin >= kmKhachDau) {
+            kmBDChuan = kmKTMin - kmKhachDau;
+        } else {
+            const gpsDau = parseToaDoDon(trip.dons[0].dinhVi);
+            const kmTuKho = gpsDau ? tinhKhoangCachNoiBo(latKho, lonKho, gpsDau.lat, gpsDau.lon) : 0;
+            kmBDChuan = Math.max(0, kmKTMin - kmTuKho);
+        }
     }
 
-    // BƯỚC 3: Duyệt qua từng đơn theo index đã sort, sửa các số kmKetThucGiaoHang nhập sai/thiếu/dư
+    // BƯỚC 3: Duyệt qua từng đơn theo index đã sort:
+    // Nếu kmKetThucGiaoHang nhập sai/lệch/thiếu -> ưu tiên lấy kmKhachVtracking làm km chặng để sửa lại kmKetThucGiaoHang
     let mocHienTai = kmBDChuan;
     const ketQuaTam = trip.dons.map((don) => {
         const rawKT = parseSoOdometer(don.kmKetThucGiaoHang);
         const tKT = parseThoiGianGiao(don.ketThucGiaoHang);
-        const suaDuoc = suaSoOdometerTheoMoc(rawKT, mocHienTai, 600);
+        const kmKhachVT = parseKmKhachVtracking(don.kmKhachVtracking);
+
+        // Kiểm tra xem rawKT có thực sự khớp với mốc hiện tại không (nếu nhập sai hoặc thiếu số đầu thì suaSoOdometerTheoMoc chỉ chấp nhận khi khớp đúng chuỗi số)
+        const rawStr = String(rawKT);
+        const refStr = String(Math.round(mocHienTai || 0));
+        const laNhapSaiRoRang = rawKT > 0 && mocHienTai > 0 && (
+            rawKT < mocHienTai ||
+            (rawKT - mocHienTai) > 600 ||
+            (doDaiChuan > 0 && rawStr.length !== doDaiChuan && !(rawStr.length < refStr.length && refStr.endsWith(rawStr)))
+        );
+
+        let suaDuoc = null;
+        if (!laNhapSaiRoRang) {
+            suaDuoc = suaSoOdometerTheoMoc(rawKT, mocHienTai, 600);
+        }
 
         if (suaDuoc !== null) {
             mocHienTai = suaDuoc;
-            return { don, kmKT: suaDuoc, daChacChan: true, tKT, rawKT };
+            return { don, kmKT: suaDuoc, daSua: false, daDuDoan: false, tKT, rawKT, kmKhachVT };
         }
-        return { don, kmKT: null, daChacChan: false, tKT, rawKT };
+
+        // Khi kmKetThucGiaoHang nhập sai hoặc thiếu: lấy kmKhachVtracking làm km chặng và cộng vào mốc hiện tại
+        if (kmKhachVT > 0 && mocHienTai > 0) {
+            const kmKTSua = mocHienTai + kmKhachVT;
+            mocHienTai = kmKTSua;
+            return { don, kmKT: kmKTSua, daSua: true, daDuDoan: false, tKT, rawKT, kmKhachVT };
+        }
+
+        return { don, kmKT: null, daSua: false, daDuDoan: false, tKT, rawKT, kmKhachVT };
     });
 
-    // BƯỚC 4: Dự đoán (nội suy / ngoại suy) cho những đơn có kmKetThucGiaoHang bị thiếu hoặc nhập hỏng hoàn toàn
+    // BƯỚC 4: Dự phòng nếu vừa sai kmKetThucGiaoHang vừa không có kmKhachVtracking
     for (let i = 0; i < ketQuaTam.length; i++) {
-        if (ketQuaTam[i].daChacChan) continue;
+        if (ketQuaTam[i].kmKT !== null) continue;
 
         const kmTruoc = i === 0 ? kmBDChuan : ketQuaTam[i - 1].kmKT;
         const tTruoc = i === 0
             ? (parseThoiGianGiao(trip.dons[0].batDauGiaoHang) || ketQuaTam[0].tKT)
             : ketQuaTam[i - 1].tKT;
 
-        // Tìm điểm chắc chắn gần nhất phía sau
         let nextIdx = -1;
         for (let j = i + 1; j < ketQuaTam.length; j++) {
-            if (ketQuaTam[j].daChacChan) {
+            if (ketQuaTam[j].kmKT !== null) {
                 nextIdx = j;
                 break;
             }
@@ -430,7 +456,6 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
             const tHienTai = ketQuaTam[i].tKT;
             const khoangKm = Math.max(0, kmSau - kmTruoc);
 
-            // Nội suy theo tỷ lệ thời gian nếu có đủ mốc giờ, ngược lại chia đều theo số chặng
             if (tTruoc !== null && tSau !== null && tHienTai !== null && tSau > tTruoc && tHienTai >= tTruoc && tHienTai <= tSau) {
                 const tyLe = (tHienTai - tTruoc) / (tSau - tTruoc);
                 ketQuaTam[i].kmKT = Math.round(kmTruoc + khoangKm * tyLe);
@@ -438,8 +463,9 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
                 const soChang = nextIdx - (i - 1);
                 ketQuaTam[i].kmKT = Math.round(kmTruoc + khoangKm / soChang);
             }
+            ketQuaTam[i].daSua = true;
+            ketQuaTam[i].daDuDoan = true;
         } else if (kmTruoc > 0) {
-            // Không có điểm chắc chắn phía sau -> ước tính từ tọa độ GPS của điểm trước tới điểm hiện tại
             const gpsTruoc = i === 0
                 ? { lat: latKho, lon: lonKho }
                 : parseToaDoDon(ketQuaTam[i - 1].don.dinhVi);
@@ -450,18 +476,21 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
                 kmUocTinh = tinhKhoangCachNoiBo(gpsTruoc.lat, gpsTruoc.lon, gpsHienTai.lat, gpsHienTai.lon);
             }
             ketQuaTam[i].kmKT = kmTruoc + kmUocTinh;
+            ketQuaTam[i].daSua = true;
+            ketQuaTam[i].daDuDoan = true;
         } else {
             ketQuaTam[i].kmKT = ketQuaTam[i].rawKT || 0;
         }
     }
 
-    // BƯỚC 5: Gán lại _thuTu (index + 1) và lưu giá trị sạch vào từng đơn để renderCardDon & kmDi/kmVe dùng chung
+    // BƯỚC 5: Gán lại _thuTu (index + 1) và giá trị odometer đã sửa chuẩn để tính kmDi, kmVe và renderCardDon
     ketQuaTam.forEach((item, idx) => {
         item.don._thuTu = idx + 1;
         item.don._kmTinhToan = 0;
         item.don._kmBDSach = idx === 0 ? kmBDChuan : (ketQuaTam[idx - 1].kmKT || kmBDChuan);
         item.don._kmKTSach = item.kmKT || 0;
-        item.don._daDuDoanKmKT = !item.daChacChan && item.don._kmKTSach > 0;
+        item.don._daSuaKmKT = !!item.daSua;
+        item.don._daDuDoanKmKT = !!item.daDuDoan;
     });
 
     trip._kmBDSachDau = kmBDChuan;
@@ -626,7 +655,7 @@ function hienThiDanhSachVanChuyen() {
     const LAT_KHO = 9.9234; 
     const LON_KHO = 105.1245;
 
-    // Bước chuẩn hóa trước: Sắp xếp đơn & dự đoán lại kmKetThucGiaoHang chuẩn theo từng xe
+    // Bước chuẩn hóa trước: Sắp xếp đơn theo ketThucGiaoHang & sửa/dự đoán lại kmKetThucGiaoHang bằng kmKhachVtracking
     const kmCuoiTheoXe = {};
     for (let idx = 0; idx < allTripsArray.length; idx++) {
         let trip = allTripsArray[idx];
@@ -952,8 +981,8 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             const kmKTTruoc = donTruoc?._kmKTSach !== undefined ? donTruoc._kmKTSach : parseSoOdometer(donTruoc?.kmKetThucGiaoHang);
             if (kmKTTruoc > 0 && kmKT >= kmKTTruoc) kmGiao = kmKT - kmKTTruoc;
         }
-        const dauDuDoan = data._daDuDoanKmKT ? '~' : '';
-        kmGiaoText = `⏱️ ${dauDuDoan}${kmGiao}km`;
+        const dauSua = data._daSuaKmKT ? '~' : '';
+        kmGiaoText = `⏱️ ${dauSua}${kmGiao}km`;
     } else {
         kmGiaoText = `⏱️ 0km`;
     }
