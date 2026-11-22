@@ -498,6 +498,25 @@ function coNgayXuLy(data) {
     return data && data.ngayXuLy !== undefined && data.ngayXuLy !== null && String(data.ngayXuLy).trim() !== "";
 }
 
+function thuocTabDaGiao(data) {
+    const duyetVal = data.duyet ? data.duyet.trim() : "";
+    const daCoThongTinGiao = coDuLieuGiaoHang(data);
+    return (
+        duyetVal === "Đã giao hàng" ||
+        duyetVal === "Đang giao hàng" ||
+        (duyetVal === "Đã xuất kho" && daCoThongTinGiao)
+    );
+}
+
+function thuocTabChuanBi(data) {
+    const duyetVal = data.duyet ? data.duyet.trim() : "";
+    const daCoThongTinGiao = coDuLieuGiaoHang(data);
+    return (
+        (duyetVal === "Đã xuất kho" && !daCoThongTinGiao) ||
+        duyetVal === "Chờ xuất kho"
+    );
+}
+
 window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -556,26 +575,20 @@ function hienThiDanhSachVanChuyen() {
     // Lọc theo Tab hiện tại
     listData = listData.filter(data => {
         const duyetVal = data.duyet ? data.duyet.trim() : "";
-        const daCoThongTinGiao = coDuLieuGiaoHang(data);
+        const daGiao = thuocTabDaGiao(data);
+        const chuanBi = thuocTabChuanBi(data);
         const daCoNgayXuLy = coNgayXuLy(data);
 
         if (window._currentTabVanChuyen === 'da-giao') {
-            return (
-                duyetVal === "Đã giao hàng" ||
-                duyetVal === "Đang giao hàng" ||
-                (duyetVal === "Đã xuất kho" && daCoThongTinGiao)
-            );
+            return daGiao;
         } else if (window._currentTabVanChuyen === 'chuan-bi') {
-            return (
-                (duyetVal === "Đã xuất kho" && !daCoThongTinGiao) ||
-                duyetVal === "Chờ xuất kho"
-            );
+            return chuanBi;
         } else if (window._currentTabVanChuyen === 'cho') {
             return (
                 duyetVal === "Chờ BTGĐ duyệt" ||
                 duyetVal === "Chờ duyệt" ||
                 duyetVal === "Chờ TĐV duyệt" ||
-                daCoNgayXuLy
+                (daCoNgayXuLy && !daGiao && !chuanBi)
             );
         }
         return true;
