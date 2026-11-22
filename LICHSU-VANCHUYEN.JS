@@ -316,8 +316,35 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
     return null;
 }
 
+function napLaiChuyenTheoKmDiBangKhong(trip, mocNapLai) {
+    const moc = Math.max(0, Math.round(mocNapLai || 0));
+    trip.dons.forEach((don, idx) => {
+        don._thuTu = idx + 1;
+        don._kmTinhToan = 0;
+        don._kmBDSach = moc;
+        don._kmKTSach = moc;
+        don._daSuaKmKT = true;
+        don._daDuDoanKmKT = false;
+    });
+    trip._kmBDSachDau = moc;
+    trip._kmKTSachCuoi = moc;
+}
+
+function laKmChuyenPhiLy(kmBD, kmKT, kmThamChieuTruoc, maxChenh = 1000) {
+    if (!kmBD || kmBD <= 0 || !kmKT || kmKT <= 0) return true;
+    if (kmKT < kmBD) return true;
+    if ((kmKT - kmBD) > maxChenh) return true;
+    if (kmThamChieuTruoc > 0) {
+        if (kmBD < kmThamChieuTruoc || (kmBD - kmThamChieuTruoc) > maxChenh) return true;
+        if (kmKT < kmThamChieuTruoc || (kmKT - kmThamChieuTruoc) > maxChenh) return true;
+    }
+    return false;
+}
+
 function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, lonKho = 105.1245) {
     if (!trip || !trip.dons || trip.dons.length === 0) return;
+
+    const mocAnToan = kmThamChieuTruoc > 0 ? kmThamChieuTruoc : 0;
 
     trip.dons.sort((a, b) => {
         const tKTA = parseThoiGianGiao(a.ketThucGiaoHang);
@@ -359,6 +386,7 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
     }
 
     let kmBDChuan = 0;
+    let bdPhiLy = false;
     const bdDungDoDai = dsKmBD.filter(v => String(v).length === doDaiChuan);
     const nguonBD = bdDungDoDai.length > 0 ? bdDungDoDai : dsKmBD;
 
@@ -371,6 +399,9 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
                 : kmThamChieuTruoc;
         } else {
             kmBDChuan = minKmBDChuyen;
+            if (kmThamChieuTruoc > 0 && (kmBDChuan - kmThamChieuTruoc) > 1000) {
+                bdPhiLy = true;
+            }
         }
     } else if (kmThamChieuTruoc > 0) {
         kmBDChuan = kmThamChieuTruoc;
@@ -385,6 +416,11 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
             const kmTuKho = gpsDau ? tinhKhoangCachNoiBo(latKho, lonKho, gpsDau.lat, gpsDau.lon) : 0;
             kmBDChuan = Math.max(0, kmKTMin - kmTuKho);
         }
+    }
+
+    if (bdPhiLy) {
+        napLaiChuyenTheoKmDiBangKhong(trip, mocAnToan);
+        return;
     }
 
     let mocHienTai = kmBDChuan;
@@ -467,6 +503,15 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
         } else {
             ketQuaTam[i].kmKT = ketQuaTam[i].rawKT || 0;
         }
+    }
+
+    const kmKTCuoiTam = ketQuaTam[ketQuaTam.length - 1].kmKT || 0;
+    if (laKmChuyenPhiLy(kmBDChuan, kmKTCuoiTam, kmThamChieuTruoc, 1000)) {
+        const mocNapLai = kmBDChuan > 0 && (!kmThamChieuTruoc || Math.abs(kmBDChuan - kmThamChieuTruoc) <= 1000)
+            ? kmBDChuan
+            : mocAnToan;
+        napLaiChuyenTheoKmDiBangKhong(trip, mocNapLai);
+        return;
     }
 
     ketQuaTam.forEach((item, idx) => {
