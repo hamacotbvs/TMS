@@ -975,7 +975,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     const vungTieuThu = layVungTieuThu(data);
     const htGiaoNhan = data.htGiaoNhan || 'Giao hàng';
-    const duyet = data.duyet || '';
+    const duyet = data.duyet ? data.duyet.trim() : '';
     
     const tTaiVal = data.tTai ? Number(data.tTai).toLocaleString('vi-VN') : '0';
     const tTaiText = `${tTaiVal}kg`;
@@ -1012,8 +1012,8 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     let kmKhachVtrackingText = `📍 ${kmKhachVtrackingNum.toFixed(1)}km`;
 
     let badgeThuTu = '';
-    const trangThaiDuyet = data.duyet ? data.duyet.trim() : "";
-    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || trangThaiDuyet.toLowerCase().includes("chuẩn bị") || (trangThaiDuyet.toLowerCase().includes("đã xuất") && !coDuLieuGiaoHang(data));
+    const trangThaiDuyet = duyet;
+    const laChuaGiaoHoanToan = !trangThaiDuyet || trangThaiDuyet === "" || (trangThaiDuyet.toLowerCase().includes("chuẩn bị") || (trangThaiDuyet.toLowerCase().includes("đã xuất") && !coDuLieuGiaoHang(data)));
     
     if (laChuaGiaoHoanToan) {
         let coGPS = data.dinhVi && typeof data.dinhVi === 'string' && data.dinhVi.includes(',') && data.dinhVi !== '0,0';
@@ -1039,9 +1039,14 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚚 Chành</span>'
         : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚛 Giao</span>';
 
+    const chiTietKmGiao = `<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>`;
     let badgeDuyet = `<span style="color: #64748b; font-size: 10.5px;">${duyet}</span>`;
-    if (duyet === "Đã giao hàng" || duyet === "Đang giao hàng" || (duyet === "Đã xuất kho" && coDuLieuGiaoHang(data))) {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 10.5px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
+    if (duyet === "Đang giao hàng") {
+        badgeDuyet = `<span style="color: #0284c7; font-size: 10.5px; font-weight: 600;">🚚 Đang giao (${chiTietKmGiao})</span>`;
+    } else if (duyet === "Đã xuất kho" && coDuLieuGiaoHang(data)) {
+        badgeDuyet = `<span style="color: #d97706; font-size: 10.5px; font-weight: 600;">📦 Đã xuất (${chiTietKmGiao})</span>`;
+    } else if (duyet === "Đã giao hàng") {
+        badgeDuyet = `<span style="color: #16a34a; font-size: 10.5px; font-weight: 600;">✓ Đã giao (${chiTietKmGiao})</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
         badgeDuyet = `<span style="color: #d97706; font-size: 10.5px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
