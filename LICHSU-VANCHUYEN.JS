@@ -494,6 +494,10 @@ function coDuLieuGiaoHang(data) {
     );
 }
 
+function coNgayXuLy(data) {
+    return data && data.ngayXuLy !== undefined && data.ngayXuLy !== null && String(data.ngayXuLy).trim() !== "";
+}
+
 window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
@@ -553,6 +557,7 @@ function hienThiDanhSachVanChuyen() {
     listData = listData.filter(data => {
         const duyetVal = data.duyet ? data.duyet.trim() : "";
         const daCoThongTinGiao = coDuLieuGiaoHang(data);
+        const daCoNgayXuLy = coNgayXuLy(data);
 
         if (window._currentTabVanChuyen === 'da-giao') {
             return (
@@ -566,7 +571,12 @@ function hienThiDanhSachVanChuyen() {
                 duyetVal === "Chờ xuất kho"
             );
         } else if (window._currentTabVanChuyen === 'cho') {
-            return duyetVal === "Chờ BTGĐ duyệt" || duyetVal === "Chờ duyệt" || duyetVal === "Chờ TĐV duyệt";
+            return (
+                duyetVal === "Chờ BTGĐ duyệt" ||
+                duyetVal === "Chờ duyệt" ||
+                duyetVal === "Chờ TĐV duyệt" ||
+                daCoNgayXuLy
+            );
         }
         return true;
     });
