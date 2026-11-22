@@ -1440,6 +1440,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         const dinhMucHienThi = Number(cauHinhKy.dinhMuc) || 0.16;
         const nguongNoiO = Number(cauHinhKy.noiO) || 60;
 
+        // Lấy thêm tối đa 15 ngày sau denNgay chỉ để tính kmVe cho chuyến cuối kỳ
+        const denNgayMoRongKmVe = new Date(denNgay.getTime() + 15 * 24 * 60 * 60 * 1000);
+
         // 2. Tải dữ liệu TUYENDUONG của xe này
         const qTd = query(collection(db, "TUYENDUONG"), where("phuongTien", "==", bienSoChon));
         const snapTd = await getDocs(qTd);
@@ -1463,7 +1466,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         let mapChuyenTuNgayApDung = {};
 
         allDocsXe.forEach(d => {
-            if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc || d._dateChuyen > denNgay) return;
+            if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc || d._dateChuyen > denNgayMoRongKmVe) return;
 
             const ngayKey = dinhDangNgayHienThi(d._rawNgay);
             const soChuyen = (d.chuyenVtracking !== undefined && d.chuyenVtracking !== null && d.chuyenVtracking !== "") ? d.chuyenVtracking : 1;
