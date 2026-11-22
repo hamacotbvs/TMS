@@ -259,13 +259,11 @@ function parseToaDoDon(dinhVi) {
     return null;
 }
 
-// Kiểm tra và khôi phục số odometer hợp lệ theo mốc chuẩn (ưu tiên giữ nguyên nếu hợp lệ, sửa thiếu số đầu/dư số/nhầm hàng cao)
 function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
     const raw = parseSoOdometer(rawVal);
     if (raw <= 0) return null;
     if (!mocChuan || mocChuan <= 0) return raw;
 
-    // 1. Số gốc đã hợp lệ trong khoảng [mocChuan, mocChuan + maxDelta]
     if (raw >= mocChuan && raw - mocChuan <= maxDelta) {
         return raw;
     }
@@ -274,7 +272,6 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
     const rawStr = String(raw);
     let ungVien = [];
 
-    // 2. Tài xế nhập thiếu các chữ số đầu (VD: mốc 125430, nhập 455 -> 125455; nhập 5455 -> 125455)
     if (rawStr.length < refStr.length) {
         const prefix = refStr.slice(0, refStr.length - rawStr.length);
         const ghep = Number(prefix + rawStr);
@@ -288,7 +285,6 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
         }
     }
 
-    // 3. Tài xế gõ dư 1 chữ số
     if (rawStr.length === refStr.length + 1) {
         for (let i = 0; i < rawStr.length; i++) {
             const bo1So = Number(rawStr.slice(0, i) + rawStr.slice(i + 1));
@@ -298,7 +294,6 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
         }
     }
 
-    // 4. Tài xế nhìn nhầm 1 chữ số ở hàng cao
     if (rawStr.length === refStr.length) {
         const soChuSoGiu = Math.min(3, rawStr.length - 1);
         const duoiRaw = rawStr.slice(-soChuSoGiu);
@@ -321,11 +316,9 @@ function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
     return null;
 }
 
-// Sắp xếp lại đúng thứ tự đơn trong chuyến và sửa/dự đoán lại kmKetThucGiaoHang chuẩn
 function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, lonKho = 105.1245) {
     if (!trip || !trip.dons || trip.dons.length === 0) return;
 
-    // BƯỚC 1: Sắp xếp đơn để xác định đúng INDEX theo ketThucGiaoHang
     trip.dons.sort((a, b) => {
         const tKTA = parseThoiGianGiao(a.ketThucGiaoHang);
         const tKTB = parseThoiGianGiao(b.ketThucGiaoHang);
@@ -351,7 +344,6 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
         return (a.maPhieu || "").localeCompare(b.maPhieu || "");
     });
 
-    // BƯỚC 2: Xác định mốc kmBatDauGiaoHang chuẩn của chuyến
     let dsKmBD = trip.dons.map(d => parseSoOdometer(d.kmBatDauGiaoHang)).filter(v => v > 0);
     let dsKmKT = trip.dons.map(d => parseSoOdometer(d.kmKetThucGiaoHang)).filter(v => v > 0);
 
@@ -396,15 +388,12 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
         }
     }
 
-    // BƯỚC 3: Duyệt qua từng đơn theo index đã sort:
-    // Nếu kmKetThucGiaoHang nhập sai/lệch/thiếu -> ưu tiên lấy kmKhachVtracking làm km chặng để sửa lại kmKetThucGiaoHang
     let mocHienTai = kmBDChuan;
     const ketQuaTam = trip.dons.map((don) => {
         const rawKT = parseSoOdometer(don.kmKetThucGiaoHang);
         const tKT = parseThoiGianGiao(don.ketThucGiaoHang);
         const kmKhachVT = parseKmKhachVtracking(don.kmKhachVtracking);
 
-        // Kiểm tra xem rawKT có thực sự khớp với mốc hiện tại không (nếu nhập sai hoặc thiếu số đầu thì suaSoOdometerTheoMoc chỉ chấp nhận khi khớp đúng chuỗi số)
         const rawStr = String(rawKT);
         const refStr = String(Math.round(mocHienTai || 0));
         const laNhapSaiRoRang = rawKT > 0 && mocHienTai > 0 && (
@@ -423,7 +412,6 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
             return { don, kmKT: suaDuoc, daSua: false, daDuDoan: false, tKT, rawKT, kmKhachVT };
         }
 
-        // Khi kmKetThucGiaoHang nhập sai hoặc thiếu: lấy kmKhachVtracking làm km chặng và cộng vào mốc hiện tại
         if (kmKhachVT > 0 && mocHienTai > 0) {
             const kmKTSua = mocHienTai + kmKhachVT;
             mocHienTai = kmKTSua;
@@ -433,7 +421,6 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
         return { don, kmKT: null, daSua: false, daDuDoan: false, tKT, rawKT, kmKhachVT };
     });
 
-    // BƯỚC 4: Dự phòng nếu vừa sai kmKetThucGiaoHang vừa không có kmKhachVtracking
     for (let i = 0; i < ketQuaTam.length; i++) {
         if (ketQuaTam[i].kmKT !== null) continue;
 
@@ -483,7 +470,6 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
         }
     }
 
-    // BƯỚC 5: Gán lại _thuTu (index + 1) và giá trị odometer đã sửa chuẩn để tính kmDi, kmVe và renderCardDon
     ketQuaTam.forEach((item, idx) => {
         item.don._thuTu = idx + 1;
         item.don._kmTinhToan = 0;
@@ -655,7 +641,6 @@ function hienThiDanhSachVanChuyen() {
     const LAT_KHO = 9.9234; 
     const LON_KHO = 105.1245;
 
-    // Bước chuẩn hóa trước: Sắp xếp đơn theo ketThucGiaoHang & sửa/dự đoán lại kmKetThucGiaoHang bằng kmKhachVtracking
     const kmCuoiTheoXe = {};
     for (let idx = 0; idx < allTripsArray.length; idx++) {
         let trip = allTripsArray[idx];
@@ -673,7 +658,6 @@ function hienThiDanhSachVanChuyen() {
         }
     }
 
-    // Bước tính toán kmDi, kmVe và tổng hợp chỉ số cho từng chuyến
     for (let idx = 0; idx < allTripsArray.length; idx++) {
         let trip = allTripsArray[idx];
         const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
@@ -752,7 +736,6 @@ function hienThiDanhSachVanChuyen() {
         trip.textKmVe = textKmVe;
         trip._kmVeNum = kmVeNum;
 
-        // Lấy dữ liệu 1 dòng bất kỳ trong chuyến (đơn đầu tiên `dons[0]`) và làm tròn không số lẻ
         const sampleDon = trip.dons[0] || {};
         trip.kmChuyenDiVtracking = sampleDon.kmChuyenDiVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenDiVtracking) || 0) : 0;
         trip.kmChuyenVeVtracking = sampleDon.kmChuyenVeVtracking !== undefined ? Math.round(Number(sampleDon.kmChuyenVeVtracking) || 0) : 0;
@@ -776,7 +759,6 @@ function hienThiDanhSachVanChuyen() {
         return;
     }
 
-    // RENDER RIÊNG CHO TAB CHỜ: HIỂN THỊ THEO VÙNG TIÊU THỤ
     if (window._currentTabVanChuyen === 'cho') {
         allTripsArray.forEach(trip => {
             let taiVung = 0, dtVung = 0;
@@ -809,7 +791,6 @@ function hienThiDanhSachVanChuyen() {
         return;
     }
 
-    // GOM NHÓM THEO NGÀY CHO 2 TAB CÒN LẠI (ĐÃ GIAO & CHUẨN BỊ)
     let groupedByDate = {};
     allTripsArray.forEach(trip => {
         const ngay = trip.ngay;
@@ -863,7 +844,6 @@ function hienThiDanhSachVanChuyen() {
             const vehicleHeader = document.createElement('div');
             vehicleHeader.style.cssText = `background: ${mauXe.badgeBg}; color: ${mauXe.textHeader}; padding: 3px 5px; border-radius: 4px; font-weight: 600; font-size: 11.5px; margin-bottom: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; width: 100%; box-sizing: border-box;`;
             
-            // --- HÀNG TRÊN: Cố định độ rộng cột, chữ canh trái, giãn đều và cân đối ---
             if (trip.isXeMay) {
                 vehicleHeader.innerHTML = `
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 6px;">
@@ -907,7 +887,6 @@ function hienThiDanhSachVanChuyen() {
             }
             vehicleWrapper.appendChild(vehicleHeader);
 
-            // --- HÀNG DƯỚI: Cột trái (Bột / Sơn / TBVS), Cột phải (800kg/5tr 1 đơn) ---
             const vehicleSubHeader = document.createElement('div');
             vehicleSubHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: normal; color: #475569; font-size: 9.5px; border-top: 1px dashed rgba(0,0,0,0.08); padding-top: 4px; padding-bottom: 3px; margin-bottom: 2px; width: 100%; box-sizing: border-box;';
             vehicleSubHeader.innerHTML = `
@@ -1200,7 +1179,6 @@ document.addEventListener('DOMContentLoaded', function() {
         selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
     }
 
-    // Tự động chèn nút icon máy in cạnh nút Tải
     if (btnTaiDuLieu && btnTaiDuLieu.parentNode && !document.getElementById('btnXuatPdfBangKe')) {
         const btnXuatPdf = document.createElement('button');
         btnXuatPdf.id = 'btnXuatPdfBangKe';
@@ -1482,48 +1460,71 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             }
         });
 
-        let mapChuyenTruocKy = {};
-        let mapChuyenTrongKy = {};
+        let mapChuyenTuNgayApDung = {};
 
         allDocsXe.forEach(d => {
-            if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc) return;
+            if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc || d._dateChuyen > denNgay) return;
 
             const ngayKey = dinhDangNgayHienThi(d._rawNgay);
             const soChuyen = (d.chuyenVtracking !== undefined && d.chuyenVtracking !== null && d.chuyenVtracking !== "") ? d.chuyenVtracking : 1;
             const tripKey = `${ngayKey}_CHUYEN_${soChuyen}`;
 
-            if (d._dateChuyen < tuNgay) {
-                if (!mapChuyenTruocKy[tripKey]) {
-                    mapChuyenTruocKy[tripKey] = Number(d.kmChuyenVtracking) || 0;
-                }
-            } else if (d._dateChuyen >= tuNgay && d._dateChuyen <= denNgay) {
-                if (!mapChuyenTrongKy[tripKey]) {
-                    mapChuyenTrongKy[tripKey] = {
-                        ngayStr: ngayKey,
-                        dateObj: d._dateChuyen,
-                        soChuyen: Number(soChuyen) || 1,
-                        kmChuyenDiVtracking: Number(d.kmChuyenDiVtracking) || 0,
-                        kmChuyenVeVtracking: Number(d.kmChuyenVeVtracking) || 0,
-                        kmChuyenVtracking: Number(d.kmChuyenVtracking) || 0,
-                        dons: []
-                    };
-                }
-                mapChuyenTrongKy[tripKey].dons.push(d);
+            if (!mapChuyenTuNgayApDung[tripKey]) {
+                mapChuyenTuNgayApDung[tripKey] = {
+                    ngayStr: ngayKey,
+                    dateObj: d._dateChuyen,
+                    soChuyen: Number(soChuyen) || 1,
+                    isXeMay: false,
+                    phuongTien: bienSoChon,
+                    dons: []
+                };
             }
+            mapChuyenTuNgayApDung[tripKey].dons.push(d);
         });
 
+        let dsTatCaChuyen = Object.values(mapChuyenTuNgayApDung).sort((a, b) => {
+            if (a.dateObj - b.dateObj !== 0) return a.dateObj - b.dateObj;
+            if (a.soChuyen - b.soChuyen !== 0) return a.soChuyen - b.soChuyen;
+            const tA = parseThoiGianGiao(a.dons[0]?.batDauGiaoHang || a.dons[0]?.ketThucGiaoHang);
+            const tB = parseThoiGianGiao(b.dons[0]?.batDauGiaoHang || b.dons[0]?.ketThucGiaoHang);
+            return (tA || 0) - (tB || 0);
+        });
+
+        // Chuẩn hóa odometer & tính kmDi, kmVe cho toàn bộ chuỗi chuyến từ ngayApDungGoc
+        let kmCuoiLienTruoc = kmDauKyGoc;
+        for (let i = 0; i < dsTatCaChuyen.length; i++) {
+            const chuyen = dsTatCaChuyen[i];
+            chuanHoaVaDuDoanKmChuyen(chuyen, kmCuoiLienTruoc);
+
+            const kmBD = chuyen._kmBDSachDau || 0;
+            const kmKT = chuyen._kmKTSachCuoi || 0;
+            chuyen.kmDi = (kmBD > 0 && kmKT >= kmBD) ? (kmKT - kmBD) : 0;
+            chuyen.kmVe = 0;
+
+            if (kmKT > 0) {
+                kmCuoiLienTruoc = kmKT;
+                for (let j = i + 1; j < dsTatCaChuyen.length; j++) {
+                    const nextChuyen = dsTatCaChuyen[j];
+                    const nextKmBD = parseSoOdometer(nextChuyen.dons[0]?.kmBatDauGiaoHang) || nextChuyen._kmBDSachDau || 0;
+                    if (nextKmBD > 0 && nextKmBD >= kmKT && (nextKmBD - kmKT) <= 600) {
+                        chuyen.kmVe = nextKmBD - kmKT;
+                    }
+                    break;
+                }
+            }
+            chuyen.tongKmChuyen = chuyen.kmDi + chuyen.kmVe;
+        }
+
+        const dsChuyenTruocKy = dsTatCaChuyen.filter(c => c.dateObj < tuNgay);
+        const dsChuyenTrongKy = dsTatCaChuyen.filter(c => c.dateObj >= tuNgay && c.dateObj <= denNgay);
+
         let kmTichLuyTruocKy = 0;
-        Object.values(mapChuyenTruocKy).forEach(km => {
-            kmTichLuyTruocKy += km;
+        dsChuyenTruocKy.forEach(c => {
+            kmTichLuyTruocKy += c.tongKmChuyen;
         });
         const dongHoKmDauKy = Math.round(kmDauKyGoc + kmTichLuyTruocKy);
 
-        let dsChuyenTrongKy = Object.values(mapChuyenTrongKy).sort((a, b) => {
-            if (a.dateObj - b.dateObj !== 0) return a.dateObj - b.dateObj;
-            return a.soChuyen - b.soChuyen;
-        });
-
-        // 3. Xử lý từng chuyến: gom đơn trùng (doiTuong + dinhVi) & thêm dòng "Về kho"
+        // 3. Xử lý từng chuyến trong kỳ theo kmDi và kmVe: gom đơn trùng (doiTuong + dinhVi) & thêm dòng "Về kho"
         let bangKeRows = [];
         let tongKmNoiO = 0;
         let tongKmTinh = 0;
@@ -1535,7 +1536,10 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             const dinhMucChuyen = Number(cfgNgay.dinhMuc) || dinhMucHienThi;
             const noiOChuyen = Number(cfgNgay.noiO) || nguongNoiO;
 
-            const kmChuyen = chuyen.kmChuyenVtracking;
+            const kmDiChuyen = chuyen.kmDi || 0;
+            const kmVeChuyen = chuyen.kmVe || 0;
+            const kmChuyen = kmDiChuyen + kmVeChuyen;
+
             tongKmTatCaChuyen += kmChuyen;
             if (kmChuyen <= noiOChuyen) {
                 tongKmNoiO += kmChuyen;
@@ -1546,41 +1550,59 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             let groupedStops = [];
             let stopIndexMap = {};
 
-            chuyen.dons.sort((a, b) => {
-                const tA = parseThoiGianGiao(a.ketThucGiaoHang);
-                const tB = parseThoiGianGiao(b.ketThucGiaoHang);
-                if (tA !== null && tB !== null && tA !== tB) return tA - tB;
-                return (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || "");
-            });
-
             chuyen.dons.forEach(don => {
                 const dt = (don.doiTuong || "").trim();
                 const dv = (don.dinhVi || "").trim();
                 const groupKey = `${dt}___${dv}`;
                 const pxkClean = catSoKhongDau(don.pxk);
 
+                const kmBDDon = don._kmBDSach !== undefined ? don._kmBDSach : parseSoOdometer(don.kmBatDauGiaoHang);
+                const kmKTDon = don._kmKTSach !== undefined ? don._kmKTSach : parseSoOdometer(don.kmKetThucGiaoHang);
+                const kmChangDon = (kmKTDon > 0 && kmBDDon > 0 && kmKTDon >= kmBDDon)
+                    ? (kmKTDon - kmBDDon)
+                    : parseKmKhachVtracking(don.kmKhachVtracking);
+
                 if (stopIndexMap[groupKey] === undefined) {
                     stopIndexMap[groupKey] = groupedStops.length;
                     groupedStops.push({
                         ngay: chuyen.ngayStr,
                         noiGiao: dt,
-                        km: Number(don.kmKhachVtracking) || 0,
+                        km: kmChangDon,
                         pxkList: pxkClean ? [pxkClean] : []
                     });
                 } else {
                     const idx = stopIndexMap[groupKey];
+                    groupedStops[idx].km += kmChangDon;
                     if (pxkClean && !groupedStops[idx].pxkList.includes(pxkClean)) {
                         groupedStops[idx].pxkList.push(pxkClean);
                     }
                 }
             });
 
-            let tongLitDiChuan = chuyen.kmChuyenDiVtracking * dinhMucChuyen;
+            const tongKmChangDons = groupedStops.reduce((sum, s) => sum + s.km, 0);
+            if (kmDiChuyen > 0 && groupedStops.length > 0 && tongKmChangDons !== kmDiChuyen) {
+                if (tongKmChangDons > 0) {
+                    let congDonKm = 0;
+                    groupedStops.forEach((s, i) => {
+                        if (i === groupedStops.length - 1) {
+                            s.km = Math.max(0, kmDiChuyen - congDonKm);
+                        } else {
+                            const kmPhanBo = Math.round((s.km / tongKmChangDons) * kmDiChuyen);
+                            s.km = kmPhanBo;
+                            congDonKm += kmPhanBo;
+                        }
+                    });
+                } else {
+                    groupedStops[groupedStops.length - 1].km = kmDiChuyen;
+                }
+            }
+
+            let tongLitDiChuan = kmDiChuyen * dinhMucChuyen;
             let congDonLitDi = 0;
 
             groupedStops.forEach((stop, i) => {
                 let litHang = 0;
-                if (i === groupedStops.length - 1 && groupedStops.length > 0 && chuyen.kmChuyenDiVtracking > 0) {
+                if (i === groupedStops.length - 1 && groupedStops.length > 0 && kmDiChuyen > 0) {
                     litHang = Math.max(0, Number((tongLitDiChuan - congDonLitDi).toFixed(2)));
                 } else {
                     litHang = Number((stop.km * dinhMucChuyen).toFixed(2));
@@ -1592,7 +1614,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 bangKeRows.push({
                     ngay: stop.ngay,
                     noiGiao: stop.noiGiao,
-                    km: stop.km > 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
+                    km: stop.km > 0 ? String(Math.round(stop.km)) : "0",
                     tieuThu: litHang > 0 ? litHang.toFixed(2) : "0.00",
                     doThem: "",
                     chungTu: stop.pxkList.join(", "),
@@ -1600,14 +1622,13 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 });
             });
 
-            const kmVe = chuyen.kmChuyenVeVtracking;
-            const litVe = Number((kmVe * dinhMucChuyen).toFixed(2));
+            const litVe = Number((kmVeChuyen * dinhMucChuyen).toFixed(2));
             tongTieuThuLit += litVe;
 
             bangKeRows.push({
                 ngay: chuyen.ngayStr,
                 noiGiao: "Về kho",
-                km: kmVe > 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
+                km: kmVeChuyen > 0 ? String(Math.round(kmVeChuyen)) : "0",
                 tieuThu: litVe > 0 ? litVe.toFixed(2) : "0.00",
                 doThem: "",
                 chungTu: "",
