@@ -360,34 +360,17 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
 
     let kmBDChuan = 0;
     const bdDungDoDai = dsKmBD.filter(v => String(v).length === doDaiChuan);
-    if (bdDungDoDai.length > 0) {
-        if (kmThamChieuTruoc > 0) {
-            const cacMocHopLy = bdDungDoDai
-                .filter(v => v >= kmThamChieuTruoc && (v - kmThamChieuTruoc) <= 800)
-                .sort((a, b) => a - b);
+    const nguonBD = bdDungDoDai.length > 0 ? bdDungDoDai : dsKmBD;
 
-            if (cacMocHopLy.length > 0) {
-                kmBDChuan = cacMocHopLy[0];
-            } else {
-                const daSuaList = bdDungDoDai
-                    .map(v => suaSoOdometerTheoMoc(v, kmThamChieuTruoc, 800))
-                    .filter(v => v !== null)
-                    .sort((a, b) => a - b);
-                kmBDChuan = daSuaList.length > 0 ? daSuaList[0] : kmThamChieuTruoc;
-            }
+    if (nguonBD.length > 0) {
+        const minKmBDChuyen = Math.min(...nguonBD);
+        if (kmThamChieuTruoc > 0 && minKmBDChuyen < kmThamChieuTruoc) {
+            const daSua = suaSoOdometerTheoMoc(minKmBDChuyen, kmThamChieuTruoc, 800);
+            kmBDChuan = (daSua !== null && daSua >= kmThamChieuTruoc && (daSua - kmThamChieuTruoc) <= 800)
+                ? daSua
+                : kmThamChieuTruoc;
         } else {
-            const sapXepBD = [...bdDungDoDai].sort((a, b) => a - b);
-            kmBDChuan = sapXepBD[0];
-        }
-    } else if (dsKmBD.length > 0) {
-        const sapXepBD = [...dsKmBD].sort((a, b) => a - b);
-        kmBDChuan = sapXepBD[0];
-        if (kmThamChieuTruoc > 0) {
-            const daSuaList = sapXepBD
-                .map(v => suaSoOdometerTheoMoc(v, kmThamChieuTruoc, 800))
-                .filter(v => v !== null)
-                .sort((a, b) => a - b);
-            kmBDChuan = daSuaList.length > 0 ? daSuaList[0] : kmThamChieuTruoc;
+            kmBDChuan = minKmBDChuyen;
         }
     } else if (kmThamChieuTruoc > 0) {
         kmBDChuan = kmThamChieuTruoc;
