@@ -1,8 +1,9 @@
 // PHẦN 1: KHỞI TẠO, IMPORT VÀ BIẾN TOÀN CỤC (CACHE & TAB)
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 const db = window.db;
 window._cachedVanChuyenData = null;        // Biến lưu trữ bộ nhớ tạm (cache) dữ liệu vận chuyển sau khi tải từ Firebase
 window._currentTabVanChuyen = 'da-giao';    // Biến lưu tab hiện tại ('da-giao', 'chuan-bi', 'cho')
+window._selectedDieuChinhIds = new Set();  // Lưu danh sách id các đơn được chọn điều chỉnh
 
 // PHẦN 2: CÁC HÀM TIỆN ÍCH XỬ LÝ NGÀY THÁNG, TÊN VÀ ĐỊA BÀN
 function chuanHoaNgay(ngayStr) {
@@ -223,7 +224,21 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
         const thamChieuTuyenDuong = collection(db, "TUYENDUONG");
         const q = query(thamChieuTuyenDuong, where("nam", "==", namNum), where("thang", "==", thangNum));
 
-        const querySnapshot = await getDocs(q);
+        const [querySnapshot, dieuChinhSnapshot] = await Promise.all([
+            getDocs(q),
+            getDocs(collection(db, "TUYENDUONG-DIEUCHINH"))
+        ]);
+
+        let dieuChinhMap = {};
+        dieuChinhSnapshot.forEach((dcSnap) => {
+            const dcData = dcSnap.data();
+            const keyById = dcSnap.id;
+            const keyByMaPhieu = dcData.maPhieu ? String(dcData.maPhieu).trim() : "";
+            dieuChinhMap[keyById] = dcData;
+            if (keyByMaPhieu) {
+                dieuChinhMap[`MP___${keyByMaPhieu}`] = dcData;
+            }
+        });
 
         if (querySnapshot.empty) {
             window._cachedVanChuyenData = [];
@@ -234,8 +249,22 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
         let listData = [];
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            const ngayGom = layNgayGomNhom(data);
-            listData.push({ id: docSnap.id, ...data, _ngayGom: ngayGom });
+            const maPhieuKey = data.maPhieu ? String(data.maPhieu).trim() : "";
+            const dc = dieuChinhMap[docSnap.id] || (maPhieuKey ? dieuChinhMap[`MP___${maPhieuKey}`] : null);
+
+            const mergedData = {
+                ...data,
+                ...(dc ? {
+                    kmBatDauGiaoHang: dc.kmBatDauGiaoHang !== undefined ? dc.kmBatDauGiaoHang : data.kmBatDauGiaoHang,
+                    kmKetThucGiaoHang: dc.kmKetThucGiaoHang !== undefined ? dc.kmKetThucGiaoHang : data.kmKetThucGiaoHang,
+                    phuongTien: dc.phuongTien !== undefined ? dc.phuongTien : data.phuongTien,
+                    taiXe: dc.taiXe !== undefined ? dc.taiXe : data.taiXe,
+                    _daDieuChinh: true
+                } : {})
+            };
+
+            const ngayGom = layNgayGomNhom(mergedData);
+            listData.push({ id: docSnap.id, ...mergedData, _ngayGom: ngayGom });
         });
         
         window._cachedVanChuyenData = listData;
@@ -247,9 +276,48 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
     }
 };
 
+function capNhatThanhDieuChinh() {
+    let bar = document.getElementById('thanhDieuChinhChonDong');
+    const count = window._selectedDieuChinhIds.size;
+
+    if (count === 0) {
+        if (bar) bar.remove();
+        return;
+    }
+
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'thanhDieuChinhChonDong';
+        bar.style.cssText = 'position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 9998; background: #0f172a; color: #fff; padding: 8px 14px; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.22); display: flex; align-items: center; gap: 10px; font-size: 12px; font-family: Arial, sans-serif;';
+        document.body.appendChild(bar);
+    }
+
+    bar.innerHTML = `
+        <span>Đã chọn <strong>${count}</strong> dòng sai</span>
+        <button type="button" id="btnMoBangDieuChinh" style="background: #0284c7; color: #fff; border: none; border-radius: 5px; padding: 5px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+            ✏️ Điều chỉnh
+        </button>
+        <button type="button" id="btnBoChonDieuChinh" style="background: #334155; color: #e2e8f0; border: none; border-radius: 5px; padding: 5px 8px; font-size: 11px; cursor: pointer;">
+            Bỏ chọn
+        </button>
+    `;
+
+    document.getElementById('btnMoBangDieuChinh').onclick = () => {
+        window.moBangDieuChinhVanChuyen(Array.from(window._selectedDieuChinhIds));
+    };
+
+    document.getElementById('btnBoChonDieuChinh').onclick = () => {
+        window._selectedDieuChinhIds.clear();
+        capNhatThanhDieuChinh();
+        hienThiDanhSachVanChuyen();
+    };
+}
+
 function hienThiDanhSachVanChuyen() {
     const container = document.getElementById('danhSachLichSuVanChuyen');
     if (!container) return;
+
+    capNhatThanhDieuChinh();
 
     if (!window._cachedVanChuyenData) {
         container.innerHTML = '<div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">Vui lòng chọn tháng và bấm nút <b>"Tải"</b> để xem lịch sử vận chuyển.</div>';
@@ -712,6 +780,10 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         ? '<span style="background: #fef2f2; color: #dc2626; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚚 Chành</span>'
         : '<span style="background: #eff6ff; color: #2563eb; padding: 2px 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600;">🚛 Giao</span>';
 
+    const badgeDieuChinh = data._daDieuChinh
+        ? '<span style="background: #fef3c7; color: #92400e; padding: 1px 4px; border-radius: 4px; font-size: 9px; font-weight: 600;" title="Đã có bản điều chỉnh">Đã ĐC</span>'
+        : '';
+
     let badgeDuyet = `<span style="color: #64748b; font-size: 10.5px;">${duyet}</span>`;
     if (duyet === "Đã giao hàng" || duyet === "Đang giao hàng") {
         badgeDuyet = `<span style="color: #16a34a; font-size: 10.5px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
@@ -723,19 +795,24 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         badgeDuyet = `<span style="color: #9333ea; font-size: 10.5px; font-weight: 600;">⏳ Chưa giao (${kmHienThi}km)</span>`;
     }
 
+    const isChecked = window._selectedDieuChinhIds.has(data.id);
+
     const cardItem = document.createElement('div');
     cardItem.className = 'card-lich-su-item';
-    cardItem.style.cssText = 'background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 7px; margin-bottom: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;';
+    cardItem.style.cssText = `background: ${isChecked ? '#f0f9ff' : '#fff'}; border: 1px solid ${isChecked ? '#0284c7' : '#cbd5e1'}; border-radius: 6px; padding: 5px 7px; margin-bottom: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); width: 100%; box-sizing: border-box;`;
 
     cardItem.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 2px; margin-bottom: 2px;">
-            <div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <input type="checkbox" class="chk-dieu-chinh-don" data-id="${data.id}" ${isChecked ? 'checked' : ''} title="Chọn dòng sai để điều chỉnh" style="cursor: pointer; margin: 0;">
                 <strong style="color: #0f172a; font-size: 11.5px;">${maPhieu}</strong>
-                <span style="font-size: 9.5px; color: #64748b; margin-left: 4px;">(PXK: ${maPXK})</span><strong style="color: #0f172a; font-size: 8px; margin-left: 3px;">${chuyenVal}</strong>
+                <span style="font-size: 9.5px; color: #64748b;">(PXK: ${maPXK})</span><strong style="color: #0f172a; font-size: 8px; margin-left: 2px;">${chuyenVal}</strong>
+                ${badgeDieuChinh}
             </div>
             <div style="display: flex; gap: 4px; align-items: center;">
                 ${badgeThuTu}
                 ${badgeHT}
+                <button type="button" class="btn-sua-don-le" data-id="${data.id}" title="Điều chỉnh dòng này" style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #0f172a; border-radius: 4px; padding: 1px 5px; font-size: 9.5px; cursor: pointer;">✏️ Sửa</button>
             </div>
         </div>
 
@@ -760,8 +837,180 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
         </div>
     `;
 
+    const chk = cardItem.querySelector('.chk-dieu-chinh-don');
+    if (chk) {
+        chk.addEventListener('change', function() {
+            if (this.checked) {
+                window._selectedDieuChinhIds.add(data.id);
+            } else {
+                window._selectedDieuChinhIds.delete(data.id);
+            }
+            cardItem.style.background = this.checked ? '#f0f9ff' : '#fff';
+            cardItem.style.borderColor = this.checked ? '#0284c7' : '#cbd5e1';
+            capNhatThanhDieuChinh();
+        });
+    }
+
+    const btnSuaLe = cardItem.querySelector('.btn-sua-don-le');
+    if (btnSuaLe) {
+        btnSuaLe.addEventListener('click', function() {
+            window._selectedDieuChinhIds.add(data.id);
+            capNhatThanhDieuChinh();
+            window.moBangDieuChinhVanChuyen(Array.from(window._selectedDieuChinhIds));
+        });
+    }
+
     parentElement.appendChild(cardItem);
 }
+
+// PHẦN 5B: BẢNG ĐIỀU CHỈNH & LƯU VÀO TUYENDUONG-DIEUCHINH
+window.moBangDieuChinhVanChuyen = function(idsList = []) {
+    if (!window._cachedVanChuyenData || idsList.length === 0) {
+        alert("Vui lòng chọn ít nhất một dòng cần điều chỉnh!");
+        return;
+    }
+
+    const rowsData = window._cachedVanChuyenData.filter(item => idsList.includes(item.id));
+    if (rowsData.length === 0) return;
+
+    let modal = document.getElementById('modalDieuChinhVanChuyen');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'modalDieuChinhVanChuyen';
+    modal.style.cssText = 'position: fixed; inset: 0; z-index: 10000; background: rgba(15, 23, 42, 0.55); display: flex; align-items: center; justify-content: center; padding: 12px; font-family: Arial, sans-serif;';
+
+    const tableRowsHtml = rowsData.map(item => {
+        const maPhieu = item.maPhieu || item.id;
+        const kmBD = item.kmBatDauGiaoHang !== undefined && item.kmBatDauGiaoHang !== null ? item.kmBatDauGiaoHang : '';
+        const kmKT = item.kmKetThucGiaoHang !== undefined && item.kmKetThucGiaoHang !== null ? item.kmKetThucGiaoHang : '';
+        const pt = item.phuongTien || '';
+        const tx = item.taiXe || '';
+
+        return `
+            <tr data-doc-id="${item.id}" data-ma-phieu="${maPhieu}">
+                <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 11.5px; color: #0f172a; white-space: nowrap;">
+                    ${maPhieu}<br><span style="font-size: 10px; font-weight: normal; color: #64748b;">${item.doiTuong || ''}</span>
+                </td>
+                <td style="padding: 4px; border: 1px solid #cbd5e1;">
+                    <input type="number" step="any" class="dc-km-bd" value="${kmBD}" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
+                </td>
+                <td style="padding: 4px; border: 1px solid #cbd5e1;">
+                    <input type="number" step="any" class="dc-km-kt" value="${kmKT}" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
+                </td>
+                <td style="padding: 4px; border: 1px solid #cbd5e1;">
+                    <input type="text" class="dc-phuong-tien" value="${String(pt).replace(/"/g, '&quot;')}" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
+                </td>
+                <td style="padding: 4px; border: 1px solid #cbd5e1;">
+                    <input type="text" class="dc-tai-xe" value="${String(tx).replace(/"/g, '&quot;')}" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    modal.innerHTML = `
+        <div style="background: #fff; border-radius: 8px; max-width: 860px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.25);">
+            <div style="background: #0284c7; color: #fff; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 13px;">✏️ Điều chỉnh thông tin vận chuyển (${rowsData.length} dòng)</strong>
+                <button type="button" id="btnDongModalDieuChinh" style="background: transparent; border: none; color: #fff; font-size: 16px; cursor: pointer;">✕</button>
+            </div>
+            <div style="padding: 12px; overflow: auto; flex: 1;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 620px;">
+                    <thead>
+                        <tr style="background: #f1f5f9; font-size: 11px; color: #334155;">
+                            <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">maPhieu / Khách</th>
+                            <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">kmBatDauGiaoHang</th>
+                            <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">kmKetThucGiaoHang</th>
+                            <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">phuongTien</th>
+                            <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">taiXe</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyDieuChinhRows">
+                        ${tableRowsHtml}
+                    </tbody>
+                </table>
+            </div>
+            <div style="padding: 10px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" id="btnHuyDieuChinh" style="padding: 6px 12px; border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 6px; font-size: 12px; cursor: pointer;">Hủy</button>
+                <button type="button" id="btnLuuDieuChinh" style="padding: 6px 14px; border: none; background: #16a34a; color: #fff; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">💾 Lưu vào TUYENDUONG-DIEUCHINH</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeModal = () => modal.remove();
+    document.getElementById('btnDongModalDieuChinh').onclick = closeModal;
+    document.getElementById('btnHuyDieuChinh').onclick = closeModal;
+
+    document.getElementById('btnLuuDieuChinh').onclick = async function() {
+        const btnLuu = this;
+        const trList = modal.querySelectorAll('#tbodyDieuChinhRows tr');
+        const recordsToSave = [];
+
+        trList.forEach(tr => {
+            const docId = tr.getAttribute('data-doc-id');
+            const maPhieu = tr.getAttribute('data-ma-phieu') || docId;
+            const kmBdRaw = tr.querySelector('.dc-km-bd').value.trim();
+            const kmKtRaw = tr.querySelector('.dc-km-kt').value.trim();
+            const phuongTienVal = tr.querySelector('.dc-phuong-tien').value.trim();
+            const taiXeVal = tr.querySelector('.dc-tai-xe').value.trim();
+
+            recordsToSave.push({
+                docId,
+                payload: {
+                    maPhieu: maPhieu,
+                    kmBatDauGiaoHang: kmBdRaw === "" ? "" : Number(kmBdRaw),
+                    kmKetThucGiaoHang: kmKtRaw === "" ? "" : Number(kmKtRaw),
+                    phuongTien: phuongTienVal,
+                    taiXe: taiXeVal
+                }
+            });
+        });
+
+        btnLuu.disabled = true;
+        btnLuu.textContent = "Đang lưu...";
+
+        try {
+            await Promise.all(
+                recordsToSave.map(rec =>
+                    setDoc(doc(db, "TUYENDUONG-DIEUCHINH", rec.docId), rec.payload, { merge: true })
+                )
+            );
+
+            // Cập nhật cache trên giao diện mà không sửa bảng TUYENDUONG
+            const payloadById = {};
+            recordsToSave.forEach(rec => {
+                payloadById[rec.docId] = rec.payload;
+            });
+
+            window._cachedVanChuyenData = window._cachedVanChuyenData.map(item => {
+                const p = payloadById[item.id];
+                if (!p) return item;
+                const updated = {
+                    ...item,
+                    kmBatDauGiaoHang: p.kmBatDauGiaoHang,
+                    kmKetThucGiaoHang: p.kmKetThucGiaoHang,
+                    phuongTien: p.phuongTien,
+                    taiXe: p.taiXe,
+                    _daDieuChinh: true
+                };
+                updated._ngayGom = layNgayGomNhom(updated);
+                return updated;
+            });
+
+            window._selectedDieuChinhIds.clear();
+            closeModal();
+            hienThiDanhSachVanChuyen();
+            alert(`Đã lưu điều chỉnh ${recordsToSave.length} dòng vào TUYENDUONG-DIEUCHINH!`);
+        } catch (err) {
+            console.error("Lỗi lưu TUYENDUONG-DIEUCHINH:", err);
+            alert("Lỗi khi lưu điều chỉnh: " + err.message);
+            btnLuu.disabled = false;
+            btnLuu.textContent = "💾 Lưu vào TUYENDUONG-DIEUCHINH";
+        }
+    };
+};
 
 // PHẦN 6: LẮNG NGHE SỰ KIỆN GIAO DIỆN & TỰ ĐỘNG CHÈN THANH TAB NẰM CẠNH TIÊU ĐỀ
 document.addEventListener('DOMContentLoaded', function() {
@@ -1142,20 +1391,45 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         const dinhMucHienThi = Number(cauHinhKy.dinhMuc) || 0.16;
         const nguongNoiO = Number(cauHinhKy.noiO) || 60;
 
-        // 2. Tải dữ liệu TUYENDUONG của xe này
-        const qTd = query(collection(db, "TUYENDUONG"), where("phuongTien", "==", bienSoChon));
-        const snapTd = await getDocs(qTd);
+        // 2. Tải dữ liệu TUYENDUONG và áp dụng điều chỉnh từ TUYENDUONG-DIEUCHINH (không sửa TUYENDUONG)
+        const [snapTd, dieuChinhSnapshot] = await Promise.all([
+            getDocs(collection(db, "TUYENDUONG")),
+            getDocs(collection(db, "TUYENDUONG-DIEUCHINH"))
+        ]);
+
+        let dieuChinhMap = {};
+        dieuChinhSnapshot.forEach((dcSnap) => {
+            const dcData = dcSnap.data();
+            dieuChinhMap[dcSnap.id] = dcData;
+            if (dcData.maPhieu) {
+                dieuChinhMap[`MP___${String(dcData.maPhieu).trim()}`] = dcData;
+            }
+        });
 
         let allDocsXe = [];
         snapTd.forEach(docSnap => {
             const d = docSnap.data();
-            const duyetVal = (d.duyet || "").trim();
+            const mpKey = d.maPhieu ? String(d.maPhieu).trim() : "";
+            const dc = dieuChinhMap[docSnap.id] || (mpKey ? dieuChinhMap[`MP___${mpKey}`] : null);
+            const merged = {
+                ...d,
+                ...(dc ? {
+                    kmBatDauGiaoHang: dc.kmBatDauGiaoHang !== undefined ? dc.kmBatDauGiaoHang : d.kmBatDauGiaoHang,
+                    kmKetThucGiaoHang: dc.kmKetThucGiaoHang !== undefined ? dc.kmKetThucGiaoHang : d.kmKetThucGiaoHang,
+                    phuongTien: dc.phuongTien !== undefined ? dc.phuongTien : d.phuongTien,
+                    taiXe: dc.taiXe !== undefined ? dc.taiXe : d.taiXe
+                } : {})
+            };
+
+            if ((merged.phuongTien || "").trim() !== bienSoChon) return;
+
+            const duyetVal = (merged.duyet || "").trim();
             if (duyetVal === "Đã giao hàng" || duyetVal === "Đang giao hàng") {
-                const rawNgay = d.ngayThangNam || layNgayGomNhom(d);
+                const rawNgay = merged.ngayThangNam || layNgayGomNhom(merged);
                 const dateChuyen = chuyenNgaySangDate(rawNgay);
                 allDocsXe.push({
                     id: docSnap.id,
-                    ...d,
+                    ...merged,
                     _rawNgay: rawNgay,
                     _dateChuyen: dateChuyen
                 });
