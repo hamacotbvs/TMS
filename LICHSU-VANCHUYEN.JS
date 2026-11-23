@@ -1080,6 +1080,30 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         btnPdf.disabled = true;
     }
 
+    const tinhKmDiCuaChuyen = (dons) => {
+        if (!dons || dons.length === 0) return 0;
+        const donDau = dons[0];
+        const donCuoi = dons[dons.length - 1];
+        const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
+        const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
+        if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
+            return kmKTCuoi - kmBDDau;
+        }
+        return 0;
+    };
+
+    const tinhKmVeCuaChuyen = (chuyenHienTai, chuyenKeTiep) => {
+        if (!chuyenHienTai || !chuyenHienTai.dons || chuyenHienTai.dons.length === 0) return 0;
+        if (!chuyenKeTiep || !chuyenKeTiep.dons || chuyenKeTiep.dons.length === 0) return 0;
+        const donCuoi = chuyenHienTai.dons[chuyenHienTai.dons.length - 1];
+        const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
+        const kmBDChuyenSau = Number(chuyenKeTiep.dons[0].kmBatDauGiaoHang) || 0;
+        if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
+            return kmBDChuyenSau - kmKTCuoi;
+        }
+        return 0;
+    };
+
     try {
         // 1. Lấy cấu hình PHUONGTIEN của biển số xe đang chọn
         const qPt = query(collection(db, "PHUONGTIEN"), where("bienSo", "==", bienSoChon));
@@ -1138,8 +1162,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             }
         });
 
-        let mapChuyenTruocKy = {};
-        let mapChuyenTrongKy = {};
+        let mapTatCaChuyen = {};
 
         allDocsXe.forEach(d => {
             if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc) return;
@@ -1148,36 +1171,41 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             const soChuyen = (d.chuyenVtracking !== undefined && d.chuyenVtracking !== null && d.chuyenVtracking !== "") ? d.chuyenVtracking : 1;
             const tripKey = `${ngayKey}_CHUYEN_${soChuyen}`;
 
-            if (d._dateChuyen < tuNgay) {
-                if (!mapChuyenTruocKy[tripKey]) {
-                    mapChuyenTruocKy[tripKey] = Number(d.kmChuyenVtracking) || 0;
-                }
-            } else if (d._dateChuyen >= tuNgay && d._dateChuyen <= denNgay) {
-                if (!mapChuyenTrongKy[tripKey]) {
-                    mapChuyenTrongKy[tripKey] = {
-                        ngayStr: ngayKey,
-                        dateObj: d._dateChuyen,
-                        soChuyen: Number(soChuyen) || 1,
-                        kmChuyenDiVtracking: Number(d.kmChuyenDiVtracking) || 0,
-                        kmChuyenVeVtracking: Number(d.kmChuyenVeVtracking) || 0,
-                        kmChuyenVtracking: Number(d.kmChuyenVtracking) || 0,
-                        dons: []
-                    };
-                }
-                mapChuyenTrongKy[tripKey].dons.push(d);
+            if (!mapTatCaChuyen[tripKey]) {
+                mapTatCaChuyen[tripKey] = {
+                    ngayStr: ngayKey,
+                    dateObj: d._dateChuyen,
+                    soChuyen: Number(soChuyen) || 1,
+                    dons: []
+                };
             }
+            mapTatCaChuyen[tripKey].dons.push(d);
         });
 
-        let kmTichLuyTruocKy = 0;
-        Object.values(mapChuyenTruocKy).forEach(km => {
-            kmTichLuyTruocKy += km;
-        });
-        const dongHoKmDauKy = Math.round(kmDauKyGoc + kmTichLuyTruocKy);
-
-        let dsChuyenTrongKy = Object.values(mapChuyenTrongKy).sort((a, b) => {
+        let dsTatCaChuyen = Object.values(mapTatCaChuyen).sort((a, b) => {
             if (a.dateObj - b.dateObj !== 0) return a.dateObj - b.dateObj;
             return a.soChuyen - b.soChuyen;
         });
+
+        dsTatCaChuyen.forEach((chuyen, idx) => {
+            chuyen.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
+            chuyen.kmDi = tinhKmDiCuaChuyen(chuyen.dons);
+            chuyen.kmVe = tinhKmVeCuaChuyen(chuyen, dsTatCaChuyen[idx + 1]);
+            chuyen.kmChuyen = chuyen.kmDi + chuyen.kmVe;
+        });
+
+        let kmTichLuyTruocKy = 0;
+        let dsChuyenTrongKy = [];
+
+        dsTatCaChuyen.forEach(chuyen => {
+            if (chuyen.dateObj < tuNgay) {
+                kmTichLuyTruocKy += chuyen.kmChuyen;
+            } else if (chuyen.dateObj >= tuNgay && chuyen.dateObj <= denNgay) {
+                dsChuyenTrongKy.push(chuyen);
+            }
+        });
+
+        const dongHoKmDauKy = Math.round(kmDauKyGoc + kmTichLuyTruocKy);
 
         // 3. Xử lý từng chuyến: gom đơn trùng (doiTuong + dinhVi) & thêm dòng "Về kho"
         let bangKeRows = [];
@@ -1191,7 +1219,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             const dinhMucChuyen = Number(cfgNgay.dinhMuc) || dinhMucHienThi;
             const noiOChuyen = Number(cfgNgay.noiO) || nguongNoiO;
 
-            const kmChuyen = chuyen.kmChuyenVtracking;
+            const kmChuyen = chuyen.kmChuyen;
             tongKmTatCaChuyen += kmChuyen;
             if (kmChuyen <= noiOChuyen) {
                 tongKmNoiO += kmChuyen;
@@ -1202,9 +1230,19 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             let groupedStops = [];
             let stopIndexMap = {};
 
-            chuyen.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
+            chuyen.dons.forEach((don, index) => {
+                let kmGiaoDon = 0;
+                const kmKT = Number(don.kmKetThucGiaoHang) || 0;
+                if (kmKT > 0) {
+                    if (index === 0) {
+                        const kmBD = Number(don.kmBatDauGiaoHang) || 0;
+                        if (kmBD > 0) kmGiaoDon = kmKT - kmBD;
+                    } else {
+                        const kmKTTruoc = Number(chuyen.dons[index - 1]?.kmKetThucGiaoHang) || 0;
+                        if (kmKTTruoc > 0) kmGiaoDon = kmKT - kmKTTruoc;
+                    }
+                }
 
-            chuyen.dons.forEach(don => {
                 const dt = (don.doiTuong || "").trim();
                 const dv = (don.dinhVi || "").trim();
                 const groupKey = `${dt}___${dv}`;
@@ -1215,23 +1253,24 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     groupedStops.push({
                         ngay: chuyen.ngayStr,
                         noiGiao: dt,
-                        km: Number(don.kmKhachVtracking) || 0,
+                        km: kmGiaoDon,
                         pxkList: pxkClean ? [pxkClean] : []
                     });
                 } else {
                     const idx = stopIndexMap[groupKey];
+                    groupedStops[idx].km += kmGiaoDon;
                     if (pxkClean && !groupedStops[idx].pxkList.includes(pxkClean)) {
                         groupedStops[idx].pxkList.push(pxkClean);
                     }
                 }
             });
 
-            let tongLitDiChuan = chuyen.kmChuyenDiVtracking * dinhMucChuyen;
+            let tongLitDiChuan = chuyen.kmDi * dinhMucChuyen;
             let congDonLitDi = 0;
 
             groupedStops.forEach((stop, i) => {
                 let litHang = 0;
-                if (i === groupedStops.length - 1 && groupedStops.length > 0 && chuyen.kmChuyenDiVtracking > 0) {
+                if (i === groupedStops.length - 1 && groupedStops.length > 0 && chuyen.kmDi > 0) {
                     litHang = Math.max(0, Number((tongLitDiChuan - congDonLitDi).toFixed(2)));
                 } else {
                     litHang = Number((stop.km * dinhMucChuyen).toFixed(2));
@@ -1251,7 +1290,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 });
             });
 
-            const kmVe = chuyen.kmChuyenVeVtracking;
+            const kmVe = chuyen.kmVe;
             const litVe = Number((kmVe * dinhMucChuyen).toFixed(2));
             tongTieuThuLit += litVe;
 
