@@ -775,44 +775,6 @@ document.addEventListener('DOMContentLoaded', function() {
         btnTaiDuLieu.textContent = 'Tải';
     }
 
-    const moPickerThang = () => {
-        if (!inputThangVC) return;
-        inputThangVC.disabled = false;
-        inputThangVC.readOnly = false;
-        try { inputThangVC.focus({ preventScroll: true }); } catch (e) {}
-        if (typeof inputThangVC.showPicker === 'function') {
-            try { inputThangVC.showPicker(); return; } catch (e) {}
-        }
-        try { inputThangVC.click(); } catch (e) {}
-    };
-
-    if (inputThangVC) {
-        inputThangVC.disabled = false;
-        inputThangVC.readOnly = false;
-        inputThangVC.style.position = 'relative';
-        inputThangVC.style.zIndex = '5';
-        inputThangVC.style.pointerEvents = 'auto';
-        inputThangVC.style.cursor = 'pointer';
-        inputThangVC.addEventListener('click', function() {
-            if (typeof this.showPicker === 'function') {
-                try { this.showPicker(); } catch (e) {}
-            }
-        });
-        if (inputThangVC.parentElement) {
-            inputThangVC.parentElement.addEventListener('click', function(e) {
-                if (e.target !== inputThangVC) moPickerThang();
-            });
-        }
-    }
-
-    if (labelThangVC && inputThangVC) {
-        labelThangVC.style.cursor = 'pointer';
-        labelThangVC.addEventListener('click', function(e) {
-            e.preventDefault();
-            moPickerThang();
-        });
-    }
-
     const possibleTitles = document.querySelectorAll('h1, h2, h3, h4, .header-title, .title, span, div');
     let titleElement = null;
     for (let el of possibleTitles) {
