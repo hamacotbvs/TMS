@@ -1215,30 +1215,7 @@ function layChungTuPdf(don) {
     if (pxkTrim !== "") {
         return pxkTrim;
     }
-    const maPhieuTrim = don.maPhieu !== undefined && don.maPhieu !== null ? String(don.maPhieu).trim() : "";
-    if (!maPhieuTrim) return "";
-
-    const matchHg = maPhieuTrim.match(/HG0*(\d+)/i);
-    if (matchHg) {
-        const soGon = matchHg[1].padStart(3, "0");
-        return `HG${soGon}`;
-    }
-
-    const matchXk = maPhieuTrim.match(/XKH[A-Z]*0*(\d+)/i);
-    if (matchXk) {
-        const soGon = matchXk[1].padStart(3, "0");
-        return `HG${soGon}`;
-    }
-
-    const parts = maPhieuTrim.split("-");
-    if (parts.length >= 3) {
-        const soPart = parts[2].replace(/\D+/g, "").replace(/^0+/, "");
-        if (soPart) {
-            return `HG${soPart.padStart(3, "0")}`;
-        }
-    }
-
-    return maPhieuTrim.replace(/^0+/, "");
+    return don.maPhieu !== undefined && don.maPhieu !== null ? String(don.maPhieu).trim() : "";
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
