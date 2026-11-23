@@ -1575,7 +1575,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 tieuThu: litVe > 0 ? litVe.toFixed(2) : "0.00",
                 doThem: "",
                 chungTu: "",
-                ghiChu: ""
+                ghiChu: "",
+                isVeKho: true
             });
         });
 
@@ -1588,8 +1589,10 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         }
 
         // 4. Tạo giao diện HTML chuẩn A4 và mở hộp thoại in/lưu PDF
-        const rowsHtml = bangKeRows.map(r => `
-            <tr>
+        const rowsHtml = bangKeRows.map(r => {
+            const boldStyle = r.isVeKho ? 'font-weight: bold;' : '';
+            return `
+            <tr style="${boldStyle}">
                 <td style="text-align: center;">${r.ngay}</td>
                 <td style="text-align: left; padding-left: 6px;">${r.noiGiao}</td>
                 <td style="text-align: right; padding-right: 6px;">${r.km}</td>
@@ -1598,7 +1601,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 <td style="text-align: left; padding-left: 6px;">${r.chungTu}</td>
                 <td style="text-align: left; padding-left: 6px;">${r.ghiChu}</td>
             </tr>
-        `).join("");
+        `;
+        }).join("");
 
         const today = new Date();
         const ngayKyStr = `Cần Thơ, ngày ${String(today.getDate()).padStart(2, '0')} tháng ${String(today.getMonth() + 1).padStart(2, '0')} năm ${today.getFullYear()}`;
