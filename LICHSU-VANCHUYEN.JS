@@ -793,12 +793,21 @@ document.addEventListener('DOMContentLoaded', function() {
         inputThangVC.style.zIndex = '5';
         inputThangVC.style.pointerEvents = 'auto';
         inputThangVC.style.cursor = 'pointer';
+        inputThangVC.style.width = 'auto';
+        inputThangVC.style.maxWidth = '135px';
+        inputThangVC.style.minWidth = 'unset';
+        inputThangVC.style.flex = '0 0 auto';
+        inputThangVC.style.paddingLeft = '6px';
+        inputThangVC.style.paddingRight = '4px';
+
         inputThangVC.addEventListener('click', function() {
             if (typeof this.showPicker === 'function') {
                 try { this.showPicker(); } catch (e) {}
             }
         });
         if (inputThangVC.parentElement) {
+            inputThangVC.parentElement.style.width = 'fit-content';
+            inputThangVC.parentElement.style.flex = '0 0 auto';
             inputThangVC.parentElement.addEventListener('click', function(e) {
                 if (e.target !== inputThangVC) moPickerThang();
             });
