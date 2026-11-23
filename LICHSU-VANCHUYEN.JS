@@ -793,25 +793,31 @@ document.addEventListener('DOMContentLoaded', function() {
         inputThangVC.style.zIndex = '5';
         inputThangVC.style.pointerEvents = 'auto';
         inputThangVC.style.cursor = 'pointer';
-        inputThangVC.style.width = 'auto';
-        inputThangVC.style.maxWidth = '135px';
-        inputThangVC.style.minWidth = 'unset';
+        inputThangVC.style.width = '102px';
+        inputThangVC.style.maxWidth = '102px';
+        inputThangVC.style.minWidth = '0';
         inputThangVC.style.flex = '0 0 auto';
-        inputThangVC.style.paddingLeft = '6px';
-        inputThangVC.style.paddingRight = '4px';
+        inputThangVC.style.padding = '5px 4px';
+        inputThangVC.style.fontSize = '11px';
+
+        if (inputThangVC.parentElement) {
+            inputThangVC.parentElement.style.display = 'flex';
+            inputThangVC.parentElement.style.alignItems = 'center';
+            inputThangVC.parentElement.style.gap = '4px';
+            inputThangVC.parentElement.style.flexWrap = 'nowrap';
+            inputThangVC.parentElement.style.width = '100%';
+            inputThangVC.parentElement.style.maxWidth = '100%';
+            inputThangVC.parentElement.style.boxSizing = 'border-box';
+            inputThangVC.parentElement.addEventListener('click', function(e) {
+                if (e.target !== inputThangVC) moPickerThang();
+            });
+        }
 
         inputThangVC.addEventListener('click', function() {
             if (typeof this.showPicker === 'function') {
                 try { this.showPicker(); } catch (e) {}
             }
         });
-        if (inputThangVC.parentElement) {
-            inputThangVC.parentElement.style.width = 'fit-content';
-            inputThangVC.parentElement.style.flex = '0 0 auto';
-            inputThangVC.parentElement.addEventListener('click', function(e) {
-                if (e.target !== inputThangVC) moPickerThang();
-            });
-        }
     }
 
     if (labelThangVC && inputThangVC) {
@@ -883,21 +889,17 @@ document.addEventListener('DOMContentLoaded', function() {
         inputTimKiemTuDo = document.createElement('input');
         inputTimKiemTuDo.id = 'inputTimKiemTuDo';
         inputTimKiemTuDo.type = 'text';
-        inputTimKiemTuDo.placeholder = '🔍 Tìm kiếm...';
-        inputTimKiemTuDo.style.cssText = 'padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; width: 100px; transition: width 0.3s ease, box-shadow 0.3s ease;';
-        
+        inputTimKiemTuDo.placeholder = '🔍 Tìm...';
+        inputTimKiemTuDo.style.cssText = 'padding: 5px 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; outline: none; flex: 1 1 auto; min-width: 65px; width: auto; transition: all 0.2s ease; box-sizing: border-box;';
+
         inputTimKiemTuDo.addEventListener('focus', function() {
-            this.style.width = '240px';
             this.style.boxShadow = '0 0 0 2px rgba(2, 132, 199, 0.2)';
-            this.placeholder = '🔍 Nhập từ khóa tìm kiếm...';
+            this.placeholder = '🔍 Từ khóa...';
         });
 
         inputTimKiemTuDo.addEventListener('blur', function() {
-            if (!this.value) {
-                this.style.width = '100px';
-                this.style.boxShadow = 'none';
-                this.placeholder = '🔍 Tìm kiếm...';
-            }
+            this.style.boxShadow = 'none';
+            this.placeholder = '🔍 Tìm...';
         });
 
         selectPhuongTien.parentNode.insertBefore(inputTimKiemTuDo, selectPhuongTien.nextSibling);
@@ -905,12 +907,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Tự động chèn nút icon máy in cạnh nút Tải
     if (btnTaiDuLieu && btnTaiDuLieu.parentNode && !document.getElementById('btnXuatPdfBangKe')) {
+        btnTaiDuLieu.style.padding = '5px 8px';
+        btnTaiDuLieu.style.fontSize = '11px';
+        btnTaiDuLieu.style.flex = '0 0 auto';
+
         const btnXuatPdf = document.createElement('button');
         btnXuatPdf.id = 'btnXuatPdfBangKe';
         btnXuatPdf.type = 'button';
         btnXuatPdf.title = 'Xuất PDF Bảng kê';
         btnXuatPdf.innerHTML = '🖨️';
-        btnXuatPdf.style.cssText = 'padding: 6px 9px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 6px;';
+        btnXuatPdf.style.cssText = 'padding: 5px 7px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; margin-left: 2px; flex: 0 0 auto;';
         btnXuatPdf.onclick = function() {
             window.moChonKyInPdf();
         };
