@@ -1224,6 +1224,20 @@ function layChungTuPdf(don) {
         return `HG${soGon}`;
     }
 
+    const matchXk = maPhieuTrim.match(/XKH[A-Z]*0*(\d+)/i);
+    if (matchXk) {
+        const soGon = matchXk[1].padStart(3, "0");
+        return `HG${soGon}`;
+    }
+
+    const parts = maPhieuTrim.split("-");
+    if (parts.length >= 3) {
+        const soPart = parts[2].replace(/\D+/g, "").replace(/^0+/, "");
+        if (soPart) {
+            return `HG${soPart.padStart(3, "0")}`;
+        }
+    }
+
     return maPhieuTrim.replace(/^0+/, "");
 }
 
