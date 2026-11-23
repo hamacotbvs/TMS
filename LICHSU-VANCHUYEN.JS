@@ -1210,9 +1210,13 @@ function dinhDangNgayHienThi(ngayStr) {
     return `${dd}/${mm}/${yyyy}`;
 }
 
-function catSoKhongDau(pxkStr) {
-    if (pxkStr === undefined || pxkStr === null) return "";
-    return String(pxkStr).trim().replace(/^0+/, "");
+function layChungTuPdf(don) {
+    const pxkTrim = don.pxk !== undefined && don.pxk !== null ? String(don.pxk).trim() : "";
+    if (pxkTrim !== "") {
+        return pxkTrim;
+    }
+    const maPhieuTrim = don.maPhieu !== undefined && don.maPhieu !== null ? String(don.maPhieu).trim() : "";
+    return maPhieuTrim.replace(/^0+/, "");
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
@@ -1520,7 +1524,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 const dt = (don.doiTuong || "").trim();
                 const dv = (don.dinhVi || "").trim();
                 const groupKey = `${dt}___${dv}`;
-                const pxkClean = catSoKhongDau(don.pxk);
+                const chungTuStr = layChungTuPdf(don);
 
                 if (stopIndexMap[groupKey] === undefined) {
                     stopIndexMap[groupKey] = groupedStops.length;
@@ -1528,13 +1532,13 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                         ngay: chuyen.ngayStr,
                         noiGiao: dt,
                         km: kmGiaoDon,
-                        pxkList: pxkClean ? [pxkClean] : []
+                        pxkList: chungTuStr ? [chungTuStr] : []
                     });
                 } else {
                     const idx = stopIndexMap[groupKey];
                     groupedStops[idx].km += kmGiaoDon;
-                    if (pxkClean && !groupedStops[idx].pxkList.includes(pxkClean)) {
-                        groupedStops[idx].pxkList.push(pxkClean);
+                    if (chungTuStr && !groupedStops[idx].pxkList.includes(chungTuStr)) {
+                        groupedStops[idx].pxkList.push(chungTuStr);
                     }
                 }
             });
