@@ -209,7 +209,7 @@ function sapXepVaTinhKmNoiBo(danhSachDon, latKho, lonKho) {
     return { optimized, tongKmDi, tongKmVe };
 }
 
-// PHẦN 3B: CHUẨN HÓA THỜI GIAN & DỰ ĐOÁN / SỬA LỖI ODOMETER (kmBatDauGiaoHang, kmKetThucGiaoHang)
+// PHẦN 3B: CHUẨN HÓA THỜI GIAN & GIỮ NGUYÊN kmBatDauGiaoHang / kmKetThucGiaoHang
 function parseThoiGianGiao(str) {
     if (!str || typeof str !== "string") return null;
     const s = str.trim();
@@ -250,101 +250,8 @@ function parseKmKhachVtracking(val) {
     return Math.round(num);
 }
 
-function parseToaDoDon(dinhVi) {
-    if (!dinhVi || typeof dinhVi !== "string" || !dinhVi.includes(",")) return null;
-    const parts = dinhVi.split(",").map(Number);
-    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] !== 0 && parts[1] !== 0) {
-        return { lat: parts[0], lon: parts[1] };
-    }
-    return null;
-}
-
-function suaSoOdometerTheoMoc(rawVal, mocChuan, maxDelta = 600) {
-    const raw = parseSoOdometer(rawVal);
-    if (raw <= 0) return null;
-    if (!mocChuan || mocChuan <= 0) return raw;
-
-    if (raw >= mocChuan && raw - mocChuan <= maxDelta) {
-        return raw;
-    }
-
-    const refStr = String(Math.round(mocChuan));
-    const rawStr = String(raw);
-    let ungVien = [];
-
-    if (rawStr.length < refStr.length) {
-        const prefix = refStr.slice(0, refStr.length - rawStr.length);
-        const ghep = Number(prefix + rawStr);
-        if (ghep >= mocChuan && ghep - mocChuan <= maxDelta) {
-            ungVien.push(ghep);
-        }
-        const prefixCong1 = String(Number(prefix) + 1);
-        const ghepCong1 = Number(prefixCong1 + rawStr);
-        if (ghepCong1 >= mocChuan && ghepCong1 - mocChuan <= maxDelta) {
-            ungVien.push(ghepCong1);
-        }
-    }
-
-    if (rawStr.length === refStr.length + 1) {
-        for (let i = 0; i < rawStr.length; i++) {
-            const bo1So = Number(rawStr.slice(0, i) + rawStr.slice(i + 1));
-            if (bo1So >= mocChuan && bo1So - mocChuan <= maxDelta) {
-                ungVien.push(bo1So);
-            }
-        }
-    }
-
-    if (rawStr.length === refStr.length) {
-        const soChuSoGiu = Math.min(3, rawStr.length - 1);
-        const duoiRaw = rawStr.slice(-soChuSoGiu);
-        const dauRef = refStr.slice(0, refStr.length - soChuSoGiu);
-        const thayDau = Number(dauRef + duoiRaw);
-        if (thayDau >= mocChuan && thayDau - mocChuan <= maxDelta) {
-            ungVien.push(thayDau);
-        }
-        const thayDauCong1 = Number(String(Number(dauRef) + 1) + duoiRaw);
-        if (thayDauCong1 >= mocChuan && thayDauCong1 - mocChuan <= maxDelta) {
-            ungVien.push(thayDauCong1);
-        }
-    }
-
-    if (ungVien.length > 0) {
-        ungVien.sort((a, b) => (a - mocChuan) - (b - mocChuan));
-        return ungVien[0];
-    }
-
-    return null;
-}
-
-function napLaiChuyenTheoKmDiBangKhong(trip, mocNapLai) {
-    const moc = Math.max(0, Math.round(mocNapLai || 0));
-    trip.dons.forEach((don, idx) => {
-        don._thuTu = idx + 1;
-        don._kmTinhToan = 0;
-        don._kmBDSach = moc;
-        don._kmKTSach = moc;
-        don._daSuaKmKT = true;
-        don._daDuDoanKmKT = false;
-    });
-    trip._kmBDSachDau = moc;
-    trip._kmKTSachCuoi = moc;
-}
-
-function laKmChuyenPhiLy(kmBD, kmKT, kmThamChieuTruoc, maxChenh = 1000) {
-    if (!kmBD || kmBD <= 0 || !kmKT || kmKT <= 0) return true;
-    if (kmKT < kmBD) return true;
-    if ((kmKT - kmBD) > maxChenh) return true;
-    if (kmThamChieuTruoc > 0) {
-        if (kmBD < kmThamChieuTruoc || (kmBD - kmThamChieuTruoc) > maxChenh) return true;
-        if (kmKT < kmThamChieuTruoc || (kmKT - kmThamChieuTruoc) > maxChenh) return true;
-    }
-    return false;
-}
-
-function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, lonKho = 105.1245) {
+function chuanHoaVaDuDoanKmChuyen(trip) {
     if (!trip || !trip.dons || trip.dons.length === 0) return;
-
-    const mocAnToan = kmThamChieuTruoc > 0 ? kmThamChieuTruoc : 0;
 
     trip.dons.sort((a, b) => {
         const tKTA = parseThoiGianGiao(a.ketThucGiaoHang);
@@ -371,160 +278,20 @@ function chuanHoaVaDuDoanKmChuyen(trip, kmThamChieuTruoc = 0, latKho = 9.9234, l
         return (a.maPhieu || "").localeCompare(b.maPhieu || "");
     });
 
-    let dsKmBD = trip.dons.map(d => parseSoOdometer(d.kmBatDauGiaoHang)).filter(v => v > 0);
-    let dsKmKT = trip.dons.map(d => parseSoOdometer(d.kmKetThucGiaoHang)).filter(v => v > 0);
-
-    const tatCaSo = [...dsKmBD, ...dsKmKT];
-    let doDaiChuan = 0;
-    if (tatCaSo.length > 0) {
-        const demDoDai = {};
-        tatCaSo.forEach(n => {
-            const len = String(n).length;
-            demDoDai[len] = (demDoDai[len] || 0) + 1;
-        });
-        doDaiChuan = Number(Object.keys(demDoDai).sort((a, b) => demDoDai[b] - demDoDai[a])[0]);
-    }
-
-    let kmBDChuan = 0;
-    let bdPhiLy = false;
-    const bdDungDoDai = dsKmBD.filter(v => String(v).length === doDaiChuan);
-    const nguonBD = bdDungDoDai.length > 0 ? bdDungDoDai : dsKmBD;
-
-    if (nguonBD.length > 0) {
-        const minKmBDChuyen = Math.min(...nguonBD);
-        if (kmThamChieuTruoc > 0 && minKmBDChuyen < kmThamChieuTruoc) {
-            const daSua = suaSoOdometerTheoMoc(minKmBDChuyen, kmThamChieuTruoc, 800);
-            kmBDChuan = (daSua !== null && daSua >= kmThamChieuTruoc && (daSua - kmThamChieuTruoc) <= 800)
-                ? daSua
-                : kmThamChieuTruoc;
-        } else {
-            kmBDChuan = minKmBDChuyen;
-            if (kmThamChieuTruoc > 0 && (kmBDChuan - kmThamChieuTruoc) > 1000) {
-                bdPhiLy = true;
-            }
-        }
-    } else if (kmThamChieuTruoc > 0) {
-        kmBDChuan = kmThamChieuTruoc;
-    } else if (dsKmKT.length > 0) {
-        const ktDungDoDai = dsKmKT.filter(v => String(v).length === doDaiChuan);
-        const kmKTMin = ktDungDoDai.length > 0 ? Math.min(...ktDungDoDai) : Math.min(...dsKmKT);
-        const kmKhachDau = parseKmKhachVtracking(trip.dons[0].kmKhachVtracking);
-        if (kmKhachDau > 0 && kmKTMin >= kmKhachDau) {
-            kmBDChuan = kmKTMin - kmKhachDau;
-        } else {
-            const gpsDau = parseToaDoDon(trip.dons[0].dinhVi);
-            const kmTuKho = gpsDau ? tinhKhoangCachNoiBo(latKho, lonKho, gpsDau.lat, gpsDau.lon) : 0;
-            kmBDChuan = Math.max(0, kmKTMin - kmTuKho);
-        }
-    }
-
-    if (bdPhiLy) {
-        napLaiChuyenTheoKmDiBangKhong(trip, mocAnToan);
-        return;
-    }
-
-    let mocHienTai = kmBDChuan;
-    const ketQuaTam = trip.dons.map((don) => {
-        const rawKT = parseSoOdometer(don.kmKetThucGiaoHang);
-        const tKT = parseThoiGianGiao(don.ketThucGiaoHang);
-        const kmKhachVT = parseKmKhachVtracking(don.kmKhachVtracking);
-
-        const rawStr = String(rawKT);
-        const refStr = String(Math.round(mocHienTai || 0));
-        const laNhapSaiRoRang = rawKT > 0 && mocHienTai > 0 && (
-            rawKT < mocHienTai ||
-            (rawKT - mocHienTai) > 600 ||
-            (doDaiChuan > 0 && rawStr.length !== doDaiChuan && !(rawStr.length < refStr.length && refStr.endsWith(rawStr)))
-        );
-
-        let suaDuoc = null;
-        if (!laNhapSaiRoRang) {
-            suaDuoc = suaSoOdometerTheoMoc(rawKT, mocHienTai, 600);
-        }
-
-        if (suaDuoc !== null) {
-            mocHienTai = suaDuoc;
-            return { don, kmKT: suaDuoc, daSua: false, daDuDoan: false, tKT, rawKT, kmKhachVT };
-        }
-
-        if (kmKhachVT > 0 && mocHienTai > 0) {
-            const kmKTSua = mocHienTai + kmKhachVT;
-            mocHienTai = kmKTSua;
-            return { don, kmKT: kmKTSua, daSua: true, daDuDoan: false, tKT, rawKT, kmKhachVT };
-        }
-
-        return { don, kmKT: null, daSua: false, daDuDoan: false, tKT, rawKT, kmKhachVT };
+    trip.dons.forEach((don, idx) => {
+        don._thuTu = idx + 1;
+        don._kmTinhToan = 0;
+        don._kmBDSach = parseSoOdometer(don.kmBatDauGiaoHang);
+        don._kmKTSach = parseSoOdometer(don.kmKetThucGiaoHang);
+        don._daSuaKmKT = false;
+        don._daDuDoanKmKT = false;
     });
 
-    for (let i = 0; i < ketQuaTam.length; i++) {
-        if (ketQuaTam[i].kmKT !== null) continue;
+    const dsKmBD = trip.dons.map(d => d._kmBDSach).filter(v => v > 0);
+    const dsKmKT = trip.dons.map(d => d._kmKTSach).filter(v => v > 0);
 
-        const kmTruoc = i === 0 ? kmBDChuan : ketQuaTam[i - 1].kmKT;
-        const tTruoc = i === 0
-            ? (parseThoiGianGiao(trip.dons[0].batDauGiaoHang) || ketQuaTam[0].tKT)
-            : ketQuaTam[i - 1].tKT;
-
-        let nextIdx = -1;
-        for (let j = i + 1; j < ketQuaTam.length; j++) {
-            if (ketQuaTam[j].kmKT !== null) {
-                nextIdx = j;
-                break;
-            }
-        }
-
-        if (nextIdx !== -1 && kmTruoc > 0) {
-            const kmSau = ketQuaTam[nextIdx].kmKT;
-            const tSau = ketQuaTam[nextIdx].tKT;
-            const tHienTai = ketQuaTam[i].tKT;
-            const khoangKm = Math.max(0, kmSau - kmTruoc);
-
-            if (tTruoc !== null && tSau !== null && tHienTai !== null && tSau > tTruoc && tHienTai >= tTruoc && tHienTai <= tSau) {
-                const tyLe = (tHienTai - tTruoc) / (tSau - tTruoc);
-                ketQuaTam[i].kmKT = Math.round(kmTruoc + khoangKm * tyLe);
-            } else {
-                const soChang = nextIdx - (i - 1);
-                ketQuaTam[i].kmKT = Math.round(kmTruoc + khoangKm / soChang);
-            }
-            ketQuaTam[i].daSua = true;
-            ketQuaTam[i].daDuDoan = true;
-        } else if (kmTruoc > 0) {
-            const gpsTruoc = i === 0
-                ? { lat: latKho, lon: lonKho }
-                : parseToaDoDon(ketQuaTam[i - 1].don.dinhVi);
-            const gpsHienTai = parseToaDoDon(ketQuaTam[i].don.dinhVi);
-
-            let kmUocTinh = 0;
-            if (gpsTruoc && gpsHienTai) {
-                kmUocTinh = tinhKhoangCachNoiBo(gpsTruoc.lat, gpsTruoc.lon, gpsHienTai.lat, gpsHienTai.lon);
-            }
-            ketQuaTam[i].kmKT = kmTruoc + kmUocTinh;
-            ketQuaTam[i].daSua = true;
-            ketQuaTam[i].daDuDoan = true;
-        } else {
-            ketQuaTam[i].kmKT = ketQuaTam[i].rawKT || 0;
-        }
-    }
-
-    const kmKTCuoiTam = ketQuaTam[ketQuaTam.length - 1].kmKT || 0;
-    if (laKmChuyenPhiLy(kmBDChuan, kmKTCuoiTam, kmThamChieuTruoc, 1000)) {
-        const mocNapLai = kmBDChuan > 0 && (!kmThamChieuTruoc || Math.abs(kmBDChuan - kmThamChieuTruoc) <= 1000)
-            ? kmBDChuan
-            : mocAnToan;
-        napLaiChuyenTheoKmDiBangKhong(trip, mocNapLai);
-        return;
-    }
-
-    ketQuaTam.forEach((item, idx) => {
-        item.don._thuTu = idx + 1;
-        item.don._kmTinhToan = 0;
-        item.don._kmBDSach = idx === 0 ? kmBDChuan : (ketQuaTam[idx - 1].kmKT || kmBDChuan);
-        item.don._kmKTSach = item.kmKT || 0;
-        item.don._daSuaKmKT = !!item.daSua;
-        item.don._daDuDoanKmKT = !!item.daDuDoan;
-    });
-
-    trip._kmBDSachDau = kmBDChuan;
-    trip._kmKTSachCuoi = ketQuaTam[ketQuaTam.length - 1].don._kmKTSach || 0;
+    trip._kmBDSachDau = dsKmBD.length > 0 ? dsKmBD[0] : 0;
+    trip._kmKTSachCuoi = dsKmKT.length > 0 ? dsKmKT[dsKmKT.length - 1] : 0;
 }
 
 // PHẦN 4: TẢI DỮ LIỆU TỪ FIREBASE VÀ XỬ LÝ HIỂN THỊ
@@ -727,7 +494,6 @@ function hienThiDanhSachVanChuyen() {
     const LAT_KHO = 9.9234; 
     const LON_KHO = 105.1245;
 
-    const kmCuoiTheoXe = {};
     for (let idx = 0; idx < allTripsArray.length; idx++) {
         let trip = allTripsArray[idx];
         const laNhomChuaGiao = trip.ngay.includes("Chưa giao");
@@ -736,11 +502,7 @@ function hienThiDanhSachVanChuyen() {
             trip.dons.sort((a, b) => (a.maPhieu || "").localeCompare(b.maPhieu || ""));
             trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
         } else if (!laNhomChuaGiao) {
-            const kmTruocXe = (!trip.isXeMay && kmCuoiTheoXe[trip.phuongTien]) ? kmCuoiTheoXe[trip.phuongTien] : 0;
-            chuanHoaVaDuDoanKmChuyen(trip, kmTruocXe, LAT_KHO, LON_KHO);
-            if (!trip.isXeMay && trip._kmKTSachCuoi > 0) {
-                kmCuoiTheoXe[trip.phuongTien] = trip._kmKTSachCuoi;
-            }
+            chuanHoaVaDuDoanKmChuyen(trip);
         }
     }
 
@@ -789,7 +551,7 @@ function hienThiDanhSachVanChuyen() {
                         let nextTrip = allTripsArray[nextIdx];
                         if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
                             const kmBDChuyenSau = nextTrip._kmBDSachDau || 0;
-                            if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi && (kmBDChuyenSau - kmKTCuoi) <= 600) {
+                            if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
                                 kmVeNum = kmBDChuyenSau - kmKTCuoi;
                                 textKmVe = kmVeNum + "km";
                             }
@@ -1046,8 +808,7 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
             const kmKTTruoc = donTruoc?._kmKTSach !== undefined ? donTruoc._kmKTSach : parseSoOdometer(donTruoc?.kmKetThucGiaoHang);
             if (kmKTTruoc > 0 && kmKT >= kmKTTruoc) kmGiao = kmKT - kmKTTruoc;
         }
-        const dauSua = data._daSuaKmKT ? '~' : '';
-        kmGiaoText = `⏱️ ${dauSua}${kmGiao}km`;
+        kmGiaoText = `⏱️ ${kmGiao}km`;
     } else {
         kmGiaoText = `⏱️ 0km`;
     }
@@ -1584,11 +1345,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             return (tA || 0) - (tB || 0);
         });
 
-        // Chuẩn hóa odometer & tính kmDi, kmVe cho toàn bộ chuỗi chuyến từ ngayApDungGoc
-        let kmCuoiLienTruoc = kmDauKyGoc;
         for (let i = 0; i < dsTatCaChuyen.length; i++) {
             const chuyen = dsTatCaChuyen[i];
-            chuanHoaVaDuDoanKmChuyen(chuyen, kmCuoiLienTruoc);
+            chuanHoaVaDuDoanKmChuyen(chuyen);
 
             const kmBD = chuyen._kmBDSachDau || 0;
             const kmKT = chuyen._kmKTSachCuoi || 0;
@@ -1596,11 +1355,10 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             chuyen.kmVe = 0;
 
             if (kmKT > 0) {
-                kmCuoiLienTruoc = kmKT;
                 for (let j = i + 1; j < dsTatCaChuyen.length; j++) {
                     const nextChuyen = dsTatCaChuyen[j];
                     const nextKmBD = parseSoOdometer(nextChuyen.dons[0]?.kmBatDauGiaoHang) || nextChuyen._kmBDSachDau || 0;
-                    if (nextKmBD > 0 && nextKmBD >= kmKT && (nextKmBD - kmKT) <= 600) {
+                    if (nextKmBD > 0 && nextKmBD >= kmKT) {
                         chuyen.kmVe = nextKmBD - kmKT;
                     }
                     break;
