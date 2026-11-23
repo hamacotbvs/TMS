@@ -1216,6 +1216,14 @@ function layChungTuPdf(don) {
         return pxkTrim;
     }
     const maPhieuTrim = don.maPhieu !== undefined && don.maPhieu !== null ? String(don.maPhieu).trim() : "";
+    if (!maPhieuTrim) return "";
+
+    const matchHg = maPhieuTrim.match(/HG0*(\d+)/i);
+    if (matchHg) {
+        const soGon = matchHg[1].padStart(3, "0");
+        return `HG${soGon}`;
+    }
+
     return maPhieuTrim.replace(/^0+/, "");
 }
 
