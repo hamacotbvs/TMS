@@ -1547,7 +1547,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         const dongHoKmDauKy = Math.round(kmDauKyGoc);
 
-        // 3. Xử lý từng chuyến: gom đơn trùng (doiTuong + dinhVi) & thêm dòng "Về kho"
+        // 3. Xử lý từng chuyến: gom đơn trùng (doiTuong + dinhVi), thêm dòng "Về kho" & hàng "TỔNG" mỗi chuyến
         let bangKeRows = [];
         let tongKmNoiO = 0;
         let tongKmTinh = 0;
@@ -1611,6 +1611,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
             let tongLitDiChuan = chuyen.kmDi * dinhMucChuyen;
             let congDonLitDi = 0;
+            let tongKmCuaChuyen = 0;
+            let tongLitCuaChuyen = 0;
 
             groupedStops.forEach((stop, i) => {
                 let litHang = 0;
@@ -1621,6 +1623,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     congDonLitDi += litHang;
                 }
 
+                tongKmCuaChuyen += stop.km;
+                tongLitCuaChuyen += litHang;
                 tongTieuThuLit += litHang;
 
                 bangKeRows.push({
@@ -1638,6 +1642,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
             const kmVe = chuyen.kmVe;
             const litVe = Number((kmVe * dinhMucChuyen).toFixed(2));
+            tongKmCuaChuyen += kmVe;
+            tongLitCuaChuyen = Number((tongLitCuaChuyen + litVe).toFixed(2));
             tongTieuThuLit += litVe;
 
             bangKeRows.push({
@@ -1651,6 +1657,19 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 chungTu: "",
                 ghiChu: "",
                 isVeKho: true
+            });
+
+            bangKeRows.push({
+                ngay: chuyen.ngayStr,
+                noiGiao: `TỔNG CHUYẾN ${chuyen.soChuyen}`,
+                km: tongKmCuaChuyen !== 0 ? tongKmCuaChuyen.toFixed(1).replace(/\.0$/, '') : "0",
+                kmNum: tongKmCuaChuyen,
+                tieuThu: tongLitCuaChuyen !== 0 ? tongLitCuaChuyen.toFixed(2) : "0.00",
+                tieuThuNum: tongLitCuaChuyen,
+                doThem: "",
+                chungTu: "",
+                ghiChu: "",
+                isTongChuyen: true
             });
         });
 
@@ -1666,7 +1685,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         const rowsHtml = bangKeRows.map(r => {
             const isNegative = (typeof r.kmNum === 'number' && r.kmNum < 0) || (typeof r.tieuThuNum === 'number' && r.tieuThuNum < 0);
             const styles = [];
-            if (r.isVeKho) styles.push('font-weight: bold;');
+            if (r.isVeKho || r.isTongChuyen) styles.push('font-weight: bold;');
+            if (r.isTongChuyen) styles.push('background-color: #f3f4f6;');
             if (isNegative) styles.push('color: #dc2626 !important;');
             const trStyle = styles.length > 0 ? ` style="${styles.join(' ')}"` : '';
             return `
