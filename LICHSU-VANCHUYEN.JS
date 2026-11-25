@@ -1547,7 +1547,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         const dongHoKmDauKy = Math.round(kmDauKyGoc);
 
-        // 3. Xử lý từng chuyến: bỏ cột NGÀY, ghi thẳng "Tổng: Ngày - CHUYẾN X" vào cột Nơi giao
+        // 3. Xử lý từng chuyến: ghi thẳng "DD/MM/YYYY - CHUYẾN X" vào cột Nơi giao
         let bangKeRows = [];
         let tongKmNoiO = 0;
         let tongKmTinh = 0;
@@ -1657,7 +1657,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             });
 
             bangKeRows.push({
-                noiGiao: `Tổng: ${chuyen.ngayStr} - CHUYẾN ${chuyen.soChuyen}`,
+                noiGiao: `${chuyen.ngayStr} - CHUYẾN ${chuyen.soChuyen}`,
                 km: tongKmCuaChuyen !== 0 ? tongKmCuaChuyen.toFixed(1).replace(/\.0$/, '') : "0",
                 kmNum: tongKmCuaChuyen,
                 tieuThu: tongLitCuaChuyen !== 0 ? tongLitCuaChuyen.toFixed(2) : "0.00",
@@ -1851,9 +1851,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                             <th style="width: 11%;">NỘI Ô</th>
                             <th style="width: 11%;">TỈNH</th>
                             <th style="width: 11%;">TỔNG</th>
-                            <th style="width: 11.25%;">TIÊU THỤ</th>
-                            <th style="width: 11.25%;">ĐỔ THÊM</th>
                             <th style="width: 11.25%;">TỒN ĐẦU KỲ</th>
+                            <th style="width: 11.25%;">ĐỔ THÊM</th>
+                            <th style="width: 11.25%;">TIÊU THỤ</th>
                             <th style="width: 11.25%;">TỒN CUỐI KỲ</th>
                         </tr>
                     </thead>
@@ -1864,9 +1864,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                             <td>${Math.round(tongKmNoiO).toLocaleString('vi-VN')}</td>
                             <td>${Math.round(tongKmTinh).toLocaleString('vi-VN')}</td>
                             <td>${Math.round(tongKmTatCaChuyen).toLocaleString('vi-VN')}</td>
-                            <td>${tongTieuThuLit.toFixed(2)}</td>
-                            <td></td>
                             <td>${dauDauKyGoc.toFixed(3)}</td>
+                            <td></td>
+                            <td>${tongTieuThuLit.toFixed(2)}</td>
                             <td></td>
                         </tr>
                     </tbody>
