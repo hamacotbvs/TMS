@@ -1212,12 +1212,8 @@ function dinhDangNgayHienThi(ngayStr) {
 }
 
 function layChungTuPdf(don) {
-    const pxkTrim = don.pxk !== undefined && don.pxk !== null ? String(don.pxk).trim() : "";
-    if (pxkTrim !== "" && pxkTrim !== "--") {
-        return pxkTrim;
-    }
-    const idTuyenDuong = don.maPhieu || don.id || "";
-    return String(idTuyenDuong).trim();
+    const pxkRaw = don.pxk !== undefined && don.pxk !== null ? String(don.pxk).trim() : "";
+    return pxkRaw === "" ? "đúng" : "sai";
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
