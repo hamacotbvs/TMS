@@ -41,6 +41,20 @@ function laDonThuocNhomDaGiao(data) {
     return false;
 }
 
+function layNhanTrangThaiNhomDaGiao(data) {
+    const duyetVal = data && data.duyet ? data.duyet.trim() : "";
+    if (duyetVal === "Đã giao hàng") {
+        return { icon: "✓", text: "Đã giao", color: "#16a34a" };
+    }
+    if (duyetVal === "Đang giao hàng") {
+        return { icon: "🚚", text: "Đang giao", color: "#0284c7" };
+    }
+    if (duyetVal === "Đã xuất kho" && coDuLieuGiaoHang(data)) {
+        return { icon: "📦", text: "Đã xuất", color: "#d97706" };
+    }
+    return { icon: "✓", text: duyetVal || "Đã giao", color: "#16a34a" };
+}
+
 function layTenRutGon(hoTen) {
     if (!hoTen || typeof hoTen !== "string") return "";
     const arr = hoTen.trim().split(/\s+/);
@@ -820,7 +834,8 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
 
     let badgeDuyet = `<span style="color: #64748b; font-size: 10.5px;">${duyet}</span>`;
     if (laDonThuocNhomDaGiao(data)) {
-        badgeDuyet = `<span style="color: #16a34a; font-size: 10.5px; font-weight: 600;">✓ Đã giao (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
+        const trangThaiInfo = layNhanTrangThaiNhomDaGiao(data);
+        badgeDuyet = `<span style="color: ${trangThaiInfo.color}; font-size: 10.5px; font-weight: 600;">${trangThaiInfo.icon} ${trangThaiInfo.text} (<span style="color: #0284c7;">${kmGiaoText} <span style="color: #cbd5e1;">|</span> ${kmKhachVtrackingText}</span>)</span>`;
     } else if (duyet === "Đã xuất kho") {
         let kmHienThi = data._kmTinhToan !== undefined ? data._kmTinhToan : 0;
         badgeDuyet = `<span style="color: #d97706; font-size: 10.5px; font-weight: 600;">📦 Đã xuất (${kmHienThi}km)</span>`;
