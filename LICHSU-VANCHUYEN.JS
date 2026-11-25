@@ -1681,7 +1681,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             bangKeRows.push({ noiGiao: "&nbsp;", km: "", tieuThu: "", doThem: "", chungTu: "", ghiChu: "" });
         }
 
-        // 4. Tạo giao diện HTML chuẩn A4, tính số trang riêng cho chân trang bên phải và mở hộp thoại in/lưu PDF
+        // 4. Tạo giao diện HTML chuẩn A4 và mở hộp thoại in/lưu PDF
         const rowsHtml = bangKeRows.map(r => {
             const isNegative = (typeof r.kmNum === 'number' && r.kmNum < 0) || (typeof r.tieuThuNum === 'number' && r.tieuThuNum < 0);
             const styles = [];
@@ -1717,7 +1717,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 <style>
                     @page {
                         size: A4 portrait;
-                        margin: 12mm 10mm 18mm 10mm;
+                        margin: 12mm 10mm 12mm 10mm;
                     }
                     body {
                         font-family: "Times New Roman", Times, serif;
@@ -1725,9 +1725,6 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                         color: #000;
                         margin: 0;
                         padding: 0;
-                    }
-                    #printContent {
-                        width: 100%;
                     }
                     .company-header {
                         font-weight: bold;
@@ -1784,8 +1781,6 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     .footer-sign {
                         margin-top: 14px;
                         width: 100%;
-                        break-inside: avoid;
-                        page-break-inside: avoid;
                     }
                     .sign-date {
                         text-align: right;
@@ -1801,22 +1796,6 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                         font-weight: bold;
                         font-size: 11px;
                     }
-                    .page-footer-num {
-                        position: fixed;
-                        bottom: 0;
-                        right: 0;
-                        font-size: 10px;
-                        font-style: italic;
-                        color: #000;
-                        text-align: right;
-                        background: #fff;
-                        padding: 2px 4px;
-                    }
-                    @media screen {
-                        .page-footer-num {
-                            display: none;
-                        }
-                    }
                     @media print {
                         .no-print { display: none !important; }
                     }
@@ -1828,111 +1807,83 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     <button onclick="window.print()" style="background: #0284c7; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-weight: bold; cursor: pointer;">🖨️ In / Lưu PDF ngay</button>
                 </div>
 
-                <div id="printContent">
-                    <div class="company-header">
-                        CÔNG TY CỔ PHẦN VẬT TƯ HẬU GIANG<br>
-                        PHÒNG KINH DOANH SƠN
-                    </div>
+                <div class="company-header">
+                    CÔNG TY CỔ PHẦN VẬT TƯ HẬU GIANG<br>
+                    PHÒNG KINH DOANH SƠN
+                </div>
 
-                    <div class="doc-title">BẢNG KÊ VẬN CHUYỂN THÁNG ${String(thangNum).padStart(2, '0')}/${namNum}</div>
-                    <div class="doc-period">Kỳ báo cáo: ${labelKy}</div>
+                <div class="doc-title">BẢNG KÊ VẬN CHUYỂN THÁNG ${String(thangNum).padStart(2, '0')}/${namNum}</div>
+                <div class="doc-period">Kỳ báo cáo: ${labelKy}</div>
 
-                    <div class="sub-info">
-                        <span>Phương tiện: <strong>${bienSoChon}</strong></span>
-                        <span>Định mức: <strong>${dinhMucLit100Km} lít/100 km</strong></span>
-                    </div>
+                <div class="sub-info">
+                    <span>Phương tiện: <strong>${bienSoChon}</strong></span>
+                    <span>Định mức: <strong>${dinhMucLit100Km} lít/100 km</strong></span>
+                </div>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th rowspan="2" style="width: 45%;">NƠI GIAO</th>
-                                <th rowspan="2" style="width: 8%;">KM</th>
-                                <th colspan="2" style="width: 19%;">NHIÊN LIỆU (lít)</th>
-                                <th rowspan="2" style="width: 16%;">CHỨNG TỪ</th>
-                                <th rowspan="2" style="width: 12%;">GHI CHÚ</th>
-                            </tr>
-                            <tr>
-                                <th style="width: 9.5%;">TIÊU THỤ</th>
-                                <th style="width: 9.5%;">ĐỔ THÊM</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
-                    </table>
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 45%;">NƠI GIAO</th>
+                            <th rowspan="2" style="width: 8%;">KM</th>
+                            <th colspan="2" style="width: 19%;">NHIÊN LIỆU (lít)</th>
+                            <th rowspan="2" style="width: 16%;">CHỨNG TỪ</th>
+                            <th rowspan="2" style="width: 12%;">GHI CHÚ</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 9.5%;">TIÊU THỤ</th>
+                            <th style="width: 9.5%;">ĐỔ THÊM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
 
-                    <table class="summary-table">
-                        <thead>
-                            <tr>
-                                <th colspan="2" style="width: 22%;">ĐỒNG HỒ KM</th>
-                                <th colspan="3" style="width: 33%;">TỔNG QUÃNG ĐƯỜNG (km)</th>
-                                <th colspan="4" style="width: 45%;">NHIÊN LIỆU (lít)</th>
-                            </tr>
-                            <tr>
-                                <th style="width: 11%;">ĐẦU KỲ</th>
-                                <th style="width: 11%;">CUỐI KỲ</th>
-                                <th style="width: 11%;">NỘI Ô</th>
-                                <th style="width: 11%;">TỈNH</th>
-                                <th style="width: 11%;">TỔNG</th>
-                                <th style="width: 11.25%;">TỒN ĐẦU KỲ</th>
-                                <th style="width: 11.25%;">ĐỔ THÊM</th>
-                                <th style="width: 11.25%;">TIÊU THỤ</th>
-                                <th style="width: 11.25%;">TỒN CUỐI KỲ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>${dongHoKmDauKy.toLocaleString('vi-VN')}</td>
-                                <td>${dongHoKmCuoiKy.toLocaleString('vi-VN')}</td>
-                                <td>${Math.round(tongKmNoiO).toLocaleString('vi-VN')}</td>
-                                <td>${Math.round(tongKmTinh).toLocaleString('vi-VN')}</td>
-                                <td>${Math.round(tongKmTatCaChuyen).toLocaleString('vi-VN')}</td>
-                                <td>${dauDauKyGoc.toFixed(3)}</td>
-                                <td></td>
-                                <td>${tongTieuThuLit.toFixed(2)}</td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2" style="width: 22%;">ĐỒNG HỒ KM</th>
+                            <th colspan="3" style="width: 33%;">TỔNG QUÃNG ĐƯỜNG (km)</th>
+                            <th colspan="4" style="width: 45%;">NHIÊN LIỆU (lít)</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 11%;">ĐẦU KỲ</th>
+                            <th style="width: 11%;">CUỐI KỲ</th>
+                            <th style="width: 11%;">NỘI Ô</th>
+                            <th style="width: 11%;">TỈNH</th>
+                            <th style="width: 11%;">TỔNG</th>
+                            <th style="width: 11.25%;">TỒN ĐẦU KỲ</th>
+                            <th style="width: 11.25%;">ĐỔ THÊM</th>
+                            <th style="width: 11.25%;">TIÊU THỤ</th>
+                            <th style="width: 11.25%;">TỒN CUỐI KỲ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${dongHoKmDauKy.toLocaleString('vi-VN')}</td>
+                            <td>${dongHoKmCuoiKy.toLocaleString('vi-VN')}</td>
+                            <td>${Math.round(tongKmNoiO).toLocaleString('vi-VN')}</td>
+                            <td>${Math.round(tongKmTinh).toLocaleString('vi-VN')}</td>
+                            <td>${Math.round(tongKmTatCaChuyen).toLocaleString('vi-VN')}</td>
+                            <td>${dauDauKyGoc.toFixed(3)}</td>
+                            <td></td>
+                            <td>${tongTieuThuLit.toFixed(2)}</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                    <div class="footer-sign">
-                        <div class="sign-date">${ngayKyStr}</div>
-                        <div class="sign-cols">
-                            <div style="width: 33%;">Trưởng đơn vị</div>
-                            <div style="width: 33%;">Người kiểm tra</div>
-                            <div style="width: 33%;">Người lập bảng</div>
-                        </div>
+                <div class="footer-sign">
+                    <div class="sign-date">${ngayKyStr}</div>
+                    <div class="sign-cols">
+                        <div style="width: 33%;">Trưởng đơn vị</div>
+                        <div style="width: 33%;">Người kiểm tra</div>
+                        <div style="width: 33%;">Người lập bảng</div>
                     </div>
                 </div>
 
                 <script>
-                    function chuanBiSoTrangTungTrang() {
-                        document.querySelectorAll('.page-footer-num').forEach(el => el.remove());
-                        const content = document.getElementById('printContent');
-                        if (!content) return;
-
-                        // Chiều cao khả dụng của 1 trang A4 dọc (297mm) trừ lề trên/dưới (12mm + 18mm = 30mm => 267mm)
-                        const probe = document.createElement('div');
-                        probe.style.cssText = 'position: absolute; visibility: hidden; height: 267mm; width: 1mm;';
-                        document.body.appendChild(probe);
-                        const pageHeightPx = probe.getBoundingClientRect().height || 1008;
-                        probe.remove();
-
-                        const totalHeightPx = content.scrollHeight;
-                        const totalPages = Math.max(1, Math.ceil(totalHeightPx / pageHeightPx));
-
-                        for (let p = 1; p <= totalPages; p++) {
-                            const footer = document.createElement('div');
-                            footer.className = 'page-footer-num';
-                            footer.style.top = ((p * pageHeightPx) - 18) + 'px';
-                            footer.textContent = 'Trang ' + p + ' / ' + totalPages;
-                            document.body.appendChild(footer);
-                        }
-                    }
-
-                    window.onbeforeprint = chuanBiSoTrangTungTrang;
                     window.onload = function() {
-                        chuanBiSoTrangTungTrang();
                         setTimeout(function() { window.print(); }, 300);
                     };
                 </script>
