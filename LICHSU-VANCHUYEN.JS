@@ -1304,6 +1304,7 @@ function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
             tuNgay: new Date(namNum, thangNum - 1, 16),
             denNgay: new Date(namNum, thangNum - 1, ngayCuoiThang, 23, 59, 59, 999),
             ngayKySau: new Date(namNum, thangNum, 1),
+            ngayCuoiKy: ngayCuoiThang,
             labelKy: `16/${String(thangNum).padStart(2, '0')}/${namNum} - ${String(ngayCuoiThang).padStart(2, '0')}/${String(thangNum).padStart(2, '0')}/${namNum}`
         };
     }
@@ -1311,6 +1312,7 @@ function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
         tuNgay: new Date(namNum, thangNum - 1, 1),
         denNgay: new Date(namNum, thangNum - 1, 15, 23, 59, 59, 999),
         ngayKySau: new Date(namNum, thangNum - 1, 16),
+        ngayCuoiKy: 15,
         labelKy: `01/${String(thangNum).padStart(2, '0')}/${namNum} - 15/${String(thangNum).padStart(2, '0')}/${namNum}`
     };
 }
@@ -1404,7 +1406,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
     const [namStr, thangStr] = inputThangVC.value.split('-');
     const thangNum = parseInt(thangStr, 10);
     const namNum = parseInt(namStr, 10);
-    const { tuNgay, denNgay, ngayKySau, labelKy } = layKhoangNgayCuaKy(kyChon, namNum, thangNum);
+    const { tuNgay, denNgay, ngayKySau, ngayCuoiKy, labelKy } = layKhoangNgayCuaKy(kyChon, namNum, thangNum);
 
     const btnPdf = document.getElementById('btnXuatPdfBangKe');
     const oldText = btnPdf ? btnPdf.innerHTML : "";
@@ -1698,8 +1700,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         `;
         }).join("");
 
-        const today = new Date();
-        const ngayKyStr = `Cần Thơ, ngày ${String(today.getDate()).padStart(2, '0')} tháng ${String(today.getMonth() + 1).padStart(2, '0')} năm ${today.getFullYear()}`;
+        const ngayKyStr = `Cần Thơ, ngày ${String(ngayCuoiKy).padStart(2, '0')} tháng ${String(thangNum).padStart(2, '0')} năm ${namNum}`;
 
         const printWindow = window.open('', '_blank', 'width=900,height=1100');
         if (!printWindow) {
