@@ -322,6 +322,23 @@ function parseRoutesToMap(buffer, ycghMap = {}) {
   return routeMap; 
 }
 
+// 🛠️ HÀM TẢI DỮ LIỆU ĐIỀU CHỈNH TỪ FIRESTORE (TUYENDUONG-DIEUCHINH)
+async function fetchTuyenDuongDieuChinh() {
+  const snapshot = await db.collection('TUYENDUONG-DIEUCHINH').get();
+  const adjustMap = {};
+  snapshot.forEach(doc => {
+    const raw = doc.data() || {};
+    const cleaned = {};
+    Object.entries(raw).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") {
+        cleaned[k] = v;
+      }
+    });
+    adjustMap[doc.id] = cleaned;
+  });
+  return adjustMap;
+}
+
 // 📌 HÀM TÍNH KHOẢNG CÁCH HAVERSINE (MET)
 function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -426,7 +443,6 @@ function parseVTrackingToMap(buffer, monthNum) {
       }
     }
 
-    // Nếu tọa độ đầu & cuối chênh lệch < 200m nhưng Quãng đường xe chạy (km) > 500m (0.5 km) -> giữ lại tính như 1 chuyến
     const isLongTripDespiteCloseCoords = isStartEndUnder200m && (quangDuong > 0.5);
 
     if (!isLongTripDespiteCloseCoords && isStartNearKho55 && isEndNearKho55) {
@@ -668,7 +684,28 @@ async function mainSync() {
 
     console.log(`📦 Đang tải file Tuyến Đường...`);
     const routeBuffer = await downloadFileBuffer(drive, ID_TUYENDUONG);
-    routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);         
+    routeDataMap = parseRoutesToMap(routeBuffer, ycghMapData);
+
+    // Áp dụng các thông tin điều chỉnh từ TUYENDUONG-DIEUCHINH trước khi dò V-Tracking
+    console.log(`🛠️ Đang tải dữ liệu điều chỉnh từ 'TUYENDUONG-DIEUCHINH'...`);
+    const dieuChinhMap = await fetchTuyenDuongDieuChinh();
+    let adjustedCount = 0;
+
+    Object.entries(dieuChinhMap).forEach(([maPhieu, adjData]) => {
+      if (routeDataMap[maPhieu]) {
+        Object.assign(routeDataMap[maPhieu], adjData);
+
+        const rawNgay = routeDataMap[maPhieu].batDauGiaoHang || routeDataMap[maPhieu].ketThucGiaoHang || routeDataMap[maPhieu].ngayxuatKho || "";
+        if (rawNgay && rawNgay.includes("/")) {
+          routeDataMap[maPhieu].ngayThangNam = rawNgay.split(" ")[0];
+          const parts = routeDataMap[maPhieu].ngayThangNam.split("/");
+          if (parts[1]) routeDataMap[maPhieu].thang = parseInt(parts[1], 10);
+          if (parts[2]) routeDataMap[maPhieu].nam = parseInt(parts[2], 10);
+        }
+        adjustedCount++;
+      }
+    });
+    console.log(`✅ Đã áp dụng điều chỉnh cho ${adjustedCount} chứng từ từ 'TUYENDUONG-DIEUCHINH'.`);
 
     // Giữ toàn bộ dòng Tuyến Đường để đẩy lên Firestore; chỉ tra cứu chéo V-Tracking cho dòng Đã giao hàng / Đang giao hàng / Đã xuất kho
     tuyenDuongMemoryList = Object.entries(routeDataMap).map(([maPhieu, data]) => ({
@@ -848,7 +885,6 @@ async function mainSync() {
         });
       });
 
-      // Tính `kmChuyenDiVtracking` trước bằng tổng `kmKhachVtracking` trong chuyến, sau đó `kmChuyenVeVtracking = kmChuyenVtracking - kmChuyenDiVtracking`
       const tripCustomerKmMap = {};
       vtrackingRows.forEach(vt => {
         if (!vt.bienSo || !vt.ngayChuan || vt.chuyenVtracking === undefined || !vt.khachHang) return;
@@ -975,6 +1011,7 @@ async function mainSync() {
     
     for (const item of tuyenDuongMemoryList) {
       const { maPhieu, ...dataToSave } = item;
+      delete dataToSave.maPhieu;
       const docRef = db.collection('TUYENDUONG').doc(maPhieu);
       batch.set(docRef, dataToSave, { merge: true });
       count++;
