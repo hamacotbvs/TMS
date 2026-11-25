@@ -1547,7 +1547,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         const dongHoKmDauKy = Math.round(kmDauKyGoc);
 
-        // 3. Xử lý từng chuyến: gom đơn trùng (doiTuong + dinhVi), thêm dòng "Về kho" & hàng "TỔNG" mỗi chuyến
+        // 3. Xử lý từng chuyến: hàng TỔNG CHUYẾN nằm trên, các dòng thuộc chuyến để trống NGÀY, Về kho bỏ in đậm
         let bangKeRows = [];
         let tongKmNoiO = 0;
         let tongKmTinh = 0;
@@ -1595,7 +1595,6 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 if (stopIndexMap[groupKey] === undefined) {
                     stopIndexMap[groupKey] = groupedStops.length;
                     groupedStops.push({
-                        ngay: chuyen.ngayStr,
                         noiGiao: dt,
                         km: kmGiaoDon,
                         pxkList: chungTuStr ? [chungTuStr] : []
@@ -1613,6 +1612,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             let congDonLitDi = 0;
             let tongKmCuaChuyen = 0;
             let tongLitCuaChuyen = 0;
+            const chiTietRowsCuaChuyen = [];
 
             groupedStops.forEach((stop, i) => {
                 let litHang = 0;
@@ -1627,8 +1627,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 tongLitCuaChuyen += litHang;
                 tongTieuThuLit += litHang;
 
-                bangKeRows.push({
-                    ngay: stop.ngay,
+                chiTietRowsCuaChuyen.push({
+                    ngay: "&nbsp;",
                     noiGiao: stop.noiGiao,
                     km: stop.km !== 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
                     kmNum: stop.km,
@@ -1646,8 +1646,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             tongLitCuaChuyen = Number((tongLitCuaChuyen + litVe).toFixed(2));
             tongTieuThuLit += litVe;
 
-            bangKeRows.push({
-                ngay: chuyen.ngayStr,
+            chiTietRowsCuaChuyen.push({
+                ngay: "&nbsp;",
                 noiGiao: "Về kho",
                 km: kmVe !== 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
                 kmNum: kmVe,
@@ -1655,8 +1655,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 tieuThuNum: litVe,
                 doThem: "",
                 chungTu: "",
-                ghiChu: "",
-                isVeKho: true
+                ghiChu: ""
             });
 
             bangKeRows.push({
@@ -1671,6 +1670,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 ghiChu: "",
                 isTongChuyen: true
             });
+
+            bangKeRows.push(...chiTietRowsCuaChuyen);
         });
 
         const dongHoKmCuoiKy = Math.round(dongHoKmDauKy + tongKmTatCaChuyen);
@@ -1685,8 +1686,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         const rowsHtml = bangKeRows.map(r => {
             const isNegative = (typeof r.kmNum === 'number' && r.kmNum < 0) || (typeof r.tieuThuNum === 'number' && r.tieuThuNum < 0);
             const styles = [];
-            if (r.isVeKho || r.isTongChuyen) styles.push('font-weight: bold;');
-            if (r.isTongChuyen) styles.push('background-color: #f3f4f6;');
+            if (r.isTongChuyen) styles.push('font-weight: bold;', 'background-color: #f3f4f6;');
             if (isNegative) styles.push('color: #dc2626 !important;');
             const trStyle = styles.length > 0 ? ` style="${styles.join(' ')}"` : '';
             return `
