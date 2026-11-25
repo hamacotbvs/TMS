@@ -249,11 +249,12 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
         let listData = [];
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            const maPhieuKey = data.maPhieu ? String(data.maPhieu).trim() : "";
-            const dc = dieuChinhMap[docSnap.id] || (maPhieuKey ? dieuChinhMap[`MP___${maPhieuKey}`] : null);
+            const maPhieuVal = (data.maPhieu && String(data.maPhieu).trim() !== "") ? String(data.maPhieu).trim() : docSnap.id;
+            const dc = dieuChinhMap[docSnap.id] || dieuChinhMap[`MP___${maPhieuVal}`] || null;
 
             const mergedData = {
                 ...data,
+                maPhieu: maPhieuVal,
                 ...(dc ? {
                     kmBatDauGiaoHang: dc.kmBatDauGiaoHang !== undefined ? dc.kmBatDauGiaoHang : data.kmBatDauGiaoHang,
                     kmKetThucGiaoHang: dc.kmKetThucGiaoHang !== undefined ? dc.kmKetThucGiaoHang : data.kmKetThucGiaoHang,
@@ -441,7 +442,7 @@ function hienThiDanhSachVanChuyen() {
         let textKmVe = "chờ"; 
 
         if (window._currentTabVanChuyen === 'cho') {
-            trip.dons.sort((a, b) => (a.maPhieu || "").localeCompare(b.maPhieu || ""));
+            trip.dons.sort((a, b) => (a.maPhieu || a.id || "").localeCompare(b.maPhieu || b.id || ""));
             trip.dons.forEach((don, i) => { don._thuTu = i + 1; don._kmTinhToan = 0; });
         } else if (laNhomChuaGiao) {
             let donsChuaGiao = [];
@@ -1215,7 +1216,8 @@ function layChungTuPdf(don) {
     if (pxkTrim !== "" && pxkTrim !== "--") {
         return pxkTrim;
     }
-    return don.maPhieu !== undefined && don.maPhieu !== null ? String(don.maPhieu).trim() : "";
+    const idTuyenDuong = don.maPhieu || don.id || "";
+    return String(idTuyenDuong).trim();
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
