@@ -1212,8 +1212,12 @@ function dinhDangNgayHienThi(ngayStr) {
 }
 
 function layChungTuPdf(don) {
-    const val = don.maPhieu || don.id || "";
-    return String(val).trim();
+    const pxkTrim = don.pxk !== undefined && don.pxk !== null ? String(don.pxk).trim() : "";
+    if (pxkTrim !== "" && pxkTrim !== "--") {
+        return pxkTrim;
+    }
+    const maPhieuVal = don.maPhieu || don.id || "";
+    return String(maPhieuVal).trim();
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
