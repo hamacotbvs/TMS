@@ -472,19 +472,23 @@ function hienThiDanhSachVanChuyen() {
             if (trip.dons.length > 0) {
                 const donDau = trip.dons[0];
                 const donCuoi = trip.dons[trip.dons.length - 1];
-                const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
-                const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
+                const hasKmBD = donDau.kmBatDauGiaoHang !== undefined && donDau.kmBatDauGiaoHang !== null && String(donDau.kmBatDauGiaoHang).trim() !== "";
+                const hasKmKT = donCuoi.kmKetThucGiaoHang !== undefined && donCuoi.kmKetThucGiaoHang !== null && String(donCuoi.kmKetThucGiaoHang).trim() !== "";
+                const kmBDDau = hasKmBD ? Number(donDau.kmBatDauGiaoHang) : NaN;
+                const kmKTCuoi = hasKmKT ? Number(donCuoi.kmKetThucGiaoHang) : NaN;
 
-                if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
+                if (!isNaN(kmBDDau) && !isNaN(kmKTCuoi)) {
                     kmDi = kmKTCuoi - kmBDDau;
                 }
 
-                if (!trip.isXeMay) {
+                if (!trip.isXeMay && !isNaN(kmKTCuoi)) {
                     for (let nextIdx = idx + 1; nextIdx < allTripsArray.length; nextIdx++) {
                         let nextTrip = allTripsArray[nextIdx];
                         if (!nextTrip.isXeMay && nextTrip.phuongTien === trip.phuongTien && nextTrip.dons.length > 0) {
-                            const kmBDChuyenSau = Number(nextTrip.dons[0].kmBatDauGiaoHang) || 0;
-                            if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
+                            const rawKmBDSau = nextTrip.dons[0].kmBatDauGiaoHang;
+                            const hasKmBDSau = rawKmBDSau !== undefined && rawKmBDSau !== null && String(rawKmBDSau).trim() !== "";
+                            const kmBDChuyenSau = hasKmBDSau ? Number(rawKmBDSau) : NaN;
+                            if (!isNaN(kmBDChuyenSau)) {
                                 kmVeNum = kmBDChuyenSau - kmKTCuoi;
                                 textKmVe = kmVeNum + "km";
                             }
@@ -619,7 +623,7 @@ function hienThiDanhSachVanChuyen() {
             });
             const dtChuyenTr = Math.round(dtChuyen / 1000000);
 
-            let odometerSum = (typeof trip._kmVeNum === 'number' && trip._kmVeNum > 0) ? (trip.kmDi + trip._kmVeNum) + 'km' : (trip.kmDi + 'km');
+            let odometerSum = (typeof trip._kmVeNum === 'number' && trip._kmVeNum !== 0) ? (trip.kmDi + trip._kmVeNum) + 'km' : (trip.kmDi + 'km');
 
             const mauXe = layMauGiaoDienXe(trip.phuongTien);
             const vehicleWrapper = document.createElement('div');
@@ -735,15 +739,19 @@ function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSach
     const ketThucGiaoHang = data.ketThucGiaoHang || '';
 
     let kmGiaoText = '';
-    const kmKT = Number(data.kmKetThucGiaoHang) || 0;
-    if (kmKT > 0) {
+    const hasKmKT = data.kmKetThucGiaoHang !== undefined && data.kmKetThucGiaoHang !== null && String(data.kmKetThucGiaoHang).trim() !== "";
+    const kmKT = hasKmKT ? Number(data.kmKetThucGiaoHang) : NaN;
+    if (!isNaN(kmKT)) {
         let kmGiao = 0;
         if (index === 0) {
-            const kmBD = Number(data.kmBatDauGiaoHang) || 0;
-            if (kmBD > 0) kmGiao = kmKT - kmBD;
+            const hasKmBD = data.kmBatDauGiaoHang !== undefined && data.kmBatDauGiaoHang !== null && String(data.kmBatDauGiaoHang).trim() !== "";
+            const kmBD = hasKmBD ? Number(data.kmBatDauGiaoHang) : NaN;
+            if (!isNaN(kmBD)) kmGiao = kmKT - kmBD;
         } else {
-            const kmKTTruoc = Number(danhSachDon[index - 1]?.kmKetThucGiaoHang) || 0;
-            if (kmKTTruoc > 0) kmGiao = kmKT - kmKTTruoc;
+            const rawKmKTTruoc = danhSachDon[index - 1]?.kmKetThucGiaoHang;
+            const hasKmKTTruoc = rawKmKTTruoc !== undefined && rawKmKTTruoc !== null && String(rawKmKTTruoc).trim() !== "";
+            const kmKTTruoc = hasKmKTTruoc ? Number(rawKmKTTruoc) : NaN;
+            if (!isNaN(kmKTTruoc)) kmGiao = kmKT - kmKTTruoc;
         }
         kmGiaoText = `⏱️ ${kmGiao}km`;
     } else {
@@ -1353,9 +1361,11 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         if (!dons || dons.length === 0) return 0;
         const donDau = dons[0];
         const donCuoi = dons[dons.length - 1];
-        const kmBDDau = Number(donDau.kmBatDauGiaoHang) || 0;
-        const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
-        if (kmBDDau > 0 && kmKTCuoi >= kmBDDau) {
+        const hasKmBD = donDau.kmBatDauGiaoHang !== undefined && donDau.kmBatDauGiaoHang !== null && String(donDau.kmBatDauGiaoHang).trim() !== "";
+        const hasKmKT = donCuoi.kmKetThucGiaoHang !== undefined && donCuoi.kmKetThucGiaoHang !== null && String(donCuoi.kmKetThucGiaoHang).trim() !== "";
+        const kmBDDau = hasKmBD ? Number(donDau.kmBatDauGiaoHang) : NaN;
+        const kmKTCuoi = hasKmKT ? Number(donCuoi.kmKetThucGiaoHang) : NaN;
+        if (!isNaN(kmBDDau) && !isNaN(kmKTCuoi)) {
             return kmKTCuoi - kmBDDau;
         }
         return 0;
@@ -1364,21 +1374,24 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
     const tinhKmVeCuaChuyen = (chuyenHienTai, chuyenKeTiep, isLastTripInPeriod, cauHinhKySau) => {
         if (!chuyenHienTai || !chuyenHienTai.dons || chuyenHienTai.dons.length === 0) return 0;
         const donCuoi = chuyenHienTai.dons[chuyenHienTai.dons.length - 1];
-        const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
+        const hasKmKT = donCuoi.kmKetThucGiaoHang !== undefined && donCuoi.kmKetThucGiaoHang !== null && String(donCuoi.kmKetThucGiaoHang).trim() !== "";
+        const kmKTCuoi = hasKmKT ? Number(donCuoi.kmKetThucGiaoHang) : NaN;
+        if (isNaN(kmKTCuoi)) return 0;
 
         if (isLastTripInPeriod) {
-            const kmDauKySau = cauHinhKySau && cauHinhKySau.kmDauKy !== undefined && cauHinhKySau.kmDauKy !== ""
-                ? Number(cauHinhKySau.kmDauKy) || 0
-                : 0;
-            if (kmDauKySau > 0 && kmKTCuoi > 0 && kmDauKySau >= kmKTCuoi) {
+            const hasKmDauKySau = cauHinhKySau && cauHinhKySau.kmDauKy !== undefined && cauHinhKySau.kmDauKy !== null && String(cauHinhKySau.kmDauKy).trim() !== "";
+            const kmDauKySau = hasKmDauKySau ? Number(cauHinhKySau.kmDauKy) : NaN;
+            if (!isNaN(kmDauKySau)) {
                 return kmDauKySau - kmKTCuoi;
             }
             return 0;
         }
 
         if (!chuyenKeTiep || !chuyenKeTiep.dons || chuyenKeTiep.dons.length === 0) return 0;
-        const kmBDChuyenSau = Number(chuyenKeTiep.dons[0].kmBatDauGiaoHang) || 0;
-        if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
+        const rawKmBDSau = chuyenKeTiep.dons[0].kmBatDauGiaoHang;
+        const hasKmBDSau = rawKmBDSau !== undefined && rawKmBDSau !== null && String(rawKmBDSau).trim() !== "";
+        const kmBDChuyenSau = hasKmBDSau ? Number(rawKmBDSau) : NaN;
+        if (!isNaN(kmBDChuyenSau)) {
             return kmBDChuyenSau - kmKTCuoi;
         }
         return 0;
@@ -1504,14 +1517,18 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
             chuyen.dons.forEach((don, index) => {
                 let kmGiaoDon = 0;
-                const kmKT = Number(don.kmKetThucGiaoHang) || 0;
-                if (kmKT > 0) {
+                const hasKmKT = don.kmKetThucGiaoHang !== undefined && don.kmKetThucGiaoHang !== null && String(don.kmKetThucGiaoHang).trim() !== "";
+                const kmKT = hasKmKT ? Number(don.kmKetThucGiaoHang) : NaN;
+                if (!isNaN(kmKT)) {
                     if (index === 0) {
-                        const kmBD = Number(don.kmBatDauGiaoHang) || 0;
-                        if (kmBD > 0) kmGiaoDon = kmKT - kmBD;
+                        const hasKmBD = don.kmBatDauGiaoHang !== undefined && don.kmBatDauGiaoHang !== null && String(don.kmBatDauGiaoHang).trim() !== "";
+                        const kmBD = hasKmBD ? Number(don.kmBatDauGiaoHang) : NaN;
+                        if (!isNaN(kmBD)) kmGiaoDon = kmKT - kmBD;
                     } else {
-                        const kmKTTruoc = Number(chuyen.dons[index - 1]?.kmKetThucGiaoHang) || 0;
-                        if (kmKTTruoc > 0) kmGiaoDon = kmKT - kmKTTruoc;
+                        const rawKmKTTruoc = chuyen.dons[index - 1]?.kmKetThucGiaoHang;
+                        const hasKmKTTruoc = rawKmKTTruoc !== undefined && rawKmKTTruoc !== null && String(rawKmKTTruoc).trim() !== "";
+                        const kmKTTruoc = hasKmKTTruoc ? Number(rawKmKTTruoc) : NaN;
+                        if (!isNaN(kmKTTruoc)) kmGiaoDon = kmKT - kmKTTruoc;
                     }
                 }
 
@@ -1542,8 +1559,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
             groupedStops.forEach((stop, i) => {
                 let litHang = 0;
-                if (i === groupedStops.length - 1 && groupedStops.length > 0 && chuyen.kmDi > 0) {
-                    litHang = Math.max(0, Number((tongLitDiChuan - congDonLitDi).toFixed(2)));
+                if (i === groupedStops.length - 1 && groupedStops.length > 0 && chuyen.kmDi !== 0) {
+                    litHang = Number((tongLitDiChuan - congDonLitDi).toFixed(2));
                 } else {
                     litHang = Number((stop.km * dinhMucChuyen).toFixed(2));
                     congDonLitDi += litHang;
@@ -1554,8 +1571,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 bangKeRows.push({
                     ngay: stop.ngay,
                     noiGiao: stop.noiGiao,
-                    km: stop.km > 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
-                    tieuThu: litHang > 0 ? litHang.toFixed(2) : "0.00",
+                    km: stop.km !== 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
+                    tieuThu: litHang !== 0 ? litHang.toFixed(2) : "0.00",
                     doThem: "",
                     chungTu: stop.pxkList.join(", "),
                     ghiChu: ""
@@ -1569,8 +1586,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             bangKeRows.push({
                 ngay: chuyen.ngayStr,
                 noiGiao: "Về kho",
-                km: kmVe > 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
-                tieuThu: litVe > 0 ? litVe.toFixed(2) : "0.00",
+                km: kmVe !== 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
+                tieuThu: litVe !== 0 ? litVe.toFixed(2) : "0.00",
                 doThem: "",
                 chungTu: "",
                 ghiChu: "",
