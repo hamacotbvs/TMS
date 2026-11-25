@@ -1216,14 +1216,12 @@ function chuanHoaMaPhieuChungTu(maPhieuRaw) {
     if (!s) return "";
     s = s.replace(/-11-26/gi, "");
     s = s.replace(/41-41-XKHG00/gi, "");
-    s = s.replace(/^HG/i, "");
-    s = s.replace(/^006/i, "");
     s = s.replace(/^[-_\s]+|[-_\s]+$/g, "");
-    if (!s) return "HG006";
-    if (!s.startsWith("006")) {
-        s = `006${s}`;
+    if (!s) return "HG";
+    if (!/^HG/i.test(s)) {
+        s = `HG${s}`;
     }
-    return `HG${s}`;
+    return s;
 }
 
 function layChungTuPdf(don) {
