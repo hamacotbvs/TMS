@@ -1230,12 +1230,14 @@ function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
         return {
             tuNgay: new Date(namNum, thangNum - 1, 16),
             denNgay: new Date(namNum, thangNum - 1, ngayCuoiThang, 23, 59, 59, 999),
+            ngayKySau: new Date(namNum, thangNum, 1),
             labelKy: `16/${String(thangNum).padStart(2, '0')}/${namNum} - ${String(ngayCuoiThang).padStart(2, '0')}/${String(thangNum).padStart(2, '0')}/${namNum}`
         };
     }
     return {
         tuNgay: new Date(namNum, thangNum - 1, 1),
         denNgay: new Date(namNum, thangNum - 1, 15, 23, 59, 59, 999),
+        ngayKySau: new Date(namNum, thangNum - 1, 16),
         labelKy: `01/${String(thangNum).padStart(2, '0')}/${namNum} - 15/${String(thangNum).padStart(2, '0')}/${namNum}`
     };
 }
@@ -1329,7 +1331,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
     const [namStr, thangStr] = inputThangVC.value.split('-');
     const thangNum = parseInt(thangStr, 10);
     const namNum = parseInt(namStr, 10);
-    const { tuNgay, denNgay, labelKy } = layKhoangNgayCuaKy(kyChon, namNum, thangNum);
+    const { tuNgay, denNgay, ngayKySau, labelKy } = layKhoangNgayCuaKy(kyChon, namNum, thangNum);
 
     const btnPdf = document.getElementById('btnXuatPdfBangKe');
     const oldText = btnPdf ? btnPdf.innerHTML : "";
@@ -1350,11 +1352,22 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         return 0;
     };
 
-    const tinhKmVeCuaChuyen = (chuyenHienTai, chuyenKeTiep) => {
+    const tinhKmVeCuaChuyen = (chuyenHienTai, chuyenKeTiep, isLastTripInPeriod, cauHinhKySau) => {
         if (!chuyenHienTai || !chuyenHienTai.dons || chuyenHienTai.dons.length === 0) return 0;
-        if (!chuyenKeTiep || !chuyenKeTiep.dons || chuyenKeTiep.dons.length === 0) return 0;
         const donCuoi = chuyenHienTai.dons[chuyenHienTai.dons.length - 1];
         const kmKTCuoi = Number(donCuoi.kmKetThucGiaoHang) || 0;
+
+        if (isLastTripInPeriod) {
+            const kmDauKySau = cauHinhKySau && cauHinhKySau.kmDauKy !== undefined && cauHinhKySau.kmDauKy !== ""
+                ? Number(cauHinhKySau.kmDauKy) || 0
+                : 0;
+            if (kmDauKySau > 0 && kmKTCuoi > 0 && kmDauKySau >= kmKTCuoi) {
+                return kmDauKySau - kmKTCuoi;
+            }
+            return 0;
+        }
+
+        if (!chuyenKeTiep || !chuyenKeTiep.dons || chuyenKeTiep.dons.length === 0) return 0;
         const kmBDChuyenSau = Number(chuyenKeTiep.dons[0].kmBatDauGiaoHang) || 0;
         if (kmBDChuyenSau > 0 && kmBDChuyenSau >= kmKTCuoi) {
             return kmBDChuyenSau - kmKTCuoi;
@@ -1394,6 +1407,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         };
 
         const cauHinhKy = layCauHinhTaiNgay(tuNgay);
+        const cauHinhKySau = dsCauHinhXe.find(cfg => cfg._dateApDung >= ngayKySau) || null;
         const kmDauKyGoc = Number(cauHinhKy.kmDauKy) || 0;
         const dauDauKyGoc = Number(cauHinhKy.dauDauKy) || 0;
         const dinhMucHienThi = Number(cauHinhKy.dinhMuc) || 0.16;
@@ -1449,7 +1463,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         dsChuyenTrongKy.forEach((chuyen, idx) => {
             chuyen.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
             chuyen.kmDi = tinhKmDiCuaChuyen(chuyen.dons);
-            chuyen.kmVe = tinhKmVeCuaChuyen(chuyen, dsChuyenTrongKy[idx + 1]);
+            const isLastTripInPeriod = idx === dsChuyenTrongKy.length - 1;
+            chuyen.kmVe = tinhKmVeCuaChuyen(chuyen, dsChuyenTrongKy[idx + 1], isLastTripInPeriod, cauHinhKySau);
             chuyen.kmChuyen = chuyen.kmDi + chuyen.kmVe;
         });
 
@@ -1757,7 +1772,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     <div class="sign-date">${ngayKyStr}</div>
                     <div class="sign-cols">
                         <div style="width: 33%;">Trưởng đơn vị</div>
-                        <div style="width: 33%;">Kế toán</div>
+                        <div style="width: 33%;">Người kiểm tra</div>
                         <div style="width: 33%;">Người lập bảng</div>
                     </div>
                 </div>
