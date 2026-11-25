@@ -1212,8 +1212,8 @@ function dinhDangNgayHienThi(ngayStr) {
 }
 
 function layChungTuPdf(don) {
-    const pxkRaw = don.pxk !== undefined && don.pxk !== null ? String(don.pxk).trim() : "";
-    return pxkRaw === "" ? "đúng" : "sai";
+    const val = don.maPhieu || don.id || "";
+    return String(val).trim();
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
