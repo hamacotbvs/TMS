@@ -258,6 +258,8 @@ window.taiLichSuVanChuyen = async function(thangChon, namChon) {
                 ...(dc ? {
                     kmBatDauGiaoHang: dc.kmBatDauGiaoHang !== undefined ? dc.kmBatDauGiaoHang : data.kmBatDauGiaoHang,
                     kmKetThucGiaoHang: dc.kmKetThucGiaoHang !== undefined ? dc.kmKetThucGiaoHang : data.kmKetThucGiaoHang,
+                    batDauGiaoHang: dc.batDauGiaoHang !== undefined ? dc.batDauGiaoHang : data.batDauGiaoHang,
+                    ketThucGiaoHang: dc.ketThucGiaoHang !== undefined ? dc.ketThucGiaoHang : data.ketThucGiaoHang,
                     phuongTien: dc.phuongTien !== undefined ? dc.phuongTien : data.phuongTien,
                     taiXe: dc.taiXe !== undefined ? dc.taiXe : data.taiXe,
                     _daDieuChinh: true
@@ -893,6 +895,8 @@ window.moBangDieuChinhVanChuyen = function(idsList = []) {
         const maPhieu = item.maPhieu || item.id;
         const kmBD = item.kmBatDauGiaoHang !== undefined && item.kmBatDauGiaoHang !== null ? item.kmBatDauGiaoHang : '';
         const kmKT = item.kmKetThucGiaoHang !== undefined && item.kmKetThucGiaoHang !== null ? item.kmKetThucGiaoHang : '';
+        const bdGiao = item.batDauGiaoHang || '';
+        const ktGiao = item.ketThucGiaoHang || '';
         const pt = item.phuongTien || '';
         const tx = item.taiXe || '';
 
@@ -908,6 +912,12 @@ window.moBangDieuChinhVanChuyen = function(idsList = []) {
                     <input type="number" step="any" class="dc-km-kt" value="${kmKT}" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
                 </td>
                 <td style="padding: 4px; border: 1px solid #cbd5e1;">
+                    <input type="text" class="dc-bd-giao" value="${String(bdGiao).replace(/"/g, '&quot;')}" placeholder="VD: 2026-11-25 08:00" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
+                </td>
+                <td style="padding: 4px; border: 1px solid #cbd5e1;">
+                    <input type="text" class="dc-kt-giao" value="${String(ktGiao).replace(/"/g, '&quot;')}" placeholder="VD: 2026-11-25 09:30" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
+                </td>
+                <td style="padding: 4px; border: 1px solid #cbd5e1;">
                     <input type="text" class="dc-phuong-tien" value="${String(pt).replace(/"/g, '&quot;')}" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
                 </td>
                 <td style="padding: 4px; border: 1px solid #cbd5e1;">
@@ -918,18 +928,20 @@ window.moBangDieuChinhVanChuyen = function(idsList = []) {
     }).join('');
 
     modal.innerHTML = `
-        <div style="background: #fff; border-radius: 8px; max-width: 860px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.25);">
+        <div style="background: #fff; border-radius: 8px; max-width: 1060px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.25);">
             <div style="background: #0284c7; color: #fff; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
                 <strong style="font-size: 13px;">✏️ Điều chỉnh thông tin vận chuyển (${rowsData.length} dòng)</strong>
                 <button type="button" id="btnDongModalDieuChinh" style="background: transparent; border: none; color: #fff; font-size: 16px; cursor: pointer;">✕</button>
             </div>
             <div style="padding: 12px; overflow: auto; flex: 1;">
-                <table style="width: 100%; border-collapse: collapse; min-width: 620px;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 820px;">
                     <thead>
                         <tr style="background: #f1f5f9; font-size: 11px; color: #334155;">
                             <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">maPhieu / Khách</th>
                             <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">kmBatDauGiaoHang</th>
                             <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">kmKetThucGiaoHang</th>
+                            <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">batDauGiaoHang</th>
+                            <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">ketThucGiaoHang</th>
                             <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">phuongTien</th>
                             <th style="padding: 7px 6px; border: 1px solid #cbd5e1; text-align: left;">taiXe</th>
                         </tr>
@@ -962,6 +974,8 @@ window.moBangDieuChinhVanChuyen = function(idsList = []) {
             const maPhieu = tr.getAttribute('data-ma-phieu') || docId;
             const kmBdRaw = tr.querySelector('.dc-km-bd').value.trim();
             const kmKtRaw = tr.querySelector('.dc-km-kt').value.trim();
+            const bdGiaoVal = tr.querySelector('.dc-bd-giao').value.trim();
+            const ktGiaoVal = tr.querySelector('.dc-kt-giao').value.trim();
             const phuongTienVal = tr.querySelector('.dc-phuong-tien').value.trim();
             const taiXeVal = tr.querySelector('.dc-tai-xe').value.trim();
 
@@ -971,6 +985,8 @@ window.moBangDieuChinhVanChuyen = function(idsList = []) {
                     maPhieu: maPhieu,
                     kmBatDauGiaoHang: kmBdRaw === "" ? "" : Number(kmBdRaw),
                     kmKetThucGiaoHang: kmKtRaw === "" ? "" : Number(kmKtRaw),
+                    batDauGiaoHang: bdGiaoVal,
+                    ketThucGiaoHang: ktGiaoVal,
                     phuongTien: phuongTienVal,
                     taiXe: taiXeVal
                 }
@@ -1000,6 +1016,8 @@ window.moBangDieuChinhVanChuyen = function(idsList = []) {
                     ...item,
                     kmBatDauGiaoHang: p.kmBatDauGiaoHang,
                     kmKetThucGiaoHang: p.kmKetThucGiaoHang,
+                    batDauGiaoHang: p.batDauGiaoHang,
+                    ketThucGiaoHang: p.ketThucGiaoHang,
                     phuongTien: p.phuongTien,
                     taiXe: p.taiXe,
                     _daDieuChinh: true
