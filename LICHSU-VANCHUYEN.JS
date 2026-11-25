@@ -1547,7 +1547,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         const dongHoKmDauKy = Math.round(kmDauKyGoc);
 
-        // 3. Xử lý từng chuyến: hàng TỔNG CHUYẾN nằm trên, các dòng thuộc chuyến để trống NGÀY, Về kho bỏ in đậm
+        // 3. Xử lý từng chuyến: bỏ cột NGÀY, ghi thẳng "Tổng: Ngày - CHUYẾN X" vào cột Nơi giao
         let bangKeRows = [];
         let tongKmNoiO = 0;
         let tongKmTinh = 0;
@@ -1628,7 +1628,6 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 tongTieuThuLit += litHang;
 
                 chiTietRowsCuaChuyen.push({
-                    ngay: "&nbsp;",
                     noiGiao: stop.noiGiao,
                     km: stop.km !== 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
                     kmNum: stop.km,
@@ -1647,7 +1646,6 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             tongTieuThuLit += litVe;
 
             chiTietRowsCuaChuyen.push({
-                ngay: "&nbsp;",
                 noiGiao: "Về kho",
                 km: kmVe !== 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
                 kmNum: kmVe,
@@ -1659,8 +1657,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             });
 
             bangKeRows.push({
-                ngay: chuyen.ngayStr,
-                noiGiao: `TỔNG CHUYẾN ${chuyen.soChuyen}`,
+                noiGiao: `Tổng: ${chuyen.ngayStr} - CHUYẾN ${chuyen.soChuyen}`,
                 km: tongKmCuaChuyen !== 0 ? tongKmCuaChuyen.toFixed(1).replace(/\.0$/, '') : "0",
                 kmNum: tongKmCuaChuyen,
                 tieuThu: tongLitCuaChuyen !== 0 ? tongLitCuaChuyen.toFixed(2) : "0.00",
@@ -1679,7 +1676,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         const minRows = 16;
         while (bangKeRows.length < minRows) {
-            bangKeRows.push({ ngay: "&nbsp;", noiGiao: "", km: "", tieuThu: "", doThem: "", chungTu: "", ghiChu: "" });
+            bangKeRows.push({ noiGiao: "&nbsp;", km: "", tieuThu: "", doThem: "", chungTu: "", ghiChu: "" });
         }
 
         // 4. Tạo giao diện HTML chuẩn A4 và mở hộp thoại in/lưu PDF
@@ -1691,7 +1688,6 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             const trStyle = styles.length > 0 ? ` style="${styles.join(' ')}"` : '';
             return `
             <tr${trStyle}>
-                <td style="text-align: center;">${r.ngay}</td>
                 <td style="text-align: left; padding-left: 6px;">${r.noiGiao}</td>
                 <td style="text-align: right; padding-right: 6px;">${r.km}</td>
                 <td style="text-align: right; padding-right: 6px;">${r.tieuThu}</td>
@@ -1826,8 +1822,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="width: 11%;">NGÀY</th>
-                            <th rowspan="2" style="width: 34%;">NƠI GIAO</th>
+                            <th rowspan="2" style="width: 45%;">NƠI GIAO</th>
                             <th rowspan="2" style="width: 8%;">KM</th>
                             <th colspan="2" style="width: 19%;">NHIÊN LIỆU (lít)</th>
                             <th rowspan="2" style="width: 16%;">CHỨNG TỪ</th>
