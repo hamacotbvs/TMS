@@ -1181,7 +1181,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // =========================================================================
-// PHẦN 7: XUẤT PDF BẢNG KÊ VẬN CHUYỂN THEO KỲ TRONG THÁNG
+// PHẦN 7: XUẤT PDF BẢNG KÊ VẬN CHUYỂN THEO KỲ TRONG THÁNG (DÙNG CACHE TUYENDUONG)
 // =========================================================================
 function chuyenNgaySangDate(ngayStr) {
     if (!ngayStr || typeof ngayStr !== "string") return null;
@@ -1212,10 +1212,16 @@ function dinhDangNgayHienThi(ngayStr) {
 
 function layChungTuPdf(don) {
     const pxkTrim = don.pxk !== undefined && don.pxk !== null ? String(don.pxk).trim() : "";
-    if (pxkTrim !== "") {
+    if (pxkTrim !== "" && pxkTrim !== "--") {
         return pxkTrim;
     }
-    return don.maPhieu !== undefined && don.maPhieu !== null ? String(don.maPhieu).trim() : "";
+    const maFallback =
+        don.maPhieu ??
+        don.soPhieu ??
+        don.maDon ??
+        don.maChungTu ??
+        "";
+    return String(maFallback).trim();
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
@@ -1357,7 +1363,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
     };
 
     try {
-        // 1. Lấy cấu hình PHUONGTIEN của biển số xe đang chọn
+        // 1. Lấy cấu hình PHUONGTIEN của biển số xe đang chọn (số đầu kỳ ngày 01 hoặc 16 đã cấp sẵn)
         const qPt = query(collection(db, "PHUONGTIEN"), where("bienSo", "==", bienSoChon));
         const snapPt = await getDocs(qPt);
         let dsCauHinhXe = [];
@@ -1388,42 +1394,19 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         };
 
         const cauHinhKy = layCauHinhTaiNgay(tuNgay);
-        const ngayApDungGoc = cauHinhKy._dateApDung;
         const kmDauKyGoc = Number(cauHinhKy.kmDauKy) || 0;
         const dauDauKyGoc = Number(cauHinhKy.dauDauKy) || 0;
         const dinhMucHienThi = Number(cauHinhKy.dinhMuc) || 0.16;
         const nguongNoiO = Number(cauHinhKy.noiO) || 60;
 
-        // 2. Tải dữ liệu TUYENDUONG và áp dụng điều chỉnh từ TUYENDUONG-DIEUCHINH (không sửa TUYENDUONG)
-        const [snapTd, dieuChinhSnapshot] = await Promise.all([
-            getDocs(collection(db, "TUYENDUONG")),
-            getDocs(collection(db, "TUYENDUONG-DIEUCHINH"))
-        ]);
-
-        let dieuChinhMap = {};
-        dieuChinhSnapshot.forEach((dcSnap) => {
-            const dcData = dcSnap.data();
-            dieuChinhMap[dcSnap.id] = dcData;
-            if (dcData.maPhieu) {
-                dieuChinhMap[`MP___${String(dcData.maPhieu).trim()}`] = dcData;
-            }
-        });
+        // 2. Lấy dữ liệu TUYENDUONG từ bộ nhớ tạm (cache); nếu chưa có thì tải theo tháng/năm đang chọn
+        if (!Array.isArray(window._cachedVanChuyenData)) {
+            await window.taiLichSuVanChuyen(thangNum, namNum);
+        }
+        const sourceData = Array.isArray(window._cachedVanChuyenData) ? window._cachedVanChuyenData : [];
 
         let allDocsXe = [];
-        snapTd.forEach(docSnap => {
-            const d = docSnap.data();
-            const mpKey = d.maPhieu ? String(d.maPhieu).trim() : "";
-            const dc = dieuChinhMap[docSnap.id] || (mpKey ? dieuChinhMap[`MP___${mpKey}`] : null);
-            const merged = {
-                ...d,
-                ...(dc ? {
-                    kmBatDauGiaoHang: dc.kmBatDauGiaoHang !== undefined ? dc.kmBatDauGiaoHang : d.kmBatDauGiaoHang,
-                    kmKetThucGiaoHang: dc.kmKetThucGiaoHang !== undefined ? dc.kmKetThucGiaoHang : d.kmKetThucGiaoHang,
-                    phuongTien: dc.phuongTien !== undefined ? dc.phuongTien : d.phuongTien,
-                    taiXe: dc.taiXe !== undefined ? dc.taiXe : d.taiXe
-                } : {})
-            };
-
+        sourceData.forEach(merged => {
             if ((merged.phuongTien || "").trim() !== bienSoChon) return;
 
             const duyetVal = (merged.duyet || "").trim();
@@ -1431,7 +1414,6 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 const rawNgay = merged.ngayThangNam || layNgayGomNhom(merged);
                 const dateChuyen = chuyenNgaySangDate(rawNgay);
                 allDocsXe.push({
-                    id: docSnap.id,
                     ...merged,
                     _rawNgay: rawNgay,
                     _dateChuyen: dateChuyen
@@ -1439,50 +1421,39 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             }
         });
 
-        let mapTatCaChuyen = {};
+        let mapChuyenTrongKy = {};
 
         allDocsXe.forEach(d => {
-            if (!d._dateChuyen || d._dateChuyen < ngayApDungGoc) return;
+            if (!d._dateChuyen || d._dateChuyen < tuNgay || d._dateChuyen > denNgay) return;
 
             const ngayKey = dinhDangNgayHienThi(d._rawNgay);
             const soChuyen = (d.chuyenVtracking !== undefined && d.chuyenVtracking !== null && d.chuyenVtracking !== "") ? d.chuyenVtracking : 1;
             const tripKey = `${ngayKey}_CHUYEN_${soChuyen}`;
 
-            if (!mapTatCaChuyen[tripKey]) {
-                mapTatCaChuyen[tripKey] = {
+            if (!mapChuyenTrongKy[tripKey]) {
+                mapChuyenTrongKy[tripKey] = {
                     ngayStr: ngayKey,
                     dateObj: d._dateChuyen,
                     soChuyen: Number(soChuyen) || 1,
                     dons: []
                 };
             }
-            mapTatCaChuyen[tripKey].dons.push(d);
+            mapChuyenTrongKy[tripKey].dons.push(d);
         });
 
-        let dsTatCaChuyen = Object.values(mapTatCaChuyen).sort((a, b) => {
+        let dsChuyenTrongKy = Object.values(mapChuyenTrongKy).sort((a, b) => {
             if (a.dateObj - b.dateObj !== 0) return a.dateObj - b.dateObj;
             return a.soChuyen - b.soChuyen;
         });
 
-        dsTatCaChuyen.forEach((chuyen, idx) => {
+        dsChuyenTrongKy.forEach((chuyen, idx) => {
             chuyen.dons.sort((a, b) => (a.ketThucGiaoHang || "").localeCompare(b.ketThucGiaoHang || ""));
             chuyen.kmDi = tinhKmDiCuaChuyen(chuyen.dons);
-            chuyen.kmVe = tinhKmVeCuaChuyen(chuyen, dsTatCaChuyen[idx + 1]);
+            chuyen.kmVe = tinhKmVeCuaChuyen(chuyen, dsChuyenTrongKy[idx + 1]);
             chuyen.kmChuyen = chuyen.kmDi + chuyen.kmVe;
         });
 
-        let kmTichLuyTruocKy = 0;
-        let dsChuyenTrongKy = [];
-
-        dsTatCaChuyen.forEach(chuyen => {
-            if (chuyen.dateObj < tuNgay) {
-                kmTichLuyTruocKy += chuyen.kmChuyen;
-            } else if (chuyen.dateObj >= tuNgay && chuyen.dateObj <= denNgay) {
-                dsChuyenTrongKy.push(chuyen);
-            }
-        });
-
-        const dongHoKmDauKy = Math.round(kmDauKyGoc + kmTichLuyTruocKy);
+        const dongHoKmDauKy = Math.round(kmDauKyGoc);
 
         // 3. Xử lý từng chuyến: gom đơn trùng (doiTuong + dinhVi) & thêm dòng "Về kho"
         let bangKeRows = [];
