@@ -1215,13 +1215,7 @@ function layChungTuPdf(don) {
     if (pxkTrim !== "" && pxkTrim !== "--") {
         return pxkTrim;
     }
-    const maFallback =
-        don.maPhieu ??
-        don.soPhieu ??
-        don.maDon ??
-        don.maChungTu ??
-        "";
-    return String(maFallback).trim();
+    return don.maPhieu !== undefined && don.maPhieu !== null ? String(don.maPhieu).trim() : "";
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
