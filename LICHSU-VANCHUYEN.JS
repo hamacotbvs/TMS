@@ -1590,7 +1590,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     ngay: stop.ngay,
                     noiGiao: stop.noiGiao,
                     km: stop.km !== 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
+                    kmNum: stop.km,
                     tieuThu: litHang !== 0 ? litHang.toFixed(2) : "0.00",
+                    tieuThuNum: litHang,
                     doThem: "",
                     chungTu: stop.pxkList.join(", "),
                     ghiChu: ""
@@ -1605,7 +1607,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 ngay: chuyen.ngayStr,
                 noiGiao: "Về kho",
                 km: kmVe !== 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
+                kmNum: kmVe,
                 tieuThu: litVe !== 0 ? litVe.toFixed(2) : "0.00",
+                tieuThuNum: litVe,
                 doThem: "",
                 chungTu: "",
                 ghiChu: "",
@@ -1623,9 +1627,13 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         // 4. Tạo giao diện HTML chuẩn A4 và mở hộp thoại in/lưu PDF
         const rowsHtml = bangKeRows.map(r => {
-            const boldStyle = r.isVeKho ? 'font-weight: bold;' : '';
+            const isNegative = (typeof r.kmNum === 'number' && r.kmNum < 0) || (typeof r.tieuThuNum === 'number' && r.tieuThuNum < 0);
+            const styles = [];
+            if (r.isVeKho) styles.push('font-weight: bold;');
+            if (isNegative) styles.push('color: #dc2626 !important;');
+            const trStyle = styles.length > 0 ? ` style="${styles.join(' ')}"` : '';
             return `
-            <tr style="${boldStyle}">
+            <tr${trStyle}>
                 <td style="text-align: center;">${r.ngay}</td>
                 <td style="text-align: left; padding-left: 6px;">${r.noiGiao}</td>
                 <td style="text-align: right; padding-right: 6px;">${r.km}</td>
