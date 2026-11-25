@@ -1211,13 +1211,28 @@ function dinhDangNgayHienThi(ngayStr) {
     return `${dd}/${mm}/${yyyy}`;
 }
 
+function chuanHoaMaPhieuChungTu(maPhieuRaw) {
+    let s = String(maPhieuRaw || "").trim();
+    if (!s) return "";
+    s = s.replace(/-11-26/gi, "");
+    s = s.replace(/41-41-XKHG00/gi, "");
+    s = s.replace(/^HG/i, "");
+    s = s.replace(/^006/i, "");
+    s = s.replace(/^[-_\s]+|[-_\s]+$/g, "");
+    if (!s) return "HG006";
+    if (!s.startsWith("006")) {
+        s = `006${s}`;
+    }
+    return `HG${s}`;
+}
+
 function layChungTuPdf(don) {
     const pxkTrim = don.pxk !== undefined && don.pxk !== null ? String(don.pxk).trim() : "";
     if (pxkTrim !== "" && pxkTrim !== "--") {
         return pxkTrim;
     }
     const maPhieuVal = don.maPhieu || don.id || "";
-    return String(maPhieuVal).trim();
+    return chuanHoaMaPhieuChungTu(maPhieuVal);
 }
 
 function layKhoangNgayCuaKy(kyChon, namNum, thangNum) {
