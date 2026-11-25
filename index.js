@@ -449,6 +449,8 @@ function parseVTrackingToMap(buffer, monthNum) {
       continue;
     }
 
+    const isKho55RoundTrip = isLongTripDespiteCloseCoords && isStartNearKho55 && isEndNearKho55;
+
     let parts = ngayRaw.includes('/') ? ngayRaw.split('/') : ngayRaw.split('-');
     let d = parts[0] ? parts[0].padStart(2, '0') : "01";
     let m = parts[1] ? parts[1].padStart(2, '0') : String(monthNum).padStart(2, '0');
@@ -482,7 +484,8 @@ function parseVTrackingToMap(buffer, monthNum) {
       nam: y,
       khachHang: "",
       kmKhachVtracking: 0,
-      thoiGianDau: "00:00:00"
+      thoiGianDau: "00:00:00",
+      isKho55RoundTrip: isKho55RoundTrip
     });
   }
 
@@ -503,7 +506,7 @@ function parseVTrackingToMap(buffer, monthNum) {
 
     let currentChuyen = 1;
 
-    items.forEach(item => {
+    items.forEach((item, idx) => {
       let isKho55 = false;
       if (item.toaDoKetThuc && item.toaDoKetThuc.includes(",")) {
         const coords = item.toaDoKetThuc.split(",");
@@ -518,7 +521,12 @@ function parseVTrackingToMap(buffer, monthNum) {
       }
 
       item.chuyenVtracking = currentChuyen;
-      if (isKho55) {
+
+      const nextItem = items[idx + 1];
+      const nextIsSameRoundTripChain =
+        item.isKho55RoundTrip && nextItem && nextItem.isKho55RoundTrip;
+
+      if (isKho55 && !nextIsSameRoundTripChain) {
         currentChuyen++;
       }
     });
