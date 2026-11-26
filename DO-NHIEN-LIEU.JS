@@ -7,6 +7,12 @@ function khoiTaoMacDinhNhienLieu() {
     if (inputNgayDo && !inputNgayDo.value) {
         inputNgayDo.value = new Date().toISOString().slice(0, 10);
     }
+    window.tinhThanhTienNhienLieu();
+}
+
+function dinhDangHangNghin(so) {
+    const num = Number(so) || 0;
+    return num.toLocaleString("vi-VN") + " đ";
 }
 
 window.tinhThanhTienNhienLieu = function () {
@@ -17,12 +23,10 @@ window.tinhThanhTienNhienLieu = function () {
 
     const soLit = parseFloat(soLitInput.value) || 0;
     const donGia = parseFloat(donGiaInput.value) || 0;
+    const thanhTien = soLit > 0 && donGia > 0 ? Math.round(soLit * donGia) : 0;
 
-    if (soLit > 0 && donGia > 0) {
-        soTienInput.value = Math.round(soLit * donGia);
-    } else if (!soLitInput.value && !donGiaInput.value) {
-        soTienInput.value = "";
-    }
+    soTienInput.dataset.raw = String(thanhTien);
+    soTienInput.value = dinhDangHangNghin(thanhTien);
 };
 
 window.luuNhienLieuVaoFirebase = async function () {
@@ -33,13 +37,13 @@ window.luuNhienLieuVaoFirebase = async function () {
     const bienSo = document.getElementById("nlBienSo")?.value.trim() || "";
     const soLitRaw = document.getElementById("nlSoLit")?.value;
     const donGiaRaw = document.getElementById("nlDonGia")?.value;
-    const soTienRaw = document.getElementById("nlSoTien")?.value;
+    const soTienInput = document.getElementById("nlSoTien");
     const ghiChu = document.getElementById("nlGhiChu")?.value.trim() || "";
 
     const soLit = parseFloat(soLitRaw) || 0;
     const donGia = parseFloat(donGiaRaw) || 0;
-    const soTien = soTienRaw !== "" && soTienRaw !== undefined
-        ? (parseFloat(soTienRaw) || 0)
+    const soTien = soTienInput?.dataset.raw !== undefined
+        ? (parseFloat(soTienInput.dataset.raw) || 0)
         : Math.round(soLit * donGia);
 
     if (!ngayDo) {
@@ -88,7 +92,10 @@ window.luuNhienLieuVaoFirebase = async function () {
 
         document.getElementById("nlSoLit").value = "";
         document.getElementById("nlDonGia").value = "";
-        document.getElementById("nlSoTien").value = "";
+        if (soTienInput) {
+            soTienInput.dataset.raw = "0";
+            soTienInput.value = dinhDangHangNghin(0);
+        }
         document.getElementById("nlGhiChu").value = "";
 
         await new Promise((resolve) => setTimeout(resolve, 1500));
