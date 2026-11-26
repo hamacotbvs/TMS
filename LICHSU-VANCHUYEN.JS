@@ -1456,9 +1456,11 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
     };
 
     try {
-        // 1. Lấy cấu hình PHUONGTIEN của biển số xe đang chọn (số đầu kỳ ngày 01 hoặc 16 đã cấp sẵn)
+        // 1. Lấy cấu hình PHUONGTIEN và dữ liệu đổ thêm từ NHIENLIEU
         const qPt = query(collection(db, "PHUONGTIEN"), where("bienSo", "==", bienSoChon));
-        const snapPt = await getDocs(qPt);
+        const qNl = query(collection(db, "NHIENLIEU"), where("bienSo", "==", bienSoChon));
+        const [snapPt, snapNl] = await Promise.all([getDocs(qPt), getDocs(qNl)]);
+
         let dsCauHinhXe = [];
         snapPt.forEach(docSnap => {
             const d = docSnap.data();
@@ -1492,6 +1494,30 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         const dauDauKyGoc = Number(cauHinhKy.dauDauKy) || 0;
         const dinhMucHienThi = Number(cauHinhKy.dinhMuc) || 0.16;
         const nguongNoiO = Number(cauHinhKy.noiO) || 60;
+
+        // Gom nhiên liệu đổ thêm theo ngày hiển thị (DD/MM/YYYY) trong kỳ báo cáo
+        let mapDoThemTheoNgay = {};
+        let tongDoThemLit = 0;
+        snapNl.forEach(docSnap => {
+            const nl = docSnap.data();
+            const rawNgayDo = nl.ngayDo || (nl.nam && nl.thang ? `${nl.nam}-${String(nl.thang).padStart(2, '0')}-01` : "");
+            const dateDo = chuyenNgaySangDate(rawNgayDo);
+            if (!dateDo || isNaN(dateDo.getTime())) return;
+            if (dateDo < tuNgay || dateDo > denNgay) return;
+
+            const ngayKey = dinhDangNgayHienThi(rawNgayDo);
+            const soLitNum = Number(nl.soLit) || 0;
+            const ghiChuStr = nl.ghiChu ? String(nl.ghiChu).trim() : "";
+
+            tongDoThemLit += soLitNum;
+            if (!mapDoThemTheoNgay[ngayKey]) {
+                mapDoThemTheoNgay[ngayKey] = { soLit: 0, ghiChuList: [] };
+            }
+            mapDoThemTheoNgay[ngayKey].soLit += soLitNum;
+            if (ghiChuStr && !mapDoThemTheoNgay[ngayKey].ghiChuList.includes(ghiChuStr)) {
+                mapDoThemTheoNgay[ngayKey].ghiChuList.push(ghiChuStr);
+            }
+        });
 
         // 2. Lấy dữ liệu TUYENDUONG từ bộ nhớ tạm (cache); nếu chưa có thì tải theo tháng/năm đang chọn
         if (!Array.isArray(window._cachedVanChuyenData)) {
@@ -1549,12 +1575,13 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         const dongHoKmDauKy = Math.round(kmDauKyGoc);
 
-        // 3. Xử lý từng chuyến: ghi thẳng "DD/MM/YYYY - CHUYẾN X" vào cột Nơi giao
+        // 3. Xử lý từng chuyến: ghi thẳng "DD/MM/YYYY - CHUYẾN X" vào cột Nơi giao và điền ĐỔ THÊM vào hàng tổng của ngày đó
         let bangKeRows = [];
         let tongKmNoiO = 0;
         let tongKmTinh = 0;
         let tongKmTatCaChuyen = 0;
         let tongTieuThuLit = 0;
+        let ngayDaDienDoThem = new Set();
 
         dsChuyenTrongKy.forEach(chuyen => {
             const cfgNgay = layCauHinhTaiNgay(chuyen.dateObj);
@@ -1658,21 +1685,31 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 ghiChu: ""
             });
 
+            let doThemNgayStr = "";
+            let ghiChuNgayStr = "";
+            const infoDoNgay = mapDoThemTheoNgay[chuyen.ngayStr];
+            if (infoDoNgay && !ngayDaDienDoThem.has(chuyen.ngayStr)) {
+                doThemNgayStr = infoDoNgay.soLit !== 0 ? infoDoNgay.soLit.toFixed(2).replace(/\.00$/, '') : "0";
+                ghiChuNgayStr = infoDoNgay.ghiChuList.join(", ");
+                ngayDaDienDoThem.add(chuyen.ngayStr);
+            }
+
             bangKeRows.push({
                 noiGiao: `${chuyen.ngayStr} - CHUYẾN ${chuyen.soChuyen}`,
                 km: tongKmCuaChuyen !== 0 ? tongKmCuaChuyen.toFixed(1).replace(/\.0$/, '') : "0",
                 kmNum: tongKmCuaChuyen,
                 tieuThu: tongLitCuaChuyen !== 0 ? tongLitCuaChuyen.toFixed(2) : "0.00",
                 tieuThuNum: tongLitCuaChuyen,
-                doThem: "",
+                doThem: doThemNgayStr,
                 chungTu: "",
-                ghiChu: "",
+                ghiChu: ghiChuNgayStr,
                 isTongChuyen: true
             });
 
             bangKeRows.push(...chiTietRowsCuaChuyen);
         });
 
+        const tonCuoiKyLit = dauDauKyGoc + tongDoThemLit - tongTieuThuLit;
         const dongHoKmCuoiKy = Math.round(dongHoKmDauKy + tongKmTatCaChuyen);
         const dinhMucLit100Km = Math.round(dinhMucHienThi * 100);
 
@@ -1866,9 +1903,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                             <td>${Math.round(tongKmTinh).toLocaleString('vi-VN')}</td>
                             <td>${Math.round(tongKmTatCaChuyen).toLocaleString('vi-VN')}</td>
                             <td>${dauDauKyGoc.toFixed(3)}</td>
-                            <td></td>
+                            <td>${tongDoThemLit !== 0 ? tongDoThemLit.toFixed(2).replace(/\.00$/, '') : "0"}</td>
                             <td>${tongTieuThuLit.toFixed(2)}</td>
-                            <td></td>
+                            <td>${tonCuoiKyLit.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
