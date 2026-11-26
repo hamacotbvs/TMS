@@ -10,6 +10,21 @@ function khoiTaoMacDinhNhienLieu() {
     window.tinhThanhTienNhienLieu();
 }
 
+function chuanHoaSoNhap(val, choPhepThapPhan = true) {
+    if (val === undefined || val === null) return "";
+    let s = String(val).replace(/,/g, ".");
+    if (choPhepThapPhan) {
+        s = s.replace(/[^0-9.]/g, "");
+        const firstDot = s.indexOf(".");
+        if (firstDot !== -1) {
+            s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, "");
+        }
+    } else {
+        s = s.replace(/[^0-9]/g, "");
+    }
+    return s;
+}
+
 function dinhDangHangNghin(so) {
     const num = Number(so) || 0;
     return num.toLocaleString("vi-VN") + " đ";
@@ -21,8 +36,18 @@ window.tinhThanhTienNhienLieu = function () {
     const soTienInput = document.getElementById("nlSoTien");
     if (!soLitInput || !donGiaInput || !soTienInput) return;
 
-    const soLit = parseFloat(soLitInput.value) || 0;
-    const donGia = parseFloat(donGiaInput.value) || 0;
+    const cleanLit = chuanHoaSoNhap(soLitInput.value, true);
+    if (soLitInput.value !== cleanLit) {
+        soLitInput.value = cleanLit;
+    }
+
+    const cleanDonGia = chuanHoaSoNhap(donGiaInput.value, false);
+    if (donGiaInput.value !== cleanDonGia) {
+        donGiaInput.value = cleanDonGia;
+    }
+
+    const soLit = parseFloat(cleanLit) || 0;
+    const donGia = parseFloat(cleanDonGia) || 0;
     const thanhTien = soLit > 0 && donGia > 0 ? Math.round(soLit * donGia) : 0;
 
     soTienInput.dataset.raw = String(thanhTien);
@@ -40,8 +65,8 @@ window.luuNhienLieuVaoFirebase = async function () {
     const soTienInput = document.getElementById("nlSoTien");
     const ghiChu = document.getElementById("nlGhiChu")?.value.trim() || "";
 
-    const soLit = parseFloat(soLitRaw) || 0;
-    const donGia = parseFloat(donGiaRaw) || 0;
+    const soLit = parseFloat(chuanHoaSoNhap(soLitRaw, true)) || 0;
+    const donGia = parseFloat(chuanHoaSoNhap(donGiaRaw, false)) || 0;
     const soTien = soTienInput?.dataset.raw !== undefined
         ? (parseFloat(soTienInput.dataset.raw) || 0)
         : Math.round(soLit * donGia);
