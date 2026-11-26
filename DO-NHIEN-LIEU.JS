@@ -1,7 +1,6 @@
 import { collection, doc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
-let donGiaGoiYMacDinh = 0;
 
 function khoiTaoMacDinhNhienLieu() {
     const inputNgayDo = document.getElementById("nlNgayDo");
@@ -9,7 +8,7 @@ function khoiTaoMacDinhNhienLieu() {
         inputNgayDo.value = new Date().toISOString().slice(0, 10);
     }
     window.tinhThanhTienNhienLieu();
-    window.goiYDonGiaGanNhat({ tuDongDienNeuTrong: true });
+    window.goiYDonGiaGanNhat();
 }
 
 function chuanHoaSoNhap(val, choPhepThapPhan = true) {
@@ -72,9 +71,23 @@ window.apDungDonGiaGoiY = function (donGia) {
     window.tinhThanhTienNhienLieu();
 };
 
-window.goiYDonGiaGanNhat = async function ({ tuDongDienNeuTrong = false } = {}) {
+function hienThiGoiYDonGia(banGhi) {
     const labelGoiY = document.getElementById("goiYDonGiaNl");
-    const donGiaInput = document.getElementById("nlDonGia");
+    if (!labelGoiY) return;
+
+    if (banGhi && Number(banGhi.donGia) > 0) {
+        const dg = Math.round(Number(banGhi.donGia));
+        const ngayText = banGhi.ngayDo ? banGhi.ngayDo.split("-").reverse().join("/") : "";
+        const datePart = ngayText ? ` (${ngayText})` : "";
+
+        labelGoiY.innerHTML = `Gợi ý${datePart}: <a href="javascript:void(0)" onclick="apDungDonGiaGoiY(${dg})" title="Bấm để dùng đơn giá này" style="color:#16a34a; font-weight:700; text-decoration:underline;">${dg.toLocaleString("vi-VN")} đ</a>`;
+    } else {
+        labelGoiY.textContent = "";
+    }
+}
+
+window.goiYDonGiaGanNhat = async function () {
+    const labelGoiY = document.getElementById("goiYDonGiaNl");
     if (!labelGoiY || !db) return;
 
     try {
@@ -85,39 +98,12 @@ window.goiYDonGiaGanNhat = async function ({ tuDongDienNeuTrong = false } = {}) 
         );
         const snapAll = await getDocs(qAll);
         const banGhi = chonBanGhiMoiNhat(snapAll);
-
-        if (banGhi && Number(banGhi.donGia) > 0) {
-            const dg = Math.round(Number(banGhi.donGia));
-            donGiaGoiYMacDinh = dg;
-            const ngayText = banGhi.ngayDo ? banGhi.ngayDo.split("-").reverse().join("/") : "";
-            const datePart = ngayText ? ` (${ngayText})` : "";
-
-            labelGoiY.innerHTML = `Gợi ý${datePart}: <a href="javascript:void(0)" onclick="apDungDonGiaGoiY(${dg})" style="color:#16a34a; font-weight:700; text-decoration:underline;">${dg.toLocaleString("vi-VN")} đ</a>`;
-
-            if (tuDongDienNeuTrong && donGiaInput && !donGiaInput.value.trim()) {
-                donGiaInput.value = String(dg);
-                window.tinhThanhTienNhienLieu();
-            }
-        } else {
-            labelGoiY.textContent = "";
-        }
+        hienThiGoiYDonGia(banGhi);
     } catch (err) {
         try {
             const snapFallback = await getDocs(query(collection(db, "NHIENLIEU"), limit(15)));
             const banGhi = chonBanGhiMoiNhat(snapFallback);
-            if (banGhi && Number(banGhi.donGia) > 0) {
-                const dg = Math.round(Number(banGhi.donGia));
-                donGiaGoiYMacDinh = dg;
-                const ngayText = banGhi.ngayDo ? banGhi.ngayDo.split("-").reverse().join("/") : "";
-                const datePart = ngayText ? ` (${ngayText})` : "";
-                labelGoiY.innerHTML = `Gợi ý${datePart}: <a href="javascript:void(0)" onclick="apDungDonGiaGoiY(${dg})" style="color:#16a34a; font-weight:700; text-decoration:underline;">${dg.toLocaleString("vi-VN")} đ</a>`;
-                if (tuDongDienNeuTrong && donGiaInput && !donGiaInput.value.trim()) {
-                    donGiaInput.value = String(dg);
-                    window.tinhThanhTienNhienLieu();
-                }
-            } else {
-                labelGoiY.textContent = "";
-            }
+            hienThiGoiYDonGia(banGhi);
         } catch (err2) {
             console.warn("Không lấy được đơn giá gợi ý:", err2);
         }
@@ -213,13 +199,13 @@ window.luuNhienLieuVaoFirebase = async function () {
         }
 
         document.getElementById("nlSoLit").value = "";
-        document.getElementById("nlDonGia").value = donGiaGoiYMacDinh ? String(donGiaGoiYMacDinh) : "";
+        document.getElementById("nlDonGia").value = "";
         if (soTienInput) {
             soTienInput.dataset.raw = "0";
             soTienInput.value = dinhDangHangNghin(0);
         }
         document.getElementById("nlGhiChu").value = "";
-        window.goiYDonGiaGanNhat({ tuDongDienNeuTrong: true });
+        window.goiYDonGiaGanNhat();
 
         await new Promise((resolve) => setTimeout(resolve, 1500));
     } catch (error) {
