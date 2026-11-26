@@ -1507,16 +1507,12 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
             const ngayKey = dinhDangNgayHienThi(rawNgayDo);
             const soLitNum = Number(nl.soLit) || 0;
-            const ghiChuStr = nl.ghiChu ? String(nl.ghiChu).trim() : "";
 
             tongDoThemLit += soLitNum;
             if (!mapDoThemTheoNgay[ngayKey]) {
-                mapDoThemTheoNgay[ngayKey] = { soLit: 0, ghiChuList: [] };
+                mapDoThemTheoNgay[ngayKey] = { soLit: 0 };
             }
             mapDoThemTheoNgay[ngayKey].soLit += soLitNum;
-            if (ghiChuStr && !mapDoThemTheoNgay[ngayKey].ghiChuList.includes(ghiChuStr)) {
-                mapDoThemTheoNgay[ngayKey].ghiChuList.push(ghiChuStr);
-            }
         });
 
         // 2. Lấy dữ liệu TUYENDUONG từ bộ nhớ tạm (cache); nếu chưa có thì tải theo tháng/năm đang chọn
@@ -1575,12 +1571,13 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         const dongHoKmDauKy = Math.round(kmDauKyGoc);
 
-        // 3. Xử lý từng chuyến: ghi thẳng "DD/MM/YYYY - CHUYẾN X" vào cột Nơi giao và điền ĐỔ THÊM vào hàng tổng của ngày đó
+        // 3. Xử lý từng chuyến: ghi thẳng "DD/MM/YYYY - CHUYẾN X" vào cột Nơi giao, điền ĐỔ THÊM và TỒN trên hàng tổng của ngày đó
         let bangKeRows = [];
         let tongKmNoiO = 0;
         let tongKmTinh = 0;
         let tongKmTatCaChuyen = 0;
         let tongTieuThuLit = 0;
+        let tonHienTai = dauDauKyGoc;
         let ngayDaDienDoThem = new Set();
 
         dsChuyenTrongKy.forEach(chuyen => {
@@ -1663,8 +1660,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     tieuThu: litHang !== 0 ? litHang.toFixed(2) : "0.00",
                     tieuThuNum: litHang,
                     doThem: "",
-                    chungTu: stop.pxkList.join(", "),
-                    ghiChu: ""
+                    ton: "",
+                    chungTu: stop.pxkList.join(", ")
                 });
             });
 
@@ -1681,18 +1678,20 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 tieuThu: litVe !== 0 ? litVe.toFixed(2) : "0.00",
                 tieuThuNum: litVe,
                 doThem: "",
-                chungTu: "",
-                ghiChu: ""
+                ton: "",
+                chungTu: ""
             });
 
+            let doThemNgayNum = 0;
             let doThemNgayStr = "";
-            let ghiChuNgayStr = "";
             const infoDoNgay = mapDoThemTheoNgay[chuyen.ngayStr];
             if (infoDoNgay && !ngayDaDienDoThem.has(chuyen.ngayStr)) {
-                doThemNgayStr = infoDoNgay.soLit !== 0 ? infoDoNgay.soLit.toFixed(2).replace(/\.00$/, '') : "0";
-                ghiChuNgayStr = infoDoNgay.ghiChuList.join(", ");
+                doThemNgayNum = infoDoNgay.soLit;
+                doThemNgayStr = doThemNgayNum !== 0 ? doThemNgayNum.toFixed(2).replace(/\.00$/, '') : "0";
                 ngayDaDienDoThem.add(chuyen.ngayStr);
             }
+
+            tonHienTai = Number((tonHienTai + doThemNgayNum - tongLitCuaChuyen).toFixed(2));
 
             bangKeRows.push({
                 noiGiao: `${chuyen.ngayStr} - CHUYẾN ${chuyen.soChuyen}`,
@@ -1701,8 +1700,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 tieuThu: tongLitCuaChuyen !== 0 ? tongLitCuaChuyen.toFixed(2) : "0.00",
                 tieuThuNum: tongLitCuaChuyen,
                 doThem: doThemNgayStr,
+                ton: tonHienTai.toFixed(2),
+                tonNum: tonHienTai,
                 chungTu: "",
-                ghiChu: ghiChuNgayStr,
                 isTongChuyen: true
             });
 
@@ -1715,12 +1715,12 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
         const minRows = 16;
         while (bangKeRows.length < minRows) {
-            bangKeRows.push({ noiGiao: "&nbsp;", km: "", tieuThu: "", doThem: "", chungTu: "", ghiChu: "" });
+            bangKeRows.push({ noiGiao: "&nbsp;", km: "", tieuThu: "", doThem: "", ton: "", chungTu: "" });
         }
 
         // 4. Tạo giao diện HTML chuẩn A4 và mở hộp thoại in/lưu PDF
         const rowsHtml = bangKeRows.map(r => {
-            const isNegative = (typeof r.kmNum === 'number' && r.kmNum < 0) || (typeof r.tieuThuNum === 'number' && r.tieuThuNum < 0);
+            const isNegative = (typeof r.kmNum === 'number' && r.kmNum < 0) || (typeof r.tieuThuNum === 'number' && r.tieuThuNum < 0) || (typeof r.tonNum === 'number' && r.tonNum < 0);
             const styles = [];
             if (r.isTongChuyen) styles.push('font-weight: bold;', 'background-color: #f3f4f6;');
             if (isNegative) styles.push('color: #dc2626 !important;');
@@ -1731,8 +1731,8 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 <td style="text-align: right; padding-right: 6px;">${r.km}</td>
                 <td style="text-align: right; padding-right: 6px;">${r.tieuThu}</td>
                 <td style="text-align: right; padding-right: 6px;">${r.doThem}</td>
+                <td style="text-align: right; padding-right: 6px;">${r.ton}</td>
                 <td style="text-align: left; padding-left: 6px;">${r.chungTu}</td>
-                <td style="text-align: left; padding-left: 6px;">${r.ghiChu}</td>
             </tr>
         `;
         }).join("");
@@ -1860,15 +1860,15 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="width: 45%;">NƠI GIAO</th>
+                            <th rowspan="2" style="width: 43%;">NƠI GIAO</th>
                             <th rowspan="2" style="width: 8%;">KM</th>
-                            <th colspan="2" style="width: 19%;">NHIÊN LIỆU (lít)</th>
-                            <th rowspan="2" style="width: 16%;">CHỨNG TỪ</th>
-                            <th rowspan="2" style="width: 12%;">GHI CHÚ</th>
+                            <th colspan="3" style="width: 31%;">NHIÊN LIỆU (lít)</th>
+                            <th rowspan="2" style="width: 18%;">CHỨNG TỪ</th>
                         </tr>
                         <tr>
-                            <th style="width: 9.5%;">TIÊU THỤ</th>
-                            <th style="width: 9.5%;">ĐỔ THÊM</th>
+                            <th style="width: 10.33%;">TIÊU THỤ</th>
+                            <th style="width: 10.33%;">ĐỔ THÊM</th>
+                            <th style="width: 10.34%;">TỒN</th>
                         </tr>
                     </thead>
                     <tbody>
