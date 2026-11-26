@@ -1,394 +1,141 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <title>HAMACO-TMS</title>
-    <link rel="icon" type="image/png" href="logo.png">
-    <link rel="apple-touch-icon" href="logo.png">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+const db = window.db;
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
-    
-    <!-- Liên kết file CSS tách rời -->
-    <link rel="stylesheet" href="style.css">
-</head>
+function khoiTaoMacDinhNhienLieu() {
+    const inputNgayDo = document.getElementById("nlNgayDo");
+    if (inputNgayDo && !inputNgayDo.value) {
+        inputNgayDo.value = new Date().toISOString().slice(0, 10);
+    }
+    window.tinhThanhTienNhienLieu();
+}
 
-<body>
+function chuanHoaSoNhap(val, choPhepThapPhan = true) {
+    if (val === undefined || val === null) return "";
+    let s = String(val).replace(/,/g, ".");
+    if (choPhepThapPhan) {
+        s = s.replace(/[^0-9.]/g, "");
+        const firstDot = s.indexOf(".");
+        if (firstDot !== -1) {
+            s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, "");
+        }
+    } else {
+        s = s.replace(/[^0-9]/g, "");
+    }
+    return s;
+}
 
-    <div class="KHUNG-CAC-TAB">
-        <!--TRANG CHỦ-->
-        <div id="home" class="trang-content active">
-            <div class="KHUNG-TAO-KHOANG-CACH-VIEN-DT">
-                <button onclick="moLichSuChiPhi()" class="btn-history"> <i class="fa-solid fa-clock-rotate-left"></i> Xem lịch sử chi phí </button>
-                <div id="modalLichSu" class="modal-hidden">
-                    <div class="modal-content">
-                        <div class="modal-header-custom">
-                            <button class="nut-dong-modal" onclick="dongModal()">&times;</button>
-                            <h3 class="modal-tieu-de">💸 CHI PHÍ KHO</h3>
-                            <div class="bo-chon-thang">
-                                <span id="labelThangNam">--/----</span>
-                                <input type="month" id="inputThangAn" class="o-lich-an-giao-dien">
-                            </div>
-                        </div>
-                        <div class="cost-comparison-container" style="margin-bottom: 1px; padding: 8px; background: #f8fafc; border-radius: 0 0 20px 20px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: bold;">
-                                <span style="color: #2563eb;">Kho: <span id="lblTongPhiKho">0 trđ</span></span>
-                                <div style="text-align: center; margin-bottom: 1px; font-size: 13px; font-weight: bold;">
-                                    <span>TỔNG CHI PHÍ: <span id="lblTongCong">0 trđ</span></span>
-                                </div>
-                                <span style="color: #dc2626;">Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
-                            </div>
+function dinhDangHangNghin(so) {
+    const num = Number(so) || 0;
+    return num.toLocaleString("vi-VN") + " đ";
+}
 
-                            <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-                                <div id="barPhiKho" style="height: 12px; background: transparent; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
-                                    <div id="subBarKhoSon" style="height: 6px !important; background: #1d4ed8; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
-                                    <div id="subBarKhoTBVS" style="height: 6px !important; background: #93c5fd; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
-                                </div>
-                                <div id="barPhiLogistics" style="height: 12px; background: transparent; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
-                                    <div id="subBarLogisticsSon" style="height: 6px !important; background: #c2410c; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
-                                    <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #fa9797; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
-                                </div>
-                            </div>
+window.tinhThanhTienNhienLieu = function () {
+    const soLitInput = document.getElementById("nlSoLit");
+    const donGiaInput = document.getElementById("nlDonGia");
+    const soTienInput = document.getElementById("nlSoTien");
+    if (!soLitInput || !donGiaInput || !soTienInput) return;
 
-                            <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 0 2px;">
-                                <div>
-                                    <span style="color: #1d4ed8; font-weight: 500;">Sơn: <span id="lblSonKho">0 trđ</span></span> | 
-                                    <span style="color: #93c5fd; font-weight: 500;">TBVS: <span id="lblTbvsKho">0 trđ</span></span>
-                                </div>
-                                <div style="text-align: right;">
-                                    <span style="color: #c2410c; font-weight: 500;">Sơn: <span id="lblSonLogistics">0 trđ</span></span> | 
-                                    <span style="color: #fa9797; font-weight: 500;">TBVS: <span id="lblTbvsLogistics">0 trđ</span></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="text-align: center; font-size: 12px; font-weight: bold; color: #64748b; margin-top: 10px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Chi tiết các khoản phát sinh
-                        </div>
-                        <div id="danhSachLichSu"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    const cleanLit = chuanHoaSoNhap(soLitInput.value, true);
+    if (soLitInput.value !== cleanLit) {
+        soLitInput.value = cleanLit;
+    }
 
-        <!--BÁO CÁO-->
-        <div id="bao-cao" class="trang-content">
-            <div class="KHUNG-TAO-KHOANG-CACH-VIEN-DT">
-                <div class="nut-treo-ngay-thang-nam">
-                    <span id="hienNgayThang" class="dong-ngay-thang">7/7</span>
-                    <span id="hienNam" class="dong-nam">2026</span>
-                    <input type="date" id="ngayHienHanh" class="o-lich-an-giao-dien">
-                </div>
-                <div class="nut-treo-loc-nganh">
-                    <select id="boLocNganh">
-                        <option value="All">All</option>
-                        <option value="TBVS">TBVS</option>
-                        <option value="Sơn">Sơn</option>
-                    </select>
-                </div>
-                <div class="vung-bieu-do-doi-ngang">
-                    <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                        <h2 class="tieu-de-bieu-do" id="tieuDeBieuDoSanLuongGiaoHang">Sản lượng giao hàng năm</h2>
-                        <div id="loading" class="loading-box"><i class="fa-solid fa-spinner"></i> Đang kết nối dữ liệu từ server...</div>
-                        <div class="vung-bieu-do">
-                            <canvas id="bieuDoSanLuongGiaoHang"></canvas>
-                        </div>
-                    </div>
-                    <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                        <h2 class="tieu-de-bieu-do" id="tieuDeBieuDoDoanhThuGiaoHang">Doanh thu giao hàng năm</h2>
-                        <div class="vung-bieu-do">
-                            <canvas id="bieuDoDoanhThuGiaoHang"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="vung-bieu-do-doi-ngang">
-                    <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                        <h2 class="tieu-de-bieu-do" id="tieuDeNhiet">Sản lượng giao hàng theo vùng năm</h2>
-                        <div class="vung-bieu-do">
-                            <canvas id="bieuDoNhietVung"></canvas>
-                        </div>
-                    </div>
-                    <div class="KHUNG-CON-TRONG-TAB" style="position: relative; min-height: 250px;">
-                        <h2 class="tieu-de-bieu-do" id="tieuDeNhietDT">Doanh thu giao hàng theo vùng năm</h2>
-                        <div class="vung-bieu-do">
-                            <canvas id="bieuDoNhietVungDT"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div id="khuVucBieuDoKhachHang" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: flex-start; padding: 40px 20px;">
-                    <div style="background: #fff; width: 90%; max-width: 2600px; max-height: 90vh; border-radius: 8px; padding: 25px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow-y: auto;">
-                        <button onclick="document.getElementById('khuVucBieuDoKhachHang').style.display = 'none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
-                        <h3 id="tieuDeBieuDoKhachHang" style="text-align: center; color: #1e293b; margin-bottom: 20px; font-weight: bold;">Chi tiết Sản lượng (kg) & Doanh thu (tr.đ) theo Khách hàng</h3>
-                        <div style="width: 100%; overflow-x: auto;">
-                            <canvas id="bieuDoNhietKhachHang" style="width: 100%;"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    const cleanDonGia = chuanHoaSoNhap(donGiaInput.value, false);
+    if (donGiaInput.value !== cleanDonGia) {
+        donGiaInput.value = cleanDonGia;
+    }
 
-        <!--THÊM MỚI (2 TAB CON: CHI PHÍ & NHIÊN LIỆU)-->
-        <div id="them-moi" class="trang-content">
-            <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
+    const soLit = parseFloat(cleanLit) || 0;
+    const donGia = parseFloat(cleanDonGia) || 0;
+    const thanhTien = soLit > 0 && donGia > 0 ? Math.round(soLit * donGia) : 0;
 
-            <!-- THANH 2 TAB: CHI PHÍ | NHIÊN LIỆU -->
-            <div style="display: flex; gap: 8px; margin-bottom: 12px; padding-right: 48px;">
-                <button id="tabBtnChiPhi" type="button" onclick="chuyenTabNhapLieu('chi-phi')" style="flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
-                    📝 CHI PHÍ
-                </button>
-                <button id="tabBtnNhienLieu" type="button" onclick="chuyenTabNhapLieu('nhien-lieu')" style="flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
-                    ⛽ NHIÊN LIỆU
-                </button>
-            </div>
+    soTienInput.dataset.raw = String(thanhTien);
+    soTienInput.value = dinhDangHangNghin(thanhTien);
+};
 
-            <!-- TAB 1: NHẬP NGHIỆP VỤ PHÁT SINH KHO (COLLECTION CHIPHI) -->
-            <div id="panelNhapChiPhi" class="KHUNG-CON-TRONG-TAB">
-                <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
-                    📝 NHẬP NGHIỆP VỤ PHÁT SINH KHO
-                </h3>
+window.luuNhienLieuVaoFirebase = async function () {
+    const nutBam = document.getElementById("btnLuuNhienLieu");
+    if (nutBam && nutBam.disabled) return;
 
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày chứng từ / phát sinh:</label>
-                        <input type="date" id="nvNgay" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
-                    </div>
+    const ngayDo = document.getElementById("nlNgayDo")?.value || "";
+    const bienSo = document.getElementById("nlBienSo")?.value.trim() || "";
+    const soLitRaw = document.getElementById("nlSoLit")?.value;
+    const donGiaRaw = document.getElementById("nlDonGia")?.value;
+    const soTienInput = document.getElementById("nlSoTien");
+    const ghiChu = document.getElementById("nlGhiChu")?.value.trim() || "";
 
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Hạng mục chi phí:</label>
-                        <select id="nvHangMuc" class="Dropdown" onchange="tuDongChonTyLeTheoHangMuc(this.value); tinhPhanBoNghiepVu('thay-doi-nguyen-tac')">
-                            <option value="">-- Chọn hạng mục --</option>
-                            <optgroup label="PHÍ KHO">
-                                <option value="Thuê mặt bằng">Thuê mặt bằng</option>
-                                <option value="Phân bổ phí sửa kho">Phân bổ phí sửa kho</option>
-                                <option value="Phân bổ phí PCCC">Phân bổ phí PCCC</option>
-                                <option value="Phân bổ phí PCCC (bảo trì)">Phân bổ phí PCCC (bảo trì)</option>
-                                <option value="Bảo hiểm cháy nổ">Bảo hiểm cháy nổ</option>
-                                <option value="Lương vị trí, phụ cấp QL, TK, BV">Lương vị trí, phụ cấp QL, TK, BV</option>
-                                <option value="Trích BH, CĐ: QL, TK, BV">Trích BH, CĐ: QL, TK, BV</option>
-                                <option value="Tiện ích kho">Tiện ích kho</option>
-                                <option value="Bảo trì kho">Bảo trì kho</option>
-                                <option value="Lương sản lượng thủ kho">Lương sản lượng thủ kho</option>
-                                <option value="Lương sản lượng bốc xếp">Lương sản lượng bốc xếp</option>
-                                <option value="Lương ngoài giờ">Lương ngoài giờ</option>
-                            </optgroup>
-                            <optgroup label="PHÍ LOGISTICS">
-                                <option value="Thuê xe">Thuê xe</option>
-                                <option value="Đăng kiểm">Đăng kiểm</option>
-                                <option value="Bảo hiểm xe">Bảo hiểm xe</option>
-                                <option value="Giám sát hành trình">Giám sát hành trình</option>
-                                <option value="Lương vị trí, phụ cấp TX, GN, BX">Lương vị trí, phụ cấp TX, GN, BX</option>
-                                <option value="Trích BH, CĐ: TX, GN, BX">Trích BH, CĐ: TX, GN, BX</option>
-                                <option value="Nhiên liệu">Nhiên liệu</option>
-                                <option value="BOT">BOT</option>
-                                <option value="Bảo trì, bảo dưỡng xe">Bảo trì, bảo dưỡng xe</option>
-                                <option value="Chi phí giao hàng">Chi phí giao hàng</option>
-                                <option value="Lương km tài xế">Lương km tài xế</option>
-                                <option value="Lương sản lượng Tài xế">Lương sản lượng Tài xế</option>
-                                <option value="Lương sản lượng giao nhận">Lương sản lượng giao nhận</option>
-                            </optgroup>
-                        </select>
-                    </div>
+    const soLit = parseFloat(chuanHoaSoNhap(soLitRaw, true)) || 0;
+    const donGia = parseFloat(chuanHoaSoNhap(donGiaRaw, false)) || 0;
+    const soTien = soTienInput?.dataset.raw !== undefined
+        ? (parseFloat(soTienInput.dataset.raw) || 0)
+        : Math.round(soLit * donGia);
 
-                    <div style="display: flex; gap: 12px; width: 100%;">
-                        <div id="vungTongTien" style="flex: 6; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Tổng số tiền thực tế (VNĐ):</label>
-                            <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right; width: 100%; min-width: 0; box-sizing: border-box;">
-                        </div>
+    if (!ngayDo) {
+        alert("Vui lòng chọn Ngày đổ nhiên liệu!");
+        return;
+    }
+    if (!bienSo) {
+        alert("Vui lòng chọn Phương tiện!");
+        return;
+    }
+    if (soLit <= 0) {
+        alert("Vui lòng nhập Số lít đổ lớn hơn 0!");
+        return;
+    }
 
-                        <div id="vungPhuongTien" style="display: none; flex: 4; min-width: 0; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
-                            <select id="nvPhuongTien" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; min-width: 0; box-sizing: border-box; height: 41px;">
-                                <option value="">-- Chọn xe --</option>
-                                <option value="65C-06126">65C-06126</option>
-                                <option value="65H-02591">65H-02591</option>
-                                <option value="65C-12290">65C-12290</option>
-                            </select>
-                        </div>
-                    </div>
+    const parts = ngayDo.split("-");
+    const namNum = Number(parts[0]) || new Date().getFullYear();
+    const thangNum = Number(parts[1]) || (new Date().getMonth() + 1);
 
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Nguyên tắc phân bổ:</label>
-                        <select id="nvKieuPhanBo" onchange="tinhPhanBoNghiepVu('thay-doi-nguyen-tac')" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #0082C8;">
-                            <option value="Sơn: 50 - TBVS: 50">Kho 50% / 50%</option>
-                            <option value="Sơn: 67 - TBVS: 33">Vận tải 67% / 33%</option>
-                            <option value="Sơn: 35 - TBVS: 65">Thuê kho 35% / 65%</option>
-                            <option value="tbvs-truoc">Phân bổ TBVS trước</option>
-                        </select>
-                    </div>
+    if (nutBam) {
+        nutBam.disabled = true;
+        nutBam.style.opacity = "0.6";
+        nutBam.style.cursor = "not-allowed";
+        nutBam.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu nhiên liệu...`;
+    }
 
-                    <div id="vungNhapTBVS" style="display: none; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #1e293b;">Số tiền TBVS tự phân bổ (VNĐ):</label>
-                        <input type="number" id="tienTBVSInput" oninput="tinhPhanBoNghiepVu('nhap-tay')" placeholder="Nhập số tiền cho TBVS..." style="padding: 10px; border: 1px solid #22c55e; border-radius: 8px; font-size: 14px; font-weight: 700; color: #22c55e; text-align: right; background: #f0fdf4;">
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 5px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">Sơn phân bổ:<br><strong id="previewSon" style="color:#ef4444; font-size: 14px;">0 đ</strong></div>
-                        <div style="flex:1; text-align: center; font-size: 12px; color: #475569;">TBVS phân bổ:<br><strong id="previewTBVS" style="color:#22c55e; font-size: 14px;">0 đ</strong></div>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ghi chú nội dung nghiệp vụ:</label>
-                        <input type="text" id="nvGhiChu" placeholder="Ví dụ: Thanh toán tiền điện kho tháng 07..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
-                    </div>
-
-                    <button id="btnLuuNghiepVu" class="nut-gui-xac-nhan" onclick="luuNghiepVuVaoFirebase()" style="width: 100%; background: #0082C8; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 130, 200, 0.25);">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Ghi Sổ
-                    </button>
-                </div>
-            </div>
-
-            <!-- TAB 2: NHẬP LẦN ĐỔ NHIÊN LIỆU PHƯƠNG TIỆN (COLLECTION NHIENLIEU) -->
-            <div id="panelNhapNhienLieu" class="KHUNG-CON-TRONG-TAB" style="display: none;">
-                <h3 style="font-size: 16px; color: #16a34a; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
-                    ⛽ NHẬP LẦN ĐỔ NHIÊN LIỆU XE
-                </h3>
-
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày đổ nhiên liệu:</label>
-                        <input type="date" id="nlNgayDo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
-                        <select id="nlBienSo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
-                            <option value="">-- Chọn xe --</option>
-                            <option value="65C-06126">65C-06126</option>
-                            <option value="65H-02591">65H-02591</option>
-                            <option value="65C-12290">65C-12290</option>
-                        </select>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; width: 100%;">
-                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Số lít đổ (Lít):</label>
-                            <input type="number" step="any" min="0" id="nlSoLit" oninput="tinhThanhTienNhienLieu()" placeholder="0.00" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; color: #0284c7; text-align: right; width: 100%; min-width: 0; box-sizing: border-box;">
-                        </div>
-
-                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
-                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Đơn giá (VNĐ/lít):</label>
-                            <input type="number" step="any" min="0" id="nlDonGia" oninput="tinhThanhTienNhienLieu()" placeholder="0" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; color: #334155; text-align: right; width: 100%; min-width: 0; box-sizing: border-box;">
-                        </div>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Thành tiền (VNĐ):</label>
-                        <input type="text" id="nlSoTien" data-raw="0" readonly placeholder="0 đ" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #16a34a; text-align: right; background: #f0fdf4; width: 100%; box-sizing: border-box; cursor: default;">
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ghi chú / Số chứng từ:</label>
-                        <input type="text" id="nlGhiChu" placeholder="Ví dụ: Đổ dầu tại cây xăng / phiếu xuất..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
-                    </div>
-
-                    <button id="btnLuuNhienLieu" type="button" onclick="luuNhienLieuVaoFirebase()" style="width: 100%; background: #16a34a; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
-                        <i class="fa-solid fa-gas-pump"></i> Lưu lần đổ nhiên liệu
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!--VẬN CHUYỂN (CỐ ĐỊNH HEADER VÀ CÙNG 1 HÀNG)-->
-        <div id="van-chuyen" class="trang-content">
-            <div class="KHUNG-CON-TRONG-TAB khung-van-chuyen-chinh">
-                
-                <!-- PHẦN CỐ ĐỊNH Ở TRÊN (STICKY HEADER) -->
-                <div class="sticky-header-vc">
-                    <h3 style="font-size: 15px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; margin-top: 0;">
-                        <span>🚚 LỊCH SỬ VẬN CHUYỂN</span>
-                    </h3>
-
-                    <!-- THANH CÔNG CỤ: CHỌN THÁNG, PHƯƠNG TIỆN, NÚT TẢI CÙNG 1 HÀNG -->
-                    <div class="thanh-cong-cu-van-chuyen">
-                        <!-- 1. Ô chọn tháng -->
-                        <div class="hop-chon-thang-vc">
-                            <span style="font-size: 12px;">📅</span>
-                            <span id="labelThangNamVC" style="font-weight: 600; font-size: 11px; color: #1e293b; white-space: nowrap;">11/2026</span>
-                            <input type="month" id="thangVanChuyen" class="input-an-thang-vc" />
-                        </div>
-
-                        <!-- 2. Dropdown lọc phương tiện -->
-                        <select id="filterPhuongTien" class="select-phuong-tien-vc">
-                            <option value="">-- Tất cả xe --</option>
-                            <option value="65C-06126">65C-06126</option>
-                            <option value="65C-12290">65C-12290</option>
-                            <option value="65H-02591">65C-02591</option>
-                            <option value="Xe máy">Xe máy</option>
-                        </select>
-
-                        <!-- 3. Nút Tải dữ liệu -->
-                        <button id="btnTaiLichSuVC" class="btn-tai-du-lieu-vc">
-                            <i class="fa-solid fa-cloud-arrow-down"></i> Tải dữ liệu
-                        </button>
-                    </div>
-                </div>
-
-                <!-- PHẦN DANH SÁCH CUỘN ĐỘC LẬP BÊN DƯỚI -->
-                <div id="danhSachLichSuVanChuyen" class="danh-sach-cuon-vc">
-                    <!-- Dữ liệu sẽ tự động render ra đây -->
-                </div>
-
-            </div>
-        </div>
-
-    </div>
-
-    <nav class="MENU-DUOI">
-        <div class="MENU-item active" data-tab="home"> <i class="fa-solid fa-house"></i> <span>HOME</span> </div>
-        <div class="MENU-item" data-tab="bao-cao"> <i class="fa-solid fa-chart-pie"></i> <span>Báo cáo</span> </div>
-        <div class="MENU-item add-btn" data-tab="them-moi"> <i class="fa-solid fa-plus"></i> </div>
-        <div class="MENU-item" data-tab="kho"> <i class="fa-solid fa-boxes-stacked"></i> <span>Kho</span> </div>
-        <div class="MENU-item" data-tab="van-chuyen"> <i class="fa-solid fa-car-side"></i> <span>Vận chuyển</span> </div>
-    </nav>
-
-    <script>
-        window.chuyenTabNhapLieu = function(tabName) {
-            const panelChiPhi = document.getElementById('panelNhapChiPhi');
-            const panelNhienLieu = document.getElementById('panelNhapNhienLieu');
-            const btnChiPhi = document.getElementById('tabBtnChiPhi');
-            const btnNhienLieu = document.getElementById('tabBtnNhienLieu');
-            if (!panelChiPhi || !panelNhienLieu || !btnChiPhi || !btnNhienLieu) return;
-
-            const isChiPhi = tabName === 'chi-phi';
-            panelChiPhi.style.display = isChiPhi ? 'block' : 'none';
-            panelNhienLieu.style.display = isChiPhi ? 'none' : 'block';
-
-            btnChiPhi.style.background = isChiPhi ? '#0082C8' : '#ffffff';
-            btnChiPhi.style.color = isChiPhi ? '#ffffff' : '#475569';
-            btnChiPhi.style.borderColor = isChiPhi ? '#0082C8' : '#cbd5e1';
-
-            btnNhienLieu.style.background = !isChiPhi ? '#16a34a' : '#ffffff';
-            btnNhienLieu.style.color = !isChiPhi ? '#ffffff' : '#475569';
-            btnNhienLieu.style.borderColor = !isChiPhi ? '#16a34a' : '#cbd5e1';
-        };
-    </script>
-
-    <!-- Khởi tạo Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-            
-        const firebaseConfig = { 
-            apiKey: "AIzaSyA4N3-5OhkDXZV8Yw-TEymODHuv_-QwPGU",
-            authDomain: "hamaco-tms-ac51b.firebaseapp.com",
-            projectId: "hamaco-tms-ac51b",
-            storageBucket: "hamaco-tms-ac51b.firebasestorage.app",
-            messagingSenderId: "593078964705",
-            appId: "1:593078964705:web:44302d0eb998c2c27542a0"
+    try {
+        const duLieuNhienLieu = {
+            ngayDo: ngayDo,
+            bienSo: bienSo,
+            soLit: soLit,
+            donGia: donGia,
+            soTien: soTien,
+            nam: namNum,
+            thang: thangNum,
+            ghiChu: ghiChu,
+            ngayTaoHeThong: new Date().toISOString()
         };
 
-        const app = initializeApp(firebaseConfig);
-        window.db = getFirestore(app);
-    </script>
+        await addDoc(collection(db, "NHIENLIEU"), duLieuNhienLieu);
 
-    <script type="module" src="BAOCAO-SLDT.JS"></script>
-    <script type="module" src="HOACHTOAN-CHIPHI.JS"></script>
-    <script type="module" src="LICHSU-VANCHUYEN.JS"></script>
-    <script type="module" src="DO-NHIEN-LIEU.JS"></script>
-</body>
-</html>
+        if (nutBam) {
+            nutBam.style.background = "#15803d";
+            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã lưu (${soLit} lít - ${bienSo})`;
+        }
+
+        document.getElementById("nlSoLit").value = "";
+        document.getElementById("nlDonGia").value = "";
+        if (soTienInput) {
+            soTienInput.dataset.raw = "0";
+            soTienInput.value = dinhDangHangNghin(0);
+        }
+        document.getElementById("nlGhiChu").value = "";
+
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+    } catch (error) {
+        console.error("Lỗi lưu collection NHIENLIEU:", error);
+        alert("Lỗi khi lưu lần đổ nhiên liệu: " + error.message);
+    } finally {
+        if (nutBam) {
+            nutBam.disabled = false;
+            nutBam.style.opacity = "1";
+            nutBam.style.background = "#16a34a";
+            nutBam.style.cursor = "pointer";
+            nutBam.innerHTML = `<i class="fa-solid fa-gas-pump"></i> Lưu lần đổ nhiên liệu`;
+        }
+    }
+};
+
+document.addEventListener("DOMContentLoaded", khoiTaoMacDinhNhienLieu);
