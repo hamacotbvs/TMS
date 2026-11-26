@@ -30,6 +30,16 @@ function dinhDangHangNghin(so) {
     return num.toLocaleString("vi-VN") + " đ";
 }
 
+function dinhDangNgayGioHeThong(nowDate = new Date()) {
+    const dd = String(nowDate.getDate()).padStart(2, "0");
+    const mm = String(nowDate.getMonth() + 1).padStart(2, "0");
+    const yyyy = String(nowDate.getFullYear());
+    const hh = String(nowDate.getHours()).padStart(2, "0");
+    const mi = String(nowDate.getMinutes()).padStart(2, "0");
+    const ss = String(nowDate.getSeconds()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+}
+
 function taoDocIdNhienLieu(ngayDo, bienSo, nowDate = new Date()) {
     const hh = String(nowDate.getHours()).padStart(2, "0");
     const mm = String(nowDate.getMinutes()).padStart(2, "0");
@@ -116,7 +126,7 @@ window.luuNhienLieuVaoFirebase = async function () {
             nam: namNum,
             thang: thangNum,
             ghiChu: ghiChu,
-            ngayTaoHeThong: now.toISOString()
+            ngayTaoHeThong: dinhDangNgayGioHeThong(now)
         };
 
         await setDoc(doc(collection(db, "NHIENLIEU"), docId), duLieuNhienLieu);
