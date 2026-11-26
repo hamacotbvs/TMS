@@ -1,4 +1,4 @@
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
 
@@ -28,6 +28,14 @@ function chuanHoaSoNhap(val, choPhepThapPhan = true) {
 function dinhDangHangNghin(so) {
     const num = Number(so) || 0;
     return num.toLocaleString("vi-VN") + " đ";
+}
+
+function taoDocIdNhienLieu(ngayDo, bienSo, nowDate = new Date()) {
+    const hh = String(nowDate.getHours()).padStart(2, "0");
+    const mm = String(nowDate.getMinutes()).padStart(2, "0");
+    const ss = String(nowDate.getSeconds()).padStart(2, "0");
+    const bienSoClean = String(bienSo || "").trim().replace(/\s+/g, "");
+    return `${ngayDo}_${bienSoClean}_${hh}:${mm}:${ss}`;
 }
 
 window.tinhThanhTienNhienLieu = function () {
@@ -96,6 +104,9 @@ window.luuNhienLieuVaoFirebase = async function () {
     }
 
     try {
+        const now = new Date();
+        const docId = taoDocIdNhienLieu(ngayDo, bienSo, now);
+
         const duLieuNhienLieu = {
             ngayDo: ngayDo,
             bienSo: bienSo,
@@ -105,10 +116,10 @@ window.luuNhienLieuVaoFirebase = async function () {
             nam: namNum,
             thang: thangNum,
             ghiChu: ghiChu,
-            ngayTaoHeThong: new Date().toISOString()
+            ngayTaoHeThong: now.toISOString()
         };
 
-        await addDoc(collection(db, "NHIENLIEU"), duLieuNhienLieu);
+        await setDoc(doc(collection(db, "NHIENLIEU"), docId), duLieuNhienLieu);
 
         if (nutBam) {
             nutBam.style.background = "#15803d";
