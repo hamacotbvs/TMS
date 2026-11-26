@@ -132,12 +132,22 @@
             </div>
         </div>
 
-        <!--THÊM MỚI-->
+        <!--THÊM MỚI (2 TAB CON: CHI PHÍ & NHIÊN LIỆU)-->
         <div id="them-moi" class="trang-content">
             <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
-            
-            <!-- KHỐI 1: NHẬP NGHIỆP VỤ PHÁT SINH KHO -->
-            <div class="KHUNG-CON-TRONG-TAB">
+
+            <!-- THANH 2 TAB: CHI PHÍ | NHIÊN LIỆU -->
+            <div style="display: flex; gap: 8px; margin-bottom: 12px; padding-right: 48px;">
+                <button id="tabBtnChiPhi" type="button" onclick="chuyenTabNhapLieu('chi-phi')" style="flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                    📝 CHI PHÍ
+                </button>
+                <button id="tabBtnNhienLieu" type="button" onclick="chuyenTabNhapLieu('nhien-lieu')" style="flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                    ⛽ NHIÊN LIỆU
+                </button>
+            </div>
+
+            <!-- TAB 1: NHẬP NGHIỆP VỤ PHÁT SINH KHO (COLLECTION CHIPHI) -->
+            <div id="panelNhapChiPhi" class="KHUNG-CON-TRONG-TAB">
                 <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
                     📝 NHẬP NGHIỆP VỤ PHÁT SINH KHO
                 </h3>
@@ -232,8 +242,8 @@
                 </div>
             </div>
 
-            <!-- KHỐI 2: NHẬP LẦN ĐỔ NHIÊN LIỆU PHƯƠNG TIỆN (COLLECTION NHIENLIEU) -->
-            <div class="KHUNG-CON-TRONG-TAB">
+            <!-- TAB 2: NHẬP LẦN ĐỔ NHIÊN LIỆU PHƯƠNG TIỆN (COLLECTION NHIENLIEU) -->
+            <div id="panelNhapNhienLieu" class="KHUNG-CON-TRONG-TAB" style="display: none;">
                 <h3 style="font-size: 16px; color: #16a34a; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
                     ⛽ NHẬP LẦN ĐỔ NHIÊN LIỆU XE
                 </h3>
@@ -337,6 +347,28 @@
         <div class="MENU-item" data-tab="kho"> <i class="fa-solid fa-boxes-stacked"></i> <span>Kho</span> </div>
         <div class="MENU-item" data-tab="van-chuyen"> <i class="fa-solid fa-car-side"></i> <span>Vận chuyển</span> </div>
     </nav>
+
+    <script>
+        window.chuyenTabNhapLieu = function(tabName) {
+            const panelChiPhi = document.getElementById('panelNhapChiPhi');
+            const panelNhienLieu = document.getElementById('panelNhapNhienLieu');
+            const btnChiPhi = document.getElementById('tabBtnChiPhi');
+            const btnNhienLieu = document.getElementById('tabBtnNhienLieu');
+            if (!panelChiPhi || !panelNhienLieu || !btnChiPhi || !btnNhienLieu) return;
+
+            const isChiPhi = tabName === 'chi-phi';
+            panelChiPhi.style.display = isChiPhi ? 'block' : 'none';
+            panelNhienLieu.style.display = isChiPhi ? 'none' : 'block';
+
+            btnChiPhi.style.background = isChiPhi ? '#0082C8' : '#ffffff';
+            btnChiPhi.style.color = isChiPhi ? '#ffffff' : '#475569';
+            btnChiPhi.style.borderColor = isChiPhi ? '#0082C8' : '#cbd5e1';
+
+            btnNhienLieu.style.background = !isChiPhi ? '#16a34a' : '#ffffff';
+            btnNhienLieu.style.color = !isChiPhi ? '#ffffff' : '#475569';
+            btnNhienLieu.style.borderColor = !isChiPhi ? '#16a34a' : '#cbd5e1';
+        };
+    </script>
 
     <!-- Khởi tạo Firebase -->
     <script type="module">
