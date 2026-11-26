@@ -195,14 +195,14 @@
                     </div>
 
                     <div style="display: flex; gap: 12px; width: 100%;">
-                        <div id="vungTongTien" style="flex: 6; display: flex; flex-direction: column; gap: 4px;">
+                        <div id="vungTongTien" style="flex: 6; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
                             <label style="font-size: 12px; font-weight: 700; color: #475569;">Tổng số tiền thực tế (VNĐ):</label>
-                            <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right; width: 100%; box-sizing: border-box;">
+                            <input type="number" id="nvTongTien" oninput="tinhPhanBoNghiepVu()" placeholder="Nhập số tiền..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #1e293b; text-align: right; width: 100%; min-width: 0; box-sizing: border-box;">
                         </div>
 
-                        <div id="vungPhuongTien" style="display: none; flex: 4; flex-direction: column; gap: 4px;">
+                        <div id="vungPhuongTien" style="display: none; flex: 4; min-width: 0; flex-direction: column; gap: 4px;">
                             <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
-                            <select id="nvPhuongTien" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box; height: 41px;">
+                            <select id="nvPhuongTien" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; min-width: 0; box-sizing: border-box; height: 41px;">
                                 <option value="">-- Chọn xe --</option>
                                 <option value="65C-06126">65C-06126</option>
                                 <option value="65H-02591">65H-02591</option>
@@ -249,15 +249,15 @@
                 </h3>
 
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div style="display: flex; gap: 12px; width: 100%;">
-                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
                             <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày đổ nhiên liệu:</label>
-                            <input type="date" id="nlNgayDo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155; width: 100%; box-sizing: border-box;">
+                            <input type="date" id="nlNgayDo" style="padding: 10px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: bold; color: #334155; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
                         </div>
 
-                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
                             <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
-                            <select id="nlBienSo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
+                            <select id="nlBienSo" style="padding: 10px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
                                 <option value="">-- Chọn xe --</option>
                                 <option value="65C-06126">65C-06126</option>
                                 <option value="65H-02591">65H-02591</option>
@@ -266,15 +266,15 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 12px; width: 100%;">
-                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
                             <label style="font-size: 12px; font-weight: 700; color: #475569;">Số lít đổ (Lít):</label>
-                            <input type="number" step="any" min="0" id="nlSoLit" oninput="tinhThanhTienNhienLieu()" placeholder="0.00" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; color: #0284c7; text-align: right; width: 100%; box-sizing: border-box;">
+                            <input type="number" step="any" min="0" id="nlSoLit" oninput="tinhThanhTienNhienLieu()" placeholder="0.00" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; color: #0284c7; text-align: right; width: 100%; min-width: 0; box-sizing: border-box;">
                         </div>
 
-                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
                             <label style="font-size: 12px; font-weight: 700; color: #475569;">Đơn giá (VNĐ/lít):</label>
-                            <input type="number" step="any" min="0" id="nlDonGia" oninput="tinhThanhTienNhienLieu()" placeholder="0" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; color: #334155; text-align: right; width: 100%; box-sizing: border-box;">
+                            <input type="number" step="any" min="0" id="nlDonGia" oninput="tinhThanhTienNhienLieu()" placeholder="0" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; color: #334155; text-align: right; width: 100%; min-width: 0; box-sizing: border-box;">
                         </div>
                     </div>
 
