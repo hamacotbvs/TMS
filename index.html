@@ -136,6 +136,7 @@
         <div id="them-moi" class="trang-content">
             <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
             
+            <!-- KHỐI 1: NHẬP NGHIỆP VỤ PHÁT SINH KHO -->
             <div class="KHUNG-CON-TRONG-TAB">
                 <h3 style="font-size: 16px; color: #0082C8; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
                     📝 NHẬP NGHIỆP VỤ PHÁT SINH KHO
@@ -230,6 +231,58 @@
                     </button>
                 </div>
             </div>
+
+            <!-- KHỐI 2: NHẬP LẦN ĐỔ NHIÊN LIỆU PHƯƠNG TIỆN (COLLECTION NHIENLIEU) -->
+            <div class="KHUNG-CON-TRONG-TAB">
+                <h3 style="font-size: 16px; color: #16a34a; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                    ⛽ NHẬP LẦN ĐỔ NHIÊN LIỆU XE
+                </h3>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; gap: 12px; width: 100%;">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày đổ nhiên liệu:</label>
+                            <input type="date" id="nlNgayDo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155; width: 100%; box-sizing: border-box;">
+                        </div>
+
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
+                            <select id="nlBienSo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
+                                <option value="">-- Chọn xe --</option>
+                                <option value="65C-06126">65C-06126</option>
+                                <option value="65H-02591">65H-02591</option>
+                                <option value="65C-12290">65C-12290</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; width: 100%;">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Số lít đổ (Lít):</label>
+                            <input type="number" step="any" min="0" id="nlSoLit" oninput="tinhThanhTienNhienLieu()" placeholder="0.00" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; color: #0284c7; text-align: right; width: 100%; box-sizing: border-box;">
+                        </div>
+
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Đơn giá (VNĐ/lít):</label>
+                            <input type="number" step="any" min="0" id="nlDonGia" oninput="tinhThanhTienNhienLieu()" placeholder="0" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 700; color: #334155; text-align: right; width: 100%; box-sizing: border-box;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Thành tiền (VNĐ):</label>
+                        <input type="number" step="any" min="0" id="nlSoTien" placeholder="Tự tính hoặc nhập tay..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #16a34a; text-align: right; background: #f0fdf4; width: 100%; box-sizing: border-box;">
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ghi chú / Số chứng từ:</label>
+                        <input type="text" id="nlGhiChu" placeholder="Ví dụ: Đổ dầu tại cây xăng / phiếu xuất..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
+                    </div>
+
+                    <button id="btnLuuNhienLieu" type="button" onclick="luuNhienLieuVaoFirebase()" style="width: 100%; background: #16a34a; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
+                        <i class="fa-solid fa-gas-pump"></i> Lưu lần đổ nhiên liệu
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!--VẬN CHUYỂN (CỐ ĐỊNH HEADER VÀ CÙNG 1 HÀNG)-->
@@ -306,5 +359,6 @@
     <script type="module" src="BAOCAO-SLDT.JS"></script>
     <script type="module" src="HOACHTOAN-CHIPHI.JS"></script>
     <script type="module" src="LICHSU-VANCHUYEN.JS"></script>
+    <script type="module" src="DO-NHIEN-LIEU.JS"></script>
 </body>
 </html>
