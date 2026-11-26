@@ -1275,6 +1275,27 @@ function dinhDangNgayHienThi(ngayStr) {
     return `${dd}/${mm}/${yyyy}`;
 }
 
+function dinhDangSoVN(val, decimals = 2, allowEmpty = false) {
+    if (val === null || val === undefined || val === "") {
+        return allowEmpty ? "" : (0).toLocaleString('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+    const num = Number(val);
+    if (isNaN(num)) return allowEmpty ? "" : String(val);
+    return num.toLocaleString('vi-VN', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+function dinhDangKmPdf(val) {
+    const num = Number(val) || 0;
+    const hasDecimal = Math.abs(num % 1) > 0.0001;
+    return num.toLocaleString('vi-VN', {
+        minimumFractionDigits: hasDecimal ? 1 : 0,
+        maximumFractionDigits: hasDecimal ? 1 : 0
+    });
+}
+
 function chuanHoaMaPhieuChungTu(maPhieuRaw) {
     let s = String(maPhieuRaw || "").trim();
     if (!s) return "";
@@ -1655,9 +1676,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
                 chiTietRowsCuaChuyen.push({
                     noiGiao: stop.noiGiao,
-                    km: stop.km !== 0 ? stop.km.toFixed(1).replace(/\.0$/, '') : "0",
+                    km: dinhDangKmPdf(stop.km),
                     kmNum: stop.km,
-                    tieuThu: litHang !== 0 ? litHang.toFixed(2) : "0.00",
+                    tieuThu: dinhDangSoVN(litHang, 2),
                     tieuThuNum: litHang,
                     doThem: "",
                     ton: "",
@@ -1673,9 +1694,9 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
             chiTietRowsCuaChuyen.push({
                 noiGiao: "Về kho",
-                km: kmVe !== 0 ? kmVe.toFixed(1).replace(/\.0$/, '') : "0",
+                km: dinhDangKmPdf(kmVe),
                 kmNum: kmVe,
-                tieuThu: litVe !== 0 ? litVe.toFixed(2) : "0.00",
+                tieuThu: dinhDangSoVN(litVe, 2),
                 tieuThuNum: litVe,
                 doThem: "",
                 ton: "",
@@ -1687,7 +1708,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
             const infoDoNgay = mapDoThemTheoNgay[chuyen.ngayStr];
             if (infoDoNgay && !ngayDaDienDoThem.has(chuyen.ngayStr)) {
                 doThemNgayNum = infoDoNgay.soLit;
-                doThemNgayStr = doThemNgayNum !== 0 ? doThemNgayNum.toFixed(2).replace(/\.00$/, '') : "0";
+                doThemNgayStr = dinhDangSoVN(doThemNgayNum, 2);
                 ngayDaDienDoThem.add(chuyen.ngayStr);
             }
 
@@ -1695,12 +1716,12 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
 
             bangKeRows.push({
                 noiGiao: `${chuyen.ngayStr} - CHUYẾN ${chuyen.soChuyen}`,
-                km: tongKmCuaChuyen !== 0 ? tongKmCuaChuyen.toFixed(1).replace(/\.0$/, '') : "0",
+                km: dinhDangKmPdf(tongKmCuaChuyen),
                 kmNum: tongKmCuaChuyen,
-                tieuThu: tongLitCuaChuyen !== 0 ? tongLitCuaChuyen.toFixed(2) : "0.00",
+                tieuThu: dinhDangSoVN(tongLitCuaChuyen, 2),
                 tieuThuNum: tongLitCuaChuyen,
                 doThem: doThemNgayStr,
-                ton: tonHienTai.toFixed(2),
+                ton: dinhDangSoVN(tonHienTai, 2),
                 tonNum: tonHienTai,
                 chungTu: "",
                 isTongChuyen: true
@@ -1722,7 +1743,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
         const rowsHtml = bangKeRows.map(r => {
             const isNegative = (typeof r.kmNum === 'number' && r.kmNum < 0) || (typeof r.tieuThuNum === 'number' && r.tieuThuNum < 0) || (typeof r.tonNum === 'number' && r.tonNum < 0);
             const styles = [];
-            if (r.isTongChuyen) styles.push('font-weight: bold;', 'background-color: #f3f4f6;');
+            if (r.isTongChuyen) styles.push('font-weight: bold;', 'background-color: #e5e7eb;', '-webkit-print-color-adjust: exact;', 'print-color-adjust: exact;');
             if (isNegative) styles.push('color: #dc2626 !important;');
             const trStyle = styles.length > 0 ? ` style="${styles.join(' ')}"` : '';
             return `
@@ -1902,10 +1923,10 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                             <td>${Math.round(tongKmNoiO).toLocaleString('vi-VN')}</td>
                             <td>${Math.round(tongKmTinh).toLocaleString('vi-VN')}</td>
                             <td>${Math.round(tongKmTatCaChuyen).toLocaleString('vi-VN')}</td>
-                            <td>${dauDauKyGoc.toFixed(3)}</td>
-                            <td>${tongDoThemLit !== 0 ? tongDoThemLit.toFixed(2).replace(/\.00$/, '') : "0"}</td>
-                            <td>${tongTieuThuLit.toFixed(2)}</td>
-                            <td>${tonCuoiKyLit.toFixed(2)}</td>
+                            <td>${dinhDangSoVN(dauDauKyGoc, 2)}</td>
+                            <td>${dinhDangSoVN(tongDoThemLit, 2)}</td>
+                            <td>${dinhDangSoVN(tongTieuThuLit, 2)}</td>
+                            <td>${dinhDangSoVN(tonCuoiKyLit, 2)}</td>
                         </tr>
                     </tbody>
                 </table>
