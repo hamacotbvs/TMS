@@ -61,15 +61,29 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1];
 }
 
+const TU_VIET_TAT_IN_HOA = new Set([
+    "MTV", "TNHH", "TM", "DV", "TN", "XD", "CP",
+    "SX", "XNK", "DT", "PT", "HTX", "DNTN", "CTCP",
+    "TP", "QL", "ĐT", "KCN", "KDC"
+]);
+
 function vietHoaChuCaiDau(str) {
     if (!str || typeof str !== "string") return "";
-    return str
+    const titleCased = str
         .trim()
         .replace(/\s+/g, " ")
         .toLocaleLowerCase("vi-VN")
         .replace(/(^|\s|[-/,(])([a-zàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ])/giu, (match, prefix, ch) => {
             return prefix + ch.toLocaleUpperCase("vi-VN");
         });
+
+    return titleCased.replace(/(^|[\s\-/,(])([a-zàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]+)(?=$|[\s\-/.,)])/giu, (match, prefix, word) => {
+        const upperWord = word.toLocaleUpperCase("vi-VN");
+        if (TU_VIET_TAT_IN_HOA.has(upperWord)) {
+            return prefix + upperWord;
+        }
+        return match;
+    });
 }
 
 function layVungTieuThu(data) {
