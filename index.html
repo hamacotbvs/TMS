@@ -308,16 +308,23 @@
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày:</label>
-                        <input type="date" id="epNgay" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
+                        <input type="date" id="epNgay" onchange="taiDanhSachChuyenEpass()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
-                        <select id="epBienSo" onchange="goiYTienEpassGanNhat()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
+                        <select id="epBienSo" onchange="taiDanhSachChuyenEpass(); goiYTienEpassGanNhat()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
                             <option value="">-- Chọn xe --</option>
                             <option value="65C-06126">65C-06126</option>
                             <option value="65H-02591">65H-02591</option>
                             <option value="65C-12290">65C-12290</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Chuyến (để tính chi phí chuyến):</label>
+                        <select id="epChuyen" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; font-weight: 600; color: #1e293b; width: 100%; box-sizing: border-box;">
+                            <option value="">-- Không gắn chuyến --</option>
                         </select>
                     </div>
 
@@ -345,7 +352,7 @@
                 </div>
             </div>
 
-            <!-- TAB 4: NHẬP PHÍ BẾN - CẦU - PHÀ PHƯƠNG TIỆN (COLLECTION BCP) -->
+            <!-- TAB 4: NHẬP PHÍ BẾN - CẦU - PHÀ PHƯƠNG TIỆN (COLLECTION BENCAUPHA) -->
             <div id="panelNhapBcp" class="KHUNG-CON-TRONG-TAB" style="display: none;">
                 <h3 style="font-size: 16px; color: #0f766e; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
                     🚢 NHẬP PHÍ BẾN - CẦU - PHÀ XE
@@ -354,16 +361,23 @@
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày:</label>
-                        <input type="date" id="bcpNgay" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
+                        <input type="date" id="bcpNgay" onchange="taiDanhSachChuyenBcp()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
-                        <select id="bcpBienSo" onchange="goiYTienBcpGanNhat()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
+                        <select id="bcpBienSo" onchange="taiDanhSachChuyenBcp(); goiYTienBcpGanNhat()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
                             <option value="">-- Chọn xe --</option>
                             <option value="65C-06126">65C-06126</option>
                             <option value="65H-02591">65H-02591</option>
                             <option value="65C-12290">65C-12290</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Chuyến (để tính chi phí chuyến):</label>
+                        <select id="bcpChuyen" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; font-weight: 600; color: #1e293b; width: 100%; box-sizing: border-box;">
+                            <option value="">-- Không gắn chuyến --</option>
                         </select>
                     </div>
 
