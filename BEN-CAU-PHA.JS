@@ -1,6 +1,7 @@
 import { collection, doc, setDoc, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
+const COLLECTION_BENCAUPHA = "BENCAUPHA";
 const DIA_DIEM_MAC_DINH = [
     "Phà Cần Thơ",
     "Phà Vàm Cống",
@@ -48,7 +49,7 @@ async function taiDanhSachDiaDiemTuFirebase() {
     const database = window.db || db;
     if (!database) return;
     try {
-        const snap = await getDocs(query(collection(database, "BCP"), limit(100)));
+        const snap = await getDocs(query(collection(database, COLLECTION_BENCAUPHA), limit(100)));
         snap.forEach((docSnap) => {
             const d = docSnap.data() || {};
             const diaDiem = String(d.diaDiem || d.benCauPha || "").trim();
@@ -58,7 +59,7 @@ async function taiDanhSachDiaDiemTuFirebase() {
         });
         renderDanhSachDiaDiemBcp();
     } catch (err) {
-        console.warn("Không tải được danh sách Bến - Cầu - Phà:", err);
+        console.warn("Không tải được danh sách BENCAUPHA:", err);
     }
 }
 
@@ -185,7 +186,7 @@ window.goiYTienBcpGanNhat = async function () {
 
         if (bienSo && diaDiem) {
             const qXeDiaDiem = query(
-                collection(database, "BCP"),
+                collection(database, COLLECTION_BENCAUPHA),
                 where("bienSo", "==", bienSo),
                 where("diaDiem", "==", diaDiem)
             );
@@ -196,7 +197,7 @@ window.goiYTienBcpGanNhat = async function () {
 
         if (!banGhi && diaDiem) {
             const qDiaDiem = query(
-                collection(database, "BCP"),
+                collection(database, COLLECTION_BENCAUPHA),
                 where("diaDiem", "==", diaDiem)
             );
             const snapDiaDiem = await getDocs(qDiaDiem);
@@ -205,7 +206,7 @@ window.goiYTienBcpGanNhat = async function () {
 
         if (!banGhi && bienSo) {
             const qXe = query(
-                collection(database, "BCP"),
+                collection(database, COLLECTION_BENCAUPHA),
                 where("bienSo", "==", bienSo)
             );
             const snapXe = await getDocs(qXe);
@@ -214,7 +215,7 @@ window.goiYTienBcpGanNhat = async function () {
 
         hienThiGoiYTienBcp(banGhi, khopCaHai);
     } catch (err) {
-        console.warn("Không lấy được số tiền Bến - Cầu - Phà gợi ý:", err);
+        console.warn("Không lấy được số tiền BENCAUPHA gợi ý:", err);
     }
 };
 
@@ -284,7 +285,7 @@ window.luuBcpVaoFirebase = async function () {
             ngayTaoHeThong: dinhDangNgayGioHeThong(now)
         };
 
-        await setDoc(doc(collection(database, "BCP"), docId), duLieuBcp);
+        await setDoc(doc(collection(database, COLLECTION_BENCAUPHA), docId), duLieuBcp);
 
         if (diaDiem) {
             danhSachDiaDiem.add(diaDiem);
@@ -304,7 +305,7 @@ window.luuBcpVaoFirebase = async function () {
 
         await new Promise((resolve) => setTimeout(resolve, 1500));
     } catch (error) {
-        console.error("Lỗi lưu collection BCP:", error);
+        console.error("Lỗi lưu collection BENCAUPHA:", error);
         alert("Lỗi khi lưu phí Bến - Cầu - Phà: " + error.message);
     } finally {
         if (nutBam) {
