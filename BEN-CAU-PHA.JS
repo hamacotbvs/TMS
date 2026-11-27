@@ -28,7 +28,7 @@ function chuanHoaKeyChuyen(val) {
     return String(val ?? "").trim().toLowerCase().replace(/\s+/g, "");
 }
 
-function chuanHoaNgay(val) {
+function chuanHoaNgayIso(val) {
     if (!val) return "";
     if (typeof val === "object" && typeof val.toDate === "function") {
         return val.toDate().toISOString().slice(0, 10);
@@ -42,33 +42,15 @@ function chuanHoaNgay(val) {
     return s;
 }
 
-function layNgayTuDocumentTuyenDuong(data = {}) {
-    const candidates = [
-        data.ngay,
-        data.ngayChay,
-        data.ngayGiao,
-        data.ngayXuatPhat,
-        data.batDauGiaoHang,
-        data.ketThucGiaoHang,
-        data.ngayTao
-    ];
-    for (const c of candidates) {
-        const d = chuanHoaNgay(c);
-        if (d) return d;
-    }
-    return "";
+function dinhDangNgayThangNam(isoDate) {
+    const clean = chuanHoaNgayIso(isoDate);
+    const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return String(isoDate || "").trim();
+    return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-function layBienSoTuDocumentTuyenDuong(data = {}) {
-    const raw =
-        data.bienSo ||
-        data.phuongTien ||
-        data.bienSoXe ||
-        data.soXe ||
-        data.xe ||
-        data.soPhuongTien ||
-        "";
-    return String(raw).trim().replace(/\s+/g, "").toUpperCase();
+function chuanHoaBienSo(val) {
+    return String(val ?? "").trim().replace(/\s+/g, "").toUpperCase();
 }
 
 window.taiDanhSachChuyenBcp = async function (giaTriGiuLai = "") {
@@ -77,22 +59,51 @@ window.taiDanhSachChuyenBcp = async function (giaTriGiuLai = "") {
     if (!selectChuyen) return;
 
     const currentVal = giaTriGiuLai || selectChuyen.value;
-    const ngayChon = chuanHoaNgay(document.getElementById("bcpNgay")?.value || "");
-    const bienSoChon = (document.getElementById("bcpBienSo")?.value || "").trim().replace(/\s+/g, "").toUpperCase();
+    const ngayIso = chuanHoaNgayIso(document.getElementById("bcpNgay")?.value || "");
+    const ngayDmy = dinhDangNgayThangNam(ngayIso);
+    const bienSoChon = chuanHoaBienSo(document.getElementById("bcpBienSo")?.value || "");
 
     const danhSachChuyen = new Map();
 
-    if (database && ngayChon && bienSoChon) {
+    if (database && ngayIso && bienSoChon) {
         try {
-            const snap = await getDocs(query(collection(database, COLLECTION_TUYENDUONG), limit(400)));
-            snap.forEach((docSnap) => {
-                const data = docSnap.data() || {};
+            const tapDoc = new Map();
+            const q1 = query(
+                collection(database, COLLECTION_TUYENDUONG),
+                where("ngayThangNam", "==", ngayDmy),
+                where("phuongTien", "==", bienSoChon)
+            );
+            const snap1 = await getDocs(q1);
+            snap1.forEach((d) => tapDoc.set(d.id, d.data() || {}));
+
+            if (tapDoc.size === 0) {
+                const q2 = query(
+                    collection(database, COLLECTION_TUYENDUONG),
+                    where("ngayThangNam", "==", ngayIso),
+                    where("phuongTien", "==", bienSoChon)
+                );
+                const snap2 = await getDocs(q2);
+                snap2.forEach((d) => tapDoc.set(d.id, d.data() || {}));
+            }
+
+            if (tapDoc.size === 0) {
+                const qFallback = query(
+                    collection(database, COLLECTION_TUYENDUONG),
+                    where("phuongTien", "==", bienSoChon),
+                    limit(200)
+                );
+                const snapFallback = await getDocs(qFallback);
+                snapFallback.forEach((d) => {
+                    const data = d.data() || {};
+                    if (chuanHoaNgayIso(data.ngayThangNam) === ngayIso) {
+                        tapDoc.set(d.id, data);
+                    }
+                });
+            }
+
+            tapDoc.forEach((data) => {
                 const soChuyen = data.chuyenVtracking;
                 if (soChuyen === undefined || soChuyen === null || String(soChuyen).trim() === "") return;
-
-                const ngayDoc = layNgayTuDocumentTuyenDuong(data);
-                const bienSoDoc = layBienSoTuDocumentTuyenDuong(data);
-                if (ngayDoc !== ngayChon || bienSoDoc !== bienSoChon) return;
 
                 const keyVal = String(soChuyen).trim();
                 if (!danhSachChuyen.has(keyVal)) {
