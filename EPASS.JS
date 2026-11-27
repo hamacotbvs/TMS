@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, setDoc, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
 const TRAM_MAC_DINH = [
@@ -17,6 +17,7 @@ function khoiTaoMacDinhEpass() {
     renderDanhSachTramEpass();
     taiDanhSachTramTuFirebase();
     window.dinhDangSoTienEpass();
+    window.goiYTienEpassGanNhat();
 }
 
 function renderDanhSachTramEpass(giaTriDangChon = "") {
@@ -44,9 +45,10 @@ function renderDanhSachTramEpass(giaTriDangChon = "") {
 }
 
 async function taiDanhSachTramTuFirebase() {
-    if (!db) return;
+    const database = window.db || db;
+    if (!database) return;
     try {
-        const snap = await getDocs(query(collection(db, "EPASS"), limit(100)));
+        const snap = await getDocs(query(collection(database, "EPASS"), limit(100)));
         snap.forEach((docSnap) => {
             const d = docSnap.data() || {};
             const tram = String(d.tramThuPhi || "").trim();
@@ -112,6 +114,100 @@ function taoDocIdEpass(ngay, bienSo, nowDate = new Date()) {
     return `${ngay}_${bienSoClean}_${hh}:${mm}:${ss}`;
 }
 
+function chonBanGhiEpassMoiNhat(docsSnap) {
+    let best = null;
+    docsSnap.forEach((d) => {
+        const data = d.data() || {};
+        const soTien = Number(data.soTien) || 0;
+        if (soTien <= 0) return;
+
+        const key = `${data.ngay || ""}|${data.ngayTaoHeThong || ""}|${d.id}`;
+        if (!best || key > best.key) {
+            best = { key, id: d.id, data };
+        }
+    });
+    return best ? best.data : null;
+}
+
+window.apDungTienEpassGoiY = function (soTien) {
+    const soTienInput = document.getElementById("epSoTien");
+    if (!soTienInput || !soTien) return;
+    soTienInput.value = String(Math.round(Number(soTien)));
+    window.dinhDangSoTienEpass();
+};
+
+function hienThiGoiYTienEpass(banGhi, khopCaXeVaTram = true) {
+    const labelGoiY = document.getElementById("goiYTienEpass");
+    if (!labelGoiY) return;
+
+    if (banGhi && Number(banGhi.soTien) > 0) {
+        const tien = Math.round(Number(banGhi.soTien));
+        const xeText = banGhi.bienSo ? `${banGhi.bienSo}` : "";
+        const tramText = banGhi.tramThuPhi ? `${banGhi.tramThuPhi}` : "";
+        const infoParts = [];
+        if (xeText) infoParts.push(xeText);
+        if (tramText) infoParts.push(tramText);
+        if (!khopCaXeVaTram && tramText) infoParts.push("theo trạm");
+        const meta = infoParts.length > 0 ? ` (${infoParts.join(" - ")})` : "";
+
+        labelGoiY.innerHTML = `Gợi ý${meta}: <a href="javascript:void(0)" onclick="apDungTienEpassGoiY(${tien})" title="Bấm để áp dụng số tiền này" style="color:#0284c7; font-weight:700; text-decoration:underline;">${tien.toLocaleString("vi-VN")} đ</a>`;
+    } else {
+        labelGoiY.textContent = "";
+    }
+}
+
+window.goiYTienEpassGanNhat = async function () {
+    const database = window.db || db;
+    const labelGoiY = document.getElementById("goiYTienEpass");
+    if (!labelGoiY || !database) return;
+
+    const bienSo = document.getElementById("epBienSo")?.value.trim() || "";
+    const tramThuPhi = layTenTramChon();
+
+    if (!bienSo && !tramThuPhi) {
+        labelGoiY.textContent = "";
+        return;
+    }
+
+    try {
+        let banGhi = null;
+        let khopCaHai = false;
+
+        if (bienSo && tramThuPhi) {
+            const qXeTram = query(
+                collection(database, "EPASS"),
+                where("bienSo", "==", bienSo),
+                where("tramThuPhi", "==", tramThuPhi)
+            );
+            const snapXeTram = await getDocs(qXeTram);
+            banGhi = chonBanGhiEpassMoiNhat(snapXeTram);
+            if (banGhi) khopCaHai = true;
+        }
+
+        if (!banGhi && tramThuPhi) {
+            const qTram = query(
+                collection(database, "EPASS"),
+                where("tramThuPhi", "==", tramThuPhi)
+            );
+            const snapTram = await getDocs(qTram);
+            banGhi = chonBanGhiEpassMoiNhat(snapTram);
+        }
+
+        if (!banGhi && bienSo) {
+            const qXe = query(
+                collection(database, "EPASS"),
+                where("bienSo", "==", bienSo)
+            );
+            const snapXe = await getDocs(qXe);
+            banGhi = chonBanGhiEpassMoiNhat(snapXe);
+        }
+
+        hienThiGoiYTienEpass(banGhi, khopCaHai);
+    } catch (err) {
+        console.warn("Không lấy được số tiền ePass gợi ý:", err);
+    }
+};
+
 window.dinhDangSoTienEpass = function () {
     const soTienInput = document.getElementById("epSoTien");
     const preview = document.getElementById("previewTienEpass");
@@ -129,6 +225,7 @@ window.dinhDangSoTienEpass = function () {
 };
 
 window.luuEpassVaoFirebase = async function () {
+    const database = window.db || db;
     const nutBam = document.getElementById("btnLuuEpass");
     if (nutBam && nutBam.disabled) return;
 
@@ -177,7 +274,7 @@ window.luuEpassVaoFirebase = async function () {
             ngayTaoHeThong: dinhDangNgayGioHeThong(now)
         };
 
-        await setDoc(doc(collection(db, "EPASS"), docId), duLieuEpass);
+        await setDoc(doc(collection(database, "EPASS"), docId), duLieuEpass);
 
         if (tramThuPhi) {
             danhSachTram.add(tramThuPhi);
@@ -193,6 +290,7 @@ window.luuEpassVaoFirebase = async function () {
         const inputTramMoi = document.getElementById("epTramMoi");
         if (inputTramMoi) inputTramMoi.value = "";
         window.dinhDangSoTienEpass();
+        window.goiYTienEpassGanNhat();
 
         await new Promise((resolve) => setTimeout(resolve, 1500));
     } catch (error) {
