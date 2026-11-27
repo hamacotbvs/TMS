@@ -1,15 +1,19 @@
-import { collection, doc, setDoc, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, setDoc, updateDoc, getDoc, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
 const COLLECTION_TUYENDUONG = "TUYENDUONG";
+const COLLECTION_EPASS = "EPASS";
 const TRAM_MAC_DINH = [
     "Cầu Cần Thơ",
     "Trạm BOT Quốc lộ 1A",
     "Cao tốc TP.HCM - Trung Lương",
     "Cao tốc Trung Lương - Mỹ Thuận"
 ];
+const XE_MAC_DINH = ["65C-06126", "65H-02591", "65C-12290"];
 const danhSachTram = new Set(TRAM_MAC_DINH);
 let mapChuyenEpass = new Map();
+let cacheDanhSachEpass = new Map();
+let docIdDangSuaEpass = "";
 
 function khoiTaoMacDinhEpass() {
     const inputNgay = document.getElementById("epNgay");
@@ -28,6 +32,15 @@ function khoiTaoMacDinhEpass() {
     window.dinhDangSoTienEpass();
     window.goiYTienEpassGanNhat();
     window.xemLaiDanhSachEpass();
+}
+
+function escapeHtml(str) {
+    return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 function chuanHoaKeyChuyen(val) {
@@ -59,73 +72,80 @@ function chuanHoaBienSo(val) {
     return String(val ?? "").trim().replace(/\s+/g, "").toUpperCase();
 }
 
-window.taiDanhSachChuyenEpass = async function (giaTriGiuLai = "") {
+async function layDanhSachChuyenTheoNgayVaXe(ngayInput, bienSoInput) {
     const database = window.db || db;
+    const ngayIso = chuanHoaNgayIso(ngayInput);
+    const ngayDmy = dinhDangNgayThangNam(ngayIso);
+    const bienSoChon = chuanHoaBienSo(bienSoInput);
+    const danhSachChuyen = new Map();
+
+    if (!database || !ngayIso || !bienSoChon) return danhSachChuyen;
+
+    try {
+        const tapDoc = new Map();
+        const q1 = query(
+            collection(database, COLLECTION_TUYENDUONG),
+            where("ngayThangNam", "==", ngayDmy),
+            where("phuongTien", "==", bienSoChon)
+        );
+        const snap1 = await getDocs(q1);
+        snap1.forEach((d) => tapDoc.set(d.id, d.data() || {}));
+
+        if (tapDoc.size === 0) {
+            const q2 = query(
+                collection(database, COLLECTION_TUYENDUONG),
+                where("ngayThangNam", "==", ngayIso),
+                where("phuongTien", "==", bienSoChon)
+            );
+            const snap2 = await getDocs(q2);
+            snap2.forEach((d) => tapDoc.set(d.id, d.data() || {}));
+        }
+
+        if (tapDoc.size === 0) {
+            const qFallback = query(
+                collection(database, COLLECTION_TUYENDUONG),
+                where("phuongTien", "==", bienSoChon),
+                limit(200)
+            );
+            const snapFallback = await getDocs(qFallback);
+            snapFallback.forEach((d) => {
+                const data = d.data() || {};
+                if (chuanHoaNgayIso(data.ngayThangNam) === ngayIso) {
+                    tapDoc.set(d.id, data);
+                }
+            });
+        }
+
+        tapDoc.forEach((data) => {
+            const soChuyen = data.chuyenVtracking;
+            if (soChuyen === undefined || soChuyen === null || String(soChuyen).trim() === "") return;
+
+            const keyVal = String(soChuyen).trim();
+            if (!danhSachChuyen.has(keyVal)) {
+                danhSachChuyen.set(keyVal, {
+                    chuyenVtracking: soChuyen,
+                    chuyenId: keyVal,
+                    tenChuyen: `Chuyến ${keyVal}`,
+                    chuyenKey: chuanHoaKeyChuyen(keyVal)
+                });
+            }
+        });
+    } catch (err) {
+        console.warn(`Không đọc được chuyenVtracking từ ${COLLECTION_TUYENDUONG}:`, err);
+    }
+
+    return danhSachChuyen;
+}
+
+window.taiDanhSachChuyenEpass = async function (giaTriGiuLai = "") {
     const selectChuyen = document.getElementById("epChuyen");
     if (!selectChuyen) return;
 
     const currentVal = giaTriGiuLai || selectChuyen.value;
-    const ngayIso = chuanHoaNgayIso(document.getElementById("epNgay")?.value || "");
-    const ngayDmy = dinhDangNgayThangNam(ngayIso);
-    const bienSoChon = chuanHoaBienSo(document.getElementById("epBienSo")?.value || "");
+    const ngayIso = document.getElementById("epNgay")?.value || "";
+    const bienSoChon = document.getElementById("epBienSo")?.value || "";
 
-    const danhSachChuyen = new Map();
-
-    if (database && ngayIso && bienSoChon) {
-        try {
-            const tapDoc = new Map();
-            const q1 = query(
-                collection(database, COLLECTION_TUYENDUONG),
-                where("ngayThangNam", "==", ngayDmy),
-                where("phuongTien", "==", bienSoChon)
-            );
-            const snap1 = await getDocs(q1);
-            snap1.forEach((d) => tapDoc.set(d.id, d.data() || {}));
-
-            if (tapDoc.size === 0) {
-                const q2 = query(
-                    collection(database, COLLECTION_TUYENDUONG),
-                    where("ngayThangNam", "==", ngayIso),
-                    where("phuongTien", "==", bienSoChon)
-                );
-                const snap2 = await getDocs(q2);
-                snap2.forEach((d) => tapDoc.set(d.id, d.data() || {}));
-            }
-
-            if (tapDoc.size === 0) {
-                const qFallback = query(
-                    collection(database, COLLECTION_TUYENDUONG),
-                    where("phuongTien", "==", bienSoChon),
-                    limit(200)
-                );
-                const snapFallback = await getDocs(qFallback);
-                snapFallback.forEach((d) => {
-                    const data = d.data() || {};
-                    if (chuanHoaNgayIso(data.ngayThangNam) === ngayIso) {
-                        tapDoc.set(d.id, data);
-                    }
-                });
-            }
-
-            tapDoc.forEach((data) => {
-                const soChuyen = data.chuyenVtracking;
-                if (soChuyen === undefined || soChuyen === null || String(soChuyen).trim() === "") return;
-
-                const keyVal = String(soChuyen).trim();
-                if (!danhSachChuyen.has(keyVal)) {
-                    danhSachChuyen.set(keyVal, {
-                        chuyenVtracking: soChuyen,
-                        chuyenId: keyVal,
-                        tenChuyen: `Chuyến ${keyVal}`,
-                        chuyenKey: chuanHoaKeyChuyen(keyVal)
-                    });
-                }
-            });
-        } catch (err) {
-            console.warn(`Không đọc được chuyenVtracking từ ${COLLECTION_TUYENDUONG}:`, err);
-        }
-    }
-
+    const danhSachChuyen = await layDanhSachChuyenTheoNgayVaXe(ngayIso, bienSoChon);
     mapChuyenEpass = danhSachChuyen;
 
     const sortedList = Array.from(danhSachChuyen.values()).sort((a, b) =>
@@ -134,8 +154,7 @@ window.taiDanhSachChuyenEpass = async function (giaTriGiuLai = "") {
 
     let html = `<option value="">-- Chọn chuyến --</option>`;
     for (const item of sortedList) {
-        const escapedId = item.chuyenId.replace(/"/g, "&quot;");
-        html += `<option value="${escapedId}">${item.tenChuyen}</option>`;
+        html += `<option value="${escapeHtml(item.chuyenId)}">${escapeHtml(item.tenChuyen)}</option>`;
     }
     selectChuyen.innerHTML = html;
 
@@ -171,8 +190,7 @@ function renderDanhSachTramEpass(giaTriDangChon = "") {
 
     let html = `<option value="">-- Chọn trạm thu phí --</option>`;
     for (const tram of sorted) {
-        const escaped = tram.replace(/"/g, "&quot;");
-        html += `<option value="${escaped}">${tram}</option>`;
+        html += `<option value="${escapeHtml(tram)}">${escapeHtml(tram)}</option>`;
     }
     html += `<option value="__THEM_MOI__">+ Thêm trạm mới...</option>`;
     selectTram.innerHTML = html;
@@ -187,7 +205,7 @@ async function taiDanhSachTramTuFirebase() {
     const database = window.db || db;
     if (!database) return;
     try {
-        const snap = await getDocs(query(collection(database, "EPASS"), limit(100)));
+        const snap = await getDocs(query(collection(database, COLLECTION_EPASS), limit(100)));
         snap.forEach((docSnap) => {
             const d = docSnap.data() || {};
             const tram = String(d.tramThuPhi || "").trim();
@@ -325,7 +343,7 @@ window.goiYTienEpassGanNhat = async function () {
 
         if (bienSo && tramThuPhi) {
             const qXeTram = query(
-                collection(database, "EPASS"),
+                collection(database, COLLECTION_EPASS),
                 where("bienSo", "==", bienSo),
                 where("tramThuPhi", "==", tramThuPhi)
             );
@@ -336,7 +354,7 @@ window.goiYTienEpassGanNhat = async function () {
 
         if (!banGhi && tramThuPhi) {
             const qTram = query(
-                collection(database, "EPASS"),
+                collection(database, COLLECTION_EPASS),
                 where("tramThuPhi", "==", tramThuPhi)
             );
             const snapTram = await getDocs(qTram);
@@ -345,7 +363,7 @@ window.goiYTienEpassGanNhat = async function () {
 
         if (!banGhi && bienSo) {
             const qXe = query(
-                collection(database, "EPASS"),
+                collection(database, COLLECTION_EPASS),
                 where("bienSo", "==", bienSo)
             );
             const snapXe = await getDocs(qXe);
@@ -374,10 +392,181 @@ window.dinhDangSoTienEpass = function () {
     }
 };
 
+function renderDanhSachXemEpass() {
+    const container = document.getElementById("danhSachXemEpass");
+    const lblTong = document.getElementById("tongTienXemEpass");
+    if (!container) return;
+
+    const items = Array.from(cacheDanhSachEpass.values()).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+    const tongTien = lamTronHaiLe(items.reduce((acc, it) => acc + it.soTien, 0));
+    if (lblTong) {
+        lblTong.textContent = `${items.length} khoản • ${dinhDangTienHaiLe(tongTien)}`;
+    }
+
+    if (items.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:#94a3b8; font-size:12px; padding:12px;">Không có dữ liệu ePASS khớp tháng / xe.</div>`;
+        return;
+    }
+
+    const dsXe = Array.from(new Set([...XE_MAC_DINH, ...items.map((x) => x.bienSo).filter(Boolean)]));
+    const dsTram = Array.from(danhSachTram);
+
+    container.innerHTML = items.map((it) => {
+        const isEditing = docIdDangSuaEpass === it.id;
+        if (!isEditing) {
+            return `
+                <div style="background:#fff; border:1px solid #e2e8f0; border-left:4px solid #0284c7; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div style="min-width:0; flex:1;">
+                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11px;">
+                            <strong style="color:#1e293b;">${escapeHtml(it.bienSo || "---")}</strong>
+                            <span style="color:#64748b;">${escapeHtml(it.ngayHienThi || "---")}</span>
+                            <span style="color:#0284c7; font-weight:600;">• ${escapeHtml(it.chuyenText)}</span>
+                        </div>
+                        ${it.tramText ? `<div style="font-size:11px; color:#475569; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${escapeHtml(it.tramText)}</div>` : ""}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                        <span style="font-size:13px; font-weight:700; color:#0284c7; white-space:nowrap;">
+                            ${dinhDangTienHaiLe(it.soTien)}
+                        </span>
+                        <button type="button" onclick="batDauSuaDongEpass('${escapeHtml(it.id)}')" title="Sửa dòng này" style="border:1px solid #bae6fd; background:#f0f9ff; color:#0284c7; border-radius:6px; padding:5px 7px; font-size:11px; font-weight:700; cursor:pointer;">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        const optionsXe = dsXe.map((xe) => `<option value="${escapeHtml(xe)}" ${xe === it.bienSo ? "selected" : ""}>${escapeHtml(xe)}</option>`).join("");
+        const optionsTram = dsTram.map((tr) => `<option value="${escapeHtml(tr)}" ${tr === it.tramText ? "selected" : ""}>${escapeHtml(tr)}</option>`).join("");
+
+        return `
+            <div style="background:#f8fafc; border:1px solid #0284c7; border-left:4px solid #0284c7; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; color:#0284c7;">
+                    <span>✏️ Sửa dòng ePASS</span>
+                    <button type="button" onclick="huySuaDongEpass()" style="border:none; background:transparent; color:#64748b; font-size:12px; font-weight:700; cursor:pointer;">Huỷ</button>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <input type="date" id="editEpNgay_${escapeHtml(it.id)}" value="${escapeHtml(it.ngayIso)}" onchange="taiChuyenSuaEpass('${escapeHtml(it.id)}')" style="flex:1; min-width:125px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; background:#fff;" />
+                    <select id="editEpBienSo_${escapeHtml(it.id)}" onchange="taiChuyenSuaEpass('${escapeHtml(it.id)}')" style="flex:1; min-width:110px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; font-weight:700; background:#fff;">
+                        <option value="">-- Xe --</option>
+                        ${optionsXe}
+                    </select>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <select id="editEpChuyen_${escapeHtml(it.id)}" style="flex:1; min-width:120px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; background:#fff;">
+                        <option value="">-- Chuyến --</option>
+                        ${it.chuyenId ? `<option value="${escapeHtml(it.chuyenId)}" selected>${escapeHtml(it.chuyenText)}</option>` : ""}
+                    </select>
+                    <input type="text" list="listTramSuaEpass_${escapeHtml(it.id)}" id="editEpTram_${escapeHtml(it.id)}" value="${escapeHtml(it.tramText)}" placeholder="Trạm thu phí..." style="flex:1.4; min-width:140px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; background:#fff;" />
+                    <datalist id="listTramSuaEpass_${escapeHtml(it.id)}">${optionsTram}</datalist>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <input type="text" inputmode="decimal" id="editEpSoTien_${escapeHtml(it.id)}" value="${escapeHtml(String(it.soTien))}" placeholder="Số tiền..." style="flex:1; padding:6px 8px; border:1px solid #0284c7; border-radius:6px; font-size:13px; font-weight:700; color:#0284c7; text-align:right; background:#fff;" />
+                    <button type="button" onclick="luuSuaDongEpass('${escapeHtml(it.id)}')" style="padding:7px 12px; border:none; border-radius:6px; background:#0284c7; color:#fff; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;">
+                        <i class="fa-solid fa-check"></i> Lưu
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+window.taiChuyenSuaEpass = async function (docId, giaTriChuyenMacDinh = "") {
+    const selChuyen = document.getElementById(`editEpChuyen_${docId}`);
+    if (!selChuyen) return;
+    const ngayVal = document.getElementById(`editEpNgay_${docId}`)?.value || "";
+    const xeVal = document.getElementById(`editEpBienSo_${docId}`)?.value || "";
+    const currentVal = giaTriChuyenMacDinh || selChuyen.value;
+
+    const dsChuyen = await layDanhSachChuyenTheoNgayVaXe(ngayVal, xeVal);
+    let html = `<option value="">-- Chuyến --</option>`;
+    for (const ch of dsChuyen.values()) {
+        html += `<option value="${escapeHtml(ch.chuyenId)}">${escapeHtml(ch.tenChuyen)}</option>`;
+    }
+    if (currentVal && !dsChuyen.has(currentVal)) {
+        html += `<option value="${escapeHtml(currentVal)}">${escapeHtml(`Chuyến ${currentVal}`)}</option>`;
+    }
+    selChuyen.innerHTML = html;
+    if (currentVal) selChuyen.value = currentVal;
+};
+
+window.batDauSuaDongEpass = async function (docId) {
+    docIdDangSuaEpass = docId;
+    renderDanhSachXemEpass();
+    const it = cacheDanhSachEpass.get(docId);
+    if (it) {
+        await window.taiChuyenSuaEpass(docId, it.chuyenId);
+    }
+};
+
+window.huySuaDongEpass = function () {
+    docIdDangSuaEpass = "";
+    renderDanhSachXemEpass();
+};
+
+window.luuSuaDongEpass = async function (docId) {
+    const database = window.db || db;
+    if (!database || !docId) return;
+
+    const ngay = document.getElementById(`editEpNgay_${docId}`)?.value || "";
+    const bienSo = document.getElementById(`editEpBienSo_${docId}`)?.value.trim() || "";
+    const chuyenId = document.getElementById(`editEpChuyen_${docId}`)?.value.trim() || "";
+    const tramThuPhi = document.getElementById(`editEpTram_${docId}`)?.value.trim() || "";
+    const soTienRaw = document.getElementById(`editEpSoTien_${docId}`)?.value || "";
+    const soTien = lamTronHaiLe(parseFloat(chuanHoaSoHaiLe(soTienRaw)) || 0);
+
+    if (!ngay) {
+        alert("Vui lòng chọn Ngày!");
+        return;
+    }
+    if (!bienSo) {
+        alert("Vui lòng chọn Phương tiện!");
+        return;
+    }
+    if (soTien <= 0) {
+        alert("Số tiền ePass phải lớn hơn 0!");
+        return;
+    }
+
+    const parts = ngay.split("-");
+    const namNum = Number(parts[0]) || new Date().getFullYear();
+    const thangNum = Number(parts[1]) || (new Date().getMonth() + 1);
+
+    try {
+        const ref = doc(collection(database, COLLECTION_EPASS), docId);
+        const snap = await getDoc(ref);
+        const oldData = snap.exists() ? (snap.data() || {}) : {};
+
+        await updateDoc(ref, {
+            ngay,
+            bienSo,
+            chuyenVtracking: chuyenId,
+            chuyenId,
+            tenChuyen: chuyenId ? `Chuyến ${chuyenId}` : "",
+            chuyenKey: chuanHoaKeyChuyen(chuyenId),
+            tramThuPhi,
+            soTien,
+            nam: namNum,
+            thang: thangNum,
+            ngayTaoHeThong: oldData.ngayTaoHeThong || dinhDangNgayGioHeThong(),
+            ngayCapNhatHeThong: dinhDangNgayGioHeThong()
+        });
+
+        if (tramThuPhi) {
+            danhSachTram.add(tramThuPhi);
+            renderDanhSachTramEpass();
+        }
+        docIdDangSuaEpass = "";
+        await window.xemLaiDanhSachEpass();
+    } catch (err) {
+        console.error("Lỗi cập nhật EPASS:", err);
+        alert("Lỗi khi lưu chỉnh sửa ePASS: " + err.message);
+    }
+};
+
 window.xemLaiDanhSachEpass = async function () {
     const database = window.db || db;
     const container = document.getElementById("danhSachXemEpass");
-    const lblTong = document.getElementById("tongTienXemEpass");
     if (!container || !database) return;
 
     const thangVal = document.getElementById("thangXemEpass")?.value || document.getElementById("thangVanChuyen")?.value || "";
@@ -395,25 +584,28 @@ window.xemLaiDanhSachEpass = async function () {
 
     try {
         const snap = (namLoc && thangLoc)
-            ? await getDocs(query(collection(database, "EPASS"), where("nam", "==", namLoc), where("thang", "==", thangLoc)))
-            : await getDocs(query(collection(database, "EPASS"), limit(150)));
+            ? await getDocs(query(collection(database, COLLECTION_EPASS), where("nam", "==", namLoc), where("thang", "==", thangLoc)))
+            : await getDocs(query(collection(database, COLLECTION_EPASS), limit(150)));
 
-        const items = [];
+        const nextCache = new Map();
         snap.forEach((docSnap) => {
             const d = docSnap.data() || {};
             if (xeLoc && chuanHoaBienSo(d.bienSo || "") !== xeLoc) return;
 
             const soTien = lamTronHaiLe(d.soTien || 0);
             const ngayIso = chuanHoaNgayIso(d.ngay || "");
-            const chuyenText = d.chuyenVtracking !== undefined && d.chuyenVtracking !== ""
-                ? `Chuyến ${d.chuyenVtracking}`
-                : (d.tenChuyen || "Chuyến lẻ");
+            const chuyenVal = d.chuyenVtracking !== undefined && d.chuyenVtracking !== ""
+                ? String(d.chuyenVtracking).trim()
+                : String(d.chuyenId || "").trim();
+            const chuyenText = chuyenVal ? `Chuyến ${chuyenVal}` : (d.tenChuyen || "Chuyến lẻ");
             const tramText = String(d.tramThuPhi || "").trim();
 
-            items.push({
+            nextCache.set(docSnap.id, {
                 id: docSnap.id,
+                ngayIso,
                 ngayHienThi: ngayIso ? dinhDangNgayThangNam(ngayIso) : String(d.ngay || ""),
                 bienSo: String(d.bienSo || "").trim(),
+                chuyenId: chuyenVal,
                 chuyenText,
                 tramText,
                 soTien,
@@ -421,35 +613,14 @@ window.xemLaiDanhSachEpass = async function () {
             });
         });
 
-        items.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
-        const tongTien = lamTronHaiLe(items.reduce((acc, it) => acc + it.soTien, 0));
-        if (lblTong) {
-            lblTong.textContent = `${items.length} khoản • ${dinhDangTienHaiLe(tongTien)}`;
+        cacheDanhSachEpass = nextCache;
+        if (docIdDangSuaEpass && !cacheDanhSachEpass.has(docIdDangSuaEpass)) {
+            docIdDangSuaEpass = "";
         }
-
-        if (items.length === 0) {
-            container.innerHTML = `<div style="text-align:center; color:#94a3b8; font-size:12px; padding:12px;">Không có dữ liệu ePASS khớp tháng / xe.</div>`;
-            return;
-        }
-
-        container.innerHTML = items.map((it) => `
-            <div style="background:#fff; border:1px solid #e2e8f0; border-left:4px solid #0284c7; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                <div style="min-width:0; flex:1;">
-                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11px;">
-                        <strong style="color:#1e293b;">${it.bienSo || "---"}</strong>
-                        <span style="color:#64748b;">${it.ngayHienThi || "---"}</span>
-                        <span style="color:#0284c7; font-weight:600;">• ${it.chuyenText}</span>
-                    </div>
-                    ${it.tramText ? `<div style="font-size:11px; color:#475569; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${it.tramText}</div>` : ""}
-                </div>
-                <div style="font-size:13px; font-weight:700; color:#0284c7; white-space:nowrap;">
-                    ${dinhDangTienHaiLe(it.soTien)}
-                </div>
-            </div>
-        `).join("");
+        renderDanhSachXemEpass();
     } catch (err) {
         console.error("Lỗi tải lịch sử EPASS:", err);
-        container.innerHTML = `<div style="text-align:center; color:#dc2626; font-size:12px; padding:10px;">Lỗi tải ePASS: ${err.message}</div>`;
+        container.innerHTML = `<div style="text-align:center; color:#dc2626; font-size:12px; padding:10px;">Lỗi tải ePASS: ${escapeHtml(err.message)}</div>`;
     }
 };
 
@@ -508,7 +679,7 @@ window.luuEpassVaoFirebase = async function () {
             ngayTaoHeThong: dinhDangNgayGioHeThong(now)
         };
 
-        await setDoc(doc(collection(database, "EPASS"), docId), duLieuEpass);
+        await setDoc(doc(collection(database, COLLECTION_EPASS), docId), duLieuEpass);
 
         if (tramThuPhi) {
             danhSachTram.add(tramThuPhi);
