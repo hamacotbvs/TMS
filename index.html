@@ -406,12 +406,15 @@
             </div>
         </div>
 
-        <!--VẬN CHUYỂN (3 TAB CON RIÊNG: VẬN CHUYỂN | ePASS | BẾN)-->
+        <!--VẬN CHUYỂN (4 TAB CON RIÊNG: VẬN CHUYỂN | NHIÊN LIỆU | ePASS | BẾN)-->
         <div id="van-chuyen" class="trang-content">
             <!-- THANH TAB GIỐNG BÊN THÊM MỚI -->
             <div style="display: flex; gap: 6px; margin-bottom: 12px;">
                 <button id="tabBtnVanChuyen" type="button" onclick="chuyenTabVanChuyen('van-chuyen')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     🚚 VẬN CHUYỂN
+                </button>
+                <button id="tabBtnXemNhienLieu" type="button" onclick="chuyenTabVanChuyen('xem-nhien-lieu')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                    ⛽ NHIÊN LIỆU
                 </button>
                 <button id="tabBtnXemEpass" type="button" onclick="chuyenTabVanChuyen('xem-epass')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     💳 ePASS
@@ -443,7 +446,7 @@
                             <option value="">-- Tất cả xe --</option>
                             <option value="65C-06126">65C-06126</option>
                             <option value="65C-12290">65C-12290</option>
-                            <option value="65H-02591">65C-02591</option>
+                            <option value="65H-02591">65H-02591</option>
                             <option value="Xe máy">Xe máy</option>
                         </select>
 
@@ -460,7 +463,34 @@
                 </div>
             </div>
 
-            <!-- TAB CON 2: XEM LẠI ePASS RIÊNG -->
+            <!-- TAB CON 2: XEM LẠI NHIÊN LIỆU RIÊNG -->
+            <div id="panelXemNhienLieu" class="KHUNG-CON-TRONG-TAB" style="display: none;">
+                <h3 style="font-size: 15px; color: #16a34a; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; margin-top: 0;">
+                    <span>⛽ LỊCH SỬ NHIÊN LIỆU</span>
+                    <span id="tongTienXemNhienLieu" style="font-size: 12px; font-weight: 700; color: #16a34a;">0 đ</span>
+                </h3>
+
+                <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <input type="month" id="thangXemNhienLieu" onchange="dongBoThangVanChuyen(this.value)" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; background: #fff; color: #1e293b;" />
+                    <select id="filterXeXemNhienLieu" onchange="dongBoXeVanChuyen(this.value)" style="flex: 1; min-width: 120px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; background: #fff; color: #1e293b;">
+                        <option value="">-- Tất cả xe --</option>
+                        <option value="65C-06126">65C-06126</option>
+                        <option value="65C-12290">65C-12290</option>
+                        <option value="65H-02591">65H-02591</option>
+                    </select>
+                    <button type="button" onclick="xemLaiDanhSachNhienLieu()" style="padding: 8px 12px; border: none; border-radius: 8px; background: #16a34a; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                        <i class="fa-solid fa-rotate"></i> Tải
+                    </button>
+                </div>
+
+                <div id="danhSachXemNhienLieu" style="display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto;">
+                    <div style="text-align:center; color: #64748b; font-size: 12px; padding: 14px;">
+                        Đang tải lịch sử nhiên liệu...
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CON 3: XEM LẠI ePASS RIÊNG -->
             <div id="panelXemEpass" class="KHUNG-CON-TRONG-TAB" style="display: none;">
                 <h3 style="font-size: 15px; color: #0284c7; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; margin-top: 0;">
                     <span>💳 LỊCH SỬ ePASS</span>
@@ -481,13 +511,13 @@
                 </div>
 
                 <div id="danhSachXemEpass" style="display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto;">
-                    <div style="text-align: center; color: #64748b; font-size: 12px; padding: 14px;">
+                    <div style="text-align:center; color: #64748b; font-size: 12px; padding: 14px;">
                         Đang tải lịch sử ePASS...
                     </div>
                 </div>
             </div>
 
-            <!-- TAB CON 3: XEM LẠI BẾN - CẦU - PHÀ RIÊNG -->
+            <!-- TAB CON 4: XEM LẠI BẾN - CẦU - PHÀ RIÊNG -->
             <div id="panelXemBcp" class="KHUNG-CON-TRONG-TAB" style="display: none;">
                 <h3 style="font-size: 15px; color: #0f766e; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; margin-top: 0;">
                     <span>🚢 LỊCH SỬ BẾN - CẦU - PHÀ</span>
@@ -508,7 +538,7 @@
                 </div>
 
                 <div id="danhSachXemBcp" style="display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto;">
-                    <div style="text-align: center; color: #64748b; font-size: 12px; padding: 14px;">
+                    <div style="text-align:center; color: #64748b; font-size: 12px; padding: 14px;">
                         Đang tải lịch sử Bến - Cầu - Phà...
                     </div>
                 </div>
@@ -561,20 +591,27 @@
 
         window.chuyenTabVanChuyen = function(tabName) {
             const panelVc = document.getElementById('panelVanChuyen');
+            const panelNl = document.getElementById('panelXemNhienLieu');
             const panelEpass = document.getElementById('panelXemEpass');
             const panelBcp = document.getElementById('panelXemBcp');
             const btnVc = document.getElementById('tabBtnVanChuyen');
+            const btnNl = document.getElementById('tabBtnXemNhienLieu');
             const btnEpass = document.getElementById('tabBtnXemEpass');
             const btnBcp = document.getElementById('tabBtnXemBcp');
-            if (!panelVc || !panelEpass || !panelBcp || !btnVc || !btnEpass || !btnBcp) return;
+            if (!panelVc || !panelNl || !panelEpass || !panelBcp || !btnVc || !btnNl || !btnEpass || !btnBcp) return;
 
             panelVc.style.display = tabName === 'van-chuyen' ? 'block' : 'none';
+            panelNl.style.display = tabName === 'xem-nhien-lieu' ? 'block' : 'none';
             panelEpass.style.display = tabName === 'xem-epass' ? 'block' : 'none';
             panelBcp.style.display = tabName === 'xem-bcp' ? 'block' : 'none';
 
             btnVc.style.background = tabName === 'van-chuyen' ? '#0082C8' : '#ffffff';
             btnVc.style.color = tabName === 'van-chuyen' ? '#ffffff' : '#475569';
             btnVc.style.borderColor = tabName === 'van-chuyen' ? '#0082C8' : '#cbd5e1';
+
+            btnNl.style.background = tabName === 'xem-nhien-lieu' ? '#16a34a' : '#ffffff';
+            btnNl.style.color = tabName === 'xem-nhien-lieu' ? '#ffffff' : '#475569';
+            btnNl.style.borderColor = tabName === 'xem-nhien-lieu' ? '#16a34a' : '#cbd5e1';
 
             btnEpass.style.background = tabName === 'xem-epass' ? '#0284c7' : '#ffffff';
             btnEpass.style.color = tabName === 'xem-epass' ? '#ffffff' : '#475569';
@@ -584,7 +621,9 @@
             btnBcp.style.color = tabName === 'xem-bcp' ? '#ffffff' : '#475569';
             btnBcp.style.borderColor = tabName === 'xem-bcp' ? '#0f766e' : '#cbd5e1';
 
-            if (tabName === 'xem-epass' && typeof window.xemLaiDanhSachEpass === 'function') {
+            if (tabName === 'xem-nhien-lieu' && typeof window.xemLaiDanhSachNhienLieu === 'function') {
+                window.xemLaiDanhSachNhienLieu();
+            } else if (tabName === 'xem-epass' && typeof window.xemLaiDanhSachEpass === 'function') {
                 window.xemLaiDanhSachEpass();
             } else if (tabName === 'xem-bcp' && typeof window.xemLaiDanhSachBcp === 'function') {
                 window.xemLaiDanhSachBcp();
@@ -592,7 +631,7 @@
         };
 
         window.dongBoThangVanChuyen = function(thangVal) {
-            const ids = ['thangVanChuyen', 'thangXemEpass', 'thangXemBcp'];
+            const ids = ['thangVanChuyen', 'thangXemNhienLieu', 'thangXemEpass', 'thangXemBcp'];
             ids.forEach((id) => {
                 const el = document.getElementById(id);
                 if (el && el.value !== thangVal) {
@@ -604,6 +643,9 @@
                 const [y, m] = thangVal.split('-');
                 lbl.textContent = `${m}/${y}`;
             }
+            if (typeof window.xemLaiDanhSachNhienLieu === 'function') {
+                window.xemLaiDanhSachNhienLieu();
+            }
             if (typeof window.xemLaiDanhSachEpass === 'function') {
                 window.xemLaiDanhSachEpass();
             }
@@ -613,13 +655,16 @@
         };
 
         window.dongBoXeVanChuyen = function(xeVal) {
-            const ids = ['filterPhuongTien', 'filterXeXemEpass', 'filterXeXemBcp'];
+            const ids = ['filterPhuongTien', 'filterXeXemNhienLieu', 'filterXeXemEpass', 'filterXeXemBcp'];
             ids.forEach((id) => {
                 const el = document.getElementById(id);
                 if (el && el.value !== xeVal) {
                     el.value = xeVal;
                 }
             });
+            if (typeof window.xemLaiDanhSachNhienLieu === 'function') {
+                window.xemLaiDanhSachNhienLieu();
+            }
             if (typeof window.xemLaiDanhSachEpass === 'function') {
                 window.xemLaiDanhSachEpass();
             }
@@ -651,6 +696,7 @@
     <script type="module" src="HOACHTOAN-CHIPHI.JS"></script>
     <script type="module" src="LICHSU-VANCHUYEN.JS"></script>
     <script type="module" src="DO-NHIEN-LIEU.JS"></script>
+    <script type="module" src="XEM-NHIEN-LIEU.JS"></script>
     <script type="module" src="EPASS.JS"></script>
     <script type="module" src="BEN-CAU-PHA.JS"></script>
 </body>
