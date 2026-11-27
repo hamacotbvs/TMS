@@ -87,27 +87,27 @@ function layTenTramChon() {
 }
 
 /**
- * Chuẩn hóa số cho phép tối đa 1 chữ số thập phân (hỗ trợ cả dấu ',' và '.')
+ * Chuẩn hóa số cho phép tối đa 2 chữ số thập phân (hỗ trợ cả dấu ',' và '.')
  */
-function chuanHoaSoMotLe(val) {
+function chuanHoaSoHaiLe(val) {
     if (val === undefined || val === null) return "";
     let s = String(val).replace(/,/g, ".").replace(/[^0-9.]/g, "");
     const firstDot = s.indexOf(".");
     if (firstDot !== -1) {
         const phanNguyen = s.slice(0, firstDot);
-        const phanLe = s.slice(firstDot + 1).replace(/\./g, "").slice(0, 1);
+        const phanLe = s.slice(firstDot + 1).replace(/\./g, "").slice(0, 2);
         s = `${phanNguyen}.${phanLe}`;
     }
     return s;
 }
 
-function lamTronMotLe(so) {
-    return Math.round((Number(so) || 0) * 10) / 10;
+function lamTronHaiLe(so) {
+    return Math.round((Number(so) || 0) * 100) / 100;
 }
 
-function dinhDangTienMotLe(so) {
-    const num = lamTronMotLe(so);
-    return num.toLocaleString("vi-VN", { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + " đ";
+function dinhDangTienHaiLe(so) {
+    const num = lamTronHaiLe(so);
+    return num.toLocaleString("vi-VN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " đ";
 }
 
 function dinhDangNgayGioHeThong(nowDate = new Date()) {
@@ -146,7 +146,7 @@ function chonBanGhiEpassMoiNhat(docsSnap) {
 window.apDungTienEpassGoiY = function (soTien) {
     const soTienInput = document.getElementById("epSoTien");
     if (!soTienInput || !soTien) return;
-    soTienInput.value = String(lamTronMotLe(soTien));
+    soTienInput.value = String(lamTronHaiLe(soTien));
     window.dinhDangSoTienEpass();
 };
 
@@ -155,7 +155,7 @@ function hienThiGoiYTienEpass(banGhi, khopCaXeVaTram = true) {
     if (!labelGoiY) return;
 
     if (banGhi && Number(banGhi.soTien) > 0) {
-        const tien = lamTronMotLe(banGhi.soTien);
+        const tien = lamTronHaiLe(banGhi.soTien);
         const xeText = banGhi.bienSo ? `${banGhi.bienSo}` : "";
         const tramText = banGhi.tramThuPhi ? `${banGhi.tramThuPhi}` : "";
         const infoParts = [];
@@ -164,7 +164,7 @@ function hienThiGoiYTienEpass(banGhi, khopCaXeVaTram = true) {
         if (!khopCaXeVaTram && tramText) infoParts.push("theo trạm");
         const meta = infoParts.length > 0 ? ` (${infoParts.join(" - ")})` : "";
 
-        labelGoiY.innerHTML = `Gợi ý${meta}: <a href="javascript:void(0)" onclick="apDungTienEpassGoiY(${tien})" title="Bấm để áp dụng số tiền này" style="color:#0284c7; font-weight:700; text-decoration:underline;">${dinhDangTienMotLe(tien)}</a>`;
+        labelGoiY.innerHTML = `Gợi ý${meta}: <a href="javascript:void(0)" onclick="apDungTienEpassGoiY(${tien})" title="Bấm để áp dụng số tiền này" style="color:#0284c7; font-weight:700; text-decoration:underline;">${dinhDangTienHaiLe(tien)}</a>`;
     } else {
         labelGoiY.textContent = "";
     }
@@ -227,14 +227,14 @@ window.dinhDangSoTienEpass = function () {
     const preview = document.getElementById("previewTienEpass");
     if (!soTienInput) return;
 
-    const clean = chuanHoaSoMotLe(soTienInput.value);
+    const clean = chuanHoaSoHaiLe(soTienInput.value);
     if (soTienInput.value !== clean) {
         soTienInput.value = clean;
     }
 
-    const soTien = lamTronMotLe(parseFloat(clean) || 0);
+    const soTien = lamTronHaiLe(parseFloat(clean) || 0);
     if (preview) {
-        preview.textContent = dinhDangTienMotLe(soTien);
+        preview.textContent = dinhDangTienHaiLe(soTien);
     }
 };
 
@@ -248,7 +248,7 @@ window.luuEpassVaoFirebase = async function () {
     const soTienRaw = document.getElementById("epSoTien")?.value;
     const tramThuPhi = layTenTramChon();
 
-    const soTien = lamTronMotLe(parseFloat(chuanHoaSoMotLe(soTienRaw)) || 0);
+    const soTien = lamTronHaiLe(parseFloat(chuanHoaSoHaiLe(soTienRaw)) || 0);
 
     if (!ngay) {
         alert("Vui lòng chọn Ngày giao dịch / phát sinh!");
@@ -297,7 +297,7 @@ window.luuEpassVaoFirebase = async function () {
 
         if (nutBam) {
             nutBam.style.background = "#15803d";
-            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã lưu (${dinhDangTienMotLe(soTien)} - ${bienSo})`;
+            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã lưu (${dinhDangTienHaiLe(soTien)} - ${bienSo})`;
         }
 
         document.getElementById("epSoTien").value = "";
