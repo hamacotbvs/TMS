@@ -439,6 +439,9 @@ window.luuEpassVaoFirebase = async function () {
         if (inputTramMoi) inputTramMoi.value = "";
         window.dinhDangSoTienEpass();
         window.goiYTienEpassGanNhat();
+        if (typeof window.xemLaiEpassVaBcp === "function") {
+            window.xemLaiEpassVaBcp();
+        }
 
         await new Promise((resolve) => setTimeout(resolve, 1500));
     } catch (error) {
