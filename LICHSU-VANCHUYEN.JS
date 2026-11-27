@@ -1775,39 +1775,39 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                 <style>
                     @page {
                         size: A4 portrait;
-                        margin: 12mm 10mm 12mm 10mm;
+                        margin: 10mm 10mm 10mm 10mm;
                     }
                     body {
                         font-family: "Times New Roman", Times, serif;
-                        font-size: 11px;
+                        font-size: 10.5px;
                         color: #000;
                         margin: 0;
                         padding: 0;
                     }
                     .company-header {
                         font-weight: bold;
-                        font-size: 11px;
-                        line-height: 1.4;
+                        font-size: 10.5px;
+                        line-height: 1.3;
                         text-align: left;
                     }
                     .doc-title {
                         text-align: center;
                         font-weight: bold;
-                        font-size: 15px;
-                        margin: 8px 0 3px 0;
+                        font-size: 14px;
+                        margin: 5px 0 2px 0;
                         text-transform: uppercase;
                     }
                     .doc-period {
                         text-align: center;
                         font-style: italic;
-                        font-size: 11px;
-                        margin-bottom: 6px;
+                        font-size: 10.5px;
+                        margin-bottom: 4px;
                     }
                     .sub-info {
                         display: flex;
                         justify-content: space-between;
-                        font-size: 11px;
-                        margin-bottom: 4px;
+                        font-size: 10.5px;
+                        margin-bottom: 3px;
                     }
                     table {
                         width: 100%;
@@ -1816,10 +1816,11 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     }
                     th, td {
                         border: 1px solid #000;
-                        padding: 3px 4px;
-                        font-size: 10.5px;
+                        padding: 1.5px 4px;
+                        font-size: 10px;
+                        line-height: 1.15;
                         word-wrap: break-word;
-                        height: 18px;
+                        height: 14px;
                     }
                     th {
                         background-color: #d9d9d9 !important;
@@ -1827,32 +1828,33 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                         print-color-adjust: exact;
                         font-weight: bold;
                         text-align: center;
+                        height: 16px;
                     }
                     .summary-table {
-                        margin-top: 8px;
+                        margin-top: 6px;
                     }
                     .summary-table td {
                         text-align: center;
                         font-weight: bold;
-                        height: 20px;
+                        height: 16px;
                     }
                     .footer-sign {
-                        margin-top: 14px;
+                        margin-top: 10px;
                         width: 100%;
                     }
                     .sign-date {
                         text-align: right;
                         font-style: italic;
-                        font-size: 11px;
+                        font-size: 10.5px;
                         padding-right: 25px;
-                        margin-bottom: 4px;
+                        margin-bottom: 3px;
                     }
                     .sign-cols {
                         display: flex;
                         justify-content: space-around;
                         text-align: center;
                         font-weight: bold;
-                        font-size: 11px;
+                        font-size: 10.5px;
                     }
                     @media print {
                         .no-print { display: none !important; }
