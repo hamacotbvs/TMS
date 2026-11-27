@@ -2,7 +2,6 @@ import { collection, doc, setDoc, getDocs, query, where, limit } from "https://w
 
 const db = window.db;
 const COLLECTION_BENCAUPHA = "BENCAUPHA";
-const COLLECTION_EPASS = "EPASS";
 const COLLECTION_TUYENDUONG = "TUYENDUONG";
 const DIA_DIEM_MAC_DINH = [
     "Phà Cần Thơ",
@@ -18,12 +17,18 @@ function khoiTaoMacDinhBcp() {
     if (inputNgay && !inputNgay.value) {
         inputNgay.value = new Date().toISOString().slice(0, 10);
     }
+    const thangMacDinh = document.getElementById("thangVanChuyen")?.value || new Date().toISOString().slice(0, 7);
+    ["thangVanChuyen", "thangXemEpass", "thangXemBcp"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && !el.value) el.value = thangMacDinh;
+    });
+
     renderDanhSachDiaDiemBcp();
     taiDanhSachDiaDiemTuFirebase();
     window.taiDanhSachChuyenBcp();
     window.dinhDangSoTienBcp();
     window.goiYTienBcpGanNhat();
-    window.xemLaiEpassVaBcp();
+    window.xemLaiDanhSachBcp();
 }
 
 function chuanHoaKeyChuyen(val) {
@@ -369,15 +374,14 @@ window.dinhDangSoTienBcp = function () {
     }
 };
 
-window.xemLaiEpassVaBcp = async function () {
+window.xemLaiDanhSachBcp = async function () {
     const database = window.db || db;
-    const container = document.getElementById("danhSachPhiDuongBo");
-    const lblTong = document.getElementById("tongTienPhiDuongBo");
+    const container = document.getElementById("danhSachXemBcp");
+    const lblTong = document.getElementById("tongTienXemBcp");
     if (!container || !database) return;
 
-    const loaiLoc = document.getElementById("filterLoaiPhiDuongBo")?.value || "ALL";
-    const thangVal = document.getElementById("thangVanChuyen")?.value || "";
-    const xeLoc = chuanHoaBienSo(document.getElementById("filterPhuongTien")?.value || "");
+    const thangVal = document.getElementById("thangXemBcp")?.value || document.getElementById("thangVanChuyen")?.value || "";
+    const xeLoc = chuanHoaBienSo(document.getElementById("filterXeXemBcp")?.value || document.getElementById("filterPhuongTien")?.value || "");
 
     let namLoc = 0;
     let thangLoc = 0;
@@ -387,89 +391,65 @@ window.xemLaiEpassVaBcp = async function () {
         thangLoc = Number(m);
     }
 
-    container.innerHTML = `<div style="text-align:center; color:#64748b; font-size:12px; padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>`;
-
-    const items = [];
+    container.innerHTML = `<div style="text-align:center; color:#64748b; font-size:12px; padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải Bến - Cầu - Phà...</div>`;
 
     try {
-        const layTuCollection = async (colName, loaiCode, nhanLoai, mauSac) => {
-            if (loaiLoc !== "ALL" && loaiLoc !== loaiCode) return;
+        const snap = (namLoc && thangLoc)
+            ? await getDocs(query(collection(database, COLLECTION_BENCAUPHA), where("nam", "==", namLoc), where("thang", "==", thangLoc)))
+            : await getDocs(query(collection(database, COLLECTION_BENCAUPHA), limit(150)));
 
-            let snap;
-            if (namLoc && thangLoc) {
-                snap = await getDocs(
-                    query(
-                        collection(database, colName),
-                        where("nam", "==", namLoc),
-                        where("thang", "==", thangLoc)
-                    )
-                );
-            } else {
-                snap = await getDocs(query(collection(database, colName), limit(150)));
-            }
+        const items = [];
+        snap.forEach((docSnap) => {
+            const d = docSnap.data() || {};
+            if (xeLoc && chuanHoaBienSo(d.bienSo || "") !== xeLoc) return;
 
-            snap.forEach((docSnap) => {
-                const d = docSnap.data() || {};
-                const bienSoDoc = chuanHoaBienSo(d.bienSo || "");
-                if (xeLoc && bienSoDoc !== xeLoc) return;
+            const soTien = lamTronHaiLe(d.soTien || 0);
+            const ngayIso = chuanHoaNgayIso(d.ngay || "");
+            const chuyenText = d.chuyenVtracking !== undefined && d.chuyenVtracking !== ""
+                ? `Chuyến ${d.chuyenVtracking}`
+                : (d.tenChuyen || "Chuyến lẻ");
+            const diaDiemText = String(d.diaDiem || d.benCauPha || "").trim();
 
-                const soTien = lamTronHaiLe(d.soTien || 0);
-                const ngayIso = chuanHoaNgayIso(d.ngay || "");
-                const chuyenText = d.chuyenVtracking !== undefined && d.chuyenVtracking !== ""
-                    ? `Chuyến ${d.chuyenVtracking}`
-                    : (d.tenChuyen || "Chuyến lẻ");
-                const diaDiemText = d.tramThuPhi || d.diaDiem || d.benCauPha || "";
-
-                items.push({
-                    id: docSnap.id,
-                    loaiCode,
-                    nhanLoai,
-                    mauSac,
-                    ngayIso,
-                    ngayHienThi: ngayIso ? dinhDangNgayThangNam(ngayIso) : String(d.ngay || ""),
-                    bienSo: String(d.bienSo || "").trim(),
-                    chuyenText,
-                    diaDiemText,
-                    soTien,
-                    sortKey: `${ngayIso || ""}|${d.ngayTaoHeThong || ""}|${docSnap.id}`
-                });
+            items.push({
+                id: docSnap.id,
+                ngayHienThi: ngayIso ? dinhDangNgayThangNam(ngayIso) : String(d.ngay || ""),
+                bienSo: String(d.bienSo || "").trim(),
+                chuyenText,
+                diaDiemText,
+                soTien,
+                sortKey: `${ngayIso || ""}|${d.ngayTaoHeThong || ""}|${docSnap.id}`
             });
-        };
-
-        await layTuCollection(COLLECTION_EPASS, "EPASS", "ePASS", "#0284c7");
-        await layTuCollection(COLLECTION_BENCAUPHA, "BENCAUPHA", "BẾN - CẦU - PHÀ", "#0f766e");
+        });
 
         items.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
-
         const tongTien = lamTronHaiLe(items.reduce((acc, it) => acc + it.soTien, 0));
         if (lblTong) {
             lblTong.textContent = `${items.length} khoản • ${dinhDangTienHaiLe(tongTien)}`;
         }
 
         if (items.length === 0) {
-            container.innerHTML = `<div style="text-align:center; color:#94a3b8; font-size:12px; padding:12px;">Không có dữ liệu ePASS / Bến - Cầu - Phà khớp bộ lọc.</div>`;
+            container.innerHTML = `<div style="text-align:center; color:#94a3b8; font-size:12px; padding:12px;">Không có dữ liệu Bến - Cầu - Phà khớp tháng / xe.</div>`;
             return;
         }
 
         container.innerHTML = items.map((it) => `
-            <div style="background:#fff; border:1px solid #e2e8f0; border-left:4px solid ${it.mauSac}; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div style="background:#fff; border:1px solid #e2e8f0; border-left:4px solid #0f766e; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
                 <div style="min-width:0; flex:1;">
                     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11px;">
-                        <span style="background:${it.mauSac}; color:#fff; padding:1px 6px; border-radius:4px; font-weight:700;">${it.nhanLoai}</span>
                         <strong style="color:#1e293b;">${it.bienSo || "---"}</strong>
                         <span style="color:#64748b;">${it.ngayHienThi || "---"}</span>
-                        <span style="color:#475569; font-weight:600;">• ${it.chuyenText}</span>
+                        <span style="color:#0f766e; font-weight:600;">• ${it.chuyenText}</span>
                     </div>
                     ${it.diaDiemText ? `<div style="font-size:11px; color:#475569; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${it.diaDiemText}</div>` : ""}
                 </div>
-                <div style="font-size:13px; font-weight:700; color:${it.mauSac}; white-space:nowrap;">
+                <div style="font-size:13px; font-weight:700; color:#0f766e; white-space:nowrap;">
                     ${dinhDangTienHaiLe(it.soTien)}
                 </div>
             </div>
         `).join("");
     } catch (err) {
-        console.error("Lỗi xem lại EPASS / BENCAUPHA:", err);
-        container.innerHTML = `<div style="text-align:center; color:#dc2626; font-size:12px; padding:10px;">Không tải được lịch sử: ${err.message}</div>`;
+        console.error("Lỗi tải lịch sử BENCAUPHA:", err);
+        container.innerHTML = `<div style="text-align:center; color:#dc2626; font-size:12px; padding:10px;">Lỗi tải Bến - Cầu - Phà: ${err.message}</div>`;
     }
 };
 
@@ -545,7 +525,7 @@ window.luuBcpVaoFirebase = async function () {
         if (inputMoi) inputMoi.value = "";
         window.dinhDangSoTienBcp();
         window.goiYTienBcpGanNhat();
-        window.xemLaiEpassVaBcp();
+        window.xemLaiDanhSachBcp();
 
         await new Promise((resolve) => setTimeout(resolve, 1500));
     } catch (error) {
