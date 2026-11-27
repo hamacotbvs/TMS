@@ -406,15 +406,18 @@
             </div>
         </div>
 
-        <!--VẬN CHUYỂN (2 TAB CON: VẬN CHUYỂN | ePASS & BẾN)-->
+        <!--VẬN CHUYỂN (3 TAB CON RIÊNG: VẬN CHUYỂN | ePASS | BẾN)-->
         <div id="van-chuyen" class="trang-content">
             <!-- THANH TAB GIỐNG BÊN THÊM MỚI -->
             <div style="display: flex; gap: 6px; margin-bottom: 12px;">
-                <button id="tabBtnVanChuyen" type="button" onclick="chuyenTabVanChuyen('van-chuyen')" style="flex: 1; padding: 9px 8px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                <button id="tabBtnVanChuyen" type="button" onclick="chuyenTabVanChuyen('van-chuyen')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     🚚 VẬN CHUYỂN
                 </button>
-                <button id="tabBtnPhiDuongBo" type="button" onclick="chuyenTabVanChuyen('phi-duong-bo')" style="flex: 1; padding: 9px 8px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
-                    💳🚢 ePASS & BẾN
+                <button id="tabBtnXemEpass" type="button" onclick="chuyenTabVanChuyen('xem-epass')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                    💳 ePASS
+                </button>
+                <button id="tabBtnXemBcp" type="button" onclick="chuyenTabVanChuyen('xem-bcp')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                    🚢 BẾN
                 </button>
             </div>
 
@@ -432,11 +435,11 @@
                         <div class="hop-chon-thang-vc">
                             <span style="font-size: 12px;">📅</span>
                             <span id="labelThangNamVC" style="font-weight: 600; font-size: 11px; color: #1e293b; white-space: nowrap;">11/2026</span>
-                            <input type="month" id="thangVanChuyen" class="input-an-thang-vc" />
+                            <input type="month" id="thangVanChuyen" onchange="dongBoThangVanChuyen(this.value)" class="input-an-thang-vc" />
                         </div>
 
                         <!-- 2. Dropdown lọc phương tiện -->
-                        <select id="filterPhuongTien" class="select-phuong-tien-vc">
+                        <select id="filterPhuongTien" onchange="dongBoXeVanChuyen(this.value)" class="select-phuong-tien-vc">
                             <option value="">-- Tất cả xe --</option>
                             <option value="65C-06126">65C-06126</option>
                             <option value="65C-12290">65C-12290</option>
@@ -457,27 +460,56 @@
                 </div>
             </div>
 
-            <!-- TAB CON 2: XEM LẠI ePASS & BẾN - CẦU - PHÀ -->
-            <div id="panelPhiDuongBo" class="KHUNG-CON-TRONG-TAB" style="display: none;">
-                <h3 style="font-size: 15px; color: #0f766e; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; margin-top: 0;">
-                    <span>💳🚢 LỊCH SỬ ePASS & BẾN - CẦU - PHÀ</span>
-                    <span id="tongTienPhiDuongBo" style="font-size: 12px; font-weight: 700; color: #0284c7;">0 đ</span>
+            <!-- TAB CON 2: XEM LẠI ePASS RIÊNG -->
+            <div id="panelXemEpass" class="KHUNG-CON-TRONG-TAB" style="display: none;">
+                <h3 style="font-size: 15px; color: #0284c7; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; margin-top: 0;">
+                    <span>💳 LỊCH SỬ ePASS</span>
+                    <span id="tongTienXemEpass" style="font-size: 12px; font-weight: 700; color: #0284c7;">0 đ</span>
                 </h3>
 
                 <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
-                    <select id="filterLoaiPhiDuongBo" onchange="xemLaiEpassVaBcp()" style="flex: 1; min-width: 140px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; background: #fff; color: #1e293b;">
-                        <option value="ALL">Tất cả (ePASS + Bến)</option>
-                        <option value="EPASS">Chỉ ePASS</option>
-                        <option value="BENCAUPHA">Chỉ Bến - Cầu - Phà</option>
+                    <input type="month" id="thangXemEpass" onchange="dongBoThangVanChuyen(this.value)" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; background: #fff; color: #1e293b;" />
+                    <select id="filterXeXemEpass" onchange="dongBoXeVanChuyen(this.value)" style="flex: 1; min-width: 120px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; background: #fff; color: #1e293b;">
+                        <option value="">-- Tất cả xe --</option>
+                        <option value="65C-06126">65C-06126</option>
+                        <option value="65C-12290">65C-12290</option>
+                        <option value="65H-02591">65H-02591</option>
                     </select>
-                    <button id="btnXemLaiPhiDuongBo" type="button" onclick="xemLaiEpassVaBcp()" style="padding: 8px 12px; border: none; border-radius: 8px; background: #0f766e; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;">
-                        <i class="fa-solid fa-rotate"></i> Xem lại
+                    <button type="button" onclick="xemLaiDanhSachEpass()" style="padding: 8px 12px; border: none; border-radius: 8px; background: #0284c7; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                        <i class="fa-solid fa-rotate"></i> Tải
                     </button>
                 </div>
 
-                <div id="danhSachPhiDuongBo" style="display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto;">
+                <div id="danhSachXemEpass" style="display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto;">
                     <div style="text-align: center; color: #64748b; font-size: 12px; padding: 14px;">
-                        Đang tải lịch sử ePASS & Bến - Cầu - Phà...
+                        Đang tải lịch sử ePASS...
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CON 3: XEM LẠI BẾN - CẦU - PHÀ RIÊNG -->
+            <div id="panelXemBcp" class="KHUNG-CON-TRONG-TAB" style="display: none;">
+                <h3 style="font-size: 15px; color: #0f766e; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; margin-top: 0;">
+                    <span>🚢 LỊCH SỬ BẾN - CẦU - PHÀ</span>
+                    <span id="tongTienXemBcp" style="font-size: 12px; font-weight: 700; color: #0f766e;">0 đ</span>
+                </h3>
+
+                <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <input type="month" id="thangXemBcp" onchange="dongBoThangVanChuyen(this.value)" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; background: #fff; color: #1e293b;" />
+                    <select id="filterXeXemBcp" onchange="dongBoXeVanChuyen(this.value)" style="flex: 1; min-width: 120px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; background: #fff; color: #1e293b;">
+                        <option value="">-- Tất cả xe --</option>
+                        <option value="65C-06126">65C-06126</option>
+                        <option value="65C-12290">65C-12290</option>
+                        <option value="65H-02591">65H-02591</option>
+                    </select>
+                    <button type="button" onclick="xemLaiDanhSachBcp()" style="padding: 8px 12px; border: none; border-radius: 8px; background: #0f766e; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                        <i class="fa-solid fa-rotate"></i> Tải
+                    </button>
+                </div>
+
+                <div id="danhSachXemBcp" style="display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto;">
+                    <div style="text-align: center; color: #64748b; font-size: 12px; padding: 14px;">
+                        Đang tải lịch sử Bến - Cầu - Phà...
                     </div>
                 </div>
             </div>
@@ -529,24 +561,70 @@
 
         window.chuyenTabVanChuyen = function(tabName) {
             const panelVc = document.getElementById('panelVanChuyen');
-            const panelPhi = document.getElementById('panelPhiDuongBo');
+            const panelEpass = document.getElementById('panelXemEpass');
+            const panelBcp = document.getElementById('panelXemBcp');
             const btnVc = document.getElementById('tabBtnVanChuyen');
-            const btnPhi = document.getElementById('tabBtnPhiDuongBo');
-            if (!panelVc || !panelPhi || !btnVc || !btnPhi) return;
+            const btnEpass = document.getElementById('tabBtnXemEpass');
+            const btnBcp = document.getElementById('tabBtnXemBcp');
+            if (!panelVc || !panelEpass || !panelBcp || !btnVc || !btnEpass || !btnBcp) return;
 
             panelVc.style.display = tabName === 'van-chuyen' ? 'block' : 'none';
-            panelPhi.style.display = tabName === 'phi-duong-bo' ? 'block' : 'none';
+            panelEpass.style.display = tabName === 'xem-epass' ? 'block' : 'none';
+            panelBcp.style.display = tabName === 'xem-bcp' ? 'block' : 'none';
 
             btnVc.style.background = tabName === 'van-chuyen' ? '#0082C8' : '#ffffff';
             btnVc.style.color = tabName === 'van-chuyen' ? '#ffffff' : '#475569';
             btnVc.style.borderColor = tabName === 'van-chuyen' ? '#0082C8' : '#cbd5e1';
 
-            btnPhi.style.background = tabName === 'phi-duong-bo' ? '#0f766e' : '#ffffff';
-            btnPhi.style.color = tabName === 'phi-duong-bo' ? '#ffffff' : '#475569';
-            btnPhi.style.borderColor = tabName === 'phi-duong-bo' ? '#0f766e' : '#cbd5e1';
+            btnEpass.style.background = tabName === 'xem-epass' ? '#0284c7' : '#ffffff';
+            btnEpass.style.color = tabName === 'xem-epass' ? '#ffffff' : '#475569';
+            btnEpass.style.borderColor = tabName === 'xem-epass' ? '#0284c7' : '#cbd5e1';
 
-            if (tabName === 'phi-duong-bo' && typeof window.xemLaiEpassVaBcp === 'function') {
-                window.xemLaiEpassVaBcp();
+            btnBcp.style.background = tabName === 'xem-bcp' ? '#0f766e' : '#ffffff';
+            btnBcp.style.color = tabName === 'xem-bcp' ? '#ffffff' : '#475569';
+            btnBcp.style.borderColor = tabName === 'xem-bcp' ? '#0f766e' : '#cbd5e1';
+
+            if (tabName === 'xem-epass' && typeof window.xemLaiDanhSachEpass === 'function') {
+                window.xemLaiDanhSachEpass();
+            } else if (tabName === 'xem-bcp' && typeof window.xemLaiDanhSachBcp === 'function') {
+                window.xemLaiDanhSachBcp();
+            }
+        };
+
+        window.dongBoThangVanChuyen = function(thangVal) {
+            const ids = ['thangVanChuyen', 'thangXemEpass', 'thangXemBcp'];
+            ids.forEach((id) => {
+                const el = document.getElementById(id);
+                if (el && el.value !== thangVal) {
+                    el.value = thangVal;
+                }
+            });
+            const lbl = document.getElementById('labelThangNamVC');
+            if (lbl && /^\d{4}-\d{2}$/.test(thangVal)) {
+                const [y, m] = thangVal.split('-');
+                lbl.textContent = `${m}/${y}`;
+            }
+            if (typeof window.xemLaiDanhSachEpass === 'function') {
+                window.xemLaiDanhSachEpass();
+            }
+            if (typeof window.xemLaiDanhSachBcp === 'function') {
+                window.xemLaiDanhSachBcp();
+            }
+        };
+
+        window.dongBoXeVanChuyen = function(xeVal) {
+            const ids = ['filterPhuongTien', 'filterXeXemEpass', 'filterXeXemBcp'];
+            ids.forEach((id) => {
+                const el = document.getElementById(id);
+                if (el && el.value !== xeVal) {
+                    el.value = xeVal;
+                }
+            });
+            if (typeof window.xemLaiDanhSachEpass === 'function') {
+                window.xemLaiDanhSachEpass();
+            }
+            if (typeof window.xemLaiDanhSachBcp === 'function') {
+                window.xemLaiDanhSachBcp();
             }
         };
     </script>
