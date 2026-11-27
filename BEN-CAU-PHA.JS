@@ -2,7 +2,7 @@ import { collection, doc, setDoc, getDocs, query, where, limit } from "https://w
 
 const db = window.db;
 const COLLECTION_BENCAUPHA = "BENCAUPHA";
-const COLLECTION_CHUYEN = "chuyenVtracking";
+const COLLECTION_TUYENDUONG = "TUYENDUONG";
 const DIA_DIEM_MAC_DINH = [
     "Phà Cần Thơ",
     "Phà Vàm Cống",
@@ -42,33 +42,59 @@ function chuanHoaNgay(val) {
     return s;
 }
 
-function chuanHoaBanGhiChuyen(docId, data = {}) {
+function layNgayTuDocumentTuyenDuong(data = {}) {
+    const candidates = [
+        data.ngay,
+        data.ngayChay,
+        data.ngayGiao,
+        data.ngayXuatPhat,
+        data.batDauGiaoHang,
+        data.ketThucGiaoHang,
+        data.ngayTao
+    ];
+    for (const c of candidates) {
+        const d = chuanHoaNgay(c);
+        if (d) return d;
+    }
+    return "";
+}
+
+function layBienSoTuDocumentTuyenDuong(data = {}) {
+    const raw =
+        data.bienSo ||
+        data.phuongTien ||
+        data.bienSoXe ||
+        data.soXe ||
+        data.xe ||
+        data.soPhuongTien ||
+        "";
+    return String(raw).trim().replace(/\s+/g, "").toUpperCase();
+}
+
+function chuanHoaChuyenTuTuyenDuong(docId, data = {}) {
+    const chuyenTracking = data.chuyenVtracking ?? data.chuyen ?? "";
+    const doiTuong = String(data.doiTuong || data.tenChuyen || data.tuyenDuong || data.loTrinh || "").trim();
+    const ngay = layNgayTuDocumentTuyenDuong(data);
+    const bienSo = layBienSoTuDocumentTuyenDuong(data);
+
     const maChuyen = String(
-        data.maChuyen || data.chuyenId || data.soChuyen || data.tripId || data.code || docId || ""
+        data.maChuyen || data.chuyenId || docId || ""
     ).trim();
-    const tenTuyen = String(
-        data.tenChuyen || data.tuyenDuong || data.tenTuyen || data.loTrinh || data.hanhTrinh || data.noiDen || data.diaDiem || ""
-    ).trim();
-    const ngay = chuanHoaNgay(
-        data.ngay || data.ngayChay || data.ngayXuatPhat || data.ngayGiao || data.startTime || ""
-    );
-    const bienSo = String(
-        data.bienSo || data.phuongTien || data.bienSoXe || data.soXe || data.xe || ""
-    ).trim().replace(/\s+/g, "");
 
-    if (!maChuyen && !tenTuyen) return null;
+    if (!maChuyen && !doiTuong && chuyenTracking === "") return null;
 
-    const idChuyen = maChuyen || tenTuyen;
-    const labelParts = [];
-    if (maChuyen) labelParts.push(maChuyen);
-    if (tenTuyen && tenTuyen !== maChuyen) labelParts.push(tenTuyen);
-    if (bienSo) labelParts.push(bienSo);
-    if (ngay) labelParts.push(ngay);
-    const label = labelParts.join(" - ") || idChuyen;
+    const idChuyen = maChuyen || `${docId}`;
+    const parts = [];
+    if (chuyenTracking !== "") parts.push(`Chuyến ${chuyenTracking}`);
+    if (doiTuong) parts.push(doiTuong);
+    if (bienSo) parts.push(bienSo);
+    if (ngay) parts.push(ngay);
+    const tenHienThi = parts.length > 0 ? `${idChuyen} (${parts.join(" - ")})` : idChuyen;
 
     return {
         chuyenId: idChuyen,
-        tenChuyen: label,
+        chuyenVtracking: chuyenTracking,
+        tenChuyen: tenHienThi,
         chuyenKey: chuanHoaKeyChuyen(idChuyen),
         ngay,
         bienSo
@@ -81,52 +107,51 @@ window.taiDanhSachChuyenBcp = async function (giaTriGiuLai = "") {
     if (!selectChuyen) return;
 
     const currentVal = giaTriGiuLai || selectChuyen.value;
-    const ngayChon = document.getElementById("bcpNgay")?.value || "";
-    const bienSoChon = (document.getElementById("bcpBienSo")?.value || "").trim().replace(/\s+/g, "");
+    const ngayChon = chuanHoaNgay(document.getElementById("bcpNgay")?.value || "");
+    const bienSoChon = (document.getElementById("bcpBienSo")?.value || "").trim().replace(/\s+/g, "").toUpperCase();
 
-    const tatCaChuyen = [];
-    const danhSachLoc = new Map();
+    const danhSachChinhXac = new Map();
+    const danhSachDuPhong = new Map();
 
     if (database) {
         try {
-            const snap = await getDocs(query(collection(database, COLLECTION_CHUYEN), limit(300)));
+            const snap = await getDocs(query(collection(database, COLLECTION_TUYENDUONG), limit(400)));
             snap.forEach((docSnap) => {
-                const item = chuanHoaBanGhiChuyen(docSnap.id, docSnap.data() || {});
+                const item = chuanHoaChuyenTuTuyenDuong(docSnap.id, docSnap.data() || {});
                 if (!item) return;
-                tatCaChuyen.push(item);
 
-                const khopXe = !bienSoChon || !item.bienSo || item.bienSo === bienSoChon;
-                const khopNgay = !ngayChon || !item.ngay || item.ngay === ngayChon;
-                if (khopXe && khopNgay && !danhSachLoc.has(item.chuyenId)) {
-                    danhSachLoc.set(item.chuyenId, item);
+                if (!danhSachDuPhong.has(item.chuyenId)) {
+                    danhSachDuPhong.set(item.chuyenId, item);
+                }
+
+                const khopNgay = !ngayChon || item.ngay === ngayChon;
+                const khopXe = !bienSoChon || item.bienSo === bienSoChon;
+
+                if (khopNgay && khopXe && !danhSachChinhXac.has(item.chuyenId)) {
+                    danhSachChinhXac.set(item.chuyenId, item);
                 }
             });
 
-            if (danhSachLoc.size === 0 && tatCaChuyen.length > 0) {
-                const thangChon = ngayChon ? ngayChon.slice(0, 7) : "";
-                for (const item of tatCaChuyen) {
-                    const khopXe = !bienSoChon || !item.bienSo || item.bienSo === bienSoChon;
-                    const khopThang = !thangChon || !item.ngay || item.ngay.startsWith(thangChon);
-                    if (khopXe && khopThang && !danhSachLoc.has(item.chuyenId)) {
-                        danhSachLoc.set(item.chuyenId, item);
+            if (danhSachChinhXac.size === 0 && (ngayChon || bienSoChon)) {
+                snap.forEach((docSnap) => {
+                    const item = chuanHoaChuyenTuTuyenDuong(docSnap.id, docSnap.data() || {});
+                    if (!item) return;
+                    const khopNgay = ngayChon && item.ngay === ngayChon;
+                    const khopXe = bienSoChon && item.bienSo === bienSoChon;
+                    if ((khopNgay || khopXe) && !danhSachChinhXac.has(item.chuyenId)) {
+                        danhSachChinhXac.set(item.chuyenId, item);
                     }
-                }
-            }
-            if (danhSachLoc.size === 0 && tatCaChuyen.length > 0) {
-                for (const item of tatCaChuyen) {
-                    if (!danhSachLoc.has(item.chuyenId)) {
-                        danhSachLoc.set(item.chuyenId, item);
-                    }
-                }
+                });
             }
         } catch (err) {
-            console.warn(`Không đọc được chuyến từ ${COLLECTION_CHUYEN}:`, err);
+            console.warn(`Không đọc được chuyến từ ${COLLECTION_TUYENDUONG}:`, err);
         }
     }
 
-    mapChuyenBcp = danhSachLoc;
+    const nguonHienThi = danhSachChinhXac.size > 0 ? danhSachChinhXac : danhSachDuPhong;
+    mapChuyenBcp = nguonHienThi;
 
-    const sortedList = Array.from(danhSachLoc.values()).sort((a, b) =>
+    const sortedList = Array.from(nguonHienThi.values()).sort((a, b) =>
         (b.ngay || "").localeCompare(a.ngay || "") || a.tenChuyen.localeCompare(b.tenChuyen, "vi")
     );
 
@@ -146,12 +171,13 @@ function layThongTinChuyenBcp() {
     const selectChuyen = document.getElementById("bcpChuyen");
     const chuyenId = selectChuyen?.value.trim() || "";
     if (!chuyenId) {
-        return { chuyenId: "", tenChuyen: "", chuyenKey: "" };
+        return { chuyenId: "", chuyenVtracking: "", tenChuyen: "", chuyenKey: "" };
     }
     const found = mapChuyenBcp.get(chuyenId);
     const tenChuyen = found?.tenChuyen || selectChuyen.options[selectChuyen.selectedIndex]?.text.trim() || chuyenId;
     return {
         chuyenId,
+        chuyenVtracking: found?.chuyenVtracking ?? "",
         tenChuyen,
         chuyenKey: chuanHoaKeyChuyen(chuyenId)
     };
@@ -416,6 +442,7 @@ window.luuBcpVaoFirebase = async function () {
             ngay: ngay,
             bienSo: bienSo,
             chuyenId: thongTinChuyen.chuyenId,
+            chuyenVtracking: thongTinChuyen.chuyenVtracking,
             tenChuyen: thongTinChuyen.tenChuyen,
             chuyenKey: thongTinChuyen.chuyenKey,
             soTien: soTien,
