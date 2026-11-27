@@ -61,6 +61,17 @@ function layTenRutGon(hoTen) {
     return arr[arr.length - 1];
 }
 
+function vietHoaChuCaiDau(str) {
+    if (!str || typeof str !== "string") return "";
+    return str
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLocaleLowerCase("vi-VN")
+        .replace(/(^|\s|[-/,(])([a-zàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ])/giu, (match, prefix, ch) => {
+            return prefix + ch.toLocaleUpperCase("vi-VN");
+        });
+}
+
 function layVungTieuThu(data) {
     let xa = data.phuongXa ? data.phuongXa.trim() : "";
     let tinh = data.thanhPho ? data.thanhPho.trim() : "";
@@ -744,7 +755,7 @@ function hienThiDanhSachVanChuyen() {
 function renderCardDon(data, parentElement, isXeMay = false, index = 0, danhSachDon = []) {
     const maPhieu = data.maPhieu || data.id;
     const chuyenVal = (data.chuyen !== undefined && data.chuyen !== null && data.chuyen !== "") ? ` ${data.chuyen}` : "";
-    const doiTuong = data.doiTuong || 'Chưa xác định';
+    const doiTuong = data.doiTuong ? vietHoaChuCaiDau(data.doiTuong) : 'Chưa xác định';
     const maPXK = data.pxk ? data.pxk.trim() : '---';
 
     let nhanVienHtml = '';
@@ -941,7 +952,7 @@ window.moBangDieuChinhVanChuyen = function(idsList = []) {
         return `
             <tr data-doc-id="${item.id}" data-ma-phieu="${maPhieu}">
                 <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 11.5px; color: #0f172a; white-space: nowrap;">
-                    ${maPhieu}<br><span style="font-size: 10px; font-weight: normal; color: #64748b;">${item.doiTuong || ''}</span>
+                    ${maPhieu}<br><span style="font-size: 10px; font-weight: normal; color: #64748b;">${item.doiTuong ? vietHoaChuCaiDau(item.doiTuong) : ''}</span>
                 </td>
                 <td style="padding: 4px; border: 1px solid #cbd5e1;">
                     <input type="number" step="any" class="dc-km-bd" value="${kmBD}" style="width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
@@ -1634,7 +1645,7 @@ window.xuatPdfBangKeVanChuyen = async function(kyChon = '01-15') {
                     }
                 }
 
-                const dt = (don.doiTuong || "").trim();
+                const dt = vietHoaChuCaiDau(don.doiTuong || "");
                 const dv = (don.dinhVi || "").trim();
                 const groupKey = `${dt}___${dv}`;
                 const chungTuStr = layChungTuPdf(don);
