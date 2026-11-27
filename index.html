@@ -446,6 +446,33 @@
                     <!-- Dữ liệu sẽ tự động render ra đây -->
                 </div>
 
+                <!-- KHU VỰC XEM LẠI ePASS & BẾN - CẦU - PHÀ -->
+                <div style="margin-top: 14px; padding-top: 12px; border-top: 2px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: #0f172a;">
+                            💳🚢 LỊCH SỬ ePASS & BẾN - CẦU - PHÀ
+                        </h4>
+                        <span id="tongTienPhiDuongBo" style="font-size: 12px; font-weight: 700; color: #0284c7;">0 đ</span>
+                    </div>
+
+                    <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+                        <select id="filterLoaiPhiDuongBo" onchange="xemLaiEpassVaBcp()" style="flex: 1; padding: 7px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 11px; font-weight: 600; background: #fff; color: #1e293b;">
+                            <option value="ALL">Tất cả (ePASS + Bến)</option>
+                            <option value="EPASS">Chỉ ePASS</option>
+                            <option value="BENCAUPHA">Chỉ Bến - Cầu - Phà</option>
+                        </select>
+                        <button id="btnXemLaiPhiDuongBo" type="button" onclick="xemLaiEpassVaBcp()" style="padding: 7px 10px; border: none; border-radius: 8px; background: #0f766e; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                            <i class="fa-solid fa-rotate"></i> Xem lại
+                        </button>
+                    </div>
+
+                    <div id="danhSachPhiDuongBo" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
+                        <div style="text-align: center; color: #64748b; font-size: 12px; padding: 12px;">
+                            Chọn tháng / phương tiện và bấm "Xem lại" để xem ePASS & Bến - Cầu - Phà.
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
