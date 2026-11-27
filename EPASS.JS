@@ -86,14 +86,28 @@ function layTenTramChon() {
     return chon;
 }
 
-function chuanHoaSoNguyen(val) {
+/**
+ * Chuẩn hóa số cho phép tối đa 1 chữ số thập phân (hỗ trợ cả dấu ',' và '.')
+ */
+function chuanHoaSoMotLe(val) {
     if (val === undefined || val === null) return "";
-    return String(val).replace(/[^0-9]/g, "");
+    let s = String(val).replace(/,/g, ".").replace(/[^0-9.]/g, "");
+    const firstDot = s.indexOf(".");
+    if (firstDot !== -1) {
+        const phanNguyen = s.slice(0, firstDot);
+        const phanLe = s.slice(firstDot + 1).replace(/\./g, "").slice(0, 1);
+        s = `${phanNguyen}.${phanLe}`;
+    }
+    return s;
 }
 
-function dinhDangHangNghin(so) {
-    const num = Number(so) || 0;
-    return num.toLocaleString("vi-VN") + " đ";
+function lamTronMotLe(so) {
+    return Math.round((Number(so) || 0) * 10) / 10;
+}
+
+function dinhDangTienMotLe(so) {
+    const num = lamTronMotLe(so);
+    return num.toLocaleString("vi-VN", { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + " đ";
 }
 
 function dinhDangNgayGioHeThong(nowDate = new Date()) {
@@ -132,7 +146,7 @@ function chonBanGhiEpassMoiNhat(docsSnap) {
 window.apDungTienEpassGoiY = function (soTien) {
     const soTienInput = document.getElementById("epSoTien");
     if (!soTienInput || !soTien) return;
-    soTienInput.value = String(Math.round(Number(soTien)));
+    soTienInput.value = String(lamTronMotLe(soTien));
     window.dinhDangSoTienEpass();
 };
 
@@ -141,7 +155,7 @@ function hienThiGoiYTienEpass(banGhi, khopCaXeVaTram = true) {
     if (!labelGoiY) return;
 
     if (banGhi && Number(banGhi.soTien) > 0) {
-        const tien = Math.round(Number(banGhi.soTien));
+        const tien = lamTronMotLe(banGhi.soTien);
         const xeText = banGhi.bienSo ? `${banGhi.bienSo}` : "";
         const tramText = banGhi.tramThuPhi ? `${banGhi.tramThuPhi}` : "";
         const infoParts = [];
@@ -150,7 +164,7 @@ function hienThiGoiYTienEpass(banGhi, khopCaXeVaTram = true) {
         if (!khopCaXeVaTram && tramText) infoParts.push("theo trạm");
         const meta = infoParts.length > 0 ? ` (${infoParts.join(" - ")})` : "";
 
-        labelGoiY.innerHTML = `Gợi ý${meta}: <a href="javascript:void(0)" onclick="apDungTienEpassGoiY(${tien})" title="Bấm để áp dụng số tiền này" style="color:#0284c7; font-weight:700; text-decoration:underline;">${tien.toLocaleString("vi-VN")} đ</a>`;
+        labelGoiY.innerHTML = `Gợi ý${meta}: <a href="javascript:void(0)" onclick="apDungTienEpassGoiY(${tien})" title="Bấm để áp dụng số tiền này" style="color:#0284c7; font-weight:700; text-decoration:underline;">${dinhDangTienMotLe(tien)}</a>`;
     } else {
         labelGoiY.textContent = "";
     }
@@ -213,14 +227,14 @@ window.dinhDangSoTienEpass = function () {
     const preview = document.getElementById("previewTienEpass");
     if (!soTienInput) return;
 
-    const clean = chuanHoaSoNguyen(soTienInput.value);
+    const clean = chuanHoaSoMotLe(soTienInput.value);
     if (soTienInput.value !== clean) {
         soTienInput.value = clean;
     }
 
-    const soTien = parseFloat(clean) || 0;
+    const soTien = lamTronMotLe(parseFloat(clean) || 0);
     if (preview) {
-        preview.textContent = dinhDangHangNghin(soTien);
+        preview.textContent = dinhDangTienMotLe(soTien);
     }
 };
 
@@ -234,7 +248,7 @@ window.luuEpassVaoFirebase = async function () {
     const soTienRaw = document.getElementById("epSoTien")?.value;
     const tramThuPhi = layTenTramChon();
 
-    const soTien = parseFloat(chuanHoaSoNguyen(soTienRaw)) || 0;
+    const soTien = lamTronMotLe(parseFloat(chuanHoaSoMotLe(soTienRaw)) || 0);
 
     if (!ngay) {
         alert("Vui lòng chọn Ngày giao dịch / phát sinh!");
@@ -283,7 +297,7 @@ window.luuEpassVaoFirebase = async function () {
 
         if (nutBam) {
             nutBam.style.background = "#15803d";
-            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã lưu (${dinhDangHangNghin(soTien)} - ${bienSo})`;
+            nutBam.innerHTML = `<i class="fa-solid fa-circle-check"></i> Đã lưu (${dinhDangTienMotLe(soTien)} - ${bienSo})`;
         }
 
         document.getElementById("epSoTien").value = "";
