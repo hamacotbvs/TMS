@@ -132,17 +132,20 @@
             </div>
         </div>
 
-        <!--THÊM MỚI (2 TAB CON: CHI PHÍ & NHIÊN LIỆU)-->
+        <!--THÊM MỚI (3 TAB CON: CHI PHÍ, NHIÊN LIỆU & ePASS)-->
         <div id="them-moi" class="trang-content">
             <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
 
-            <!-- THANH 2 TAB: CHI PHÍ | NHIÊN LIỆU -->
-            <div style="display: flex; gap: 8px; margin-bottom: 12px; padding-right: 48px;">
-                <button id="tabBtnChiPhi" type="button" onclick="chuyenTabNhapLieu('chi-phi')" style="flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+            <!-- THANH 3 TAB: CHI PHÍ | NHIÊN LIỆU | ePASS -->
+            <div style="display: flex; gap: 6px; margin-bottom: 12px; padding-right: 48px;">
+                <button id="tabBtnChiPhi" type="button" onclick="chuyenTabNhapLieu('chi-phi')" style="flex: 1; padding: 9px 8px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
                     📝 CHI PHÍ
                 </button>
-                <button id="tabBtnNhienLieu" type="button" onclick="chuyenTabNhapLieu('nhien-lieu')" style="flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                <button id="tabBtnNhienLieu" type="button" onclick="chuyenTabNhapLieu('nhien-lieu')" style="flex: 1; padding: 9px 8px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
                     ⛽ NHIÊN LIỆU
+                </button>
+                <button id="tabBtnEpass" type="button" onclick="chuyenTabNhapLieu('epass')" style="flex: 1; padding: 9px 8px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                    💳 ePASS
                 </button>
             </div>
 
@@ -292,6 +295,45 @@
                     </button>
                 </div>
             </div>
+
+            <!-- TAB 3: NHẬP PHÍ ePASS PHƯƠNG TIỆN (COLLECTION EPASS) -->
+            <div id="panelNhapEpass" class="KHUNG-CON-TRONG-TAB" style="display: none;">
+                <h3 style="font-size: 16px; color: #0284c7; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                    💳 NHẬP PHÍ ePASS XE
+                </h3>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ngày giao dịch / phát sinh:</label>
+                        <input type="date" id="epNgay" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: bold; color: #334155;">
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
+                        <select id="epBienSo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
+                            <option value="">-- Chọn xe --</option>
+                            <option value="65C-06126">65C-06126</option>
+                            <option value="65H-02591">65H-02591</option>
+                            <option value="65C-12290">65C-12290</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Số tiền phí ePass (VNĐ):</label>
+                        <input type="text" inputmode="numeric" id="epSoTien" oninput="dinhDangSoTienEpass()" placeholder="0" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #0284c7; text-align: right; width: 100%; box-sizing: border-box;">
+                        <small id="previewTienEpass" style="font-size: 12px; font-weight: 700; color: #16a34a; text-align: right;">0 đ</small>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">Ghi chú / Trạm thu phí:</label>
+                        <input type="text" id="epGhiChu" placeholder="Ví dụ: Nạp tiền ePass / phí qua trạm..." style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;">
+                    </div>
+
+                    <button id="btnLuuEpass" type="button" onclick="luuEpassVaoFirebase()" style="width: 100%; background: #0284c7; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+                        <i class="fa-solid fa-credit-card"></i> Lưu phí ePass
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!--VẬN CHUYỂN (CỐ ĐỊNH HEADER VÀ CÙNG 1 HÀNG)-->
@@ -351,21 +393,27 @@
         window.chuyenTabNhapLieu = function(tabName) {
             const panelChiPhi = document.getElementById('panelNhapChiPhi');
             const panelNhienLieu = document.getElementById('panelNhapNhienLieu');
+            const panelEpass = document.getElementById('panelNhapEpass');
             const btnChiPhi = document.getElementById('tabBtnChiPhi');
             const btnNhienLieu = document.getElementById('tabBtnNhienLieu');
-            if (!panelChiPhi || !panelNhienLieu || !btnChiPhi || !btnNhienLieu) return;
+            const btnEpass = document.getElementById('tabBtnEpass');
+            if (!panelChiPhi || !panelNhienLieu || !panelEpass || !btnChiPhi || !btnNhienLieu || !btnEpass) return;
 
-            const isChiPhi = tabName === 'chi-phi';
-            panelChiPhi.style.display = isChiPhi ? 'block' : 'none';
-            panelNhienLieu.style.display = isChiPhi ? 'none' : 'block';
+            panelChiPhi.style.display = tabName === 'chi-phi' ? 'block' : 'none';
+            panelNhienLieu.style.display = tabName === 'nhien-lieu' ? 'block' : 'none';
+            panelEpass.style.display = tabName === 'epass' ? 'block' : 'none';
 
-            btnChiPhi.style.background = isChiPhi ? '#0082C8' : '#ffffff';
-            btnChiPhi.style.color = isChiPhi ? '#ffffff' : '#475569';
-            btnChiPhi.style.borderColor = isChiPhi ? '#0082C8' : '#cbd5e1';
+            btnChiPhi.style.background = tabName === 'chi-phi' ? '#0082C8' : '#ffffff';
+            btnChiPhi.style.color = tabName === 'chi-phi' ? '#ffffff' : '#475569';
+            btnChiPhi.style.borderColor = tabName === 'chi-phi' ? '#0082C8' : '#cbd5e1';
 
-            btnNhienLieu.style.background = !isChiPhi ? '#16a34a' : '#ffffff';
-            btnNhienLieu.style.color = !isChiPhi ? '#ffffff' : '#475569';
-            btnNhienLieu.style.borderColor = !isChiPhi ? '#16a34a' : '#cbd5e1';
+            btnNhienLieu.style.background = tabName === 'nhien-lieu' ? '#16a34a' : '#ffffff';
+            btnNhienLieu.style.color = tabName === 'nhien-lieu' ? '#ffffff' : '#475569';
+            btnNhienLieu.style.borderColor = tabName === 'nhien-lieu' ? '#16a34a' : '#cbd5e1';
+
+            btnEpass.style.background = tabName === 'epass' ? '#0284c7' : '#ffffff';
+            btnEpass.style.color = tabName === 'epass' ? '#ffffff' : '#475569';
+            btnEpass.style.borderColor = tabName === 'epass' ? '#0284c7' : '#cbd5e1';
         };
     </script>
 
@@ -391,5 +439,6 @@
     <script type="module" src="HOACHTOAN-CHIPHI.JS"></script>
     <script type="module" src="LICHSU-VANCHUYEN.JS"></script>
     <script type="module" src="DO-NHIEN-LIEU.JS"></script>
+    <script type="module" src="EPASS.JS"></script>
 </body>
 </html>
