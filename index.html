@@ -17,84 +17,6 @@
     
     <!-- Liên kết file CSS tách rời -->
     <link rel="stylesheet" href="style.css">
-
-    <style>
-        .thanh-tab-menu-tren {
-            display: flex;
-            align-items: stretch;
-            width: 100%;
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .thanh-tab-menu-tren::-webkit-scrollbar {
-            display: none;
-        }
-        .thanh-tab-menu-tren .nut-tab-tren {
-            flex: 1;
-            min-width: 0;
-            padding: 11px 6px;
-            background: transparent;
-            border: none;
-            border-bottom: 3px solid transparent;
-            color: #64748b;
-            font-size: 11px;
-            font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            white-space: nowrap;
-            transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
-        }
-        .thanh-tab-menu-tren .nut-tab-tren:hover {
-            color: #0082C8;
-            background: #f8fafc;
-        }
-        .thanh-tab-menu-tren .nut-tab-tren.active {
-            color: #0082C8;
-            font-weight: 700;
-            border-bottom-color: #0082C8;
-            background: #f0f9ff;
-        }
-        .thanh-tab-menu-tren.co-nut-reset {
-            padding-right: 48px;
-        }
-        .khung-lich-su-kho {
-            background: #ffffff;
-            border-radius: 14px;
-            padding: 12px;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-            border: 1px solid #e2e8f0;
-        }
-        .header-lich-su-kho {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-        .header-lich-su-kho .bo-chon-thang {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 5px 10px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #1e293b;
-            cursor: pointer;
-        }
-    </style>
 </head>
 
 <body>
@@ -102,7 +24,56 @@
     <div class="KHUNG-CAC-TAB">
         <!--TRANG CHỦ-->
         <div id="home" class="trang-content active">
-            <div class="KHUNG-TAO-KHOANG-CACH-VIEN-DT"></div>
+            <div class="KHUNG-TAO-KHOANG-CACH-VIEN-DT">
+                <button onclick="moLichSuChiPhi()" class="btn-history"> <i class="fa-solid fa-clock-rotate-left"></i> Xem lịch sử chi phí </button>
+                <div id="modalLichSu" class="modal-hidden">
+                    <div class="modal-content">
+                        <div class="modal-header-custom">
+                            <button class="nut-dong-modal" onclick="dongModal()">&times;</button>
+                            <h3 class="modal-tieu-de">💸 CHI PHÍ KHO</h3>
+                            <div class="bo-chon-thang">
+                                <span id="labelThangNam">--/----</span>
+                                <input type="month" id="inputThangAn" class="o-lich-an-giao-dien">
+                            </div>
+                        </div>
+                        <div class="cost-comparison-container" style="margin-bottom: 1px; padding: 8px; background: #f8fafc; border-radius: 0 0 20px 20px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: bold;">
+                                <span style="color: #2563eb;">Kho: <span id="lblTongPhiKho">0 trđ</span></span>
+                                <div style="text-align: center; margin-bottom: 1px; font-size: 13px; font-weight: bold;">
+                                    <span>TỔNG CHI PHÍ: <span id="lblTongCong">0 trđ</span></span>
+                                </div>
+                                <span style="color: #dc2626;">Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
+                            </div>
+
+                            <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                <div id="barPhiKho" style="height: 12px; background: transparent; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                                    <div id="subBarKhoSon" style="height: 6px !important; background: #1d4ed8; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                                    <div id="subBarKhoTBVS" style="height: 6px !important; background: #93c5fd; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                                </div>
+                                <div id="barPhiLogistics" style="height: 12px; background: transparent; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
+                                    <div id="subBarLogisticsSon" style="height: 6px !important; background: #c2410c; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                                    <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #fa9797; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 0 2px;">
+                                <div>
+                                    <span style="color: #1d4ed8; font-weight: 500;">Sơn: <span id="lblSonKho">0 trđ</span></span> | 
+                                    <span style="color: #93c5fd; font-weight: 500;">TBVS: <span id="lblTbvsKho">0 trđ</span></span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color: #c2410c; font-weight: 500;">Sơn: <span id="lblSonLogistics">0 trđ</span></span> | 
+                                    <span style="color: #fa9797; font-weight: 500;">TBVS: <span id="lblTbvsLogistics">0 trđ</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; font-size: 12px; font-weight: bold; color: #64748b; margin-top: 10px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Chi tiết các khoản phát sinh
+                        </div>
+                        <div id="danhSachLichSu"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!--BÁO CÁO-->
@@ -165,18 +136,18 @@
         <div id="them-moi" class="trang-content">
             <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
 
-            <!-- THANH TAB KIỂU MENU TRÊN -->
-            <div class="thanh-tab-menu-tren co-nut-reset">
-                <button id="tabBtnChiPhi" type="button" class="nut-tab-tren active" onclick="chuyenTabNhapLieu('chi-phi')">
+            <!-- THANH 4 TAB: CHI PHÍ | NHIÊN LIỆU | ePASS | BẾN -->
+            <div style="display: flex; gap: 6px; margin-bottom: 12px; padding-right: 48px;">
+                <button id="tabBtnChiPhi" type="button" onclick="chuyenTabNhapLieu('chi-phi')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     📝 CHI PHÍ
                 </button>
-                <button id="tabBtnNhienLieu" type="button" class="nut-tab-tren" onclick="chuyenTabNhapLieu('nhien-lieu')">
+                <button id="tabBtnNhienLieu" type="button" onclick="chuyenTabNhapLieu('nhien-lieu')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     ⛽ NHIÊN LIỆU
                 </button>
-                <button id="tabBtnEpass" type="button" class="nut-tab-tren" onclick="chuyenTabNhapLieu('epass')">
+                <button id="tabBtnEpass" type="button" onclick="chuyenTabNhapLieu('epass')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     💳 ePASS
                 </button>
-                <button id="tabBtnBcp" type="button" class="nut-tab-tren" onclick="chuyenTabNhapLieu('bcp')">
+                <button id="tabBtnBcp" type="button" onclick="chuyenTabNhapLieu('bcp')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     🚢 BẾN
                 </button>
             </div>
@@ -435,77 +406,20 @@
             </div>
         </div>
 
-        <!--MENU KHO (HIỂN THỊ LỊCH SỬ CHI PHÍ)-->
-        <div id="kho" class="trang-content">
-            <div class="KHUNG-TAO-KHOANG-CACH-VIEN-DT">
-                <div id="modalLichSu" class="khung-lich-su-kho">
-                    <div class="modal-content">
-                        <div class="header-lich-su-kho">
-                            <h3 class="modal-tieu-de" style="margin: 0;">💸 LỊCH SỬ CHI PHÍ</h3>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <div class="bo-chon-thang">
-                                    <span id="labelThangNam">--/----</span>
-                                    <input type="month" id="inputThangAn" class="o-lich-an-giao-dien">
-                                </div>
-                                <button type="button" onclick="moLichSuChiPhi()" style="padding: 6px 10px; border: none; border-radius: 8px; background: #0082C8; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;">
-                                    <i class="fa-solid fa-rotate"></i> Tải
-                                </button>
-                            </div>
-                        </div>
-                        <div class="cost-comparison-container" style="margin-bottom: 1px; padding: 8px; background: #f8fafc; border-radius: 0 0 20px 20px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: bold;">
-                                <span style="color: #2563eb;">Kho: <span id="lblTongPhiKho">0 trđ</span></span>
-                                <div style="text-align: center; margin-bottom: 1px; font-size: 13px; font-weight: bold;">
-                                    <span>TỔNG CHI PHÍ: <span id="lblTongCong">0 trđ</span></span>
-                                </div>
-                                <span style="color: #dc2626;">Logistics: <span id="lblTongPhiLogistics">0 trđ</span></span>
-                            </div>
-
-                            <div style="display: flex; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-                                <div id="barPhiKho" style="height: 12px; background: transparent; border-radius: 6px 0 0 6px; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
-                                    <div id="subBarKhoSon" style="height: 6px !important; background: #1d4ed8; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
-                                    <div id="subBarKhoTBVS" style="height: 6px !important; background: #93c5fd; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
-                                </div>
-                                <div id="barPhiLogistics" style="height: 12px; background: transparent; border-radius: 0 6px 6px 0; width: 50%; position: relative; transition: width 0.3s; box-sizing: border-box;">
-                                    <div id="subBarLogisticsSon" style="height: 6px !important; background: #c2410c; position: absolute; top: 50%; left: 4px; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
-                                    <div id="subBarLogisticsTBVS" style="height: 6px !important; background: #fa9797; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 3px; box-sizing: border-box;"></div>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 0 2px;">
-                                <div>
-                                    <span style="color: #1d4ed8; font-weight: 500;">Sơn: <span id="lblSonKho">0 trđ</span></span> | 
-                                    <span style="color: #93c5fd; font-weight: 500;">TBVS: <span id="lblTbvsKho">0 trđ</span></span>
-                                </div>
-                                <div style="text-align: right;">
-                                    <span style="color: #c2410c; font-weight: 500;">Sơn: <span id="lblSonLogistics">0 trđ</span></span> | 
-                                    <span style="color: #fa9797; font-weight: 500;">TBVS: <span id="lblTbvsLogistics">0 trđ</span></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="text-align: center; font-size: 12px; font-weight: bold; color: #64748b; margin-top: 10px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Chi tiết các khoản phát sinh
-                        </div>
-                        <div id="danhSachLichSu"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!--VẬN CHUYỂN (4 TAB CON RIÊNG: VẬN CHUYỂN | NHIÊN LIỆU | ePASS | BẾN)-->
         <div id="van-chuyen" class="trang-content">
-            <!-- THANH TAB KIỂU MENU TRÊN -->
-            <div class="thanh-tab-menu-tren">
-                <button id="tabBtnVanChuyen" type="button" class="nut-tab-tren active" onclick="chuyenTabVanChuyen('van-chuyen')">
+            <!-- THANH TAB GIỐNG BÊN THÊM MỚI -->
+            <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                <button id="tabBtnVanChuyen" type="button" onclick="chuyenTabVanChuyen('van-chuyen')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     🚚 VẬN CHUYỂN
                 </button>
-                <button id="tabBtnXemNhienLieu" type="button" class="nut-tab-tren" onclick="chuyenTabVanChuyen('xem-nhien-lieu')">
+                <button id="tabBtnXemNhienLieu" type="button" onclick="chuyenTabVanChuyen('xem-nhien-lieu')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     ⛽ NHIÊN LIỆU
                 </button>
-                <button id="tabBtnXemEpass" type="button" class="nut-tab-tren" onclick="chuyenTabVanChuyen('xem-epass')">
+                <button id="tabBtnXemEpass" type="button" onclick="chuyenTabVanChuyen('xem-epass')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     💳 ePASS
                 </button>
-                <button id="tabBtnXemBcp" type="button" class="nut-tab-tren" onclick="chuyenTabVanChuyen('xem-bcp')">
+                <button id="tabBtnXemBcp" type="button" onclick="chuyenTabVanChuyen('xem-bcp')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                     🚢 BẾN
                 </button>
             </div>
@@ -642,13 +556,6 @@
     </nav>
 
     <script>
-        function capNhatTrangThaiTab(btns, activeBtn) {
-            btns.forEach((btn) => {
-                if (!btn) return;
-                btn.classList.toggle('active', btn === activeBtn);
-            });
-        }
-
         window.chuyenTabNhapLieu = function(tabName) {
             const panelChiPhi = document.getElementById('panelNhapChiPhi');
             const panelNhienLieu = document.getElementById('panelNhapNhienLieu');
@@ -665,13 +572,21 @@
             panelEpass.style.display = tabName === 'epass' ? 'block' : 'none';
             panelBcp.style.display = tabName === 'bcp' ? 'block' : 'none';
 
-            const mapBtn = {
-                'chi-phi': btnChiPhi,
-                'nhien-lieu': btnNhienLieu,
-                'epass': btnEpass,
-                'bcp': btnBcp
-            };
-            capNhatTrangThaiTab([btnChiPhi, btnNhienLieu, btnEpass, btnBcp], mapBtn[tabName] || btnChiPhi);
+            btnChiPhi.style.background = tabName === 'chi-phi' ? '#0082C8' : '#ffffff';
+            btnChiPhi.style.color = tabName === 'chi-phi' ? '#ffffff' : '#475569';
+            btnChiPhi.style.borderColor = tabName === 'chi-phi' ? '#0082C8' : '#cbd5e1';
+
+            btnNhienLieu.style.background = tabName === 'nhien-lieu' ? '#16a34a' : '#ffffff';
+            btnNhienLieu.style.color = tabName === 'nhien-lieu' ? '#ffffff' : '#475569';
+            btnNhienLieu.style.borderColor = tabName === 'nhien-lieu' ? '#16a34a' : '#cbd5e1';
+
+            btnEpass.style.background = tabName === 'epass' ? '#0284c7' : '#ffffff';
+            btnEpass.style.color = tabName === 'epass' ? '#ffffff' : '#475569';
+            btnEpass.style.borderColor = tabName === 'epass' ? '#0284c7' : '#cbd5e1';
+
+            btnBcp.style.background = tabName === 'bcp' ? '#0f766e' : '#ffffff';
+            btnBcp.style.color = tabName === 'bcp' ? '#ffffff' : '#475569';
+            btnBcp.style.borderColor = tabName === 'bcp' ? '#0f766e' : '#cbd5e1';
         };
 
         window.chuyenTabVanChuyen = function(tabName) {
@@ -690,13 +605,21 @@
             panelEpass.style.display = tabName === 'xem-epass' ? 'block' : 'none';
             panelBcp.style.display = tabName === 'xem-bcp' ? 'block' : 'none';
 
-            const mapBtn = {
-                'van-chuyen': btnVc,
-                'xem-nhien-lieu': btnNl,
-                'xem-epass': btnEpass,
-                'xem-bcp': btnBcp
-            };
-            capNhatTrangThaiTab([btnVc, btnNl, btnEpass, btnBcp], mapBtn[tabName] || btnVc);
+            btnVc.style.background = tabName === 'van-chuyen' ? '#0082C8' : '#ffffff';
+            btnVc.style.color = tabName === 'van-chuyen' ? '#ffffff' : '#475569';
+            btnVc.style.borderColor = tabName === 'van-chuyen' ? '#0082C8' : '#cbd5e1';
+
+            btnNl.style.background = tabName === 'xem-nhien-lieu' ? '#16a34a' : '#ffffff';
+            btnNl.style.color = tabName === 'xem-nhien-lieu' ? '#ffffff' : '#475569';
+            btnNl.style.borderColor = tabName === 'xem-nhien-lieu' ? '#16a34a' : '#cbd5e1';
+
+            btnEpass.style.background = tabName === 'xem-epass' ? '#0284c7' : '#ffffff';
+            btnEpass.style.color = tabName === 'xem-epass' ? '#ffffff' : '#475569';
+            btnEpass.style.borderColor = tabName === 'xem-epass' ? '#0284c7' : '#cbd5e1';
+
+            btnBcp.style.background = tabName === 'xem-bcp' ? '#0f766e' : '#ffffff';
+            btnBcp.style.color = tabName === 'xem-bcp' ? '#ffffff' : '#475569';
+            btnBcp.style.borderColor = tabName === 'xem-bcp' ? '#0f766e' : '#cbd5e1';
 
             if (tabName === 'xem-nhien-lieu' && typeof window.xemLaiDanhSachNhienLieu === 'function') {
                 window.xemLaiDanhSachNhienLieu();
@@ -749,17 +672,6 @@
                 window.xemLaiDanhSachBcp();
             }
         };
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const khoNavItem = document.querySelector('.MENU-DUOI .MENU-item[data-tab="kho"]');
-            if (khoNavItem) {
-                khoNavItem.addEventListener('click', function() {
-                    if (typeof window.moLichSuChiPhi === 'function') {
-                        window.moLichSuChiPhi();
-                    }
-                });
-            }
-        });
     </script>
 
     <!-- Khởi tạo Firebase -->
