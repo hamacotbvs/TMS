@@ -260,9 +260,11 @@ export function tinhPhiTinhTaiXe(kmDiVe, nguongNoiO = 60) {
     return km > nguong ? 30000 : 0;
 }
 
-export function tinhPhiTinhGiaoNhan(khoiLuongKg, kmDiVe) {
+export function tinhPhiTinhGiaoNhan(khoiLuongKg, kmDiVe, nguongNoiO = 60) {
     const kg = Number(khoiLuongKg) || 0;
     const km = Number(kmDiVe) || 0;
+    const nguong = Number(nguongNoiO) || 60;
+    if (km <= nguong) return 0;
     if (kg >= 5000) {
         return km > 120 ? 60000 : 40000;
     }
@@ -274,12 +276,13 @@ export function tinhPhiTinhChuyen(chuyen = {}) {
     const khoiLuongKg = Number(chuyen.khoiLuongKg) || 0;
     const nguongNoiO = layNguongNoiOCuaXe(chuyen.phuongTien);
     const phiTaiXe = tinhPhiTinhTaiXe(kmDiVe, nguongNoiO);
-    const phiGiaoNhan = tinhPhiTinhGiaoNhan(khoiLuongKg, kmDiVe);
+    const phiGiaoNhan = tinhPhiTinhGiaoNhan(khoiLuongKg, kmDiVe, nguongNoiO);
 
     return {
         nguongNoiO,
         kmDiVe,
         khoiLuongKg,
+        coDiTinh: kmDiVe > nguongNoiO,
         phiTaiXe,
         phiGiaoNhan,
         tongPhiTinh: phiTaiXe + phiGiaoNhan
