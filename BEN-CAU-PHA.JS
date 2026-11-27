@@ -126,7 +126,7 @@ window.taiDanhSachChuyenBcp = async function (giaTriGiuLai = "") {
         a.tenChuyen.localeCompare(b.tenChuyen, "vi", { numeric: true })
     );
 
-    let html = `<option value="">-- Không gắn chuyến --</option>`;
+    let html = `<option value="">-- Chọn chuyến --</option>`;
     for (const item of sortedList) {
         const escapedId = item.chuyenId.replace(/"/g, "&quot;");
         html += `<option value="${escapedId}">${item.tenChuyen}</option>`;
