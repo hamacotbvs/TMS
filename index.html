@@ -310,7 +310,7 @@
 
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Phương tiện:</label>
-                        <select id="epBienSo" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
+                        <select id="epBienSo" onchange="goiYTienEpassGanNhat()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; font-weight: bold; color: #1e293b; width: 100%; box-sizing: border-box;">
                             <option value="">-- Chọn xe --</option>
                             <option value="65C-06126">65C-06126</option>
                             <option value="65H-02591">65H-02591</option>
@@ -320,17 +320,20 @@
 
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Trạm:</label>
-                        <select id="epTramThuPhi" onchange="xuLyChonTramEpass()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; font-weight: 600; color: #1e293b; width: 100%; box-sizing: border-box;">
+                        <select id="epTramThuPhi" onchange="xuLyChonTramEpass(); goiYTienEpassGanNhat()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; font-weight: 600; color: #1e293b; width: 100%; box-sizing: border-box;">
                             <option value="">-- Chọn trạm thu phí --</option>
                             <option value="__THEM_MOI__">+ Thêm trạm mới...</option>
                         </select>
-                        <input type="text" id="epTramMoi" placeholder="Nhập tên trạm thu phí mới..." style="display: none; margin-top: 6px; padding: 10px; border: 1px solid #0284c7; border-radius: 8px; font-size: 13px; background: #f0f9ff; width: 100%; box-sizing: border-box;">
+                        <input type="text" id="epTramMoi" oninput="goiYTienEpassGanNhat()" placeholder="Nhập tên trạm thu phí mới..." style="display: none; margin-top: 6px; padding: 10px; border: 1px solid #0284c7; border-radius: 8px; font-size: 13px; background: #f0f9ff; width: 100%; box-sizing: border-box;">
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 12px; font-weight: 700; color: #475569;">Số tiền ePass:</label>
                         <input type="text" inputmode="numeric" id="epSoTien" oninput="dinhDangSoTienEpass()" placeholder="0" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; font-weight: 700; color: #0284c7; text-align: right; width: 100%; box-sizing: border-box;">
-                        <small id="previewTienEpass" style="font-size: 12px; font-weight: 700; color: #16a34a; text-align: right;">0 đ</small>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 16px;">
+                            <small id="goiYTienEpass" style="font-size: 11px; color: #64748b;"></small>
+                            <small id="previewTienEpass" style="font-size: 12px; font-weight: 700; color: #16a34a; text-align: right;">0 đ</small>
+                        </div>
                     </div>
 
                     <button id="btnLuuEpass" type="button" onclick="luuEpassVaoFirebase()" style="width: 100%; background: #0284c7; color: #fff; border: none; padding: 12px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
