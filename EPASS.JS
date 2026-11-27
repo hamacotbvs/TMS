@@ -49,7 +49,7 @@ async function taiDanhSachTramTuFirebase() {
         const snap = await getDocs(query(collection(db, "EPASS"), limit(100)));
         snap.forEach((docSnap) => {
             const d = docSnap.data() || {};
-            const tram = String(d.tramThuPhi || d.ghiChu || "").trim();
+            const tram = String(d.tramThuPhi || "").trim();
             if (tram) {
                 danhSachTram.add(tram);
             }
@@ -174,7 +174,6 @@ window.luuEpassVaoFirebase = async function () {
             nam: namNum,
             thang: thangNum,
             tramThuPhi: tramThuPhi,
-            ghiChu: tramThuPhi,
             ngayTaoHeThong: dinhDangNgayGioHeThong(now)
         };
 
