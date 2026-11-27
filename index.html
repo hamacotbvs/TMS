@@ -17,6 +17,53 @@
     
     <!-- Liên kết file CSS tách rời -->
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        .thanh-tab-menu-tren {
+            display: flex;
+            align-items: stretch;
+            width: 100%;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .thanh-tab-menu-tren::-webkit-scrollbar {
+            display: none;
+        }
+        .thanh-tab-menu-tren .nut-tab-tren {
+            flex: 1;
+            min-width: 0;
+            padding: 11px 6px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            white-space: nowrap;
+            transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+        }
+        .thanh-tab-menu-tren .nut-tab-tren:hover {
+            color: #0082C8;
+            background: #f8fafc;
+        }
+        .thanh-tab-menu-tren .nut-tab-tren.active {
+            color: #0082C8;
+            font-weight: 700;
+            border-bottom-color: #0082C8;
+            background: #f0f9ff;
+        }
+        .thanh-tab-menu-tren.co-nut-reset {
+            padding-right: 48px;
+        }
+    </style>
 </head>
 
 <body>
@@ -136,18 +183,18 @@
         <div id="them-moi" class="trang-content">
             <button id="NUT-LAM-MOI-APP" class="nut-reset-treo" title="Tải lại ứng dụng"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.67-.19"/></svg></button>
 
-            <!-- THANH 4 TAB: CHI PHÍ | NHIÊN LIỆU | ePASS | BẾN -->
-            <div style="display: flex; gap: 6px; margin-bottom: 12px; padding-right: 48px;">
-                <button id="tabBtnChiPhi" type="button" onclick="chuyenTabNhapLieu('chi-phi')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+            <!-- THANH TAB KIỂU MENU TRÊN -->
+            <div class="thanh-tab-menu-tren co-nut-reset">
+                <button id="tabBtnChiPhi" type="button" class="nut-tab-tren active" onclick="chuyenTabNhapLieu('chi-phi')">
                     📝 CHI PHÍ
                 </button>
-                <button id="tabBtnNhienLieu" type="button" onclick="chuyenTabNhapLieu('nhien-lieu')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                <button id="tabBtnNhienLieu" type="button" class="nut-tab-tren" onclick="chuyenTabNhapLieu('nhien-lieu')">
                     ⛽ NHIÊN LIỆU
                 </button>
-                <button id="tabBtnEpass" type="button" onclick="chuyenTabNhapLieu('epass')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                <button id="tabBtnEpass" type="button" class="nut-tab-tren" onclick="chuyenTabNhapLieu('epass')">
                     💳 ePASS
                 </button>
-                <button id="tabBtnBcp" type="button" onclick="chuyenTabNhapLieu('bcp')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                <button id="tabBtnBcp" type="button" class="nut-tab-tren" onclick="chuyenTabNhapLieu('bcp')">
                     🚢 BẾN
                 </button>
             </div>
@@ -408,18 +455,18 @@
 
         <!--VẬN CHUYỂN (4 TAB CON RIÊNG: VẬN CHUYỂN | NHIÊN LIỆU | ePASS | BẾN)-->
         <div id="van-chuyen" class="trang-content">
-            <!-- THANH TAB GIỐNG BÊN THÊM MỚI -->
-            <div style="display: flex; gap: 6px; margin-bottom: 12px;">
-                <button id="tabBtnVanChuyen" type="button" onclick="chuyenTabVanChuyen('van-chuyen')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #0082C8; background: #0082C8; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+            <!-- THANH TAB KIỂU MENU TRÊN -->
+            <div class="thanh-tab-menu-tren">
+                <button id="tabBtnVanChuyen" type="button" class="nut-tab-tren active" onclick="chuyenTabVanChuyen('van-chuyen')">
                     🚚 VẬN CHUYỂN
                 </button>
-                <button id="tabBtnXemNhienLieu" type="button" onclick="chuyenTabVanChuyen('xem-nhien-lieu')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                <button id="tabBtnXemNhienLieu" type="button" class="nut-tab-tren" onclick="chuyenTabVanChuyen('xem-nhien-lieu')">
                     ⛽ NHIÊN LIỆU
                 </button>
-                <button id="tabBtnXemEpass" type="button" onclick="chuyenTabVanChuyen('xem-epass')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                <button id="tabBtnXemEpass" type="button" class="nut-tab-tren" onclick="chuyenTabVanChuyen('xem-epass')">
                     💳 ePASS
                 </button>
-                <button id="tabBtnXemBcp" type="button" onclick="chuyenTabVanChuyen('xem-bcp')" style="flex: 1; padding: 9px 6px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                <button id="tabBtnXemBcp" type="button" class="nut-tab-tren" onclick="chuyenTabVanChuyen('xem-bcp')">
                     🚢 BẾN
                 </button>
             </div>
@@ -556,6 +603,13 @@
     </nav>
 
     <script>
+        function capNhatTrangThaiTab(btns, activeBtn) {
+            btns.forEach((btn) => {
+                if (!btn) return;
+                btn.classList.toggle('active', btn === activeBtn);
+            });
+        }
+
         window.chuyenTabNhapLieu = function(tabName) {
             const panelChiPhi = document.getElementById('panelNhapChiPhi');
             const panelNhienLieu = document.getElementById('panelNhapNhienLieu');
@@ -572,21 +626,13 @@
             panelEpass.style.display = tabName === 'epass' ? 'block' : 'none';
             panelBcp.style.display = tabName === 'bcp' ? 'block' : 'none';
 
-            btnChiPhi.style.background = tabName === 'chi-phi' ? '#0082C8' : '#ffffff';
-            btnChiPhi.style.color = tabName === 'chi-phi' ? '#ffffff' : '#475569';
-            btnChiPhi.style.borderColor = tabName === 'chi-phi' ? '#0082C8' : '#cbd5e1';
-
-            btnNhienLieu.style.background = tabName === 'nhien-lieu' ? '#16a34a' : '#ffffff';
-            btnNhienLieu.style.color = tabName === 'nhien-lieu' ? '#ffffff' : '#475569';
-            btnNhienLieu.style.borderColor = tabName === 'nhien-lieu' ? '#16a34a' : '#cbd5e1';
-
-            btnEpass.style.background = tabName === 'epass' ? '#0284c7' : '#ffffff';
-            btnEpass.style.color = tabName === 'epass' ? '#ffffff' : '#475569';
-            btnEpass.style.borderColor = tabName === 'epass' ? '#0284c7' : '#cbd5e1';
-
-            btnBcp.style.background = tabName === 'bcp' ? '#0f766e' : '#ffffff';
-            btnBcp.style.color = tabName === 'bcp' ? '#ffffff' : '#475569';
-            btnBcp.style.borderColor = tabName === 'bcp' ? '#0f766e' : '#cbd5e1';
+            const mapBtn = {
+                'chi-phi': btnChiPhi,
+                'nhien-lieu': btnNhienLieu,
+                'epass': btnEpass,
+                'bcp': btnBcp
+            };
+            capNhatTrangThaiTab([btnChiPhi, btnNhienLieu, btnEpass, btnBcp], mapBtn[tabName] || btnChiPhi);
         };
 
         window.chuyenTabVanChuyen = function(tabName) {
@@ -605,21 +651,13 @@
             panelEpass.style.display = tabName === 'xem-epass' ? 'block' : 'none';
             panelBcp.style.display = tabName === 'xem-bcp' ? 'block' : 'none';
 
-            btnVc.style.background = tabName === 'van-chuyen' ? '#0082C8' : '#ffffff';
-            btnVc.style.color = tabName === 'van-chuyen' ? '#ffffff' : '#475569';
-            btnVc.style.borderColor = tabName === 'van-chuyen' ? '#0082C8' : '#cbd5e1';
-
-            btnNl.style.background = tabName === 'xem-nhien-lieu' ? '#16a34a' : '#ffffff';
-            btnNl.style.color = tabName === 'xem-nhien-lieu' ? '#ffffff' : '#475569';
-            btnNl.style.borderColor = tabName === 'xem-nhien-lieu' ? '#16a34a' : '#cbd5e1';
-
-            btnEpass.style.background = tabName === 'xem-epass' ? '#0284c7' : '#ffffff';
-            btnEpass.style.color = tabName === 'xem-epass' ? '#ffffff' : '#475569';
-            btnEpass.style.borderColor = tabName === 'xem-epass' ? '#0284c7' : '#cbd5e1';
-
-            btnBcp.style.background = tabName === 'xem-bcp' ? '#0f766e' : '#ffffff';
-            btnBcp.style.color = tabName === 'xem-bcp' ? '#ffffff' : '#475569';
-            btnBcp.style.borderColor = tabName === 'xem-bcp' ? '#0f766e' : '#cbd5e1';
+            const mapBtn = {
+                'van-chuyen': btnVc,
+                'xem-nhien-lieu': btnNl,
+                'xem-epass': btnEpass,
+                'xem-bcp': btnBcp
+            };
+            capNhatTrangThaiTab([btnVc, btnNl, btnEpass, btnBcp], mapBtn[tabName] || btnVc);
 
             if (tabName === 'xem-nhien-lieu' && typeof window.xemLaiDanhSachNhienLieu === 'function') {
                 window.xemLaiDanhSachNhienLieu();
