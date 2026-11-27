@@ -1,13 +1,87 @@
-import { collection, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, setDoc, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
+const TRAM_MAC_DINH = [
+    "Cầu Cần Thơ",
+    "Trạm BOT Quốc lộ 1A",
+    "Cao tốc TP.HCM - Trung Lương",
+    "Cao tốc Trung Lương - Mỹ Thuận"
+];
+const danhSachTram = new Set(TRAM_MAC_DINH);
 
 function khoiTaoMacDinhEpass() {
     const inputNgay = document.getElementById("epNgay");
     if (inputNgay && !inputNgay.value) {
         inputNgay.value = new Date().toISOString().slice(0, 10);
     }
+    renderDanhSachTramEpass();
+    taiDanhSachTramTuFirebase();
     window.dinhDangSoTienEpass();
+}
+
+function renderDanhSachTramEpass(giaTriDangChon = "") {
+    const selectTram = document.getElementById("epTramThuPhi");
+    if (!selectTram) return;
+
+    const currentVal = giaTriDangChon || selectTram.value;
+    const sorted = Array.from(danhSachTram)
+        .map((t) => String(t).trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "vi"));
+
+    let html = `<option value="">-- Chọn trạm thu phí --</option>`;
+    for (const tram of sorted) {
+        const escaped = tram.replace(/"/g, "&quot;");
+        html += `<option value="${escaped}">${tram}</option>`;
+    }
+    html += `<option value="__THEM_MOI__">+ Thêm trạm mới...</option>`;
+    selectTram.innerHTML = html;
+
+    if (currentVal && Array.from(selectTram.options).some((o) => o.value === currentVal)) {
+        selectTram.value = currentVal;
+    }
+    window.xuLyChonTramEpass();
+}
+
+async function taiDanhSachTramTuFirebase() {
+    if (!db) return;
+    try {
+        const snap = await getDocs(query(collection(db, "EPASS"), limit(100)));
+        snap.forEach((docSnap) => {
+            const d = docSnap.data() || {};
+            const tram = String(d.tramThuPhi || d.ghiChu || "").trim();
+            if (tram) {
+                danhSachTram.add(tram);
+            }
+        });
+        renderDanhSachTramEpass();
+    } catch (err) {
+        console.warn("Không tải được danh sách trạm ePass:", err);
+    }
+}
+
+window.xuLyChonTramEpass = function () {
+    const selectTram = document.getElementById("epTramThuPhi");
+    const inputTramMoi = document.getElementById("epTramMoi");
+    if (!selectTram || !inputTramMoi) return;
+
+    if (selectTram.value === "__THEM_MOI__") {
+        inputTramMoi.style.display = "block";
+        inputTramMoi.focus();
+    } else {
+        inputTramMoi.style.display = "none";
+        inputTramMoi.value = "";
+    }
+};
+
+function layTenTramChon() {
+    const selectTram = document.getElementById("epTramThuPhi");
+    const inputTramMoi = document.getElementById("epTramMoi");
+    const chon = selectTram?.value.trim() || "";
+    if (chon === "__THEM_MOI__") {
+        return inputTramMoi?.value.trim() || "";
+    }
+    return chon;
 }
 
 function chuanHoaSoNguyen(val) {
@@ -61,7 +135,7 @@ window.luuEpassVaoFirebase = async function () {
     const ngay = document.getElementById("epNgay")?.value || "";
     const bienSo = document.getElementById("epBienSo")?.value.trim() || "";
     const soTienRaw = document.getElementById("epSoTien")?.value;
-    const ghiChu = document.getElementById("epGhiChu")?.value.trim() || "";
+    const tramThuPhi = layTenTramChon();
 
     const soTien = parseFloat(chuanHoaSoNguyen(soTienRaw)) || 0;
 
@@ -99,11 +173,17 @@ window.luuEpassVaoFirebase = async function () {
             soTien: soTien,
             nam: namNum,
             thang: thangNum,
-            ghiChu: ghiChu,
+            tramThuPhi: tramThuPhi,
+            ghiChu: tramThuPhi,
             ngayTaoHeThong: dinhDangNgayGioHeThong(now)
         };
 
         await setDoc(doc(collection(db, "EPASS"), docId), duLieuEpass);
+
+        if (tramThuPhi) {
+            danhSachTram.add(tramThuPhi);
+            renderDanhSachTramEpass(tramThuPhi);
+        }
 
         if (nutBam) {
             nutBam.style.background = "#15803d";
@@ -111,7 +191,8 @@ window.luuEpassVaoFirebase = async function () {
         }
 
         document.getElementById("epSoTien").value = "";
-        document.getElementById("epGhiChu").value = "";
+        const inputTramMoi = document.getElementById("epTramMoi");
+        if (inputTramMoi) inputTramMoi.value = "";
         window.dinhDangSoTienEpass();
 
         await new Promise((resolve) => setTimeout(resolve, 1500));
