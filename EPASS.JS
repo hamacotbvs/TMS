@@ -1,7 +1,7 @@
 import { collection, doc, setDoc, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const db = window.db;
-const COLLECTION_CHUYEN_CANDIDATES = ["TUYENDUONG", "CHUYENXE", "CHUYEN_XE", "VANCHUYEN"];
+const COLLECTION_CHUYEN = "chuyenVtracking";
 const TRAM_MAC_DINH = [
     "Cầu Cần Thơ",
     "Trạm BOT Quốc lộ 1A",
@@ -27,11 +27,33 @@ function chuanHoaKeyChuyen(val) {
     return String(val || "").trim().toLowerCase().replace(/\s+/g, "");
 }
 
+function chuanHoaNgay(val) {
+    if (!val) return "";
+    if (typeof val === "object" && typeof val.toDate === "function") {
+        return val.toDate().toISOString().slice(0, 10);
+    }
+    const s = String(val).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) {
+        return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+    }
+    return s;
+}
+
 function chuanHoaBanGhiChuyen(docId, data = {}) {
-    const maChuyen = String(data.maChuyen || data.chuyenId || data.soChuyen || docId || "").trim();
-    const tenTuyen = String(data.tenChuyen || data.tuyenDuong || data.tenTuyen || data.loTrinh || data.noiDen || "").trim();
-    const ngay = String(data.ngay || data.ngayChay || data.ngayXuatPhat || "").trim();
-    const bienSo = String(data.bienSo || data.phuongTien || data.xe || "").trim();
+    const maChuyen = String(
+        data.maChuyen || data.chuyenId || data.soChuyen || data.tripId || data.code || docId || ""
+    ).trim();
+    const tenTuyen = String(
+        data.tenChuyen || data.tuyenDuong || data.tenTuyen || data.loTrinh || data.hanhTrinh || data.noiDen || data.diaDiem || ""
+    ).trim();
+    const ngay = chuanHoaNgay(
+        data.ngay || data.ngayChay || data.ngayXuatPhat || data.ngayGiao || data.startTime || ""
+    );
+    const bienSo = String(
+        data.bienSo || data.phuongTien || data.bienSoXe || data.soXe || data.xe || ""
+    ).trim().replace(/\s+/g, "");
 
     if (!maChuyen && !tenTuyen) return null;
 
@@ -39,6 +61,7 @@ function chuanHoaBanGhiChuyen(docId, data = {}) {
     const labelParts = [];
     if (maChuyen) labelParts.push(maChuyen);
     if (tenTuyen && tenTuyen !== maChuyen) labelParts.push(tenTuyen);
+    if (bienSo) labelParts.push(bienSo);
     if (ngay) labelParts.push(ngay);
     const label = labelParts.join(" - ") || idChuyen;
 
@@ -58,37 +81,57 @@ window.taiDanhSachChuyenEpass = async function (giaTriGiuLai = "") {
 
     const currentVal = giaTriGiuLai || selectChuyen.value;
     const ngayChon = document.getElementById("epNgay")?.value || "";
-    const bienSoChon = document.getElementById("epBienSo")?.value.trim() || "";
-    const danhSachMoi = new Map();
+    const bienSoChon = (document.getElementById("epBienSo")?.value || "").trim().replace(/\s+/g, "");
+
+    const tatCaChuyen = [];
+    const danhSachLoc = new Map();
 
     if (database) {
-        for (const colName of COLLECTION_CHUYEN_CANDIDATES) {
-            try {
-                const snap = await getDocs(query(collection(database, colName), limit(150)));
-                if (snap.empty) continue;
+        try {
+            const snap = await getDocs(query(collection(database, COLLECTION_CHUYEN), limit(300)));
+            snap.forEach((docSnap) => {
+                const item = chuanHoaBanGhiChuyen(docSnap.id, docSnap.data() || {});
+                if (!item) return;
+                tatCaChuyen.push(item);
 
-                snap.forEach((docSnap) => {
-                    const item = chuanHoaBanGhiChuyen(docSnap.id, docSnap.data() || {});
-                    if (!item) return;
+                const khopXe = !bienSoChon || !item.bienSo || item.bienSo === bienSoChon;
+                const khopNgay = !ngayChon || !item.ngay || item.ngay === ngayChon;
+                if (khopXe && khopNgay && !danhSachLoc.has(item.chuyenId)) {
+                    danhSachLoc.set(item.chuyenId, item);
+                }
+            });
 
+            // Nếu lọc theo cả ngày & xe chưa có kết quả, ưu tiên lọc theo xe trong tháng hoặc hiển thị danh sách gần nhất
+            if (danhSachLoc.size === 0 && tatCaChuyen.length > 0) {
+                const thangChon = ngayChon ? ngayChon.slice(0, 7) : "";
+                for (const item of tatCaChuyen) {
                     const khopXe = !bienSoChon || !item.bienSo || item.bienSo === bienSoChon;
-                    const khopNgay = !ngayChon || !item.ngay || item.ngay === ngayChon;
-                    if (khopXe && khopNgay && !danhSachMoi.has(item.chuyenId)) {
-                        danhSachMoi.set(item.chuyenId, item);
+                    const khopThang = !thangChon || !item.ngay || item.ngay.startsWith(thangChon);
+                    if (khopXe && khopThang && !danhSachLoc.has(item.chuyenId)) {
+                        danhSachLoc.set(item.chuyenId, item);
                     }
-                });
-
-                if (danhSachMoi.size > 0) break;
-            } catch (err) {
-                console.warn(`Không đọc được chuyến từ ${colName}:`, err);
+                }
             }
+            if (danhSachLoc.size === 0 && tatCaChuyen.length > 0) {
+                for (const item of tatCaChuyen) {
+                    if (!danhSachLoc.has(item.chuyenId)) {
+                        danhSachLoc.set(item.chuyenId, item);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn(`Không đọc được chuyến từ ${COLLECTION_CHUYEN}:`, err);
         }
     }
 
-    mapChuyenEpass = danhSachMoi;
+    mapChuyenEpass = danhSachLoc;
+
+    const sortedList = Array.from(danhSachLoc.values()).sort((a, b) =>
+        (b.ngay || "").localeCompare(a.ngay || "") || a.tenChuyen.localeCompare(b.tenChuyen, "vi")
+    );
 
     let html = `<option value="">-- Không gắn chuyến --</option>`;
-    for (const item of danhSachMoi.values()) {
+    for (const item of sortedList) {
         const escapedId = item.chuyenId.replace(/"/g, "&quot;");
         html += `<option value="${escapedId}">${item.tenChuyen}</option>`;
     }
