@@ -2,6 +2,7 @@ import { collection, doc, setDoc, getDocs, query, where, limit } from "https://w
 
 const db = window.db;
 const COLLECTION_BENCAUPHA = "BENCAUPHA";
+const COLLECTION_CHUYEN_CANDIDATES = ["TUYENDUONG", "CHUYENXE", "CHUYEN_XE", "VANCHUYEN"];
 const DIA_DIEM_MAC_DINH = [
     "Phà Cần Thơ",
     "Phà Vàm Cống",
@@ -9,6 +10,7 @@ const DIA_DIEM_MAC_DINH = [
     "Cầu Rạch Miễu"
 ];
 const danhSachDiaDiem = new Set(DIA_DIEM_MAC_DINH);
+let mapChuyenBcp = new Map();
 
 function khoiTaoMacDinhBcp() {
     const inputNgay = document.getElementById("bcpNgay");
@@ -17,8 +19,100 @@ function khoiTaoMacDinhBcp() {
     }
     renderDanhSachDiaDiemBcp();
     taiDanhSachDiaDiemTuFirebase();
+    window.taiDanhSachChuyenBcp();
     window.dinhDangSoTienBcp();
     window.goiYTienBcpGanNhat();
+}
+
+function chuanHoaKeyChuyen(val) {
+    return String(val || "").trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function chuanHoaBanGhiChuyen(docId, data = {}) {
+    const maChuyen = String(data.maChuyen || data.chuyenId || data.soChuyen || docId || "").trim();
+    const tenTuyen = String(data.tenChuyen || data.tuyenDuong || data.tenTuyen || data.loTrinh || data.noiDen || "").trim();
+    const ngay = String(data.ngay || data.ngayChay || data.ngayXuatPhat || "").trim();
+    const bienSo = String(data.bienSo || data.phuongTien || data.xe || "").trim();
+
+    if (!maChuyen && !tenTuyen) return null;
+
+    const idChuyen = maChuyen || tenTuyen;
+    const labelParts = [];
+    if (maChuyen) labelParts.push(maChuyen);
+    if (tenTuyen && tenTuyen !== maChuyen) labelParts.push(tenTuyen);
+    if (ngay) labelParts.push(ngay);
+    const label = labelParts.join(" - ") || idChuyen;
+
+    return {
+        chuyenId: idChuyen,
+        tenChuyen: label,
+        chuyenKey: chuanHoaKeyChuyen(idChuyen),
+        ngay,
+        bienSo
+    };
+}
+
+window.taiDanhSachChuyenBcp = async function (giaTriGiuLai = "") {
+    const database = window.db || db;
+    const selectChuyen = document.getElementById("bcpChuyen");
+    if (!selectChuyen) return;
+
+    const currentVal = giaTriGiuLai || selectChuyen.value;
+    const ngayChon = document.getElementById("bcpNgay")?.value || "";
+    const bienSoChon = document.getElementById("bcpBienSo")?.value.trim() || "";
+    const danhSachMoi = new Map();
+
+    if (database) {
+        for (const colName of COLLECTION_CHUYEN_CANDIDATES) {
+            try {
+                const snap = await getDocs(query(collection(database, colName), limit(150)));
+                if (snap.empty) continue;
+
+                snap.forEach((docSnap) => {
+                    const item = chuanHoaBanGhiChuyen(docSnap.id, docSnap.data() || {});
+                    if (!item) return;
+
+                    const khopXe = !bienSoChon || !item.bienSo || item.bienSo === bienSoChon;
+                    const khopNgay = !ngayChon || !item.ngay || item.ngay === ngayChon;
+                    if (khopXe && khopNgay && !danhSachMoi.has(item.chuyenId)) {
+                        danhSachMoi.set(item.chuyenId, item);
+                    }
+                });
+
+                if (danhSachMoi.size > 0) break;
+            } catch (err) {
+                console.warn(`Không đọc được chuyến từ ${colName}:`, err);
+            }
+        }
+    }
+
+    mapChuyenBcp = danhSachMoi;
+
+    let html = `<option value="">-- Không gắn chuyến --</option>`;
+    for (const item of danhSachMoi.values()) {
+        const escapedId = item.chuyenId.replace(/"/g, "&quot;");
+        html += `<option value="${escapedId}">${item.tenChuyen}</option>`;
+    }
+    selectChuyen.innerHTML = html;
+
+    if (currentVal && Array.from(selectChuyen.options).some((o) => o.value === currentVal)) {
+        selectChuyen.value = currentVal;
+    }
+};
+
+function layThongTinChuyenBcp() {
+    const selectChuyen = document.getElementById("bcpChuyen");
+    const chuyenId = selectChuyen?.value.trim() || "";
+    if (!chuyenId) {
+        return { chuyenId: "", tenChuyen: "", chuyenKey: "" };
+    }
+    const found = mapChuyenBcp.get(chuyenId);
+    const tenChuyen = found?.tenChuyen || selectChuyen.options[selectChuyen.selectedIndex]?.text.trim() || chuyenId;
+    return {
+        chuyenId,
+        tenChuyen,
+        chuyenKey: chuanHoaKeyChuyen(chuyenId)
+    };
 }
 
 function renderDanhSachDiaDiemBcp(giaTriDangChon = "") {
@@ -242,6 +336,7 @@ window.luuBcpVaoFirebase = async function () {
 
     const ngay = document.getElementById("bcpNgay")?.value || "";
     const bienSo = document.getElementById("bcpBienSo")?.value.trim() || "";
+    const thongTinChuyen = layThongTinChuyenBcp();
     const soTienRaw = document.getElementById("bcpSoTien")?.value;
     const diaDiem = layTenDiaDiemChon();
 
@@ -278,6 +373,9 @@ window.luuBcpVaoFirebase = async function () {
         const duLieuBcp = {
             ngay: ngay,
             bienSo: bienSo,
+            chuyenId: thongTinChuyen.chuyenId,
+            tenChuyen: thongTinChuyen.tenChuyen,
+            chuyenKey: thongTinChuyen.chuyenKey,
             soTien: soTien,
             nam: namNum,
             thang: thangNum,
