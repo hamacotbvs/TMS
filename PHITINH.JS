@@ -361,20 +361,24 @@ export function tinhPhiTinhChuyen(chuyen = {}, tenNhanVienLoc = "") {
     const khoiLuongKg = Number(chuyen.khoiLuongKg) || 0;
     const nguongNoiO = layNguongNoiOCuaXe(chuyen.phuongTien);
     const coDiTinh = kmDiVe > nguongNoiO;
-    const phiTaiXeDayDu = tinhPhiTinhTaiXe(kmDiVe, nguongNoiO);
-    const phiGiaoNhanDayDu = tinhPhiTinhGiaoNhan(khoiLuongKg, kmDiVe, nguongNoiO);
+
+    const soTaiXe = (chuyen.danhSachTaiXe || []).length;
+    const soGiaoNhan = (chuyen.danhSachGiaoNhan || []).length;
+
+    const mucPhiTxChuyen = soTaiXe > 0 ? tinhPhiTinhTaiXe(kmDiVe, nguongNoiO) : 0;
+    const mucPhiGnChuyen = soGiaoNhan > 0 ? tinhPhiTinhGiaoNhan(khoiLuongKg, kmDiVe, nguongNoiO) : 0;
 
     const keyLoc = chuanHoaSoSanhTen(tenNhanVienLoc);
-    let laTaiXe = (chuyen.danhSachTaiXe || []).some((t) => chuanHoaSoSanhTen(t).includes(keyLoc));
-    let laGiaoNhan = (chuyen.danhSachGiaoNhan || []).some((g) => chuanHoaSoSanhTen(g).includes(keyLoc));
+    let laTaiXe = soTaiXe > 0;
+    let laGiaoNhan = soGiaoNhan > 0;
 
-    if (!keyLoc) {
-        laTaiXe = (chuyen.danhSachTaiXe || []).length > 0;
-        laGiaoNhan = (chuyen.danhSachGiaoNhan || []).length > 0;
+    if (keyLoc) {
+        laTaiXe = (chuyen.danhSachTaiXe || []).some((t) => chuanHoaSoSanhTen(t).includes(keyLoc));
+        laGiaoNhan = (chuyen.danhSachGiaoNhan || []).some((g) => chuanHoaSoSanhTen(g).includes(keyLoc));
     }
 
-    const phiTaiXe = laTaiXe ? phiTaiXeDayDu : 0;
-    const phiGiaoNhan = laGiaoNhan ? phiGiaoNhanDayDu : 0;
+    const phiTaiXe = laTaiXe ? mucPhiTxChuyen : 0;
+    const phiGiaoNhan = laGiaoNhan ? mucPhiGnChuyen : 0;
     const chucDanhApDung = [
         ...(laTaiXe ? ["Tài xế"] : []),
         ...(laGiaoNhan ? ["Giao nhận"] : [])
@@ -391,7 +395,7 @@ export function tinhPhiTinhChuyen(chuyen = {}, tenNhanVienLoc = "") {
         phiTaiXe,
         phiGiaoNhan,
         phiApDung: phiTaiXe + phiGiaoNhan,
-        tongPhiTinh: phiTaiXeDayDu + phiGiaoNhanDayDu
+        tongPhiTinh: mucPhiTxChuyen + mucPhiGnChuyen
     };
 }
 
@@ -430,13 +434,10 @@ export function inPdfBangKePhiTinh() {
         const { trip, ketQua } = item;
         const ngayGiao = dinhDangNgayDdMmYyyy(trip.ngay);
         const ghiChuParts = [
+            ketQua.chucDanhApDung || "Nội ô",
             `${ketQua.kmDiVe.toLocaleString("vi-VN")} km`,
-            `${ketQua.khoiLuongKg.toLocaleString("vi-VN")} kg`,
-            ketQua.coDiTinh ? "Đi tỉnh" : "Nội ô"
+            `${ketQua.khoiLuongKg.toLocaleString("vi-VN")} kg`
         ];
-        if (!nvLocRaw && (ketQua.phiTaiXe > 0 || ketQua.phiGiaoNhan > 0)) {
-            ghiChuParts.push(`TX ${dinhDangSoNguyenVN(ketQua.phiTaiXe)} / GN ${dinhDangSoNguyenVN(ketQua.phiGiaoNhan)}`);
-        }
 
         return `
             <tr>
@@ -657,7 +658,7 @@ export async function xemLaiDanhSachPhiTinh(batBuocTaiLai = false) {
         return;
     }
 
-    dsEl.innerHTML = `<div style="text-align:center; color:#64748b; font-size:12px; padding:14px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tính phí tỉnh từ TUYENDUONG & PHUONGTIEN...</div>`;
+    dsEl.innerHTML = `<div style="text-align:center; color:#64748b; font-size:12px; padding:14px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tính phí tỉnh theo nhân viên từ TUYENDUONG & PHUONGTIEN...</div>`;
 
     const [namStr, thangStr] = thangVal.split("-");
     const namNum = parseInt(namStr, 10);
